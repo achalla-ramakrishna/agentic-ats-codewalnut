@@ -1,0 +1,70 @@
+/*
+ * Design tokens. Components use only these variables, never raw colours or
+ * sizes, so the look can change in one place (and dark mode comes for free).
+ */
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 26px;
+
+  --color-bg: #f6f7f5;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eef1ee;
+  --color-border: #dde2dd;
+  --color-text: #17201c;
+  --color-text-muted: #5b6862;
+  --color-primary: #1f5f4a;
+  --color-primary-hover: #184c3b;
+  --color-primary-text: #ffffff;
+  --color-primary-soft: #e3efe9;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
+  --color-warning-soft: #fff4e0;
+  --color-focus: #3b82f6;
+
+  --shadow-sm: 0 1px 2px rgb(16 24 20 / 0.06);
+  --shadow-md: 0 4px 16px rgb(16 24 20 / 0.08);
+
+  --sidebar-width: 232px;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #111614;
+    --color-surface: #19201d;
+    --color-surface-muted: #212a26;
+    --color-border: #2e3834;
+    --color-text: #e8ede9;
+    --color-text-muted: #9aa8a1;
+    --color-primary: #5fb894;
+    --color-primary-hover: #7ccaa8;
+    --color-primary-text: #0d1512;
+    --color-primary-soft: #1d3129;
+    --color-danger: #f0827a;
+    --color-danger-soft: #3a1f1d;
+    --color-warning-soft: #3a2f1a;
+    --shadow-sm: none;
+    --shadow-md: none;
+    color-scheme: dark;
+  }
+}

@@ -1,8 +1,6 @@
 spring:
   application:
     name: ats
-  profiles:
-    active: dev
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/ats?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8}
     username: ${DB_USERNAME:ats}
@@ -37,8 +35,8 @@ ats:
     failure-url: ${ATS_LOGIN_FAILURE_URL:/login?error}
 
 ---
-# Local development: same MySQL, plus fake seed users and the password-less dev login.
-# Run anything shared or real with SPRING_PROFILES_ACTIVE=prod.
+# Local development only, never on by default: same MySQL, plus fake seed users and the
+# password-less dev login. Enable with -Dspring-boot.run.profiles=dev.
 spring:
   config:
     activate:

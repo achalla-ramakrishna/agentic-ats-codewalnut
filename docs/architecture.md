@@ -9,8 +9,19 @@ alternatives are recorded in `docs/adr/0001-initial-architecture.md`.
 agentic-ats-codewalnut/
   backend/   Spring Boot 3 (Java 21) API + server-rendered careers pages
   frontend/  React + TypeScript (Vite) app for staff and candidate portal
-  docs/      spec, architecture, ADRs
+    src/api/          HTTP client (session + CSRF) and typed endpoint wrappers
+    src/auth/         AuthContext: loads GET /me, sign-in state
+    src/components/   AppShell (server-driven navigation) + ui/ design system
+    src/pages/        one component per screen
+    src/styles/       design tokens (light/dark) and globals
+  docs/      spec, feature requirements, architecture, ADRs
 ```
+
+Sign-in: the SPA calls `GET /api/v1/me`; `401` shows the login page. Google
+sign-in is a full-page redirect to `/oauth2/authorization/google`, handled by
+Spring Security, which maps the Google account to a provisioned `AppUser`
+and creates a server-side session (HTTP-only cookie). CSRF uses the
+`XSRF-TOKEN` cookie echoed as `X-XSRF-TOKEN`.
 
 ## Shape
 

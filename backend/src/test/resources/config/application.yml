@@ -1,0 +1,7 @@
+# Tests run with the dev profile (seed users, dev login) and their own database, so they
+# never pollute the local dev data.
+spring:
+  profiles:
+    active: dev
+  datasource:
+    url: ${TEST_DB_URL:jdbc:mysql://localhost:3306/ats_test?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true}

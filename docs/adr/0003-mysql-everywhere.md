@@ -32,8 +32,9 @@ The team asked to use MySQL.
   adds only fake seed users and the dev login — not a different database.
 - **CI**: GitHub Actions runs the backend tests against a MySQL 8 service
   container.
-- **Tests** run against a real MySQL database that may outlive a run, so tests
-  must not depend on an empty database (e.g. use unique emails).
+- **Tests** run against their own database, `ats_test` (never the dev `ats`
+  database). It may outlive a run, so tests must not depend on an empty
+  database (e.g. use unique emails).
 
 ## Consequences
 

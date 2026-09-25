@@ -43,7 +43,10 @@ chunk 0 in `docs/SPEC.md` is next.
   migration, add a new one. Tests run against a real MySQL that may outlive
   a run, so never assume an empty database (use unique test data).
 - **Frontend**: functional components + hooks, TypeScript strict mode.
-  API calls go through a thin client module, not scattered `fetch` calls.
+  API calls go through `src/api/client.ts` (session cookie + CSRF header),
+  never scattered `fetch` calls. Navigation comes from `GET /me`; the UI
+  never decides permissions. Styles use the tokens in
+  `src/styles/tokens.css` and the components in `src/components/ui`.
 - **Enforcement lives in the API**: RBAC, job scoping, compensation
   masking and stage-transition rules are checked server-side in one place
   each (`security/AccessPolicy`, `ApplicationService`). The UI hiding something is not a
@@ -61,21 +64,27 @@ chunk 0 in `docs/SPEC.md` is next.
 ## Commands (once scaffolded)
 
 Backend (from `backend/`):
-- Needs a local MySQL 8 with database `ats` and user `ats`/`ats`
-  (override with `DB_URL`/`DB_USERNAME`/`DB_PASSWORD`).
-- `mvn test` — unit and integration tests against MySQL.
-- `mvn spring-boot:run` — run locally (`dev` profile: fake seed users + dev
-  login).
+- Needs a local MySQL 8 with databases `ats` (app) and `ats_test` (tests),
+  user `ats`/`ats` (override with `DB_URL`, `TEST_DB_URL`, `DB_USERNAME`,
+  `DB_PASSWORD`; see `.env.example`).
+- `mvn test` — unit and integration tests against `ats_test`.
+- `mvn spring-boot:run -Dspring-boot.run.profiles=dev` — run locally with
+  fake seed users and the dev login. Without `dev` the app behaves like
+  production (Google sign-in only).
 
 Frontend (from `frontend/`):
-- `npm install`, `npm run dev` (proxies API to `localhost:8080`),
-  `npm run build` (type-check + production build).
+- `npm install`, `npm run dev` (http://localhost:5173, proxies `/api` and
+  the Google sign-in round trip to `localhost:8080`).
+- `npm test`, `npm run lint`, `npm run build` (type-check + production
+  build). CI runs all of these plus the backend tests on MySQL 8.
 
 ## Guardrails
 
 - **Candidate data is personal data.** Never commit real CVs, names,
   emails, phone numbers or salaries — use obviously fake fixtures. Never
   log CV contents, compensation or contact details.
+- **The `dev` profile is never on by default.** It adds a password-less
+  login; production starts must not enable it.
 - **Secrets never live in this repo.** API keys and OAuth secrets come
   from environment variables / a gitignored `.env`. Use fake-looking
   values in docs and tests.

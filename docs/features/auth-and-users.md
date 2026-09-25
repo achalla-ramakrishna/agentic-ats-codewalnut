@@ -139,3 +139,4 @@ Passwords, self-registration, staff MFA beyond what Google enforces.
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md; AUTH-01…16 implemented on the chunk-0 branch |
+| 2026-09-25 | AUTH-14: dev profile is never active by default (tested); UI for AUTH-07, AUTH-08 added |
