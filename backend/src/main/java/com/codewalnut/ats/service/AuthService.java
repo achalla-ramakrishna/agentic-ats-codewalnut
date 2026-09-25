@@ -6,7 +6,9 @@ import com.codewalnut.ats.domain.AuditAction;
 import com.codewalnut.ats.domain.Role;
 import com.codewalnut.ats.repository.AppUserRepository;
 import com.codewalnut.ats.security.LoginRejectedException;
+import com.codewalnut.ats.security.SessionType;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
@@ -18,9 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Decides whether a person who has proven their email (via Google, or the dev login) may
- * start a session. Only provisioned, active users in an allowed domain get in; configured
- * bootstrap admins are provisioned on first sign-in.
+ * Staff sign-in: decides whether a person with a staff-domain email may start a staff session.
+ * Only provisioned, active users in an allowed (staff) domain get in; configured bootstrap
+ * admins are provisioned on first sign-in. Other emails go to {@link CandidateAuthService}.
  */
 @Service
 @RequiredArgsConstructor
@@ -68,9 +70,10 @@ public class AuthService {
     }
 
     public static List<GrantedAuthority> authoritiesFor(AppUser user) {
-        return user.getRoles().stream()
-                .map(role -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + role.name()))
-                .toList();
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority(SessionType.STAFF.authority()));
+        user.getRoles().forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name())));
+        return authorities;
     }
 
     private LoginRejectedException reject(String email, String reason) {

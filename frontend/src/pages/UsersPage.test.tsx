@@ -36,6 +36,7 @@ describe('UsersPage', () => {
 
   it('does not offer to deactivate yourself (AUTH-09)', async () => {
     fakeFetch([
+      { path: '/auth/session', body: { type: 'STAFF' } },
       { path: '/me', body: admin },
       { path: '/users', body: users },
     ])
@@ -50,6 +51,7 @@ describe('UsersPage', () => {
 
   it('creates a user with the chosen roles (AUTH-08)', async () => {
     const fetchMock = fakeFetch([
+      { path: '/auth/session', body: { type: 'STAFF' } },
       { path: '/me', body: admin },
       { path: '/users', body: users },
       { method: 'POST', path: '/users', status: 201, body: users[1] },
@@ -71,6 +73,7 @@ describe('UsersPage', () => {
 
   it('shows the server error when creation is refused', async () => {
     fakeFetch([
+      { path: '/auth/session', body: { type: 'STAFF' } },
       { path: '/me', body: admin },
       { path: '/users', body: users },
       { method: 'POST', path: '/users', status: 409, body: { error: 'A user with this email already exists' } },

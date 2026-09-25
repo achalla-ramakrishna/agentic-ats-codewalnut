@@ -21,7 +21,7 @@ MySQL service; rename `MySQL` if your database service has another name):
 | `DB_URL` | `jdbc:mysql://${{MySQL.MYSQLHOST}}:${{MySQL.MYSQLPORT}}/${{MySQL.MYSQLDATABASE}}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8` |
 | `DB_USERNAME` | `${{MySQL.MYSQLUSER}}` |
 | `DB_PASSWORD` | `${{MySQL.MYSQLPASSWORD}}` |
-| `ATS_ALLOWED_DOMAINS` | `codewalnut.com` |
+| `ATS_ALLOWED_DOMAINS` | `codewalnut.com` — the *staff* domains; any other Google account signs in as a candidate |
 | `ATS_BOOTSTRAP_ADMINS` | the email(s) that should become Admin on first sign-in |
 | `SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID` | from step 3 |
 | `SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET` | from step 3 |
@@ -38,7 +38,13 @@ Then **Settings → Networking → Generate Domain** to get a public URL such as
    credentials → OAuth client ID** → type **Web application**.
 2. **Authorised redirect URI**:
    `https://<your-railway-domain>/login/oauth2/code/google`
-3. Consent screen: **Internal** (only your Google Workspace users).
+3. OAuth consent screen: **User type: External**, because candidates sign in
+   with personal Gmail accounts. Fill in the app name, support email, and the
+   Railway domain under authorised domains. Scopes: just `openid`, `email`,
+   `profile` (non-sensitive, so no Google verification review). Then
+   **Publish app** (move it from *Testing* to *In production*), otherwise
+   only listed test users can sign in. Staff access is still limited by the
+   app: only provisioned `codewalnut.com` users get staff sessions.
 4. Copy the client ID and secret into the variables above; Railway redeploys.
 
 ## 4. Check it

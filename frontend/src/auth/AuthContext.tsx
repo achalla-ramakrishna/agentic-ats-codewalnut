@@ -1,12 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
-import { getMe, logout as apiLogout } from '../api/auth'
-import { ApiError } from '../api/client'
-import type { Me } from '../api/types'
+import { getCandidateMe, getMe, getSession, logout as apiLogout } from '../api/auth'
+import type { CandidateMe, Me } from '../api/types'
 
 type AuthState =
   | { status: 'loading' }
   | { status: 'signed-out' }
   | { status: 'signed-in'; me: Me }
+  | { status: 'candidate'; candidate: CandidateMe }
   | { status: 'error'; message: string }
 
 interface AuthContextValue {
@@ -22,13 +22,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
-      setState({ status: 'signed-in', me: await getMe() })
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 401) {
-        setState({ status: 'signed-out' })
+      const session = await getSession()
+      if (session.type === 'STAFF') {
+        setState({ status: 'signed-in', me: await getMe() })
+      } else if (session.type === 'CANDIDATE') {
+        setState({ status: 'candidate', candidate: await getCandidateMe() })
       } else {
-        setState({ status: 'error', message: error instanceof Error ? error.message : 'Something went wrong' })
+        setState({ status: 'signed-out' })
       }
+    } catch (error) {
+      setState({ status: 'error', message: error instanceof Error ? error.message : 'Something went wrong' })
     }
   }, [])
 
@@ -53,9 +56,9 @@ export function useAuth(): AuthContextValue {
   return value
 }
 
-/** For screens rendered only when signed in. */
+/** For staff screens rendered only when a staff member is signed in. */
 export function useMe(): Me {
   const { state } = useAuth()
-  if (state.status !== 'signed-in') throw new Error('useMe used while not signed in')
+  if (state.status !== 'signed-in') throw new Error('useMe used while no staff member is signed in')
   return state.me
 }

@@ -91,10 +91,10 @@ class AuthFlowTest {
     }
 
     @Test
-    void emailOutsideAllowedDomainsCannotSignIn() throws Exception {
+    void unprovisionedStaffDomainEmailIsRejectedNotTurnedIntoACandidate() throws Exception {
         mockMvc.perform(post("/api/v1/auth/dev-login").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"someone@example.com\"}"))
+                        .content("{\"email\":\"not.added@codewalnut.com\"}"))
                 .andExpect(status().isUnauthorized());
     }
 

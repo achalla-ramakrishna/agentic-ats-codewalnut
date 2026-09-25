@@ -11,7 +11,7 @@ export function LoginPage() {
   const [devEmail, setDevEmail] = useState('')
   const [error, setError] = useState<string | null>(
     new URLSearchParams(window.location.search).has('error')
-      ? 'Sign-in was refused. Ask an Admin to add your CodeWalnut account.'
+      ? 'Sign-in was refused. CodeWalnut staff: ask an Admin to add your account. Candidates: make sure your Google email is verified.'
       : null,
   )
 
@@ -39,8 +39,11 @@ export function LoginPage() {
     <div className="login">
       <Card>
         <div>
-          <h1>CodeWalnut ATS</h1>
-          <p className="muted">Sign in with your CodeWalnut account.</p>
+          <h1>CodeWalnut</h1>
+          <p className="muted">
+            Candidates: continue with any Google account, including personal Gmail. CodeWalnut staff: use your
+            work account.
+          </p>
         </div>
         {error && (
           <div role="alert" className="alert alert-error">
@@ -49,7 +52,7 @@ export function LoginPage() {
         )}
         {config?.googleEnabled && (
           <a className="btn btn-primary" href={GOOGLE_SIGN_IN_URL}>
-            Sign in with Google
+            Continue with Google
           </a>
         )}
         {config && !config.googleEnabled && !config.devLoginEnabled && (
@@ -58,7 +61,7 @@ export function LoginPage() {
         {config?.devLoginEnabled && (
           <form className="dev" onSubmit={onDevLogin}>
             <strong>Dev login</strong>
-            <span className="muted">Local development only — sign in as a seeded user.</span>
+            <span className="muted">Local development only — sign in as a seeded staff user or a candidate.</span>
             <label className="field">
               User
               <select className="input" value={devEmail} onChange={(e) => setDevEmail(e.target.value)}>

@@ -71,8 +71,9 @@ Backend (from `backend/`):
   `DB_PASSWORD`; see `.env.example`).
 - `mvn test` — unit and integration tests against `ats_test`.
 - `mvn spring-boot:run -Dspring-boot.run.profiles=dev` — run locally with
-  fake seed users and the dev login. Without `dev` the app behaves like
-  production (Google sign-in only).
+  fake seed users and the dev login (staff users plus a candidate). Without
+  `dev` the app behaves like production (Google sign-in only: provisioned
+  `codewalnut.com` staff, or any other Google account as a candidate).
 
 Frontend (from `frontend/`):
 - `npm install`, `npm run dev` (http://localhost:5173, proxies `/api` and

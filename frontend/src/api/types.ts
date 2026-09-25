@@ -59,3 +59,15 @@ export interface Page<T> {
   totalItems: number
   totalPages: number
 }
+
+export type SessionType = 'STAFF' | 'CANDIDATE'
+
+export interface Session {
+  type: SessionType | null
+}
+
+export interface CandidateMe {
+  id: string
+  email: string
+  name: string | null
+}

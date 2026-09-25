@@ -1,7 +1,7 @@
 package com.codewalnut.ats.security;
 
-import com.codewalnut.ats.domain.AppUser;
-import com.codewalnut.ats.service.AuthService;
+import com.codewalnut.ats.service.SignInService;
+import com.codewalnut.ats.service.SignInService.SignedIn;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
@@ -12,14 +12,15 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Component;
 
 /**
- * Maps a Google sign-in onto a provisioned AppUser. Unverified emails, other domains and
- * unknown or inactive users are rejected here, before a session is created.
+ * Maps a Google sign-in onto a session. Any verified Google account may sign in: staff-domain
+ * accounts must be provisioned staff; all others (e.g. personal Gmail) become candidates.
+ * Unverified emails and rejected staff sign-ins fail here, before a session is created.
  */
 @Component
 @RequiredArgsConstructor
 public class GoogleOidcUserService extends OidcUserService {
 
-    private final AuthService authService;
+    private final SignInService signInService;
 
     @Override
     public OidcUser loadUser(OidcUserRequest request) throws OAuth2AuthenticationException {
@@ -27,14 +28,13 @@ public class GoogleOidcUserService extends OidcUserService {
         if (!Boolean.TRUE.equals(google.getEmailVerified()) || google.getEmail() == null) {
             throw reject("Google account email is not verified");
         }
-        AppUser user;
+        SignedIn signedIn;
         try {
-            user = authService.completeLogin(google.getEmail(), google.getFullName(), google.getSubject());
+            signedIn = signInService.signIn(google.getEmail(), google.getFullName(), google.getSubject());
         } catch (LoginRejectedException ex) {
             throw reject(ex.getMessage());
         }
-        return new DefaultOidcUser(
-                AuthService.authoritiesFor(user), google.getIdToken(), google.getUserInfo(), "email");
+        return new DefaultOidcUser(signedIn.authorities(), google.getIdToken(), google.getUserInfo(), "email");
     }
 
     private static OAuth2AuthenticationException reject(String message) {

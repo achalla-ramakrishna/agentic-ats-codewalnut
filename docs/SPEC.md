@@ -65,7 +65,11 @@ review what CodeWalnut submits to them, via secure links (ADR-0002).
 | Client Reviewer | External, client side | Review submissions via link, feedback, interview slots |
 | Candidate | External | Apply, book slots, take assessments, respond to offers |
 
-Staff sign in with Google; externals use magic links. Permissions are defined
+Everyone signs in with Google: `codewalnut.com` accounts that an Admin has
+provisioned get staff sessions; any other Google account (e.g. a candidate's
+personal Gmail) gets a candidate session. Client reviewers use magic links;
+candidates without Google get an email magic link once email sending exists
+(ADR-0004). Permissions are defined
 per capability in [auth-and-users.md](features/auth-and-users.md) and enforced
 by the API, with row scoping (own jobs, own clients, assigned interviews) added
 per feature.

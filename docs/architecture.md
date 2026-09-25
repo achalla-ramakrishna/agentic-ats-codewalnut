@@ -17,10 +17,14 @@ agentic-ats-codewalnut/
   docs/      spec, feature requirements, architecture, ADRs
 ```
 
-Sign-in: the SPA calls `GET /api/v1/me`; `401` shows the login page. Google
-sign-in is a full-page redirect to `/oauth2/authorization/google`, handled by
-Spring Security, which maps the Google account to a provisioned `AppUser`
-and creates a server-side session (HTTP-only cookie). CSRF uses the
+Sign-in: the SPA calls `GET /api/v1/auth/session` to learn whether the
+visitor is signed out, staff or a candidate, then loads `GET /api/v1/me`
+(staff) or `GET /api/v1/candidate/me`. Google sign-in is a full-page redirect
+to `/oauth2/authorization/google`, handled by Spring Security;
+`SignInService` routes staff-domain emails to a provisioned `AppUser` and
+every other verified Google account to a `CandidateAccount`, then creates a
+server-side session (HTTP-only cookie) carrying `ROLE_STAFF` or
+`ROLE_CANDIDATE`. CSRF uses the
 `XSRF-TOKEN` cookie echoed as `X-XSRF-TOKEN`.
 
 ## Shape

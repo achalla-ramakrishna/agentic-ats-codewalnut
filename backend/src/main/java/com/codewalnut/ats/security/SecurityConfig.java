@@ -32,7 +32,8 @@ public class SecurityConfig {
             SecurityContextRepository securityContextRepository,
             AuthProperties authProperties) throws Exception {
         http.authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/health", "/api/v1/auth/config", "/api/v1/auth/dev-login")
+                        .requestMatchers("/api/v1/health", "/api/v1/auth/config", "/api/v1/auth/session",
+                                "/api/v1/auth/dev-login")
                         .permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())

@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
 import { AppShell } from './components/AppShell'
 import { AuditLogPage } from './pages/AuditLogPage'
+import { CandidateHomePage } from './pages/CandidateHomePage'
 import { ComingSoonPage } from './pages/ComingSoonPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
@@ -35,6 +36,9 @@ export function App() {
         <button className="btn btn-secondary" onClick={() => void refresh()}>Try again</button>
       </div>
     )
+  }
+  if (state.status === 'candidate') {
+    return <CandidateHomePage candidate={state.candidate} />
   }
   if (state.status === 'signed-out') {
     return (

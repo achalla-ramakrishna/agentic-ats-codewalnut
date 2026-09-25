@@ -19,6 +19,8 @@ const interviewer: Me = {
   ],
 }
 
+const STAFF_SESSION = { path: '/auth/session', body: { type: 'STAFF' } }
+
 function renderAt(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
@@ -34,7 +36,7 @@ describe('App', () => {
 
   it('shows the login page with dev users when signed out', async () => {
     fakeFetch([
-      { path: '/me', status: 401, body: { error: 'Not signed in' } },
+      { path: '/auth/session', body: { type: null } },
       {
         path: '/auth/config',
         body: { googleEnabled: false, devLoginEnabled: true, devUsers: [{ email: 'admin@codewalnut.test', label: 'Admin' }] },
@@ -45,11 +47,11 @@ describe('App', () => {
 
     expect(await screen.findByRole('button', { name: 'Sign in as this user' })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: /admin@codewalnut.test/ })).toBeInTheDocument()
-    expect(screen.queryByText('Sign in with Google')).not.toBeInTheDocument()
+    expect(screen.queryByText('Continue with Google')).not.toBeInTheDocument()
   })
 
   it('renders only the navigation the server returns (AUTH-07)', async () => {
-    fakeFetch([{ path: '/me', body: interviewer }])
+    fakeFetch([STAFF_SESSION, { path: '/me', body: interviewer }])
 
     renderAt('/')
 
@@ -60,7 +62,7 @@ describe('App', () => {
   })
 
   it('shows "Not available" for a page outside the role', async () => {
-    fakeFetch([{ path: '/me', body: interviewer }])
+    fakeFetch([STAFF_SESSION, { path: '/me', body: interviewer }])
 
     renderAt('/admin/users')
 
@@ -69,6 +71,7 @@ describe('App', () => {
 
   it('signs out and returns to the login page', async () => {
     const fetchMock = fakeFetch([
+      STAFF_SESSION,
       { path: '/me', body: interviewer },
       { method: 'POST', path: '/auth/logout', status: 204 },
       { path: '/auth/config', body: { googleEnabled: true, devLoginEnabled: false, devUsers: [] } },
@@ -77,10 +80,24 @@ describe('App', () => {
     renderAt('/')
     await userEvent.click(await screen.findByRole('button', { name: 'Sign out' }))
 
-    expect(await screen.findByRole('link', { name: 'Sign in with Google' })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: 'Continue with Google' })).toHaveAttribute(
       'href',
       '/oauth2/authorization/google',
     )
     expect(fetchMock.mock.calls.some(([url, init]) => url === '/api/v1/auth/logout' && init?.method === 'POST')).toBe(true)
+  })
+
+  it('shows candidates their own area, not the staff app (AUTH-18)', async () => {
+    const fetchMock = fakeFetch([
+      { path: '/auth/session', body: { type: 'CANDIDATE' } },
+      { path: '/candidate/me', body: { id: 'c1', email: 'asha.rao@gmail.com', name: 'Asha Rao' } },
+    ])
+
+    renderAt('/admin/users')
+
+    expect(await screen.findByRole('heading', { name: 'Hi Asha' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'My applications' })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Main' })).not.toBeInTheDocument()
+    expect(fetchMock.mock.calls.some(([url]) => url === '/api/v1/me')).toBe(false)
   })
 })
