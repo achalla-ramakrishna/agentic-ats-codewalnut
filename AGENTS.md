@@ -19,10 +19,12 @@ e-sign) and funnel reporting. See `docs/SPEC.md` for requirements and
   scheduled background workers.
 - `frontend/` — React + TypeScript (Vite) app for staff and the candidate
   portal.
-- `docs/` — spec, architecture, ADRs.
+- `docs/` — spec overview, per-feature requirements (`docs/features/`),
+  architecture, ADRs, deploy guide.
 
-Stack rationale: `docs/adr/0001-initial-architecture.md`. Nothing is scaffolded yet;
-chunk 0 in `docs/SPEC.md` is next.
+Stack rationale: `docs/adr/0001-initial-architecture.md` and ADR-0003.
+Chunk 0 (sign-in, roles, users, audit log) is built; chunk 1 in
+`docs/SPEC.md` is next.
 
 ## Conventions
 
@@ -61,7 +63,7 @@ chunk 0 in `docs/SPEC.md` is next.
 - **Tests**: every service/endpoint change ships with a test; permission
   rules get explicit allow *and* deny tests. Don't merge red.
 
-## Commands (once scaffolded)
+## Commands
 
 Backend (from `backend/`):
 - Needs a local MySQL 8 with databases `ats` (app) and `ats_test` (tests),
