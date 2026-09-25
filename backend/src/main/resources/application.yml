@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: ats
+  profiles:
+    active: dev
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/ats?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:ats}
+    password: ${DB_PASSWORD:ats}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  # Google sign-in: set SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID and
+  # SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET. Without them the app starts
+  # with Google sign-in disabled.
+
+server:
+  port: 8080
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${SESSION_COOKIE_SECURE:true}
+      timeout: 8h
+
+ats:
+  auth:
+    allowed-domains: ${ATS_ALLOWED_DOMAINS:codewalnut.com}
+    bootstrap-admins: ${ATS_BOOTSTRAP_ADMINS:}
+    dev-login-enabled: false
+    success-url: ${ATS_LOGIN_SUCCESS_URL:/}
+    failure-url: ${ATS_LOGIN_FAILURE_URL:/login?error}
+
+---
+# Local development: same MySQL, plus fake seed users and the password-less dev login.
+# Run anything shared or real with SPRING_PROFILES_ACTIVE=prod.
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false
+
+ats:
+  auth:
+    allowed-domains: codewalnut.com,codewalnut.test
+    dev-login-enabled: true
