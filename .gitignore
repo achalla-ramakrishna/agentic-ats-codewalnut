@@ -1,9 +1,17 @@
-node_modules/
-.next/
-dist/
-coverage/
+# Java / Maven
+backend/target/
+*.class
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+
+# Local config / secrets
 .env
 .env.*
 !.env.example
+application-local.yml
+
 *.log
 .DS_Store
+.idea/

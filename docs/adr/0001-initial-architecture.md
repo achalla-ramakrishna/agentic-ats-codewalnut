@@ -1,54 +1,76 @@
 # ADR-0001: Initial architecture — stack and shape
 
-- **Status**: proposed
+- **Status**: accepted
 - **Date**: 2026-09-25
 
 ## Context
 
 CodeWalnut needs an internal ATS (see `docs/SPEC.md`). Before chunk 0 we
-need to fix the app's stack and overall shape. Constraints: a small team
-(3–6 engineers), internal-tool load (hundreds of users, ~100k candidates
-over time), a public careers page that should be SEO-friendly, several
+need to fix the app's stack and overall shape. Constraints: a small team,
+internal-tool load (hundreds of users, ~100k candidates over time), a
+public careers page that should be indexable by search engines, several
 third-party integrations with webhooks and retries, and strict privacy /
 audit requirements on candidate data.
 
+The team already builds and runs `agentic-pr-reviewer` on Spring Boot +
+React. Reusing that stack means the same people, conventions, CI and
+local setup apply here with no new learning curve.
+
 ## Decisions
 
-1. **Modular monolith**, not microservices. One API with module
-   boundaries (see `docs/architecture.md`), one database, one worker
-   process. Splitting later is possible; distributed-system overhead now
-   is not justified.
-2. **TypeScript end to end**: Next.js (React) for staff UI, careers page
-   and candidate portal; Node API (NestJS); shared types and zod schemas
-   in a workspace package. Plays to CodeWalnut's React strength and lets
-   RBAC policy and validation be shared between UI and API.
-3. **PostgreSQL** as the single store, including full-text search
-   (`tsvector` + `pg_trgm`) and `jsonb` for scorecard ratings, offer
-   breakdowns and parsed CVs. Add a search engine only if measured
-   search latency misses the spec's target.
-4. **BullMQ on Redis** for all async work: email, reminders, CV parsing,
-   provider calls, webhook processing, retention jobs.
-5. **Google Workspace SSO for staff, magic links for candidates** — no
+1. **Same stack as `agentic-pr-reviewer`**:
+   - Backend: **Spring Boot 3 (Java 21)**, Maven, Spring Web, Spring Data
+     JPA, Bean Validation, Lombok.
+   - Frontend: **React + TypeScript (Vite)** SPA for staff and the
+     candidate portal.
+   - Database: **MySQL 8** for real environments, **H2** in-memory for
+     `mvn test` and quick local runs; schema via **Flyway**, with
+     migrations mirrored in `db/migration/{h2,mysql}`.
+2. **Modular monolith**: one Spring Boot app, package-by-layer, with the
+   ATS modules as service groups (see `docs/architecture.md`). No
+   microservices.
+3. **Auth**: **Spring Security OAuth2 login with Google Workspace** for
+   staff; signed, single-use **magic links** for candidates. No
    passwords stored.
-6. **LLM behind a single `ai` module**, provider-swappable, every call
-   logged; AI output is advisory only.
+4. **Background work without new infrastructure**: a `background_task`
+   table in MySQL (outbox pattern) polled by `@Scheduled` workers, with retry
+   count, backoff and idempotency key. Handles email, reminders, CV
+   parsing, provider calls and retention. Revisit (e.g. JobRunr or a
+   broker) only if volume demands it.
+5. **Careers page**: the 2–3 public pages (job list, job detail, apply)
+   are server-rendered by Spring Boot with **Thymeleaf**, so they are
+   indexable and fast without SSR in the React app. Everything behind
+   login is the React SPA.
+6. **Search**: MySQL `FULLTEXT` indexes on candidate name, skills and
+   parsed CV text. Add a search engine only if measured latency misses
+   the spec's target.
+7. **Semi-structured data** (scorecard ratings, offer CTC breakdown,
+   parsed CV fields) uses MySQL `JSON` columns.
+8. **LLM** calls sit behind one `LlmService` (provider-swappable, every
+   call logged); AI output is advisory only.
 
 ## Alternatives considered
 
-- **Spring Boot 3 (Java 21) + React**, matching `agentic-pr-reviewer`.
-  Strong option if the team maintaining the ATS is the same Java team;
-  loses shared types between UI and API and SSR for the careers page
-  would need a separate Next.js app anyway. Revisit if the owning team
-  prefers Java — the module boundaries above port directly.
+- **Next.js + Prisma + Postgres (TypeScript end to end)** — fewer moving
+  parts (one app) and shared types, but a second stack for the team to
+  maintain alongside `agentic-pr-reviewer`. Rejected for team fit.
+- **Redis + a queue library for jobs** — more capable, but extra
+  infrastructure the outbox table doesn't need yet.
+- **SSR for the careers page via a separate Next.js app** — rejected;
+  Thymeleaf covers three pages inside the existing app.
 - **Buy (Greenhouse, Lever, Zoho Recruit, Keka Hire)** — open question in
   the spec; this ADR assumes build was chosen.
-- **Microservices per module** — rejected for team size and load.
 
 ## Consequences
 
-- One deployable API + one worker + one web app; simple CI/CD.
-- RBAC and stage-transition rules live in exactly one module each; the
-  API is the enforcement point, not the UI.
+- Local dev needs only a JDK 21 and Node; MySQL is optional (`dev`
+  profile uses H2).
+- Every schema change is a Flyway migration mirrored into `h2/` and
+  `mysql/`; the dialects differ (UUIDs as `BINARY(16)`, `JSON` column
+  support, `ALTER` syntax), so each migration is verified against a real
+  MySQL before merge, as in `agentic-pr-reviewer`'s ADR-0002.
+- `JSON` and `FULLTEXT` behave differently on H2; tests that depend on
+  them run against MySQL (Testcontainers) rather than H2.
 - Multi-tenancy is **not** designed in. If the ATS is to be offered to
   clients, add `org_id` scoping to every table before chunk 1 and record
   that in a new ADR.

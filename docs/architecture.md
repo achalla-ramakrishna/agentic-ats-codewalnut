@@ -1,85 +1,100 @@
 # Architecture
 
-Proposed; nothing is built yet. Stack choice and alternatives are recorded
-in `docs/adr/0001-initial-architecture.md`.
+Nothing is built yet; this is the target shape. Stack choice and
+alternatives are recorded in `docs/adr/0001-initial-architecture.md`.
 
-## Shape
-
-A TypeScript modular monolith: one web app, one API, Postgres, and a
-background job queue. Sized for a 3–6 engineer team and internal-tool
-load; modules have clean boundaries so one can be split out later if it
-earns it.
-
-```
-                 ┌───────────────────────┐
- Recruiters,     │  Next.js web app       │
- HMs, panel ───▶ │  (staff UI)            │──┐
-                 └───────────────────────┘  │
-                 ┌───────────────────────┐  │   ┌──────────────┐    ┌────────────┐
- Candidates ───▶ │  Careers page +        │──┼──▶│  API          │──▶│ PostgreSQL │
-                 │  candidate portal      │  │   │  (modules     │    └────────────┘
-                 └───────────────────────┘  │   │   below)      │──▶ Object storage
-                                            │   └──────┬───────┘    (CVs, offers)
- Providers  ── webhooks ───────────────────┘          │ enqueue
- (assessment, e-sign, email)                  ┌───────▼───────┐
-                                              │ Job queue      │──▶ Calendar, email,
-                                              │ BullMQ + Redis │    assessment, e-sign,
-                                              └───────────────┘    LLM, Slack, HRMS
-```
-
-## Planned repo layout
+## Repo overview
 
 ```
 agentic-ats-codewalnut/
-  apps/web/        Next.js (staff UI + careers page + candidate portal)
-  apps/api/        Node API (NestJS) — or tRPC inside apps/web if the team stays small
-  apps/worker/     BullMQ workers (emails, reminders, parsing, webhooks, retention)
-  packages/db/     Schema + migrations (Prisma or Drizzle), seed data
-  packages/shared/ Types, zod schemas, RBAC policy shared by web/api/worker
-  docs/            Spec, architecture, ADRs
+  backend/   Spring Boot 3 (Java 21) API + server-rendered careers pages
+  frontend/  React + TypeScript (Vite) app for staff and candidate portal
+  docs/      spec, architecture, ADRs
 ```
 
-## API modules
+## Shape
 
-| Module | Owns | Notes |
+```
+                 ┌──────────────────────────┐
+ Recruiters,     │  React SPA (frontend/)    │──┐
+ HMs, panel ───▶ │  staff UI + cand. portal  │  │  /api/v1
+                 └──────────────────────────┘  │
+                                               ▼
+ Candidates ── careers page (Thymeleaf) ──▶ ┌────────────────────┐    ┌──────────┐
+                                            │  Spring Boot app    │──▶│  MySQL    │
+ Providers ── /webhooks/{provider} ───────▶ │  (backend/)         │    │  (+ task  │
+ (assessment, e-sign, email)                │                     │◀──│  table)   │
+                                            │  @Scheduled workers │    └──────────┘
+                                            └─────────┬──────────┘
+                                                      ▼
+                                   Object storage (CVs, offers) · Google Calendar/Gmail
+                                   · assessment provider · e-sign · LLM · Slack · HRMS
+```
+
+## Module boundaries (backend)
+
+```
+com.codewalnut.ats
+  controller/   REST endpoints (/api/v1) + Thymeleaf careers controllers.
+                No business logic — delegate to service/.
+  service/      Business rules, one group per ATS module (below).
+  client/       Outbound clients to external providers. Nothing else calls
+                a provider API directly.
+  task/         Outbox BackgroundTask table + @Scheduled workers (email, reminders,
+                parsing, provider calls, retention).
+  security/     Spring Security config, Google OAuth2 login, candidate
+                magic links, RBAC policy (AccessPolicy).
+  repository/   Spring Data JPA repositories.
+  domain/       JPA entities.
+  dto/          Request/response shapes — never expose domain/ entities
+                over the API.
+  config/       Spring configuration (datasource, HTTP clients, CORS, storage).
+```
+
+`controller` → `service` → (`client` | `repository` | enqueue a `task`).
+`client` and `repository` never call back up into `service`. `domain` has
+no dependency on any other package.
+
+| Service group | Owns | Notes |
 | --- | --- | --- |
-| `auth` | SSO (staff), magic links (candidates), sessions | |
-| `rbac` | Role + job-scope policy checks | Every other module calls this; never re-implement checks in a controller |
-| `requisitions` | Requisition, approvals | |
-| `jobs` | Job, PipelineStage, HiringTeam, templates | |
-| `candidates` | Candidate, Document, dedupe/merge, parsing | |
-| `applications` | Application, StageEvent, stage-move rules | Single place stage transitions are validated |
-| `interviews` | Interview, Scorecard, scheduling | |
-| `assessments` | Assessment, provider adapters | |
-| `offers` | Offer, OfferApproval, e-sign | |
-| `messaging` | Message, templates, email sync | |
-| `reports` | Read-only aggregates over StageEvent etc. | |
-| `audit` | AuditLog (append-only) | |
-| `integrations` | One adapter per external provider | Nothing else calls provider APIs directly |
-| `ai` | LLM calls behind one interface | Logs every call; never makes a decision |
+| `RequisitionService` | Requisition, approvals | |
+| `JobService` | Job, PipelineStage, HiringTeam, templates | |
+| `CandidateService` | Candidate, Document, dedupe/merge, parsing | |
+| `ApplicationService` | Application, StageEvent, stage-move rules | The only place stage transitions are validated |
+| `InterviewService` | Interview, Scorecard, scheduling | |
+| `AssessmentService` | Assessment, provider adapters | |
+| `OfferService` | Offer, OfferApproval, e-sign | |
+| `MessagingService` | Message, templates, email | |
+| `ReportService` | Read-only aggregates over StageEvent etc. | |
+| `AuditService` | AuditLog (append-only) | |
+| `LlmService` | CV parsing, JD drafting, feedback summaries | Logs every call; never makes a decision |
 
-Dependency direction: `controllers → services → (repositories | integrations)`.
-Integrations and repositories never call back up into services.
+RBAC and job scoping are checked through one `AccessPolicy` in
+`security/`, called from services — not re-implemented per controller.
 
 ## Core data model
+
+UUID primary keys (`BINARY(16)` on MySQL). Semi-structured fields are
+MySQL `JSON` columns.
 
 | Entity | Key fields | Notes |
 | --- | --- | --- |
 | Requisition | role, level, headcount, budget_min/max, client_project, target_date, status, requested_by | |
-| Job | requisition_id, title, jd, skills[], location, work_mode, status, pipeline_template_id | draft / open / on_hold / closed |
-| PipelineStage | job_id, name, order, type, sla_hours | `type` drives automation |
-| Candidate | name, email (unique per org), phone, links, current_ctc, expected_ctc, notice_days, source, tags[], consent_at | |
+| Job | requisition_id, title, jd, skills, location, work_mode, status, pipeline_template_id | draft / open / on_hold / closed |
+| PipelineStage | job_id, name, position, type, sla_hours | `type` drives automation |
+| Candidate | name, email (unique), phone, links, current_ctc, expected_ctc, notice_days, source, tags, consent_at | FULLTEXT on name/skills |
 | Application | candidate_id, job_id, stage_id, status, owner_id, applied_at, rejected_reason | active / rejected / withdrawn / hired |
 | StageEvent | application_id, from_stage, to_stage, actor_id, reason, at | Append-only |
-| Interview | application_id, stage_id, start_at, end_at, panel[], meeting_url, status | |
-| Scorecard | interview_id, interviewer_id, ratings (jsonb), recommendation, notes, submitted_at | |
+| Interview | application_id, stage_id, start_at, end_at, meeting_url, status | Panel via join table |
+| Scorecard | interview_id, interviewer_id, ratings (JSON), recommendation, notes, submitted_at | |
 | Assessment | application_id, provider, external_id, score, max_score, report_url, status | |
-| Offer | application_id, ctc_breakdown (jsonb), joining_date, expires_at, status, signed_doc_id | |
+| Offer | application_id, ctc_breakdown (JSON), joining_date, expires_at, status, signed_doc_id | |
 | OfferApproval | offer_id, approver_id, decision, at | |
-| Document | owner_type, owner_id, kind, storage_key, parsed (jsonb) | Private bucket |
+| Document | owner_type, owner_id, kind, storage_key, parsed (JSON) | Private bucket; FULLTEXT on parsed text |
 | Message | candidate_id, channel, direction, subject, body, thread_id, sent_at | |
-| User | email, name, role, sso_subject | |
-| AuditLog | actor_id, entity, entity_id, action, diff (jsonb), at | Append-only |
+| AppUser | email, name, role, google_subject | |
+| AuditLog | actor_id, entity, entity_id, action, diff (JSON), at | Append-only |
+| BackgroundTask | type, payload (JSON), status, attempts, run_after, idempotency_key | Polled by workers |
 
 ## REST surface (`/api/v1`)
 
@@ -87,7 +102,7 @@ Integrations and repositories never call back up into services.
 - `/candidates`, `/candidates/{id}/documents`, `/applications`, `/applications/{id}/move`
 - `/interviews`, `/scorecards`, `/assessments`, `/offers`, `/offers/{id}/approve`
 - `/reports/funnel`, `/reports/time-to-hire`
-- `/public/jobs`, `/public/apply` — unauthenticated, rate-limited
+- `/public/apply` — unauthenticated, rate-limited (careers pages post here)
 - `/webhooks/{provider}` — signature-verified, idempotent
 
 ## Integrations
