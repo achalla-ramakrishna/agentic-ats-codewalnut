@@ -103,6 +103,23 @@ From any stage an application can go to **Rejected** (reason required),
 Every stage change appends a `StageEvent` (actor, time, reason) — the
 source of truth for the activity timeline and funnel metrics.
 
+## Tech stack
+
+Decided in `docs/adr/0001-initial-architecture.md`; module and data-model
+detail in `docs/architecture.md`.
+
+| Layer | Choice |
+| --- | --- |
+| Backend | Spring Boot 3 (Java 21), Maven, Spring Web, Spring Data JPA, Spring Security |
+| Frontend | React + TypeScript (Vite) for staff UI and candidate portal |
+| Careers pages | Server-rendered by Spring Boot (Thymeleaf) for SEO |
+| Database | MySQL 8 (H2 in-memory for local dev and tests), Flyway migrations |
+| Background work | MySQL outbox table (`background_task`) + `@Scheduled` workers |
+| Auth | Google Workspace SSO for staff; magic links for candidates |
+| Search | MySQL `FULLTEXT` on candidates and parsed CVs |
+| Files | S3-compatible private storage, signed URLs |
+| AI | One `LlmService` (CV parsing, JD drafting, feedback summaries) — advisory only |
+
 ## Functional requirements
 
 | Module | Requirement | Priority |

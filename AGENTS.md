@@ -19,8 +19,7 @@ e-sign) and funnel reporting. See `docs/SPEC.md` for requirements and
   portal.
 - `docs/` — spec, architecture, ADRs.
 
-Same stack and conventions as `agentic-pr-reviewer`, on purpose — see
-`docs/adr/0001-initial-architecture.md`. Nothing is scaffolded yet;
+Stack rationale: `docs/adr/0001-initial-architecture.md`. Nothing is scaffolded yet;
 chunk 0 in `docs/SPEC.md` is next.
 
 ## Conventions

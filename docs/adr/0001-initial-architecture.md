@@ -12,13 +12,13 @@ public careers page that should be indexable by search engines, several
 third-party integrations with webhooks and retries, and strict privacy /
 audit requirements on candidate data.
 
-The team already builds and runs `agentic-pr-reviewer` on Spring Boot +
-React. Reusing that stack means the same people, conventions, CI and
-local setup apply here with no new learning curve.
+CodeWalnut's team already builds and runs Spring Boot + React
+applications, so using that stack means existing conventions, CI and
+local setup apply with no new learning curve.
 
 ## Decisions
 
-1. **Same stack as `agentic-pr-reviewer`**:
+1. **Java + React stack**:
    - Backend: **Spring Boot 3 (Java 21)**, Maven, Spring Web, Spring Data
      JPA, Bean Validation, Lombok.
    - Frontend: **React + TypeScript (Vite)** SPA for staff and the
@@ -52,8 +52,8 @@ local setup apply here with no new learning curve.
 ## Alternatives considered
 
 - **Next.js + Prisma + Postgres (TypeScript end to end)** — fewer moving
-  parts (one app) and shared types, but a second stack for the team to
-  maintain alongside `agentic-pr-reviewer`. Rejected for team fit.
+  parts (one app) and shared types, but a stack the team does not
+  already run in production. Rejected for team fit.
 - **Redis + a queue library for jobs** — more capable, but extra
   infrastructure the outbox table doesn't need yet.
 - **SSR for the careers page via a separate Next.js app** — rejected;
@@ -68,7 +68,7 @@ local setup apply here with no new learning curve.
 - Every schema change is a Flyway migration mirrored into `h2/` and
   `mysql/`; the dialects differ (UUIDs as `BINARY(16)`, `JSON` column
   support, `ALTER` syntax), so each migration is verified against a real
-  MySQL before merge, as in `agentic-pr-reviewer`'s ADR-0002.
+  MySQL before merge.
 - `JSON` and `FULLTEXT` behave differently on H2; tests that depend on
   them run against MySQL (Testcontainers) rather than H2.
 - Multi-tenancy is **not** designed in. If the ATS is to be offered to
