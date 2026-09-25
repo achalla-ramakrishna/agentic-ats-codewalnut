@@ -12,9 +12,9 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Seeds one obviously-fake user per role (plus a multi-role lead) in the dev profile only. */
+/** Seeds one obviously-fake user per role (plus a multi-role lead) in the dev and demo profiles only. */
 @Component
-@Profile("dev")
+@Profile({"dev", "demo"})
 @RequiredArgsConstructor
 public class DevDataSeeder implements ApplicationRunner {
 

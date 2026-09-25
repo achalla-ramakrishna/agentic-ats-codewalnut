@@ -1,5 +1,6 @@
 package com.codewalnut.ats.controller;
 
+import com.codewalnut.ats.config.AuthProperties;
 import com.codewalnut.ats.domain.AppUser;
 import com.codewalnut.ats.domain.Role;
 import com.codewalnut.ats.dto.AuthConfigResponse;
@@ -23,6 +24,7 @@ public class AuthConfigController {
     private final ObjectProvider<ClientRegistrationRepository> clientRegistrations;
     private final ObjectProvider<DevLoginController> devLogin;
     private final AppUserRepository userRepository;
+    private final AuthProperties authProperties;
 
     @GetMapping("/api/v1/auth/config")
     public AuthConfigResponse config() {
@@ -38,6 +40,7 @@ public class AuthConfigController {
             // Any non-staff email signs in as a candidate; offer one for convenience.
             devUsers.add(new DevUser(DEV_CANDIDATE_EMAIL, "Candidate (personal Gmail)"));
         }
-        return new AuthConfigResponse(clientRegistrations.getIfAvailable() != null, devLoginEnabled, devUsers);
+        return new AuthConfigResponse(clientRegistrations.getIfAvailable() != null, devLoginEnabled,
+                devLoginEnabled && !authProperties.demoAccessCode().isEmpty(), devUsers);
     }
 }

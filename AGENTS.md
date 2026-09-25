@@ -87,7 +87,9 @@ Frontend (from `frontend/`):
   emails, phone numbers or salaries — use obviously fake fixtures. Never
   log CV contents, compensation or contact details.
 - **The `dev` profile is never on by default.** It adds a password-less
-  login; production starts must not enable it.
+  login; production starts must not enable it. Shared previews use the
+  `demo` profile instead, which requires `ATS_DEMO_ACCESS_CODE` and must
+  only ever hold fake data.
 - **Secrets never live in this repo.** API keys and OAuth secrets come
   from environment variables / a gitignored `.env`. Use fake-looking
   values in docs and tests.

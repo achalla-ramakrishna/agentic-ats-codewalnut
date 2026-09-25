@@ -39,7 +39,7 @@ describe('App', () => {
       { path: '/auth/session', body: { type: null } },
       {
         path: '/auth/config',
-        body: { googleEnabled: false, devLoginEnabled: true, devUsers: [{ email: 'admin@codewalnut.test', label: 'Admin' }] },
+        body: { googleEnabled: false, devLoginEnabled: true, accessCodeRequired: false, devUsers: [{ email: 'admin@codewalnut.test', label: 'Admin' }] },
       },
     ])
 
@@ -74,7 +74,7 @@ describe('App', () => {
       STAFF_SESSION,
       { path: '/me', body: interviewer },
       { method: 'POST', path: '/auth/logout', status: 204 },
-      { path: '/auth/config', body: { googleEnabled: true, devLoginEnabled: false, devUsers: [] } },
+      { path: '/auth/config', body: { googleEnabled: true, devLoginEnabled: false, accessCodeRequired: false, devUsers: [] } },
     ])
 
     renderAt('/')
@@ -99,5 +99,31 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'My applications' })).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Main' })).not.toBeInTheDocument()
     expect(fetchMock.mock.calls.some(([url]) => url === '/api/v1/me')).toBe(false)
+  })
+
+  it('asks for the access code in the demo preview and sends it (AUTH-21)', async () => {
+    const fetchMock = fakeFetch([
+      { path: '/auth/session', body: { type: null } },
+      {
+        path: '/auth/config',
+        body: {
+          googleEnabled: false,
+          devLoginEnabled: true,
+          accessCodeRequired: true,
+          devUsers: [{ email: 'admin@codewalnut.test', label: 'Admin' }],
+        },
+      },
+      { method: 'POST', path: '/auth/dev-login', status: 401, body: { error: 'Wrong access code' } },
+    ])
+    renderAt('/')
+
+    const submit = await screen.findByRole('button', { name: 'Sign in as this user' })
+    expect(submit).toBeDisabled()
+    await userEvent.type(screen.getByLabelText('Access code'), 'preview-code-1234')
+    await userEvent.click(submit)
+
+    const post = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST')!
+    expect(JSON.parse(post[1]!.body as string)).toEqual({ email: 'admin@codewalnut.test', accessCode: 'preview-code-1234' })
+    expect(await screen.findByRole('alert')).toHaveTextContent('Wrong access code')
   })
 })

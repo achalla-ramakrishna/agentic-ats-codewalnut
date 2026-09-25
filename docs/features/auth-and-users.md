@@ -78,6 +78,7 @@ permissions.
 | AUTH-18 | Candidates sign in with any verified Google account (e.g. personal Gmail); a candidate account is created on first sign-in and the Google account is pinned to it. | MVP |
 | AUTH-19 | Candidate sessions are refused (`403`) on every staff API; staff sessions are refused on candidate APIs (`/api/v1/candidate/**`). | MVP |
 | AUTH-20 | `GET /auth/session` (public) returns the session type (staff / candidate / none) so the app shows the right area. | MVP |
+| AUTH-21 | A `demo` profile for shared previews (before Google is set up): seeded fake users and the dev login, gated by a shared access code of ≥ 12 characters; the app refuses to start in demo without it; wrong codes are refused and audited. | MVP |
 
 ## Business rules
 
@@ -165,3 +166,4 @@ Passwords, self-registration, staff MFA beyond what Google enforces.
 | 2026-09-25 | Created from SPEC.md; AUTH-01…16 implemented on the chunk-0 branch |
 | 2026-09-25 | AUTH-14: dev profile is never active by default (tested); UI for AUTH-07, AUTH-08 added |
 | 2026-09-25 | Google sign-in opened to any Google account: AUTH-02, AUTH-03 changed; AUTH-18…20 added (candidates with personal Gmail); ADR-0004 |
+| 2026-09-25 | AUTH-21: demo profile with access code, so the Railway preview works before Google sign-in is configured |

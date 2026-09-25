@@ -32,6 +32,23 @@ password-less login and fake users.
 Then **Settings → Networking → Generate Domain** to get a public URL such as
 `https://ats-production-xxxx.up.railway.app`.
 
+## 3a. Preview without Google (demo mode) — optional, for now
+
+To try the app before Google sign-in is set up, add these to the app service
+instead of the Google variables:
+
+| Variable | Value |
+| --- | --- |
+| `SPRING_PROFILES_ACTIVE` | `demo` |
+| `ATS_DEMO_ACCESS_CODE` | a long random code (12+ characters) you share with the team |
+
+The login page then shows **Preview login**: pick a sample user (Admin,
+Recruiter, … or a candidate) and enter the access code. Wrong codes are
+refused and audited; the app won't start in demo mode without a code.
+Demo mode seeds fake users only — **don't put real candidate data in a demo**.
+
+When Google is ready: remove both variables, add the Google ones (step 3).
+
 ## 3. Google sign-in
 
 1. Google Cloud Console → **APIs & Services → Credentials → Create

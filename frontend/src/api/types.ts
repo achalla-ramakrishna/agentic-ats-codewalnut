@@ -29,6 +29,7 @@ export interface Me {
 export interface AuthConfig {
   googleEnabled: boolean
   devLoginEnabled: boolean
+  accessCodeRequired: boolean
   devUsers: { email: string; label: string }[]
 }
 

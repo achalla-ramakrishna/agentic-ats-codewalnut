@@ -9,6 +9,7 @@ export function LoginPage() {
   const { refresh } = useAuth()
   const [config, setConfig] = useState<AuthConfig | null>(null)
   const [devEmail, setDevEmail] = useState('')
+  const [accessCode, setAccessCode] = useState('')
   const [error, setError] = useState<string | null>(
     new URLSearchParams(window.location.search).has('error')
       ? 'Sign-in was refused. CodeWalnut staff: ask an Admin to add your account. Candidates: make sure your Google email is verified.'
@@ -28,7 +29,7 @@ export function LoginPage() {
     event.preventDefault()
     setError(null)
     try {
-      await devLogin(devEmail)
+      await devLogin(devEmail, config?.accessCodeRequired ? accessCode : undefined)
       await refresh()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Sign-in failed')
@@ -60,8 +61,12 @@ export function LoginPage() {
         )}
         {config?.devLoginEnabled && (
           <form className="dev" onSubmit={onDevLogin}>
-            <strong>Dev login</strong>
-            <span className="muted">Local development only — sign in as a seeded staff user or a candidate.</span>
+            <strong>{config.accessCodeRequired ? 'Preview login' : 'Dev login'}</strong>
+            <span className="muted">
+              {config.accessCodeRequired
+                ? 'Shared preview with sample data — enter the access code your team shared.'
+                : 'Local development only — sign in as a seeded staff user or a candidate.'}
+            </span>
             <label className="field">
               User
               <select className="input" value={devEmail} onChange={(e) => setDevEmail(e.target.value)}>
@@ -72,7 +77,19 @@ export function LoginPage() {
                 ))}
               </select>
             </label>
-            <Button type="submit" variant="secondary" disabled={!devEmail}>
+            {config.accessCodeRequired && (
+              <label className="field">
+                Access code
+                <input
+                  className="input"
+                  type="password"
+                  autoComplete="off"
+                  value={accessCode}
+                  onChange={(e) => setAccessCode(e.target.value)}
+                />
+              </label>
+            )}
+            <Button type="submit" variant="secondary" disabled={!devEmail || (config.accessCodeRequired && !accessCode)}>
               Sign in as this user
             </Button>
           </form>

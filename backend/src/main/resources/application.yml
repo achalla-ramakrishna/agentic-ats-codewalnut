@@ -55,3 +55,19 @@ ats:
   auth:
     allowed-domains: codewalnut.com,codewalnut.test
     dev-login-enabled: true
+
+---
+# Shared preview (e.g. Railway before Google sign-in is set up): fake seed users and the
+# dev login, protected by a shared access code. Enable with SPRING_PROFILES_ACTIVE=demo and
+# ATS_DEMO_ACCESS_CODE (12+ characters; the app refuses to start without it).
+# Only fake data belongs in a demo.
+spring:
+  config:
+    activate:
+      on-profile: demo
+
+ats:
+  auth:
+    allowed-domains: ${ATS_ALLOWED_DOMAINS:codewalnut.com},codewalnut.test
+    dev-login-enabled: true
+    demo-access-code: ${ATS_DEMO_ACCESS_CODE:}

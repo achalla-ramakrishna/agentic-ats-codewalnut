@@ -10,7 +10,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param allowedDomains email domains allowed to sign in or be provisioned (e.g. codewalnut.com)
  * @param bootstrapAdmins emails auto-provisioned as ADMIN on first sign-in, so a fresh install
  *     has someone who can create the other users
- * @param devLoginEnabled enables the password-less dev login; only honoured in the dev profile
+ * @param devLoginEnabled enables the dev login; only honoured in the dev and demo profiles
+ * @param demoAccessCode shared code the demo login requires (demo profile; must be set there)
  * @param successUrl where the browser lands after a successful Google sign-in
  * @param failureUrl where the browser lands after a rejected Google sign-in
  */
@@ -19,12 +20,14 @@ public record AuthProperties(
         List<String> allowedDomains,
         List<String> bootstrapAdmins,
         boolean devLoginEnabled,
+        String demoAccessCode,
         String successUrl,
         String failureUrl) {
 
     public AuthProperties {
         allowedDomains = normalize(allowedDomains);
         bootstrapAdmins = normalize(bootstrapAdmins);
+        demoAccessCode = demoAccessCode == null ? "" : demoAccessCode.trim();
         successUrl = successUrl == null ? "/" : successUrl;
         failureUrl = failureUrl == null ? "/login?error" : failureUrl;
     }
