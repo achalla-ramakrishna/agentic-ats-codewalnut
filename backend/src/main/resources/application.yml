@@ -17,7 +17,10 @@ spring:
   # with Google sign-in disabled.
 
 server:
-  port: 8080
+  # Railway (and most PaaS) inject PORT; TLS ends at their proxy, so trust X-Forwarded-*
+  # to build https:// redirect URLs for Google sign-in.
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
   servlet:
     session:
       cookie:

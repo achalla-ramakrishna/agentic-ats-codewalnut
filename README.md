@@ -30,3 +30,8 @@ cd frontend && npm install && npm run dev                           # app on :51
 Open http://localhost:5173 and use **Dev login** to sign in as any seeded role
 (admin, recruiter, hiring manager, account manager, interviewer, approver, or
 a multi-role lead). Google sign-in needs the variables in `.env.example`.
+
+## Deploy
+
+One Docker image (React UI + API) plus MySQL. Railway steps:
+[`docs/deploy-railway.md`](docs/deploy-railway.md).
