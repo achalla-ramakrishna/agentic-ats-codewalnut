@@ -100,7 +100,7 @@ MySQL `JSON` columns.
 | Assessment | application_id, provider, external_id, score, max_score, report_url, status | |
 | Offer | application_id, ctc_breakdown (JSON), joining_date, expires_at, status, signed_doc_id | |
 | OfferApproval | offer_id, approver_id, decision, at | |
-| Submission | application_id, client_id, submitted_by, approved_by, snapshot (JSON), cv_document_id, shown_rate, status, client_decision, client_reason, sent_at, decided_at | Immutable snapshot of what the client saw |
+| Submission | application_id, client_id, submitted_by, approved_by, snapshot (JSON), cv_document_id, shown_rate (v1), status, client_decision, client_reason, sent_at, decided_at | Immutable snapshot of what the client saw |
 | ClientReviewLink | client_contact_id, submission_ids, token_hash, expires_at, revoked_at | Single-client, expiring, revocable |
 | ClientFeedback | submission_id, client_contact_id, round, decision, notes, at | Client-side feedback, separate from internal Scorecards |
 | Placement | application_id, client_id, start_date, guarantee_end, replacement_of, status | v1 |

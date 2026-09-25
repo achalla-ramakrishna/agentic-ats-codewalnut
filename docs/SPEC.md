@@ -154,7 +154,7 @@ each client can have its own default template (e.g. two client rounds).
 
 **Submissions** are the key client-hiring record: one candidate sent to one
 client for one job. A submission holds a snapshot of what the client saw
-(profile, CV version, assessment summary, rate or expected CTC as agreed),
+(profile, CV version, assessment summary; commercials from v1),
 so later edits to the candidate don't change what was sent.
 
 Every stage change appends a `StageEvent` (actor, time, reason) — the
@@ -186,7 +186,9 @@ detail in `docs/architecture.md`.
 | Requisitions | Hiring type (internal / client-deployed / direct placement); client + project; role, level, headcount, budget band or bill rate, target date; approval chain by threshold | MVP |
 | Jobs | Create from requisition or template; JD editor; skills; location/remote; pipeline template; hiring team (incl. Account Manager for client jobs) | MVP |
 | Jobs | Careers page + shareable link with UTM source; **confidential client jobs** show a generic employer ("a US fintech client") instead of the client's name | MVP |
-| Submissions | Build a submission: CodeWalnut-branded profile + CV with contact details removed, recruiter summary, assessment score, availability, rate or expected CTC | MVP |
+| Submissions | Build a submission: CodeWalnut-branded profile + CV with contact details removed, recruiter summary, assessment score, availability. No bill rate or CTC shown in the MVP — commercials are shared outside the ATS | MVP |
+| Submissions | Per-client setting for showing bill rate, expected CTC or neither on submissions | v1 |
+| Clients | Per-client data rules: NDA-protected JDs, own retention period, separate data handling where a contract requires it | v1 |
 | Submissions | Account Manager approval before a submission is sent | MVP |
 | Submissions | Duplicate-submission guard: warn if the candidate was already submitted to the same client in the last 6 months (configurable), including via another job | MVP |
 | Submissions | Candidate consent recorded before submission to a named client | MVP |
@@ -375,10 +377,12 @@ tests, a short demo, and an ADR for any significant decision.
 - [x] Should clients log in in the MVP? → **No — the review link is
   enough.** No client accounts or passwords in the MVP; the full client
   portal stays in v1.
-- [ ] Do submissions show bill rate, expected CTC, or neither by default?
+- [ ] *(v1)* Should submissions show bill rate, expected CTC or neither,
+  per client? MVP shows neither.
 - [ ] Duplicate-submission guard period per client (default 6 months)?
-- [ ] Any client that needs data kept separately (contractual data
-  residency, NDA on JDs, their own retention period)?
+- [ ] *(v1)* Which clients need data kept separately (NDA on JDs, own
+  retention period, contractual data residency)? MVP applies the standard
+  retention and confidentiality rules to every client.
 - [ ] Current coding-assessment tool, if any?
 - [ ] Google Workspace or Microsoft 365?
 - [ ] Existing HRMS and e-sign provider?
