@@ -191,7 +191,7 @@ detail in `docs/architecture.md`.
 | Submissions | Duplicate-submission guard: warn if the candidate was already submitted to the same client in the last 6 months (configurable), including via another job | MVP |
 | Submissions | Candidate consent recorded before submission to a named client | MVP |
 | Client review | Secure, expiring magic-link review page per submission batch: shortlist / reject with reason, feedback, proposed interview slots | MVP |
-| Client review | Full client portal: client users see all their open jobs, submissions, interview schedule and history | v1 |
+| Client review | Full client portal: client users see all their open jobs, submissions, interview schedule and history | v1 (confirmed not needed for MVP) |
 | Client interviews | Record client rounds and outcomes (by Client Reviewer via link, or by recruiter on their behalf) | MVP |
 | Jobs | Push to LinkedIn, Naukri, Indeed | v1 |
 | Candidates | Profile: contact, CV, GitHub/LinkedIn, experience, current/expected CTC, notice period, tags | MVP |
@@ -370,10 +370,11 @@ tests, a short demo, and an ADR for any significant decision.
 - [x] Internal only, or also for clients? → **CodeWalnut also hires for
   clients** (ADR-0002: single CodeWalnut-run ATS, clients as records with
   restricted review access).
-- [ ] Which client engagement models are used today — deployed on
-  CodeWalnut payroll, direct placement, or both? Rough split?
-- [ ] Should clients log in at all in the MVP, or is a per-submission
-  review link enough?
+- [x] Which client engagement models are used? → **Both** deployed on
+  CodeWalnut payroll and direct placement; both are MVP.
+- [x] Should clients log in in the MVP? → **No — the review link is
+  enough.** No client accounts or passwords in the MVP; the full client
+  portal stays in v1.
 - [ ] Do submissions show bill rate, expected CTC, or neither by default?
 - [ ] Duplicate-submission guard period per client (default 6 months)?
 - [ ] Any client that needs data kept separately (contractual data
