@@ -1,6 +1,6 @@
 # ADR-0001: Initial architecture — stack and shape
 
-- **Status**: accepted
+- **Status**: accepted — the H2 parts are superseded by ADR-0003 (MySQL everywhere)
 - **Date**: 2026-09-25
 
 ## Context

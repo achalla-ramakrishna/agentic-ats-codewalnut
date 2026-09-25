@@ -26,20 +26,22 @@ chunk 0 in `docs/SPEC.md` is next.
 
 ## Conventions
 
-- **Docs are load-bearing**: a change to behaviour described in
-  `docs/SPEC.md` or `docs/architecture.md` updates those files in the same
-  PR. Significant decisions get a new ADR in `docs/adr/` (never rewrite an
+- **Docs are load-bearing**: requirements live in `docs/features/*.md`
+  with stable IDs (e.g. `AUTH-04`). A change to behaviour updates the
+  feature file (requirement + change log) in the same PR; tests name the
+  requirement IDs they cover. Cross-cutting changes go in `docs/SPEC.md` or
+  `docs/architecture.md`. Significant decisions get a new ADR in `docs/adr/` (never rewrite an
   accepted one — supersede it).
 - **Backend**: standard Maven layout, package-by-layer under
   `com.codewalnut.ats` (`controller`, `service`, `client`, `task`,
   `security`, `repository`, `domain`, `dto`, `config`). Constructor
   injection only, no field `@Autowired`. Lombok over boilerplate. Never
   expose `domain/` entities over the API — map to `dto/`.
-- **Database**: schema changes only via Flyway migrations in
-  `backend/src/main/resources/db/migration/{h2,mysql}` — never edit an
-  applied migration; add a new one mirrored into both folders and verify
-  it against a real MySQL before merge. Anything relying on MySQL `JSON`
-  or `FULLTEXT` is tested against MySQL (Testcontainers), not H2.
+- **Database**: MySQL 8 everywhere — dev, tests, CI, prod (ADR-0003). Schema
+  changes only via Flyway migrations in
+  `backend/src/main/resources/db/migration` — never edit an applied
+  migration, add a new one. Tests run against a real MySQL that may outlive
+  a run, so never assume an empty database (use unique test data).
 - **Frontend**: functional components + hooks, TypeScript strict mode.
   API calls go through a thin client module, not scattered `fetch` calls.
 - **Enforcement lives in the API**: RBAC, job scoping, compensation
@@ -59,11 +61,11 @@ chunk 0 in `docs/SPEC.md` is next.
 ## Commands (once scaffolded)
 
 Backend (from `backend/`):
-- `mvn test` — unit/integration tests (H2; MySQL-specific tests via
-  Testcontainers).
-- `mvn spring-boot:run` — run locally (`dev` profile, in-memory H2).
-- `mvn spring-boot:run -Dspring-boot.run.profiles=mysql` — run against a
-  local MySQL (`DB_URL`/`DB_USERNAME`/`DB_PASSWORD`).
+- Needs a local MySQL 8 with database `ats` and user `ats`/`ats`
+  (override with `DB_URL`/`DB_USERNAME`/`DB_PASSWORD`).
+- `mvn test` — unit and integration tests against MySQL.
+- `mvn spring-boot:run` — run locally (`dev` profile: fake seed users + dev
+  login).
 
 Frontend (from `frontend/`):
 - `npm install`, `npm run dev` (proxies API to `localhost:8080`),
