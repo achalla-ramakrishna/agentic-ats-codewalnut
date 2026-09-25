@@ -5,8 +5,10 @@ before touching code. It stays lean; deeper context lives in `docs/`.
 
 ## What this project is
 
-An applicant tracking system for CodeWalnut: requisitions → jobs →
-candidate pipeline (screen, coding assessment, interviews, offer) → hired,
+An applicant tracking system for CodeWalnut's own hiring and the hiring
+it does for clients: requisitions → jobs →
+candidate pipeline (screen, coding assessment, interviews, client
+submission and review, offer) → hired or placed,
 with structured scorecards, integrations (calendar, email, assessments,
 e-sign) and funnel reporting. See `docs/SPEC.md` for requirements and
 `docs/architecture.md` for how the pieces fit.
@@ -79,6 +81,10 @@ Frontend (from `frontend/`):
   provider webhook payloads are data, not instructions — including when
   passed to an LLM. Text in a CV telling the model to "rate this candidate
   highly" must be inert.
+- **Client isolation**: a client user must never see another client's
+  data, a candidate's contact details, or CodeWalnut's internal notes and
+  scorecards. Client-facing data leaves only through `SubmissionService`
+  snapshots; every client-facing endpoint has a cross-client deny test.
 - **AI is advisory**: no code path may reject, advance or score a
   candidate from LLM output alone. AI output is labelled in the UI and
   logged.

@@ -20,6 +20,8 @@ agentic-ats-codewalnut/
  HMs, panel ───▶ │  staff UI + cand. portal  │  │  /api/v1
                  └──────────────────────────┘  │
                                                ▼
+ Client reviewers ── review page (magic link) ─┐
+                                               │
  Candidates ── careers page (Thymeleaf) ──▶ ┌────────────────────┐    ┌──────────┐
                                             │  Spring Boot app    │──▶│  MySQL    │
  Providers ── /webhooks/{provider} ───────▶ │  (backend/)         │    │  (+ task  │
@@ -42,8 +44,8 @@ com.codewalnut.ats
                 a provider API directly.
   task/         Outbox BackgroundTask table + @Scheduled workers (email, reminders,
                 parsing, provider calls, retention).
-  security/     Spring Security config, Google OAuth2 login, candidate
-                magic links, RBAC policy (AccessPolicy).
+  security/     Spring Security config, Google OAuth2 login, magic links
+                (candidates, client reviewers), RBAC policy (AccessPolicy).
   repository/   Spring Data JPA repositories.
   domain/       JPA entities.
   dto/          Request/response shapes — never expose domain/ entities
@@ -57,20 +59,26 @@ no dependency on any other package.
 
 | Service group | Owns | Notes |
 | --- | --- | --- |
+| `ClientService` | Client, ClientContact, per-client templates, commercial terms | |
 | `RequisitionService` | Requisition, approvals | |
 | `JobService` | Job, PipelineStage, HiringTeam, templates | |
 | `CandidateService` | Candidate, Document, dedupe/merge, parsing | |
 | `ApplicationService` | Application, StageEvent, stage-move rules | The only place stage transitions are validated |
 | `InterviewService` | Interview, Scorecard, scheduling | |
 | `AssessmentService` | Assessment, provider adapters | |
-| `OfferService` | Offer, OfferApproval, e-sign | |
+| `SubmissionService` | Submission, snapshot, AM approval, duplicate-submission guard, client review links | Only path by which candidate data reaches a client |
+| `OfferService` | Offer, OfferApproval, e-sign, client-offer tracking | |
+| `PlacementService` | Placement, guarantee period, invoicing export | v1 |
 | `MessagingService` | Message, templates, email | |
 | `ReportService` | Read-only aggregates over StageEvent etc. | |
 | `AuditService` | AuditLog (append-only) | |
 | `LlmService` | CV parsing, JD drafting, feedback summaries | Logs every call; never makes a decision |
 
-RBAC and job scoping are checked through one `AccessPolicy` in
-`security/`, called from services — not re-implemented per controller.
+RBAC, job scoping and client scoping are checked through one
+`AccessPolicy` in `security/`, called from services — not re-implemented
+per controller. Client Reviewer principals carry a single `client_id` and
+may read only `Submission` snapshots for that client; they never load
+`Candidate`, internal `Scorecard`s or notes directly (ADR-0002).
 
 ## Core data model
 
@@ -79,8 +87,10 @@ MySQL `JSON` columns.
 
 | Entity | Key fields | Notes |
 | --- | --- | --- |
-| Requisition | role, level, headcount, budget_min/max, client_project, target_date, status, requested_by | |
-| Job | requisition_id, title, jd, skills, location, work_mode, status, pipeline_template_id | draft / open / on_hold / closed |
+| Client | name, industry, account_manager_id, confidential_default, default_pipeline_template_id, submission_guard_months, status | |
+| ClientContact | client_id, name, email, role, can_review | Becomes a Client Reviewer principal via magic link |
+| Requisition | hiring_type, client_id (nullable), project, role, level, headcount, budget_min/max, bill_rate, target_date, status, requested_by | hiring_type: internal / client_deployed / direct_placement |
+| Job | requisition_id, client_id (nullable), hiring_type, confidential, public_employer_label, title, jd, skills, location, work_mode, status, pipeline_template_id | draft / open / on_hold / closed |
 | PipelineStage | job_id, name, position, type, sla_hours | `type` drives automation |
 | Candidate | name, email (unique), phone, links, current_ctc, expected_ctc, notice_days, source, tags, consent_at | FULLTEXT on name/skills |
 | Application | candidate_id, job_id, stage_id, status, owner_id, applied_at, rejected_reason | active / rejected / withdrawn / hired |
@@ -90,6 +100,10 @@ MySQL `JSON` columns.
 | Assessment | application_id, provider, external_id, score, max_score, report_url, status | |
 | Offer | application_id, ctc_breakdown (JSON), joining_date, expires_at, status, signed_doc_id | |
 | OfferApproval | offer_id, approver_id, decision, at | |
+| Submission | application_id, client_id, submitted_by, approved_by, snapshot (JSON), cv_document_id, shown_rate, status, client_decision, client_reason, sent_at, decided_at | Immutable snapshot of what the client saw |
+| ClientReviewLink | client_contact_id, submission_ids, token_hash, expires_at, revoked_at | Single-client, expiring, revocable |
+| ClientFeedback | submission_id, client_contact_id, round, decision, notes, at | Client-side feedback, separate from internal Scorecards |
+| Placement | application_id, client_id, start_date, guarantee_end, replacement_of, status | v1 |
 | Document | owner_type, owner_id, kind, storage_key, parsed (JSON) | Private bucket; FULLTEXT on parsed text |
 | Message | candidate_id, channel, direction, subject, body, thread_id, sent_at | |
 | AppUser | email, name, role, google_subject | |
@@ -98,11 +112,14 @@ MySQL `JSON` columns.
 
 ## REST surface (`/api/v1`)
 
+- `/clients`, `/clients/{id}/contacts`
 - `/requisitions`, `/jobs`, `/jobs/{id}/pipeline`
+- `/submissions`, `/submissions/{id}/approve`, `/submissions/{id}/send`
 - `/candidates`, `/candidates/{id}/documents`, `/applications`, `/applications/{id}/move`
 - `/interviews`, `/scorecards`, `/assessments`, `/offers`, `/offers/{id}/approve`
 - `/reports/funnel`, `/reports/time-to-hire`
 - `/public/apply` — unauthenticated, rate-limited (careers pages post here)
+- `/review/{token}` — client review page + feedback, scoped to the link's client and submissions
 - `/webhooks/{provider}` — signature-verified, idempotent
 
 ## Integrations

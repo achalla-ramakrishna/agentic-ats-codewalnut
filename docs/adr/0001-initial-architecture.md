@@ -71,6 +71,6 @@ local setup apply with no new learning curve.
   MySQL before merge.
 - `JSON` and `FULLTEXT` behave differently on H2; tests that depend on
   them run against MySQL (Testcontainers) rather than H2.
-- Multi-tenancy is **not** designed in. If the ATS is to be offered to
-  clients, add `org_id` scoping to every table before chunk 1 and record
-  that in a new ADR.
+- Multi-tenancy is **not** designed in. Client hiring is handled without
+  it — see ADR-0002. Offering the ATS as a product to clients would need
+  a new ADR.

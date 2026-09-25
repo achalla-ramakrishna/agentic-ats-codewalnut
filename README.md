@@ -1,7 +1,8 @@
 # CodeWalnut ATS
 
-Applicant tracking system for CodeWalnut — one place to run every hire
-from requisition to signed offer.
+Applicant tracking system for CodeWalnut — one place to run every hire,
+for CodeWalnut and for its clients, from requisition to signed offer or
+placement.
 
 Stack: Spring Boot 3 (Java 21) + React/TypeScript (Vite) + MySQL.
 Status: **spec stage**, no application code yet.
