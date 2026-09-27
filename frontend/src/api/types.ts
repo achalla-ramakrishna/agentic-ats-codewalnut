@@ -28,6 +28,7 @@ export interface Me {
 
 export interface AuthConfig {
   googleEnabled: boolean
+  googleRedirectUri: string | null
   devLoginEnabled: boolean
   accessCodeRequired: boolean
   devUsers: { email: string; label: string }[]

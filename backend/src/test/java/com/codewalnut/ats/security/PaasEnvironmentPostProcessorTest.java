@@ -3,18 +3,18 @@ package com.codewalnut.ats.security;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.codewalnut.ats.config.RailwayMysqlUrlPostProcessor;
+import com.codewalnut.ats.config.PaasEnvironmentPostProcessor;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
 
-class RailwayMysqlUrlPostProcessorTest {
+class PaasEnvironmentPostProcessorTest {
 
     private static StandardEnvironment env(Map<String, Object> vars) {
         StandardEnvironment environment = new StandardEnvironment();
         environment.getPropertySources().addFirst(new MapPropertySource("test", vars));
-        new RailwayMysqlUrlPostProcessor().postProcessEnvironment(environment, null);
+        new PaasEnvironmentPostProcessor().postProcessEnvironment(environment, null);
         return environment;
     }
 
@@ -44,5 +44,32 @@ class RailwayMysqlUrlPostProcessorTest {
     void malformedUrlFailsClearly() {
         assertThatThrownBy(() -> env(Map.of("MYSQL_URL", "postgres://u:p@h/db")))
                 .hasMessageContaining("mysql://");
+    }
+
+    @Test
+    void shortGoogleVariablesConfigureGoogleSignIn() {
+        var environment = env(Map.of("GOOGLE_CLIENT_ID", " abc.apps.googleusercontent.com ", "GOOGLE_CLIENT_SECRET", "s3cret"));
+
+        assertThat(environment.getProperty("spring.security.oauth2.client.registration.google.client-id"))
+                .isEqualTo("abc.apps.googleusercontent.com");
+        assertThat(environment.getProperty("spring.security.oauth2.client.registration.google.client-secret"))
+                .isEqualTo("s3cret");
+    }
+
+    @Test
+    void googleNeedsBothIdAndSecret() {
+        var environment = env(Map.of("GOOGLE_CLIENT_ID", "abc"));
+
+        assertThat(environment.getProperty("spring.security.oauth2.client.registration.google.client-id")).isNull();
+    }
+
+    @Test
+    void fullSpringGooglePropertiesWin() {
+        var environment = env(Map.of(
+                "spring.security.oauth2.client.registration.google.client-id", "long-form",
+                "GOOGLE_CLIENT_ID", "short-form", "GOOGLE_CLIENT_SECRET", "x"));
+
+        assertThat(environment.getProperty("spring.security.oauth2.client.registration.google.client-id"))
+                .isEqualTo("long-form");
     }
 }

@@ -54,8 +54,8 @@ and add:
 ```
 ATS_ALLOWED_DOMAINS=codewalnut.com
 ATS_BOOTSTRAP_ADMINS=you@codewalnut.com
-SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID=<client id>
-SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET=<client secret>
+GOOGLE_CLIENT_ID=<client id>
+GOOGLE_CLIENT_SECRET=<client secret>
 ```
 
 - `ATS_ALLOWED_DOMAINS` — staff domains. Staff must be added by an Admin; any
@@ -64,6 +64,15 @@ SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET=<client secret>
   else under **Users**.
 
 Never set `SPRING_PROFILES_ACTIVE=dev` on Railway.
+
+### Check it worked
+
+- Deploy logs show `Google sign-in: ENABLED` (if they say `DISABLED`, the two
+  `GOOGLE_…` variables are missing or misspelt on the **app** service).
+- The login page shows **Continue with Google**.
+- If Google shows `redirect_uri_mismatch`, or you land back on the login page
+  with an error, the login page prints the exact redirect URI to register —
+  copy it into the Google client's **Authorised redirect URIs**.
 
 ## Reference
 

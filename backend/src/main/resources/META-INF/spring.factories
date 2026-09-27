@@ -1,2 +1,2 @@
 org.springframework.boot.env.EnvironmentPostProcessor=\
-com.codewalnut.ats.config.RailwayMysqlUrlPostProcessor
+com.codewalnut.ats.config.PaasEnvironmentPostProcessor

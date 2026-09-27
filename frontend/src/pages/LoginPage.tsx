@@ -10,8 +10,9 @@ export function LoginPage() {
   const [config, setConfig] = useState<AuthConfig | null>(null)
   const [devEmail, setDevEmail] = useState('')
   const [accessCode, setAccessCode] = useState('')
+  const googleFailed = new URLSearchParams(window.location.search).has('error')
   const [error, setError] = useState<string | null>(
-    new URLSearchParams(window.location.search).has('error')
+    googleFailed
       ? 'Sign-in was refused. CodeWalnut staff: ask an Admin to add your account. Candidates: make sure your Google email is verified.'
       : null,
   )
@@ -50,6 +51,11 @@ export function LoginPage() {
           <div role="alert" className="alert alert-error">
             {error}
           </div>
+        )}
+        {googleFailed && config?.googleRedirectUri && (
+          <p className="muted" style={{ fontSize: 12, margin: 0 }}>
+            Setting up Google? The authorised redirect URI must be exactly <code>{config.googleRedirectUri}</code>
+          </p>
         )}
         {config?.googleEnabled && (
           <a className="btn btn-primary" href={GOOGLE_SIGN_IN_URL}>

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequiredArgsConstructor
@@ -40,7 +41,11 @@ public class AuthConfigController {
             // Any non-staff email signs in as a candidate; offer one for convenience.
             devUsers.add(new DevUser(DEV_CANDIDATE_EMAIL, "Candidate (personal Gmail)"));
         }
-        return new AuthConfigResponse(clientRegistrations.getIfAvailable() != null, devLoginEnabled,
+        boolean googleEnabled = clientRegistrations.getIfAvailable() != null;
+        String googleRedirectUri = googleEnabled
+                ? ServletUriComponentsBuilder.fromCurrentContextPath().path("/login/oauth2/code/google").toUriString()
+                : null;
+        return new AuthConfigResponse(googleEnabled, googleRedirectUri, devLoginEnabled,
                 devLoginEnabled && !authProperties.demoAccessCode().isEmpty(), devUsers);
     }
 }

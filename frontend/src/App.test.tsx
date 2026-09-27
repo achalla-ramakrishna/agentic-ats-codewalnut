@@ -39,7 +39,7 @@ describe('App', () => {
       { path: '/auth/session', body: { type: null } },
       {
         path: '/auth/config',
-        body: { googleEnabled: false, devLoginEnabled: true, accessCodeRequired: false, devUsers: [{ email: 'admin@codewalnut.test', label: 'Admin' }] },
+        body: { googleEnabled: false, googleRedirectUri: null, devLoginEnabled: true, accessCodeRequired: false, devUsers: [{ email: 'admin@codewalnut.test', label: 'Admin' }] },
       },
     ])
 
@@ -74,7 +74,7 @@ describe('App', () => {
       STAFF_SESSION,
       { path: '/me', body: interviewer },
       { method: 'POST', path: '/auth/logout', status: 204 },
-      { path: '/auth/config', body: { googleEnabled: true, devLoginEnabled: false, accessCodeRequired: false, devUsers: [] } },
+      { path: '/auth/config', body: { googleEnabled: true, googleRedirectUri: 'https://ats.example/login/oauth2/code/google', devLoginEnabled: false, accessCodeRequired: false, devUsers: [] } },
     ])
 
     renderAt('/')
@@ -125,5 +125,27 @@ describe('App', () => {
     const post = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST')!
     expect(JSON.parse(post[1]!.body as string)).toEqual({ email: 'admin@codewalnut.test', accessCode: 'preview-code-1234' })
     expect(await screen.findByRole('alert')).toHaveTextContent('Wrong access code')
+  })
+
+  it('after a failed Google sign-in shows the redirect URI to register', async () => {
+    window.history.pushState({}, '', '/login?error')
+    fakeFetch([
+      { path: '/auth/session', body: { type: null } },
+      {
+        path: '/auth/config',
+        body: {
+          googleEnabled: true,
+          googleRedirectUri: 'https://ats.example/login/oauth2/code/google',
+          devLoginEnabled: false,
+          accessCodeRequired: false,
+          devUsers: [],
+        },
+      },
+    ])
+    renderAt('/login')
+
+    expect(await screen.findByText('https://ats.example/login/oauth2/code/google')).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('Sign-in was refused')
+    window.history.pushState({}, '', '/')
   })
 })

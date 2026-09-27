@@ -1,6 +1,7 @@
 package com.codewalnut.ats.security;
 
 import com.codewalnut.ats.config.AuthProperties;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +17,7 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
+@Slf4j
 @Configuration
 public class SecurityConfig {
 
@@ -51,12 +53,18 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable);
 
         // Google sign-in is only wired when a client registration is configured
-        // (SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID / _CLIENT_SECRET).
+        // (GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET, see PaasEnvironmentPostProcessor).
         if (clientRegistrations.getIfAvailable() != null) {
+            log.info("Google sign-in: ENABLED");
+            // loginPage points at the SPA's /login route, so Spring doesn't generate its own
+            // bare login page and failed sign-ins land on our page with ?error.
             http.oauth2Login(oauth -> oauth
+                    .loginPage("/login")
                     .userInfoEndpoint(userInfo -> userInfo.oidcUserService(googleOidcUserService))
                     .defaultSuccessUrl(authProperties.successUrl(), true)
                     .failureUrl(authProperties.failureUrl()));
+        } else {
+            log.info("Google sign-in: DISABLED (set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable)");
         }
         return http.build();
     }
