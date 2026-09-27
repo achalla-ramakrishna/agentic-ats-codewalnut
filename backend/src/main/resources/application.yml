@@ -12,9 +12,8 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-  # Google sign-in: set SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID and
-  # SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET. Without them the app starts
-  # with Google sign-in disabled.
+  # Google sign-in: set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (see
+  # PaasEnvironmentPostProcessor). Without them the app starts with Google sign-in disabled.
 
 server:
   # Railway (and most PaaS) inject PORT; TLS ends at their proxy, so trust X-Forwarded-*
