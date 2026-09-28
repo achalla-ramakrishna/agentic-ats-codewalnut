@@ -74,6 +74,19 @@ Never set `SPRING_PROFILES_ACTIVE=dev` on Railway.
   with an error, the login page prints the exact redirect URI to register —
   copy it into the Google client's **Authorised redirect URIs**.
 
+## Troubleshooting (lessons from the first deploy)
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Variables changed but nothing happens | Railway **stages** variable edits ("Apply N changes") | Click the purple **Deploy** button |
+| Deployment Details still shows old variables | That tab shows the *running* deployment's snapshot | Wait for the new deployment to become Active |
+| Deploy fails right after editing variables | `MYSQL_URL` got deleted in the Raw Editor | Add `MYSQL_URL=${{MySQL.MYSQL_URL}}` back |
+| Log says `Google sign-in: DISABLED` | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` missing on the **app** service | Add them, Deploy |
+| Google: `invalid_client` / "OAuth client was not found" | Client ID mistyped, or client in another Google Cloud project | Use Google's **copy** button — never retype the ID |
+| Secret contains `","javascript_origins"…` | Pasted from the downloaded JSON file | Paste only the `GOCSPX-…` value |
+| Google: `redirect_uri_mismatch` | Redirect URI not registered exactly | Add `https://<domain>/login/oauth2/code/google` (no trailing slash); wait a few minutes |
+| "Sign-in was refused" for a colleague | Staff must be added first | Admin adds them under **Users** |
+
 ## Reference
 
 - Instead of `MYSQL_URL` you can set `DB_URL` (JDBC form), `DB_USERNAME` and
