@@ -23,8 +23,8 @@ e-sign) and funnel reporting. See `docs/SPEC.md` for requirements and
   architecture, ADRs, deploy guide.
 
 Stack rationale: `docs/adr/0001-initial-architecture.md` and ADR-0003.
-Chunk 0 (sign-in, roles, users, audit log) is built; chunk 1 in
-`docs/SPEC.md` is next.
+Built: chunk 0 (sign-in, roles, users, audit log) and the hiring tracker
+(`docs/features/hiring-tracker.md`). Next: grow the tracker into chunk 1–2.
 
 ## Conventions
 

@@ -102,6 +102,7 @@ templates, rules and SLAs are in [pipeline.md](features/pipeline.md).
 | --- | --- | --- | --- |
 | AUTH | [Sign-in, users & roles](features/auth-and-users.md) | 0 | In progress |
 | AUDIT | [Audit log](features/audit-log.md) | 0 | In progress |
+| TRK | [Hiring tracker (first release)](features/hiring-tracker.md) | 1-lite | Done |
 | CLI | [Clients](features/clients.md) | 1 | Ready |
 | REQ | [Requisitions](features/requisitions.md) | 1 | Ready |
 | JOB | [Jobs & careers page](features/jobs-and-careers-page.md) | 1 | Ready |
@@ -189,6 +190,7 @@ ADR for any significant decision.
 | # | Chunk | Weeks | Features | Done when |
 | --- | --- | --- | --- | --- |
 | 0 | Foundations | 1 | AUTH, AUDIT, ADM (users) | A user signs in and sees role-based navigation |
+| 1-lite | Hiring tracker (done) | — | TRK | Blend interns tracked end to end: openings, import, stages, notes, résumés, dashboard |
 | 1 | Clients, requisitions & jobs | 2 | CLI, REQ, JOB | A public applicant appears on an internal job and a confidential client job |
 | 2 | Candidates & pipeline | 3–4 | CAND, PIPE, AI-01 | A recruiter runs a full pipeline without a spreadsheet |
 | 3 | Email | 5 | MSG | All candidate emails live on the timeline |

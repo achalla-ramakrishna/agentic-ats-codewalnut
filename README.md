@@ -5,7 +5,8 @@ for CodeWalnut and for its clients, from requisition to signed offer or
 placement.
 
 Stack: Spring Boot 3 (Java 21) + React/TypeScript (Vite) + MySQL 8.
-Status: **chunk 0 (foundations)** — sign-in, roles, users, audit log.
+Status: sign-in, roles, users, audit log, and a simple **hiring tracker**
+(clients, openings, spreadsheet import, stages, notes, résumés, dashboard).
 
 - [`docs/SPEC.md`](docs/SPEC.md) — overview: goals, roles, pipeline, non-functional requirements, build plan
 - [`docs/features/`](docs/features/README.md) — one requirements file per feature, with stable requirement IDs

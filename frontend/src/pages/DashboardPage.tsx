@@ -1,28 +1,77 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { getDashboard, type Dashboard } from '../api/tracker'
 import { useMe } from '../auth/AuthContext'
+import { StageBar } from '../components/StageBar'
 import { Card, PageHeader } from '../components/ui'
+import { useStages } from '../components/useStages'
+import '../components/tracker.css'
 
 export function DashboardPage() {
   const me = useMe()
-  const sections = me.navigation.filter((item) => item.path !== '/')
+  const stages = useStages()
+  const label = (s: string | null) => stages.find((x) => x.key === s)?.label ?? s ?? ''
+  const [data, setData] = useState<Dashboard | null>(null)
+
+  useEffect(() => {
+    getDashboard().then(setData).catch(() => setData({ openJobs: [], recentActivity: [] }))
+  }, [])
 
   return (
-    <>
-      <PageHeader title={`Welcome${me.name ? `, ${me.name.split(' ')[0]}` : ''}`} description="Your hiring work at a glance." />
-      <Card className="stack">
-        <h2>Your sections</h2>
-        {sections.length === 0 ? (
-          <p className="muted">Nothing else is assigned to your role yet.</p>
-        ) : (
-          <ul>
-            {sections.map((item) => (
-              <li key={item.key}>
-                <Link to={item.path}>{item.label}</Link>
+    <div className="stack">
+      <PageHeader title={`Welcome${me.name ? `, ${me.name.split(' ')[0]}` : ''}`} description="Open roles and what changed recently." />
+      {data && data.openJobs.length === 0 && (
+        <Card>
+          <p style={{ margin: 0 }}>
+            No open roles yet. {me.capabilities.includes('MANAGE_JOBS') && <Link to="/jobs">Create the first opening</Link>}
+          </p>
+        </Card>
+      )}
+      <div className="grid-2">
+        {data?.openJobs.map((job) => (
+          <Card key={job.id} className="stack" style={{ gap: 10 }}>
+            <div>
+              <Link to={`/jobs/${job.id}`} style={{ fontWeight: 700, fontSize: 16 }}>
+                {job.title}
+              </Link>
+              <div className="muted" style={{ fontSize: 13 }}>
+                {job.client ? `${job.client.name} · ` : ''}
+                {job.hiringTypeLabel}
+                {job.status === 'ON_HOLD' ? ' · On hold' : ''}
+              </div>
+            </div>
+            <StageBar job={job} />
+            <div className="row" style={{ fontSize: 13 }}>
+              <strong>{job.total}</strong> candidates
+              {job.openings ? <span className="muted">· {job.openings} needed</span> : null}
+              {(job.stageCounts.JOINED ?? 0) > 0 && <span className="muted">· {job.stageCounts.JOINED} joined</span>}
+            </div>
+          </Card>
+        ))}
+      </div>
+      {data && data.recentActivity.length > 0 && (
+        <Card className="stack">
+          <h2>Recent activity</h2>
+          <ul className="timeline">
+            {data.recentActivity.map((e) => (
+              <li key={e.id}>
+                <div>
+                  <strong>{e.candidateName}</strong> ({e.jobTitle}):{' '}
+                  {e.type === 'CREATED'
+                    ? `added at ${label(e.toStage)}`
+                    : e.type === 'STAGE_CHANGED'
+                      ? `${label(e.fromStage)} → ${label(e.toStage)}`
+                      : 'note'}
+                  {e.note && e.note !== 'Imported' ? ` — ${e.note}` : ''}
+                </div>
+                <div className="meta">
+                  {e.actorEmail ?? 'system'} · {new Date(e.createdAt).toLocaleString()}
+                </div>
               </li>
             ))}
           </ul>
-        )}
-      </Card>
-    </>
+        </Card>
+      )}
+    </div>
   )
 }

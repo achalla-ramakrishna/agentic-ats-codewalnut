@@ -3,6 +3,10 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
 import { AppShell } from './components/AppShell'
 import { AuditLogPage } from './pages/AuditLogPage'
+import { CandidatesPage } from './pages/CandidatesPage'
+import { ClientsPage } from './pages/ClientsPage'
+import { JobDetailPage } from './pages/JobDetailPage'
+import { JobsPage } from './pages/JobsPage'
 import { CandidateHomePage } from './pages/CandidateHomePage'
 import { ComingSoonPage } from './pages/ComingSoonPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -13,9 +17,9 @@ import { UsersPage } from './pages/UsersPage'
 /** Screen per navigation key. The server decides which keys a user gets. */
 const SCREENS: Record<string, ReactElement> = {
   dashboard: <DashboardPage />,
-  jobs: <ComingSoonPage title="Jobs" chunk="chunk 1" spec="jobs-and-careers-page.md" />,
-  candidates: <ComingSoonPage title="Candidates" chunk="chunk 2" spec="candidates.md" />,
-  clients: <ComingSoonPage title="Clients" chunk="chunk 1" spec="clients.md" />,
+  jobs: <JobsPage />,
+  candidates: <CandidatesPage />,
+  clients: <ClientsPage />,
   interviews: <ComingSoonPage title="Interviews" chunk="chunk 4" spec="interviews-and-scorecards.md" />,
   approvals: <ComingSoonPage title="Approvals" chunk="chunks 1 and 7" spec="requisitions.md" />,
   reports: <ComingSoonPage title="Reports" chunk="v1" spec="reports.md" />,
@@ -54,6 +58,7 @@ export function App() {
         {state.me.navigation.map((item) => (
           <Route key={item.key} path={item.path} element={SCREENS[item.key] ?? <NoAccessPage />} />
         ))}
+        {state.me.navigation.some((item) => item.key === 'jobs') && <Route path="/jobs/:id" element={<JobDetailPage />} />}
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NoAccessPage />} />
       </Routes>

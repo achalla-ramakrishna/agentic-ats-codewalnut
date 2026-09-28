@@ -27,6 +27,7 @@ here holds the detailed, testable requirements for one feature.
 | --- | --- | --- | --- |
 | AUTH | [Sign-in, users & roles](auth-and-users.md) | 0 | In progress |
 | AUDIT | [Audit log](audit-log.md) | 0 | In progress |
+| TRK | [Hiring tracker (first release)](hiring-tracker.md) | 1-lite | Done |
 | CLI | [Clients](clients.md) | 1 | Ready |
 | REQ | [Requisitions](requisitions.md) | 1 | Ready |
 | JOB | [Jobs & careers page](jobs-and-careers-page.md) | 1 | Ready |
