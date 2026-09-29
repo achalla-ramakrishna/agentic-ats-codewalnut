@@ -50,14 +50,21 @@ public class GmailClient implements MailClient {
             return sent == null ? null : (String) sent.get("id");
         } catch (RestClientResponseException e) {
             int status = e.getStatusCode().value();
-            log.warn("Gmail send failed with HTTP {}", status);
-            if (status == 401) {
+            GoogleErrors.Details details = GoogleErrors.of(e);
+            log.warn("Gmail send failed with HTTP {} ({}): {}", status, details.reason(), details.message());
+            if (status == 401 || details.kind() == GoogleErrors.Kind.SCOPE_MISSING) {
+                // Token revoked, or "Send email on your behalf" was unticked: connect again.
                 google.forget();
                 throw new CalendarNotConnectedException();
             }
+            if (details.kind() == GoogleErrors.Kind.API_DISABLED) {
+                throw new CalendarException("The Gmail API isn't enabled for this app. An admin needs to enable it in "
+                        + "Google Cloud Console (APIs & Services → Library → Gmail API), then try again in a few "
+                        + "minutes. Nothing was sent.");
+            }
             if (status == 403) {
-                throw new CalendarException("Gmail refused to send. Check that the Gmail API is enabled for this app "
-                        + "and that you allowed sending email. Nothing was sent.");
+                throw new CalendarException("Gmail refused to send"
+                        + (details.message() != null ? ": " + details.message() : ".") + " Nothing was sent.");
             }
             throw new CalendarException("Gmail had a problem (HTTP " + status + "). Nothing was sent; please try again.");
         } catch (RestClientException e) {

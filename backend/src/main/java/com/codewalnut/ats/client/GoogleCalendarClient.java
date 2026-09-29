@@ -109,14 +109,20 @@ public class GoogleCalendarClient implements CalendarClient {
 
     private RuntimeException translate(RestClientResponseException e, String action) {
         int status = e.getStatusCode().value();
-        log.warn("Google Calendar {} failed with HTTP {}", action, status);
-        if (status == 401) {
+        GoogleErrors.Details details = GoogleErrors.of(e);
+        log.warn("Google Calendar {} failed with HTTP {} ({}): {}", action, status, details.reason(), details.message());
+        if (status == 401 || details.kind() == GoogleErrors.Kind.SCOPE_MISSING) {
             google.forget();
             return new CalendarNotConnectedException();
         }
+        if (details.kind() == GoogleErrors.Kind.API_DISABLED) {
+            return new CalendarException("The Google Calendar API isn't enabled for this app. An admin needs to enable it "
+                    + "in Google Cloud Console (APIs & Services → Library → Google Calendar API), then try again in a "
+                    + "few minutes. Nothing was sent.");
+        }
         if (status == 403) {
-            return new CalendarException("Google Calendar refused the request. Check that the Google Calendar API is "
-                    + "enabled for this app and that you allowed calendar access.");
+            return new CalendarException("Google Calendar refused the request"
+                    + (details.message() != null ? ": " + details.message() : ".") + " Nothing was sent.");
         }
         return new CalendarException("Google Calendar had a problem (HTTP " + status + "). Please try again.");
     }

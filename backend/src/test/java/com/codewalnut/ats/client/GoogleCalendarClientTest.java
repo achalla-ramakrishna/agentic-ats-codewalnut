@@ -134,7 +134,7 @@ class GoogleCalendarClientTest {
         connect(Instant.now().plusSeconds(3600));
         google.expect(method(HttpMethod.POST)).andRespond(withStatus(HttpStatus.FORBIDDEN));
         assertThatThrownBy(() -> client.create(INVITE)).isInstanceOf(CalendarException.class)
-                .hasMessageContaining("Google Calendar API");
+                .hasMessageContaining("refused").hasMessageContaining("Nothing was sent");
     }
 
     @Test
@@ -157,5 +157,15 @@ class GoogleCalendarClientTest {
         assertThat(unconfigured.status()).isEqualTo(new CalendarClient.Status(false, false));
         assertThatThrownBy(() -> unconfigured.create(INVITE)).isInstanceOf(CalendarException.class)
                 .hasMessageContaining("isn't set up");
+    }
+
+    @Test
+    void calendarApiSwitchedOffSaysWhatToEnable() {
+        connect(Instant.now().plusSeconds(3600));
+        google.expect(method(HttpMethod.POST)).andRespond(withStatus(HttpStatus.FORBIDDEN).contentType(MediaType.APPLICATION_JSON)
+                .body("{\"error\":{\"code\":403,\"message\":\"Google Calendar API has not been used in project 123 before or it is disabled.\","
+                        + "\"errors\":[{\"reason\":\"accessNotConfigured\"}]}}"));
+        assertThatThrownBy(() -> client.create(INVITE)).isInstanceOf(CalendarException.class)
+                .hasMessageContaining("Google Calendar API isn't enabled");
     }
 }

@@ -43,6 +43,8 @@ class GmailClientTest {
             .getBuilder(GoogleAccess.REGISTRATION_ID).clientId("fake-id").clientSecret("fake-secret")
             .scope(GoogleAccess.CALENDAR_SCOPE, GoogleAccess.GMAIL_SEND_SCOPE).build();
 
+    private static final MailClient.Email EMAIL = new MailClient.Email("a@example.com", "s", "b");
+
     private final HttpSessionOAuth2AuthorizedClientRepository tokens = new HttpSessionOAuth2AuthorizedClientRepository();
     private final MockHttpServletRequest request = new MockHttpServletRequest();
     private final TestingAuthenticationToken staff = new TestingAuthenticationToken("staff@codewalnut.test", null, "ROLE_STAFF");
@@ -99,15 +101,47 @@ class GmailClientTest {
     }
 
     @Test
-    void revokedTokenAndRefusalsAreClear() {
+    void revokedTokenMeansConnectAgain() {
         connect(Set.of(GoogleAccess.GMAIL_SEND_SCOPE));
-        google.expect(method(HttpMethod.POST)).andRespond(withStatus(HttpStatus.FORBIDDEN));
         google.expect(method(HttpMethod.POST)).andRespond(withStatus(HttpStatus.UNAUTHORIZED));
 
-        assertThatThrownBy(() -> client.send(new MailClient.Email("a@example.com", "s", "b")))
-                .isInstanceOf(CalendarException.class).hasMessageContaining("Nothing was sent");
-        assertThatThrownBy(() -> client.send(new MailClient.Email("a@example.com", "s", "b")))
-                .isInstanceOf(CalendarNotConnectedException.class);
+        assertThatThrownBy(() -> client.send(EMAIL)).isInstanceOf(CalendarNotConnectedException.class);
         assertThat(client.status().connected()).isFalse();
+    }
+
+    @Test
+    void gmailApiSwitchedOffSaysExactlyWhatToEnable() {
+        connect(Set.of(GoogleAccess.GMAIL_SEND_SCOPE));
+        google.expect(method(HttpMethod.POST)).andRespond(withStatus(HttpStatus.FORBIDDEN).contentType(MediaType.APPLICATION_JSON)
+                .body("{\"error\":{\"code\":403,\"message\":\"Gmail API has not been used in project 123 before or it is disabled.\","
+                        + "\"errors\":[{\"reason\":\"accessNotConfigured\"}],\"status\":\"PERMISSION_DENIED\","
+                        + "\"details\":[{\"reason\":\"SERVICE_DISABLED\"}]}}"));
+
+        assertThatThrownBy(() -> client.send(EMAIL)).isInstanceOf(CalendarException.class)
+                .hasMessageContaining("Gmail API isn't enabled").hasMessageContaining("APIs & Services → Library → Gmail API");
+        assertThat(client.status().connected()).as("the token itself is fine").isTrue();
+    }
+
+    @Test
+    void missingSendPermissionMeansConnectAgain() {
+        connect(Set.of(GoogleAccess.GMAIL_SEND_SCOPE));
+        google.expect(method(HttpMethod.POST)).andRespond(withStatus(HttpStatus.FORBIDDEN).contentType(MediaType.APPLICATION_JSON)
+                .body("{\"error\":{\"code\":403,\"message\":\"Request had insufficient authentication scopes.\","
+                        + "\"errors\":[{\"reason\":\"insufficientPermissions\"}],\"status\":\"PERMISSION_DENIED\","
+                        + "\"details\":[{\"reason\":\"ACCESS_TOKEN_SCOPE_INSUFFICIENT\"}]}}"));
+
+        assertThatThrownBy(() -> client.send(EMAIL)).isInstanceOf(CalendarNotConnectedException.class);
+        assertThat(client.status().connected()).isFalse();
+    }
+
+    @Test
+    void otherRefusalsPassOnGooglesExplanation() {
+        connect(Set.of(GoogleAccess.GMAIL_SEND_SCOPE));
+        google.expect(method(HttpMethod.POST)).andRespond(withStatus(HttpStatus.FORBIDDEN).contentType(MediaType.APPLICATION_JSON)
+                .body("{\"error\":{\"code\":403,\"message\":\"Delegation denied for staff@codewalnut.test\","
+                        + "\"errors\":[{\"reason\":\"forbidden\"}]}}"));
+
+        assertThatThrownBy(() -> client.send(EMAIL)).isInstanceOf(CalendarException.class)
+                .hasMessageContaining("Delegation denied").hasMessageContaining("Nothing was sent");
     }
 }
