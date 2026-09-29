@@ -32,3 +32,4 @@ book interviews, upload documents and manage their data.
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
 | 2026-09-25 | PORTAL-01 is now Google sign-in (any account); magic link moved to PORTAL-08; a basic candidate area exists |
+| 2026-09-29 | Candidate area lists the candidate's applications with a coarse status ([job-links.md](job-links.md), LINK-09) |

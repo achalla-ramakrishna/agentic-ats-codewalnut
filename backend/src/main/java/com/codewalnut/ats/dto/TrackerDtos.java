@@ -9,6 +9,7 @@ import com.codewalnut.ats.domain.HiringType;
 import com.codewalnut.ats.domain.JobOpening;
 import com.codewalnut.ats.domain.JobStatus;
 import com.codewalnut.ats.domain.Stage;
+import com.codewalnut.ats.domain.WorkMode;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -37,14 +38,16 @@ public final class TrackerDtos {
 
     public record JobResponse(
             UUID id, String title, ClientResponse client, HiringType hiringType, String hiringTypeLabel,
-            Integer openings, JobStatus status, String description, Instant createdAt,
+            Integer openings, JobStatus status, String description, String location, WorkMode workMode,
+            String employmentType, boolean published, String publicSlug, Instant createdAt,
             Map<Stage, Long> stageCounts, long total) {
 
         public static JobResponse from(JobOpening j, Map<Stage, Long> counts) {
             long total = counts.values().stream().mapToLong(Long::longValue).sum();
             return new JobResponse(j.getId(), j.getTitle(), j.getClient() == null ? null : ClientResponse.from(j.getClient()),
                     j.getHiringType(), j.getHiringType().getLabel(), j.getOpenings(), j.getStatus(),
-                    j.getDescription(), j.getCreatedAt(), counts, total);
+                    j.getDescription(), j.getLocation(), j.getWorkMode(), j.getEmploymentType(), j.isPublished(),
+                    j.getPublicSlug(), j.getCreatedAt(), counts, total);
         }
     }
 
@@ -53,9 +56,26 @@ public final class TrackerDtos {
             UUID clientId,
             @NotNull HiringType hiringType,
             @Min(1) Integer openings,
-            @Size(max = 5000) String description) {}
+            @Size(max = 20000) String description) {}
 
-    public record UpdateJobRequest(JobStatus status, @Min(1) Integer openings, @Size(max = 5000) String description) {}
+    /** Partial update: null fields are left unchanged. */
+    public record UpdateJobRequest(
+            @Size(min = 1, max = 200) String title,
+            JobStatus status,
+            @Min(1) Integer openings,
+            @Size(max = 20000) String description,
+            @Size(max = 200) String location,
+            WorkMode workMode,
+            @Size(max = 100) String employmentType,
+            Boolean published) {}
+
+    /** What anyone with the link sees. No client name, no counts, no internal data. */
+    public record PublicJobResponse(
+            String slug, String title, String company, String location, String workMode, String employmentType,
+            String description, boolean acceptingApplications) {}
+
+    /** A candidate's own view of an application: a simple status, never internal stages or notes. */
+    public record MyApplicationResponse(String slug, String jobTitle, String status, Instant appliedAt) {}
 
     public record ApplicationResponse(
             UUID id, UUID jobId, String jobTitle, UUID candidateId, String name, String email, String phone,

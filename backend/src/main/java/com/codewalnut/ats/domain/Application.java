@@ -46,6 +46,15 @@ public class Application {
     @Column(nullable = false, length = 30)
     private Stage stage;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ApplicationSource source = ApplicationSource.MANUAL;
+
+    /** When the candidate agreed to CodeWalnut keeping their data (job-link applications). */
+    @Column(name = "consent_at")
+    private Instant consentAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

@@ -3,7 +3,17 @@ package com.codewalnut.ats.controller;
 import com.codewalnut.ats.domain.CandidateAccount;
 import com.codewalnut.ats.dto.CandidateMeResponse;
 import com.codewalnut.ats.security.CurrentCandidateService;
+import com.codewalnut.ats.dto.TrackerDtos.MyApplicationResponse;
+import com.codewalnut.ats.service.PublicJobService;
+import java.io.IOException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -13,6 +23,24 @@ import org.springframework.web.bind.annotation.RestController;
 public class CandidateController {
 
     private final CurrentCandidateService currentCandidateService;
+    private final PublicJobService publicJobService;
+
+    @GetMapping("/api/v1/candidate/applications")
+    public List<MyApplicationResponse> myApplications() {
+        return publicJobService.myApplications(currentCandidateService.require());
+    }
+
+    @PostMapping(path = "/api/v1/candidate/applications", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public MyApplicationResponse apply(
+            @RequestParam String slug,
+            @RequestParam String name,
+            @RequestParam String phone,
+            @RequestParam(required = false) String note,
+            @RequestParam(defaultValue = "false") boolean consent,
+            @RequestParam("resume") MultipartFile resume) throws IOException {
+        return publicJobService.apply(currentCandidateService.require(), slug, name, phone, note, consent, resume);
+    }
 
     @GetMapping("/api/v1/candidate/me")
     public CandidateMeResponse me() {

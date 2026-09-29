@@ -6,7 +6,8 @@ placement.
 
 Stack: Spring Boot 3 (Java 21) + React/TypeScript (Vite) + MySQL 8.
 Status: sign-in, roles, users, audit log, and a simple **hiring tracker**
-(clients, openings, spreadsheet import, stages, notes, résumés, dashboard).
+(clients, openings, spreadsheet import, stages, notes, résumés, dashboard),
+plus **shareable job links** where candidates sign in with Google and apply.
 
 - [`docs/SPEC.md`](docs/SPEC.md) — overview: goals, roles, pipeline, non-functional requirements, build plan
 - [`docs/features/`](docs/features/README.md) — one requirements file per feature, with stable requirement IDs

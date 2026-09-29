@@ -7,6 +7,31 @@ export type Stage =
 export type HiringType = 'INTERNAL' | 'CLIENT_DEPLOYED' | 'DIRECT_PLACEMENT'
 export type JobStatus = 'OPEN' | 'ON_HOLD' | 'CLOSED'
 export type DocumentKind = 'ORIGINAL_RESUME' | 'CODEWALNUT_RESUME'
+export type WorkMode = 'ONSITE' | 'HYBRID' | 'REMOTE'
+
+export const WORK_MODES: { key: WorkMode; label: string }[] = [
+  { key: 'ONSITE', label: 'Office' },
+  { key: 'HYBRID', label: 'Hybrid' },
+  { key: 'REMOTE', label: 'Remote' },
+]
+
+export interface PublicJob {
+  slug: string
+  title: string
+  company: string
+  location: string | null
+  workMode: string | null
+  employmentType: string | null
+  description: string | null
+  acceptingApplications: boolean
+}
+
+export interface MyApplication {
+  slug: string | null
+  jobTitle: string
+  status: string
+  appliedAt: string
+}
 
 export interface StageOption {
   key: Stage
@@ -29,6 +54,11 @@ export interface Job {
   openings: number | null
   status: JobStatus
   description: string | null
+  location: string | null
+  workMode: WorkMode | null
+  employmentType: string | null
+  published: boolean
+  publicSlug: string | null
   createdAt: string
   stageCounts: Partial<Record<Stage, number>>
   total: number
@@ -112,7 +142,18 @@ export const createJob = (input: {
   openings?: number
   description?: string
 }) => api<Job>('/jobs', { method: 'POST', body: json(input) })
-export const updateJob = (id: string, patch: { status?: JobStatus; openings?: number }) =>
+export interface JobPatch {
+  title?: string
+  status?: JobStatus
+  openings?: number
+  description?: string
+  location?: string
+  workMode?: WorkMode
+  employmentType?: string
+  published?: boolean
+}
+
+export const updateJob = (id: string, patch: JobPatch) =>
   api<Job>(`/jobs/${id}`, { method: 'PATCH', body: json(patch) })
 export const listApplications = (jobId: string) => api<ApplicationRow[]>(`/jobs/${jobId}/applications`)
 export const addCandidate = (
@@ -143,4 +184,27 @@ export const documentUrl = (id: string, inline = false) => `/api/v1/documents/${
 export const DOCUMENT_LABELS: Record<DocumentKind, string> = {
   ORIGINAL_RESUME: 'Original résumé',
   CODEWALNUT_RESUME: 'CodeWalnut résumé',
+}
+
+// ---- shareable job links ----
+
+export const jobLink = (slug: string) => `${window.location.origin}/apply/${slug}`
+export const getPublicJob = (slug: string) => api<PublicJob>(`/public/jobs/${slug}`)
+export const listMyApplications = () => api<MyApplication[]>('/candidate/applications')
+export const applyToJob = (input: {
+  slug: string
+  name: string
+  phone: string
+  note?: string
+  consent: boolean
+  resume: File
+}) => {
+  const form = new FormData()
+  form.append('slug', input.slug)
+  form.append('name', input.name)
+  form.append('phone', input.phone)
+  if (input.note) form.append('note', input.note)
+  form.append('consent', String(input.consent))
+  form.append('resume', input.resume)
+  return api<MyApplication>('/candidate/applications', { method: 'POST', body: form })
 }

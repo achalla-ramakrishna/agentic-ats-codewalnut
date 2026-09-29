@@ -92,3 +92,4 @@ public: `GET /careers`, `GET /careers/{slug}`, `POST /public/apply`.
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
+| 2026-09-29 | A first cut ships as shareable job links (SPA page per opening, Google sign-in to apply) — see [job-links.md](job-links.md) |

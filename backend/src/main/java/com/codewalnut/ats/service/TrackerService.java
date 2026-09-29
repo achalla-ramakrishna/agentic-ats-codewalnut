@@ -4,6 +4,7 @@ import com.codewalnut.ats.domain.AppUser;
 import com.codewalnut.ats.domain.Application;
 import com.codewalnut.ats.domain.ApplicationEvent;
 import com.codewalnut.ats.domain.ApplicationEventType;
+import com.codewalnut.ats.domain.ApplicationSource;
 import com.codewalnut.ats.domain.AuditAction;
 import com.codewalnut.ats.domain.Candidate;
 import com.codewalnut.ats.domain.Client;
@@ -122,6 +123,7 @@ public class TrackerService {
                 .openings(request.openings())
                 .description(request.description())
                 .status(JobStatus.OPEN)
+                .publicSlug(PublicLinks.newSlug())
                 .createdBy(actor.getEmail())
                 .build());
         auditService.record(actor, AuditAction.JOB_CREATED, "JobOpening", job.getId(),
@@ -142,9 +144,32 @@ public class TrackerService {
             changes.put("openings", request.openings());
             job.setOpenings(request.openings());
         }
+        if (request.title() != null && !request.title().isBlank() && !request.title().trim().equals(job.getTitle())) {
+            changes.put("title", "changed");
+            job.setTitle(request.title().trim());
+        }
         if (request.description() != null) {
-            job.setDescription(request.description());
+            job.setDescription(request.description().isBlank() ? null : request.description());
             changes.put("description", "changed");
+        }
+        if (request.location() != null) {
+            job.setLocation(request.location().isBlank() ? null : request.location().trim());
+            changes.put("location", "changed");
+        }
+        if (request.workMode() != null) {
+            job.setWorkMode(request.workMode());
+            changes.put("workMode", request.workMode());
+        }
+        if (request.employmentType() != null) {
+            job.setEmploymentType(request.employmentType().isBlank() ? null : request.employmentType().trim());
+            changes.put("employmentType", "changed");
+        }
+        if (request.published() != null && request.published() != job.isPublished()) {
+            if (request.published() && job.getPublicSlug() == null) {
+                job.setPublicSlug(PublicLinks.newSlug());
+            }
+            job.setPublished(request.published());
+            changes.put("published", request.published());
         }
         if (!changes.isEmpty()) {
             auditService.record(actor, AuditAction.JOB_UPDATED, "JobOpening", id, changes);
@@ -193,7 +218,8 @@ public class TrackerService {
         if (applicationRepository.existsByJobIdAndCandidateId(jobId, candidate.getId())) {
             throw new ConflictException(candidate.getName() + " is already in this opening");
         }
-        Application application = createApplication(actor, job, candidate, request.stage(), request.note());
+        Application application = createApplication(actor.getEmail(), job, candidate, request.stage(), request.note(),
+                ApplicationSource.MANUAL, null);
         return ApplicationResponse.from(application, request.note());
     }
 
@@ -230,7 +256,8 @@ public class TrackerService {
             if (!request.dryRun()) {
                 Candidate candidate = existing.orElseGet(() -> candidateRepository.save(Candidate.builder()
                         .name(row.name()).email(row.email()).phone(row.phone()).build()));
-                createApplication(actor, job, candidate, request.stage(), "Imported");
+                createApplication(actor.getEmail(), job, candidate, request.stage(), "Imported",
+                        ApplicationSource.IMPORT, null);
                 added++;
             }
             rows.add(new ImportRow(row.line(), row.name(), row.email(), row.phone(), outcome, issues));
@@ -313,15 +340,16 @@ public class TrackerService {
 
     // ---- helpers ----
 
-    private Application createApplication(AppUser actor, JobOpening job, Candidate candidate, Stage stage, String note) {
+    Application createApplication(String actorEmail, JobOpening job, Candidate candidate, Stage stage, String note,
+            ApplicationSource source, java.time.Instant consentAt) {
         Application application = applicationRepository.save(Application.builder()
-                .job(job).candidate(candidate).stage(stage).build());
+                .job(job).candidate(candidate).stage(stage).source(source).consentAt(consentAt).build());
         eventRepository.save(ApplicationEvent.builder()
                 .application(application)
                 .type(ApplicationEventType.CREATED)
                 .toStage(stage)
                 .note(StringUtils.hasText(note) ? note.trim() : null)
-                .actorEmail(actor.getEmail())
+                .actorEmail(actorEmail)
                 .build());
         return application;
     }
@@ -343,7 +371,7 @@ public class TrackerService {
         return eventRepository.findByApplicationIdOrderByCreatedAtDesc(applicationId).stream()
                 .map(e -> e.getNote())
                 .filter(StringUtils::hasText)
-                .filter(n -> !n.equals("Imported"))
+                .filter(n -> !n.equals("Imported") && !n.equals(PublicJobService.APPLIED_NOTE))
                 .findFirst()
                 .orElse(null);
     }

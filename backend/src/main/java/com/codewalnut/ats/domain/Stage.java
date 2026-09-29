@@ -5,7 +5,7 @@ package com.codewalnut.ats.domain;
  * release; per-job stage templates come later (docs/features/pipeline.md).
  */
 public enum Stage {
-    SOURCED("Sourced", false),
+    SOURCED("Applied / Sourced", false),
     SCREENING("Screening", false),
     INTERVIEWED("Interviewed", false),
     SHORTLISTED("Shortlisted", false),

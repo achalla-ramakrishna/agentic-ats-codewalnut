@@ -54,6 +54,25 @@ public class JobOpening {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(length = 200)
+    private String location;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "work_mode", length = 20)
+    private WorkMode workMode;
+
+    /** Free text shown to candidates, e.g. "Internship · 6 months". */
+    @Column(name = "employment_type", length = 100)
+    private String employmentType;
+
+    /** Random, unguessable id used in the shareable link /apply/{publicSlug}. */
+    @Column(name = "public_slug", unique = true, length = 40)
+    private String publicSlug;
+
+    /** Whether the shareable link is live. */
+    @Column(nullable = false)
+    private boolean published;
+
     @Column(name = "created_by", length = 254)
     private String createdBy;
 

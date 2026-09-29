@@ -13,6 +13,8 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
 
     boolean existsByJobIdAndCandidateId(UUID jobId, UUID candidateId);
 
+    List<Application> findByCandidateIdOrderByCreatedAtDesc(UUID candidateId);
+
     /** For people with neither email nor phone: the same name in the same opening counts as the same person. */
     boolean existsByJobIdAndCandidateNameIgnoreCase(UUID jobId, String name);
 

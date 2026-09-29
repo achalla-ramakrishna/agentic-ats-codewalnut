@@ -7,7 +7,7 @@
 | **Chunk** | 1-lite |
 | **Owner** | TBD |
 | **Related** | Simplified first cut of [clients.md](clients.md), [jobs-and-careers-page.md](jobs-and-careers-page.md), [candidates.md](candidates.md), [pipeline.md](pipeline.md) |
-| **Last updated** | 2026-09-28 |
+| **Last updated** | 2026-09-29 |
 
 ## Summary
 
@@ -35,7 +35,7 @@ on the dashboard. It grows into the fuller features linked above.
 | TRK-04 | Import candidates by pasting a table from Excel / Google Sheets (header row with name, email, phone; extra columns such as "slno" ignored); preview first, nothing saved until Import. | Done |
 | TRK-05 | Import cleans data and flags problems per row: text in the email column is left blank with a warning, stray characters (e.g. trailing `\|`) and spaces removed, missing phone flagged. | Done |
 | TRK-06 | No duplicates: same email (or phone when no email) reuses the person; a person already in the opening is skipped; duplicate rows in one paste are skipped; name-only rows match by name within the opening. | Done |
-| TRK-07 | Fixed stages: Sourced → Screening → Interviewed → Shortlisted → Submitted to client → Client interview → Selected → Offer sent → Offer accepted → Joined; exits On hold, Rejected, Withdrawn. | Done |
+| TRK-07 | Fixed stages: Applied / Sourced → Screening → Interviewed → Shortlisted → Submitted to client → Client interview → Selected → Offer sent → Offer accepted → Joined; exits On hold, Rejected, Withdrawn. | Done |
 | TRK-08 | Change a stage from the pipeline table; Rejected and Withdrawn need a reason. | Done |
 | TRK-09 | Notes per candidate; append-only history of every add, stage change and note with who and when. | Done |
 | TRK-10 | Two résumés per candidate — original and CodeWalnut-formatted — PDF or Word, ≤ 10 MB, checked by content; new uploads keep old versions. | Done |
@@ -70,3 +70,4 @@ on the dashboard. It grows into the fuller features linked above.
 | Date | Change |
 | --- | --- |
 | 2026-09-28 | Created and shipped: clients, openings, import, pipeline stages, notes, history, two résumés per candidate, dashboard |
+| 2026-09-29 | First stage renamed "Applied / Sourced"; openings gain job details and a share link ([job-links.md](job-links.md)) |

@@ -48,6 +48,15 @@ public class DocumentService {
             throws IOException {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);
         requireCandidate(candidateId);
+        CandidateDocument saved = store(candidateId, kind, file, actor.getEmail());
+        auditService.record(actor, AuditAction.DOCUMENT_UPLOADED, "Candidate", candidateId,
+                Map.of("kind", kind, "documentId", saved.getId(), "bytes", saved.getSizeBytes()));
+        return info(candidateId, saved.getId());
+    }
+
+    /** Validates and saves a file. Callers do the permission check and auditing. */
+    CandidateDocument store(UUID candidateId, DocumentKind kind, MultipartFile file, String uploadedBy)
+            throws IOException {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("file: please choose a file");
         }
@@ -61,19 +70,20 @@ public class DocumentService {
         if (contentType == null || !looksLike(extension, data)) {
             throw new IllegalArgumentException("file: only PDF or Word (.doc, .docx) files are accepted");
         }
-        CandidateDocument saved = documentRepository.save(CandidateDocument.builder()
+        return documentRepository.save(CandidateDocument.builder()
                 .candidateId(candidateId)
                 .kind(kind)
                 .fileName(name)
                 .contentType(contentType)
                 .sizeBytes(data.length)
                 .data(data)
-                .uploadedBy(actor.getEmail())
+                .uploadedBy(uploadedBy)
                 .build());
-        auditService.record(actor, AuditAction.DOCUMENT_UPLOADED, "Candidate", candidateId,
-                Map.of("kind", kind, "documentId", saved.getId(), "bytes", data.length));
+    }
+
+    private CandidateDocumentRepository.Info info(UUID candidateId, UUID documentId) {
         return documentRepository.findByCandidateIdOrderByUploadedAtDesc(candidateId).stream()
-                .filter(d -> d.getId().equals(saved.getId()))
+                .filter(d -> d.getId().equals(documentId))
                 .findFirst()
                 .orElseThrow();
     }

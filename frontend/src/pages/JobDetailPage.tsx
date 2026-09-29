@@ -13,6 +13,7 @@ import {
 import { useMe } from '../auth/AuthContext'
 import { CandidateDrawer } from '../components/CandidateDrawer'
 import { ImportCandidates } from '../components/ImportCandidates'
+import { JobDetailsEditor } from '../components/JobDetailsEditor'
 import { StageSelect } from '../components/StageSelect'
 import { Button, Card, PageHeader } from '../components/ui'
 import { useStages } from '../components/useStages'
@@ -157,6 +158,7 @@ export function JobDetailPage() {
           {error}
         </div>
       )}
+      {canEdit && <JobDetailsEditor job={job} onSaved={load} />}
       {panel === 'add' && (
         <AddCandidateForm
           jobId={job.id}

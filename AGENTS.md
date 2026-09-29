@@ -24,7 +24,8 @@ e-sign) and funnel reporting. See `docs/SPEC.md` for requirements and
 
 Stack rationale: `docs/adr/0001-initial-architecture.md` and ADR-0003.
 Built: chunk 0 (sign-in, roles, users, audit log) and the hiring tracker
-(`docs/features/hiring-tracker.md`). Next: grow the tracker into chunk 1–2.
+(`docs/features/hiring-tracker.md`) with shareable job links
+(`docs/features/job-links.md`). Next: grow the tracker into chunk 1–2.
 
 ## Conventions
 
