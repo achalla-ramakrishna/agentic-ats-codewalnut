@@ -19,6 +19,7 @@ public class NavigationService {
             new Entry("dashboard", "Dashboard", "/", Capability.VIEW_DASHBOARD),
             new Entry("jobs", "Openings", "/jobs", Capability.VIEW_JOBS),
             new Entry("candidates", "Candidates", "/candidates", Capability.VIEW_CANDIDATES),
+            new Entry("messages", "Messages", "/messages", Capability.MESSAGE_CANDIDATES),
             new Entry("clients", "Clients", "/clients", Capability.VIEW_CLIENTS),
             new Entry("interviews", "Interviews", "/interviews", Capability.VIEW_INTERVIEWS),
             new Entry("approvals", "Approvals", "/approvals", Capability.VIEW_APPROVALS),

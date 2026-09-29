@@ -5,5 +5,6 @@ public enum ApplicationEventType {
     STAGE_CHANGED,
     NOTE,
     INTERVIEW_SCHEDULED,
-    INTERVIEW_CANCELLED
+    INTERVIEW_CANCELLED,
+    EMAIL_SENT
 }

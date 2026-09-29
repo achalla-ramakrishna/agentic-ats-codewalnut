@@ -32,9 +32,10 @@ export interface CandidateInterview {
   meetLink: string | null
 }
 
-export interface CalendarStatus {
+export interface GoogleStatus {
   available: boolean
-  connected: boolean
+  calendarConnected: boolean
+  mailConnected: boolean
   redirectUri: string
 }
 
@@ -56,10 +57,10 @@ export interface CandidateContact {
 
 const json = (body: unknown) => JSON.stringify(body)
 
-export const getCalendarStatus = () => api<CalendarStatus>('/calendar/status')
+/** Whether this staff member has connected Google (Calendar + Gmail) in this session. */
+export const getGoogleStatus = () => api<GoogleStatus>('/google/status')
 /** Full-page navigation: the server sends the user to Google and back to returnTo. */
-export const connectCalendarUrl = (returnTo: string) =>
-  `/api/v1/calendar/connect?returnTo=${encodeURIComponent(returnTo)}`
+export const connectGoogleUrl = (returnTo: string) => `/api/v1/google/connect?returnTo=${encodeURIComponent(returnTo)}`
 export const listUpcomingInterviews = () => api<Interview[]>('/interviews')
 export const listApplicationInterviews = (applicationId: string) =>
   api<Interview[]>(`/applications/${applicationId}/interviews`)

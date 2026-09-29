@@ -11,7 +11,8 @@ import {
   type Stage,
 } from '../api/tracker'
 import { useMe } from '../auth/AuthContext'
-import { CandidateDrawer } from '../components/CandidateDrawer'
+import { CandidateDrawer, type DrawerTab } from '../components/CandidateDrawer'
+import { TEMPLATE_FOR_STAGE } from '../components/emailTemplates'
 import { ImportCandidates } from '../components/ImportCandidates'
 import { JobDetailsEditor } from '../components/JobDetailsEditor'
 import { StageSelect } from '../components/StageSelect'
@@ -88,6 +89,10 @@ export function JobDetailPage() {
   const [filter, setFilter] = useState<Stage | null>(null)
   const [panel, setPanel] = useState<'none' | 'add' | 'import'>('none')
   const [open, setOpen] = useState<ApplicationRow | null>(null)
+  const [openTab, setOpenTab] = useState<DrawerTab>('profile')
+  const [openTemplate, setOpenTemplate] = useState<string | undefined>()
+  const [emailPrompt, setEmailPrompt] = useState<{ row: ApplicationRow; stageLabel: string; template: string } | null>(null)
+  const canMessage = me.capabilities.includes('MESSAGE_CANDIDATES')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -96,7 +101,12 @@ export function JobDetailPage() {
     listApplications(id).then(setRows).catch(() => setRows([]))
   }, [id])
   useEffect(load, [load])
-  useOpenFromQuery(rows, setOpen)
+  const openDrawer = useCallback((row: ApplicationRow, tab: DrawerTab = 'profile', template?: string) => {
+    setOpen(row)
+    setOpenTab(tab)
+    setOpenTemplate(template)
+  }, [])
+  useOpenFromQuery(rows, openDrawer)
 
   async function onStage(row: ApplicationRow, stage: Stage) {
     const option = stages.find((s) => s.key === stage)
@@ -110,6 +120,8 @@ export function JobDetailPage() {
     try {
       await moveStage(row.id, stage, note)
       load()
+      const template = TEMPLATE_FOR_STAGE[stage]
+      setEmailPrompt(template && canMessage ? { row, stageLabel: option?.label ?? stage, template } : null)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not change the stage')
     }
@@ -155,6 +167,27 @@ export function JobDetailPage() {
         }
       />
       {message && <div className="alert alert-info">{message}</div>}
+      {emailPrompt && (
+        <div className="alert alert-info row" style={{ justifyContent: 'space-between' }}>
+          <span>
+            {emailPrompt.row.name} moved to <strong>{emailPrompt.stageLabel}</strong>. Let them know?
+          </span>
+          <span className="row" style={{ gap: 8 }}>
+            <Button
+              size="sm"
+              onClick={() => {
+                openDrawer(emailPrompt.row, 'candidate', emailPrompt.template)
+                setEmailPrompt(null)
+              }}
+            >
+              Email {emailPrompt.row.name.split(' ')[0]}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setEmailPrompt(null)}>
+              Not now
+            </Button>
+          </span>
+        </div>
+      )}
       {error && (
         <div role="alert" className="alert alert-error">
           {error}
@@ -227,7 +260,7 @@ export function JobDetailPage() {
                 {visible.map((r) => (
                   <tr key={r.id}>
                     <td>
-                      <button type="button" className="row-link" onClick={() => setOpen(r)}>
+                      <button type="button" className="row-link" onClick={() => openDrawer(r)}>
                         {r.name}
                       </button>
                     </td>
@@ -263,9 +296,11 @@ export function JobDetailPage() {
       </Card>
       {open && (
         <CandidateDrawer
-          key={open.id}
+          key={`${open.id}-${openTab}-${openTemplate ?? ''}`}
           row={open}
           canEdit={canEdit}
+          initialTab={openTab}
+          initialTemplate={openTemplate}
           onClose={() => setOpen(null)}
           onChanged={load}
         />

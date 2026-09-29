@@ -1,7 +1,5 @@
 package com.codewalnut.ats.client;
 
-import jakarta.servlet.http.HttpServletRequest;
-import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,46 +7,32 @@ import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
-import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * Google Calendar API v3 on the staff member's own primary calendar, using the access token
- * they granted through the {@value #REGISTRATION_ID} OAuth client (scope
- * {@code calendar.events} only). Events get a Google Meet link, and {@code sendUpdates=all}
- * makes Google email the invitation (and later the cancellation) to every attendee.
+ * they granted (see {@link GoogleAccess}). Events get a Google Meet link, and
+ * {@code sendUpdates=all} makes Google email the invitation (and later the cancellation) to
+ * every attendee.
  */
 @Slf4j
 public class GoogleCalendarClient implements CalendarClient {
 
-    public static final String REGISTRATION_ID = "google-calendar";
-    public static final String SCOPE = "https://www.googleapis.com/auth/calendar.events";
     public static final String BASE_URL = "https://www.googleapis.com/calendar/v3";
 
-    private final ClientRegistrationRepository registrations;
-    private final OAuth2AuthorizedClientRepository authorizedClients;
+    private final GoogleAccess google;
     private final RestClient rest;
 
-    public GoogleCalendarClient(ClientRegistrationRepository registrations,
-            OAuth2AuthorizedClientRepository authorizedClients, RestClient rest) {
-        this.registrations = registrations;
-        this.authorizedClients = authorizedClients;
+    public GoogleCalendarClient(GoogleAccess google, RestClient rest) {
+        this.google = google;
         this.rest = rest;
     }
 
     @Override
     public Status status() {
-        boolean available = registrations != null && registrations.findByRegistrationId(REGISTRATION_ID) != null;
-        return new Status(available, available && accessToken() != null);
+        return new Status(google.available(), google.token(GoogleAccess.CALENDAR_SCOPE) != null);
     }
 
     @Override
@@ -127,7 +111,7 @@ public class GoogleCalendarClient implements CalendarClient {
         int status = e.getStatusCode().value();
         log.warn("Google Calendar {} failed with HTTP {}", action, status);
         if (status == 401) {
-            forgetToken();
+            google.forget();
             return new CalendarNotConnectedException();
         }
         if (status == 403) {
@@ -138,44 +122,13 @@ public class GoogleCalendarClient implements CalendarClient {
     }
 
     private String requireToken() {
-        if (!status().available()) {
+        if (!google.available()) {
             throw new CalendarException("Google Calendar isn't set up for this app yet. Ask an admin.");
         }
-        String token = accessToken();
+        String token = google.token(GoogleAccess.CALENDAR_SCOPE);
         if (token == null) {
             throw new CalendarNotConnectedException();
         }
         return token;
-    }
-
-    /** The current user's token, or null if they haven't connected or it is about to expire. */
-    private String accessToken() {
-        HttpServletRequest request = currentRequest();
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (request == null || auth == null) {
-            return null;
-        }
-        OAuth2AuthorizedClient client = authorizedClients.loadAuthorizedClient(REGISTRATION_ID, auth, request);
-        if (client == null) {
-            return null;
-        }
-        OAuth2AccessToken token = client.getAccessToken();
-        if (token.getExpiresAt() != null && token.getExpiresAt().isBefore(Instant.now().plusSeconds(60))) {
-            return null;
-        }
-        return token.getTokenValue();
-    }
-
-    private void forgetToken() {
-        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (attrs != null && auth != null) {
-            authorizedClients.removeAuthorizedClient(REGISTRATION_ID, auth, attrs.getRequest(), attrs.getResponse());
-        }
-    }
-
-    private static HttpServletRequest currentRequest() {
-        return RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attrs
-                ? attrs.getRequest() : null;
     }
 }

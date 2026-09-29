@@ -43,6 +43,7 @@ public class PublicJobService {
     private final TrackerService trackerService;
     private final DocumentService documentService;
     private final AuditService auditService;
+    private final MessageService messageService;
 
     @Transactional(readOnly = true)
     public PublicJobResponse publicJob(String slug) {
@@ -101,7 +102,7 @@ public class PublicJobService {
     public List<MyApplicationResponse> myApplications(CandidateAccount account) {
         return candidateRepository.findByEmail(account.getEmail())
                 .map(c -> applicationRepository.findByCandidateIdOrderByCreatedAtDesc(c.getId()).stream()
-                        .map(PublicJobService::toMine)
+                        .map(this::toMine)
                         .toList())
                 .orElse(List.of());
     }
@@ -112,9 +113,9 @@ public class PublicJobService {
                 .orElseThrow(() -> new NotFoundException("This job link isn't active"));
     }
 
-    private static MyApplicationResponse toMine(Application a) {
-        return new MyApplicationResponse(a.getJob().isPublished() ? a.getJob().getPublicSlug() : null,
-                a.getJob().getTitle(), candidateStatus(a.getStage()), a.getCreatedAt());
+    private MyApplicationResponse toMine(Application a) {
+        return new MyApplicationResponse(a.getId(), a.getJob().isPublished() ? a.getJob().getPublicSlug() : null,
+                a.getJob().getTitle(), candidateStatus(a.getStage()), a.getCreatedAt(), messageService.unreadForCandidate(a));
     }
 
     /** What a candidate sees. Deliberately coarse. */

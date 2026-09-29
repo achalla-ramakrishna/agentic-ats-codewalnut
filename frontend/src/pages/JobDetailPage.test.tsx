@@ -12,7 +12,7 @@ const recruiter: Me = {
   email: 'recruiter@codewalnut.test',
   name: 'Dev Recruiter',
   roles: ['RECRUITER'],
-  capabilities: ['VIEW_JOBS', 'MANAGE_JOBS', 'VIEW_CANDIDATES'],
+  capabilities: ['VIEW_JOBS', 'MANAGE_JOBS', 'VIEW_CANDIDATES', 'MESSAGE_CANDIDATES'],
   navigation: [{ key: 'jobs', label: 'Openings', path: '/jobs' }],
 }
 
@@ -115,5 +115,45 @@ describe('JobDetailPage', () => {
 
     const call = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/import'))!
     expect(JSON.parse(call[1]!.body as string)).toMatchObject({ stage: 'INTERVIEWED', dryRun: true })
+  })
+
+  it('offers to email the candidate after a stage change, with the matching template', async () => {
+    vi.stubGlobal('prompt', vi.fn(() => 'Not the right fit for this role'))
+    const fetchMock = fakeFetch([
+      { path: '/auth/session', body: { type: 'STAFF' } },
+      { path: '/me', body: recruiter },
+      { path: '/stages', body: stages },
+      { path: '/jobs/j1/applications', body: [row] },
+      { path: '/jobs/j1', body: job },
+      { method: 'PATCH', path: '/applications/a1/stage', body: { ...row, stage: 'REJECTED', stageLabel: 'Rejected' } },
+      { path: '/applications/a1/history', body: [] },
+      { path: '/candidates/p1/documents', body: [] },
+      { path: '/applications/a1/messages', body: [] },
+      { path: '/google/status', body: { available: true, calendarConnected: true, mailConnected: true, redirectUri: 'x' } },
+      {
+        method: 'POST',
+        path: '/applications/a1/messages',
+        status: 201,
+        body: { id: 'm1', channel: 'CANDIDATE', authorType: 'STAFF', authorEmail: recruiter.email, authorName: 'Dev Recruiter', subject: 's', body: 'b', emailed: true, createdAt: '2026-09-29T00:00:00Z' },
+      },
+    ])
+    renderJob()
+
+    await userEvent.selectOptions(await screen.findByLabelText('Stage for Asha Rao'), 'REJECTED')
+    expect(await screen.findByText(/Let them know\?/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Email Asha' }))
+
+    const drawer = await screen.findByRole('complementary', { name: 'Candidate Asha Rao' })
+    expect(within(drawer).getByRole('tab', { name: 'Chat with candidate' })).toHaveAttribute('aria-selected', 'true')
+    expect(within(drawer).getByLabelText('Email subject')).toHaveValue('Your application for Acme – Interns at CodeWalnut')
+    const message = within(drawer).getByLabelText('Message') as HTMLTextAreaElement
+    expect(message.value).toContain('Hi Asha,')
+    expect(message.value).toContain('not to move forward')
+    expect(message.value).toContain('Dev Recruiter')
+
+    await userEvent.click(await within(drawer).findByRole('button', { name: 'Send email' }))
+    expect(await within(drawer).findByText('Emailed to asha@example.com from your Gmail.')).toBeInTheDocument()
+    const post = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/messages') && init?.method === 'POST')!
+    expect(JSON.parse(post[1]!.body as string)).toMatchObject({ channel: 'CANDIDATE', sendEmail: true })
   })
 })

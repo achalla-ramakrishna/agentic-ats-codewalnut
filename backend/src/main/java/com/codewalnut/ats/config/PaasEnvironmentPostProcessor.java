@@ -22,8 +22,9 @@ import org.springframework.util.StringUtils;
  *       registration — unless the full {@code spring.security.oauth2.client.registration.google.*}
  *       properties are set, which win.
  *   <li>The same Google client also gets a second registration, {@code google-calendar}, used
- *       only when staff connect Google Calendar to schedule interviews (scope
- *       {@code calendar.events}). Set {@code ATS_GOOGLE_CALENDAR_ENABLED=false} to leave it out.
+ *       only when staff connect Google to schedule interviews and email candidates (scopes
+ *       {@code calendar.events} and {@code gmail.send}). Set
+ *       {@code ATS_GOOGLE_CALENDAR_ENABLED=false} to leave it out.
  * </ul>
  */
 public class PaasEnvironmentPostProcessor implements EnvironmentPostProcessor {
@@ -74,7 +75,8 @@ public class PaasEnvironmentPostProcessor implements EnvironmentPostProcessor {
             props.put(CALENDAR_PREFIX + "client-name", "Google Calendar");
             props.put(CALENDAR_PREFIX + "authorization-grant-type", "authorization_code");
             props.put(CALENDAR_PREFIX + "redirect-uri", "{baseUrl}/oauth2/callback/{registrationId}");
-            props.put(CALENDAR_PREFIX + "scope", "https://www.googleapis.com/auth/calendar.events");
+            props.put(CALENDAR_PREFIX + "scope",
+                    "https://www.googleapis.com/auth/calendar.events,https://www.googleapis.com/auth/gmail.send");
         }
         if (!props.isEmpty()) {
             environment.getPropertySources().addFirst(new MapPropertySource(GOOGLE_SOURCE_NAME, props));

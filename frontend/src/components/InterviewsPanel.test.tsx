@@ -44,7 +44,7 @@ describe('InterviewsPanel', () => {
   it('schedules on Google Calendar and sends the invite details', async () => {
     const fetch = fakeFetch([
       { path: '/applications/a1/interviews', body: [] },
-      { path: '/calendar/status', body: { available: true, connected: true, redirectUri: 'x' } },
+      { path: '/google/status', body: { available: true, calendarConnected: true, mailConnected: true, redirectUri: 'x' } },
       { method: 'POST', path: '/applications/a1/interviews', status: 201, body: scheduled },
     ])
     renderPanel()
@@ -71,19 +71,19 @@ describe('InterviewsPanel', () => {
   it('asks to connect Google Calendar first', async () => {
     fakeFetch([
       { path: '/applications/a1/interviews', body: [] },
-      { path: '/calendar/status', body: { available: true, connected: false, redirectUri: 'x' } },
+      { path: '/google/status', body: { available: true, calendarConnected: false, mailConnected: false, redirectUri: 'x' } },
     ])
     renderPanel()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Schedule interview' }))
-    expect(await screen.findByRole('button', { name: 'Connect Google Calendar' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Connect Google (Calendar & Gmail)' })).toBeInTheDocument()
     expect(screen.queryByRole('form', { name: 'Schedule interview' })).not.toBeInTheDocument()
   })
 
   it('needs the candidate email before scheduling', async () => {
     fakeFetch([
       { path: '/applications/a1/interviews', body: [] },
-      { path: '/calendar/status', body: { available: true, connected: true, redirectUri: 'x' } },
+      { path: '/google/status', body: { available: true, calendarConnected: true, mailConnected: true, redirectUri: 'x' } },
     ])
     renderPanel(null)
 

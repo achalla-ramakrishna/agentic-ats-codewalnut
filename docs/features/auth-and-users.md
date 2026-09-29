@@ -167,3 +167,4 @@ Passwords, self-registration, staff MFA beyond what Google enforces.
 | 2026-09-25 | AUTH-14: dev profile is never active by default (tested); UI for AUTH-07, AUTH-08 added |
 | 2026-09-25 | Google sign-in opened to any Google account: AUTH-02, AUTH-03 changed; AUTH-18…20 added (candidates with personal Gmail); ADR-0004 |
 | 2026-09-25 | AUTH-21: demo profile with access code, so the Railway preview works before Google sign-in is configured |
+| 2026-09-29 | New capability `MESSAGE_CANDIDATES` for Admin, Recruiter, Hiring Manager, Account Manager (MSG-09) |

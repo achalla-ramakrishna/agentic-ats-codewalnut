@@ -1,6 +1,6 @@
 package com.codewalnut.ats.security;
 
-import com.codewalnut.ats.client.GoogleCalendarClient;
+import com.codewalnut.ats.client.GoogleAccess;
 import com.codewalnut.ats.config.AuthProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -58,7 +58,7 @@ public class SecurityConfig {
                                 "/api/v1/auth/dev-login", "/api/v1/public/**")
                         .permitAll()
                         // Only staff connect a calendar.
-                        .requestMatchers("/oauth2/authorization/" + GoogleCalendarClient.REGISTRATION_ID,
+                        .requestMatchers("/oauth2/authorization/" + GoogleAccess.REGISTRATION_ID,
                                 "/oauth2/callback/**")
                         .hasAuthority(SessionType.STAFF.authority())
                         .requestMatchers("/api/**").authenticated()
@@ -82,8 +82,8 @@ public class SecurityConfig {
         // (GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET, see PaasEnvironmentPostProcessor).
         ClientRegistrationRepository registrations = clientRegistrations.getIfAvailable();
         if (registrations != null) {
-            log.info("Google sign-in: ENABLED; Google Calendar: {}",
-                    registrations.findByRegistrationId(GoogleCalendarClient.REGISTRATION_ID) != null ? "ENABLED" : "DISABLED");
+            log.info("Google sign-in: ENABLED; Google Calendar and Gmail: {}",
+                    registrations.findByRegistrationId(GoogleAccess.REGISTRATION_ID) != null ? "ENABLED" : "DISABLED");
             OAuth2AuthorizationRequestResolver resolver = authorizationRequestResolver(registrations);
             // loginPage points at the SPA's /login route, so Spring doesn't generate its own
             // bare login page and failed sign-ins land on our page with ?error.
@@ -126,7 +126,7 @@ public class SecurityConfig {
 
     private static OAuth2AuthorizationRequest forCalendar(OAuth2AuthorizationRequest request) {
         if (request == null
-                || !GoogleCalendarClient.REGISTRATION_ID.equals(request.getAttribute(OAuth2ParameterNames.REGISTRATION_ID))) {
+                || !GoogleAccess.REGISTRATION_ID.equals(request.getAttribute(OAuth2ParameterNames.REGISTRATION_ID))) {
             return request;
         }
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

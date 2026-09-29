@@ -75,7 +75,8 @@ public final class TrackerDtos {
             String description, boolean acceptingApplications) {}
 
     /** A candidate's own view of an application: a simple status, never internal stages or notes. */
-    public record MyApplicationResponse(String slug, String jobTitle, String status, Instant appliedAt) {}
+    /** id: the candidate's own application, for their messages. newMessages: unread from CodeWalnut. */
+    public record MyApplicationResponse(UUID id, String slug, String jobTitle, String status, Instant appliedAt, long newMessages) {}
 
     public record ApplicationResponse(
             UUID id, UUID jobId, String jobTitle, UUID candidateId, String name, String email, String phone,

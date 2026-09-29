@@ -56,11 +56,6 @@ public class InterviewService {
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
 
-    public CalendarClient.Status calendarStatus(AppUser actor) {
-        accessPolicy.require(actor, Capability.MANAGE_JOBS);
-        return calendarClient.status();
-    }
-
     @Transactional
     public InterviewResponse schedule(AppUser actor, UUID applicationId, ScheduleInterviewRequest request) {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);

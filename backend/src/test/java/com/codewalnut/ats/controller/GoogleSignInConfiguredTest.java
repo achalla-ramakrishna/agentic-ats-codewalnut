@@ -62,13 +62,14 @@ class GoogleSignInConfiguredTest {
     }
 
     @Test
-    void staffConnectGoogleCalendarWithOnlyTheCalendarEventsScope() throws Exception {
+    void staffConnectGoogleWithOnlyCalendarEventsAndGmailSendScopes() throws Exception {
         mockMvc.perform(get("/oauth2/authorization/google-calendar")
                         .with(user("admin@codewalnut.test").roles("STAFF")))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(header().string("Location", allOf(
                         startsWith("https://accounts.google.com/o/oauth2/v2/auth"),
                         containsString("scope=https://www.googleapis.com/auth/calendar.events"),
+                        containsString("auth/gmail.send"),
                         not(containsString("openid")),
                         containsString("login_hint=admin@codewalnut.test"),
                         containsString("redirect_uri=http://localhost/oauth2/callback/google-calendar"))));

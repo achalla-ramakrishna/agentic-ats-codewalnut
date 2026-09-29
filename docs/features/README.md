@@ -34,7 +34,7 @@ here holds the detailed, testable requirements for one feature.
 | JOB | [Jobs & careers page](jobs-and-careers-page.md) | 1 | Ready |
 | CAND | [Candidates](candidates.md) | 2 | Ready |
 | PIPE | [Pipeline](pipeline.md) | 2 | Ready |
-| MSG | [Email & communication](communication.md) | 3 | Ready |
+| MSG | [Email & communication](communication.md) | 3 | In progress (first release shipped) |
 | INT | [Interviews & scorecards](interviews-and-scorecards.md) | 4 | In progress (scheduling shipped) |
 | ASMT | [Coding assessments](assessments.md) | 5 | Draft |
 | SUB | [Client submissions & review](client-submissions.md) | 6 | Ready |

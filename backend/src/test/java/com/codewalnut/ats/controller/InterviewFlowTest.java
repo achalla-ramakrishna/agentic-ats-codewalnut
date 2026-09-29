@@ -166,9 +166,10 @@ class InterviewFlowTest {
         calendar.setConnected(false);
         perform(ADMIN, "POST", "/api/v1/applications/" + app[0] + "/interviews", scheduleBody(tomorrow(), ""))
                 .andExpect(status().isPreconditionRequired());
-        mockMvc.perform(get("/api/v1/calendar/status").with(ADMIN))
+        mockMvc.perform(get("/api/v1/google/status").with(ADMIN))
                 .andExpect(jsonPath("$.available").value(true))
-                .andExpect(jsonPath("$.connected").value(false))
+                .andExpect(jsonPath("$.calendarConnected").value(false))
+                .andExpect(jsonPath("$.mailConnected").value(true))
                 .andExpect(jsonPath("$.redirectUri").value("http://localhost/oauth2/callback/google-calendar"));
 
         calendar.setConnected(true);
@@ -256,25 +257,25 @@ class InterviewFlowTest {
     void connectSendsStaffToGoogleAndBackToTheSameScreen() throws Exception {
         calendar.setConnected(false);
         MockHttpSession session = new MockHttpSession();
-        mockMvc.perform(get("/api/v1/calendar/connect").param("returnTo", "/jobs/123?candidate=abc").session(session).with(ADMIN))
+        mockMvc.perform(get("/api/v1/google/connect").param("returnTo", "/jobs/123?candidate=abc").session(session).with(ADMIN))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/oauth2/authorization/google-calendar"))
-                .andExpect(request().sessionAttribute(InterviewController.RETURN_TO, "/jobs/123?candidate=abc"));
+                .andExpect(request().sessionAttribute(GoogleConnectionController.RETURN_TO, "/jobs/123?candidate=abc"));
 
         mockMvc.perform(get("/oauth2/callback/google-calendar").session(session)
                         .with(user("admin@codewalnut.test").roles("STAFF")))
                 .andExpect(redirectedUrl("/jobs/123?candidate=abc"));
 
         calendar.setConnected(true);
-        mockMvc.perform(get("/api/v1/calendar/connect").param("returnTo", "https://evil.example").with(ADMIN))
-                .andExpect(redirectedUrl("/interviews"));
+        mockMvc.perform(get("/api/v1/google/connect").param("returnTo", "https://evil.example").with(ADMIN))
+                .andExpect(redirectedUrl("/"));
     }
 
     @Test
     void returnToOnlyAllowsSameSitePaths() {
         for (String bad : List.of("//evil.example", "https://evil.example", "/\\evil", "evil", "/a\nb")) {
-            assertThat(InterviewController.safeReturnTo(bad)).isEqualTo("/interviews");
+            assertThat(GoogleConnectionController.safeReturnTo(bad)).isEqualTo("/");
         }
-        assertThat(InterviewController.safeReturnTo("/candidates?open=1")).isEqualTo("/candidates?open=1");
+        assertThat(GoogleConnectionController.safeReturnTo("/candidates?open=1")).isEqualTo("/candidates?open=1");
     }
 }

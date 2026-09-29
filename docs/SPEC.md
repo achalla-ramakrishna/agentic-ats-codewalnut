@@ -109,7 +109,7 @@ templates, rules and SLAs are in [pipeline.md](features/pipeline.md).
 | JOB | [Jobs & careers page](features/jobs-and-careers-page.md) | 1 | Ready |
 | CAND | [Candidates](features/candidates.md) | 2 | Ready |
 | PIPE | [Pipeline](features/pipeline.md) | 2 | Ready |
-| MSG | [Email & communication](features/communication.md) | 3 | Ready |
+| MSG | [Email & communication](features/communication.md) | 3 | In progress (first release shipped) |
 | INT | [Interviews & scorecards](features/interviews-and-scorecards.md) | 4 | In progress (scheduling shipped) |
 | ASMT | [Coding assessments](features/assessments.md) | 5 | Draft |
 | SUB | [Client submissions & review](features/client-submissions.md) | 6 | Ready |
@@ -134,7 +134,7 @@ Decided in `docs/adr/0001-initial-architecture.md` and
 | Database | MySQL 8 everywhere — local dev, tests, CI and production — with Flyway migrations |
 | Background work | MySQL outbox table (`background_task`) + `@Scheduled` workers |
 | Auth | Google sign-in for staff and candidates (ADR-0004); magic links for client reviewers |
-| Calendar | Each recruiter's own Google Calendar + Meet; Google emails invites (ADR-0005) |
+| Calendar & email | Each staff member's own Google Calendar + Meet and Gmail (send only); in-app conversations (ADR-0005, ADR-0006) |
 | Search | MySQL `FULLTEXT` on candidates and parsed CVs |
 | Files | S3-compatible private storage, signed URLs |
 | AI | One `LlmService` — advisory only |

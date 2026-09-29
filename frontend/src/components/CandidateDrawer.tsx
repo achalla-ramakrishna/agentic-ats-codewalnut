@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import {
   addNote,
   DOCUMENT_LABELS,
@@ -10,24 +10,28 @@ import {
   type CandidateDocument,
   type DocumentKind,
   type HistoryEvent,
-} from '../api/tracker'
-import { updateCandidate } from '../api/interviews'
-import { InterviewsPanel } from './InterviewsPanel'
-import { Button } from './ui'
-import { useStages } from './useStages'
+} from "../api/tracker";
+import { updateCandidate } from "../api/interviews";
+import { useMe } from "../auth/AuthContext";
+import { Conversation } from "./Conversation";
+import { InterviewsPanel } from "./InterviewsPanel";
+import { Button } from "./ui";
+import { useStages } from "./useStages";
 
 function describe(event: HistoryEvent, label: (s: string | null) => string) {
   switch (event.type) {
-    case 'CREATED':
-      return `Added at ${label(event.toStage)}`
-    case 'STAGE_CHANGED':
-      return `${label(event.fromStage)} → ${label(event.toStage)}`
-    case 'INTERVIEW_SCHEDULED':
-      return 'Interview scheduled'
-    case 'INTERVIEW_CANCELLED':
-      return 'Interview cancelled'
+    case "CREATED":
+      return `Added at ${label(event.toStage)}`;
+    case "STAGE_CHANGED":
+      return `${label(event.fromStage)} → ${label(event.toStage)}`;
+    case "INTERVIEW_SCHEDULED":
+      return "Interview scheduled";
+    case "INTERVIEW_CANCELLED":
+      return "Interview cancelled";
+    case "EMAIL_SENT":
+      return "Email sent";
     default:
-      return 'Note'
+      return "Note";
   }
 }
 
@@ -36,27 +40,41 @@ function ContactForm({
   onSaved,
   onCancel,
 }: {
-  contact: { id: string; name: string; email: string | null; phone: string | null }
-  onSaved: (c: { name: string; email: string | null; phone: string | null }) => void
-  onCancel: () => void
+  contact: {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+  };
+  onSaved: (c: {
+    name: string;
+    email: string | null;
+    phone: string | null;
+  }) => void;
+  onCancel: () => void;
 }) {
-  const [name, setName] = useState(contact.name)
-  const [email, setEmail] = useState(contact.email ?? '')
-  const [phone, setPhone] = useState(contact.phone ?? '')
-  const [error, setError] = useState<string | null>(null)
+  const [name, setName] = useState(contact.name);
+  const [email, setEmail] = useState(contact.email ?? "");
+  const [phone, setPhone] = useState(contact.phone ?? "");
+  const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(event: FormEvent) {
-    event.preventDefault()
-    setError(null)
+    event.preventDefault();
+    setError(null);
     try {
-      onSaved(await updateCandidate(contact.id, { name, email, phone }))
+      onSaved(await updateCandidate(contact.id, { name, email, phone }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save')
+      setError(e instanceof Error ? e.message : "Could not save");
     }
   }
 
   return (
-    <form className="stack" onSubmit={onSubmit} aria-label="Contact details" style={{ gap: 8 }}>
+    <form
+      className="stack"
+      onSubmit={onSubmit}
+      aria-label="Contact details"
+      style={{ gap: 8 }}
+    >
       {error && (
         <div role="alert" className="alert alert-error">
           {error}
@@ -64,15 +82,29 @@ function ContactForm({
       )}
       <label className="field">
         Name
-        <input className="input" required value={name} onChange={(e) => setName(e.target.value)} />
+        <input
+          className="input"
+          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
       </label>
       <label className="field">
         Email
-        <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input
+          className="input"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
       </label>
       <label className="field">
         Phone
-        <input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <input
+          className="input"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
       </label>
       <div className="row">
         <Button type="submit" size="sm" disabled={!name.trim()}>
@@ -83,7 +115,7 @@ function ContactForm({
         </Button>
       </div>
     </form>
-  )
+  );
 }
 
 function ResumeSlot({
@@ -92,38 +124,50 @@ function ResumeSlot({
   canEdit,
   onUpload,
 }: {
-  kind: DocumentKind
-  documents: CandidateDocument[]
-  canEdit: boolean
-  onUpload: (kind: DocumentKind, file: File) => Promise<void>
+  kind: DocumentKind;
+  documents: CandidateDocument[];
+  canEdit: boolean;
+  onUpload: (kind: DocumentKind, file: File) => Promise<void>;
 }) {
-  const versions = documents.filter((d) => d.kind === kind)
-  const current = versions[0]
-  const [busy, setBusy] = useState(false)
-  const inputId = `upload-${kind}`
+  const versions = documents.filter((d) => d.kind === kind);
+  const current = versions[0];
+  const [busy, setBusy] = useState(false);
+  const inputId = `upload-${kind}`;
 
   return (
     <div className="card stack" style={{ padding: 16, gap: 8 }}>
       <strong>{DOCUMENT_LABELS[kind]}</strong>
       {current ? (
         <div className="row">
-          <a href={documentUrl(current.id, true)} target="_blank" rel="noreferrer">
+          <a
+            href={documentUrl(current.id, true)}
+            target="_blank"
+            rel="noreferrer"
+          >
             {current.fileName}
           </a>
-          <a className="muted" href={documentUrl(current.id)} style={{ fontSize: 12 }}>
+          <a
+            className="muted"
+            href={documentUrl(current.id)}
+            style={{ fontSize: 12 }}
+          >
             Download
           </a>
           <span className="muted" style={{ fontSize: 12 }}>
             {new Date(current.uploadedAt).toLocaleDateString()}
-            {versions.length > 1 ? ` · ${versions.length} versions` : ''}
+            {versions.length > 1 ? ` · ${versions.length} versions` : ""}
           </span>
         </div>
       ) : (
         <span className="muted">Not uploaded yet</span>
       )}
       {canEdit && (
-        <label htmlFor={inputId} className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }}>
-          {busy ? 'Uploading…' : current ? 'Upload new version' : 'Upload'}
+        <label
+          htmlFor={inputId}
+          className="btn btn-secondary btn-sm"
+          style={{ alignSelf: "flex-start" }}
+        >
+          {busy ? "Uploading…" : current ? "Upload new version" : "Upload"}
           <input
             id={inputId}
             type="file"
@@ -131,72 +175,92 @@ function ResumeSlot({
             className="visually-hidden"
             disabled={busy}
             onChange={async (e) => {
-              const file = e.target.files?.[0]
-              e.target.value = ''
-              if (!file) return
-              setBusy(true)
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (!file) return;
+              setBusy(true);
               try {
-                await onUpload(kind, file)
+                await onUpload(kind, file);
               } finally {
-                setBusy(false)
+                setBusy(false);
               }
             }}
           />
         </label>
       )}
     </div>
-  )
+  );
 }
+
+export type DrawerTab = "profile" | "candidate" | "team";
 
 export function CandidateDrawer({
   row,
   canEdit,
   onClose,
   onChanged,
+  initialTab = "profile",
+  initialTemplate,
 }: {
-  row: ApplicationRow
-  canEdit: boolean
-  onClose: () => void
-  onChanged: () => void
+  row: ApplicationRow;
+  canEdit: boolean;
+  onClose: () => void;
+  onChanged: () => void;
+  initialTab?: DrawerTab;
+  initialTemplate?: string;
 }) {
-  const stages = useStages()
-  const label = (s: string | null) => stages.find((x) => x.key === s)?.label ?? s ?? ''
-  const [history, setHistory] = useState<HistoryEvent[]>([])
-  const [documents, setDocuments] = useState<CandidateDocument[]>([])
-  const [note, setNote] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [contact, setContact] = useState({ name: row.name, email: row.email, phone: row.phone })
-  const [editingContact, setEditingContact] = useState(false)
+  const me = useMe();
+  const canMessage = me.capabilities.includes("MESSAGE_CANDIDATES");
+  const [tab, setTab] = useState<DrawerTab>(
+    canMessage ? initialTab : "profile",
+  );
+  const stages = useStages();
+  const label = (s: string | null) =>
+    stages.find((x) => x.key === s)?.label ?? s ?? "";
+  const [history, setHistory] = useState<HistoryEvent[]>([]);
+  const [documents, setDocuments] = useState<CandidateDocument[]>([]);
+  const [note, setNote] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [contact, setContact] = useState({
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+  });
+  const [editingContact, setEditingContact] = useState(false);
 
   const load = useCallback(() => {
-    getHistory(row.id).then(setHistory).catch(() => undefined)
-    listDocuments(row.candidateId).then(setDocuments).catch(() => undefined)
-  }, [row.id, row.candidateId])
+    getHistory(row.id)
+      .then(setHistory)
+      .catch(() => undefined);
+    listDocuments(row.candidateId)
+      .then(setDocuments)
+      .catch(() => undefined);
+  }, [row.id, row.candidateId]);
 
-  useEffect(load, [load])
+  useEffect(load, [load]);
 
   async function onNote(event: FormEvent) {
-    event.preventDefault()
-    if (!note.trim()) return
-    setError(null)
+    event.preventDefault();
+    if (!note.trim()) return;
+    setError(null);
     try {
-      await addNote(row.id, note.trim())
-      setNote('')
-      load()
-      onChanged()
+      await addNote(row.id, note.trim());
+      setNote("");
+      load();
+      onChanged();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save the note')
+      setError(e instanceof Error ? e.message : "Could not save the note");
     }
   }
 
   async function onUpload(kind: DocumentKind, file: File) {
-    setError(null)
+    setError(null);
     try {
-      await uploadDocument(row.candidateId, kind, file)
-      load()
-      onChanged()
+      await uploadDocument(row.candidateId, kind, file);
+      load();
+      onChanged();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Upload failed')
+      setError(e instanceof Error ? e.message : "Upload failed");
     }
   }
 
@@ -204,7 +268,7 @@ export function CandidateDrawer({
     <>
       <div className="drawer-backdrop" onClick={onClose} />
       <aside className="drawer" aria-label={`Candidate ${row.name}`}>
-        <div className="row" style={{ justifyContent: 'space-between' }}>
+        <div className="row" style={{ justifyContent: "space-between" }}>
           <div>
             <h2>{contact.name}</h2>
             <div className="muted">{row.jobTitle}</div>
@@ -213,90 +277,151 @@ export function CandidateDrawer({
             Close
           </Button>
         </div>
-        {editingContact ? (
-          <ContactForm
-            contact={{ id: row.candidateId, ...contact }}
-            onCancel={() => setEditingContact(false)}
-            onSaved={(c) => {
-              setContact({ name: c.name, email: c.email, phone: c.phone })
-              setEditingContact(false)
-              onChanged()
+        {canMessage && (
+          <div className="tabs" role="tablist" aria-label="Candidate sections">
+            {(
+              [
+                ["profile", "Profile"],
+                ["candidate", "Chat with candidate"],
+                ["team", "Team chat"],
+              ] as const
+            ).map(([key, text]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={tab === key}
+                onClick={() => setTab(key)}
+              >
+                {text}
+              </button>
+            ))}
+          </div>
+        )}
+        {tab !== "profile" && (
+          <Conversation
+            key={tab}
+            applicationId={row.id}
+            channel={tab === "candidate" ? "CANDIDATE" : "TEAM"}
+            candidateName={contact.name}
+            candidateEmail={contact.email}
+            jobTitle={row.jobTitle}
+            me={{ email: me.email, name: me.name }}
+            initialTemplate={tab === "candidate" ? initialTemplate : undefined}
+            onSent={() => {
+              load();
+              onChanged();
             }}
           />
-        ) : (
-          <div className="stack" style={{ gap: 4 }}>
-            <div>
-              <span className="muted">Email:</span> {contact.email ?? '—'}
-            </div>
-            <div>
-              <span className="muted">Phone:</span> {contact.phone ?? '—'}
-            </div>
-            <div>
-              <span className="muted">Stage:</span> <strong>{row.stageLabel}</strong>
-            </div>
-            {canEdit && (
-              <div>
-                <Button size="sm" variant="ghost" onClick={() => setEditingContact(true)}>
-                  Edit contact details
-                </Button>
+        )}
+        {tab === "profile" && (
+          <>
+            {editingContact ? (
+              <ContactForm
+                contact={{ id: row.candidateId, ...contact }}
+                onCancel={() => setEditingContact(false)}
+                onSaved={(c) => {
+                  setContact({ name: c.name, email: c.email, phone: c.phone });
+                  setEditingContact(false);
+                  onChanged();
+                }}
+              />
+            ) : (
+              <div className="stack" style={{ gap: 4 }}>
+                <div>
+                  <span className="muted">Email:</span> {contact.email ?? "—"}
+                </div>
+                <div>
+                  <span className="muted">Phone:</span> {contact.phone ?? "—"}
+                </div>
+                <div>
+                  <span className="muted">Stage:</span>{" "}
+                  <strong>{row.stageLabel}</strong>
+                </div>
+                {canEdit && (
+                  <div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setEditingContact(true)}
+                    >
+                      Edit contact details
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
-        {error && (
-          <div role="alert" className="alert alert-error">
-            {error}
-          </div>
-        )}
-        <div className="stack">
-          <ResumeSlot kind="ORIGINAL_RESUME" documents={documents} canEdit={canEdit} onUpload={onUpload} />
-          <ResumeSlot kind="CODEWALNUT_RESUME" documents={documents} canEdit={canEdit} onUpload={onUpload} />
-        </div>
-        <InterviewsPanel
-          applicationId={row.id}
-          candidateName={contact.name}
-          candidateEmail={contact.email}
-          jobTitle={row.jobTitle}
-          canEdit={canEdit}
-          onChanged={() => {
-            load()
-            onChanged()
-          }}
-        />
-        {canEdit && (
-          <form className="stack" onSubmit={onNote} style={{ gap: 8 }}>
-            <label className="field">
-              Add a note
-              <textarea
-                className="textarea"
-                style={{ minHeight: 70, fontFamily: 'inherit', fontSize: 14 }}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="e.g. Strong in React, available from 1 Nov"
+            {error && (
+              <div role="alert" className="alert alert-error">
+                {error}
+              </div>
+            )}
+            <div className="stack">
+              <ResumeSlot
+                kind="ORIGINAL_RESUME"
+                documents={documents}
+                canEdit={canEdit}
+                onUpload={onUpload}
               />
-            </label>
-            <div>
-              <Button type="submit" size="sm" disabled={!note.trim()}>
-                Save note
-              </Button>
+              <ResumeSlot
+                kind="CODEWALNUT_RESUME"
+                documents={documents}
+                canEdit={canEdit}
+                onUpload={onUpload}
+              />
             </div>
-          </form>
-        )}
-        <div className="stack" style={{ gap: 8 }}>
-          <strong>History</strong>
-          <ul className="timeline">
-            {history.map((h) => (
-              <li key={h.id}>
-                <div>{describe(h, label)}</div>
-                {h.note && <div>{h.note}</div>}
-                <div className="meta">
-                  {h.actorEmail ?? 'system'} · {new Date(h.createdAt).toLocaleString()}
+            <InterviewsPanel
+              applicationId={row.id}
+              candidateName={contact.name}
+              candidateEmail={contact.email}
+              jobTitle={row.jobTitle}
+              canEdit={canEdit}
+              onChanged={() => {
+                load();
+                onChanged();
+              }}
+            />
+            {canEdit && (
+              <form className="stack" onSubmit={onNote} style={{ gap: 8 }}>
+                <label className="field">
+                  Add a note
+                  <textarea
+                    className="textarea"
+                    style={{
+                      minHeight: 70,
+                      fontFamily: "inherit",
+                      fontSize: 14,
+                    }}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="e.g. Strong in React, available from 1 Nov"
+                  />
+                </label>
+                <div>
+                  <Button type="submit" size="sm" disabled={!note.trim()}>
+                    Save note
+                  </Button>
                 </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+              </form>
+            )}
+            <div className="stack" style={{ gap: 8 }}>
+              <strong>History</strong>
+              <ul className="timeline">
+                {history.map((h) => (
+                  <li key={h.id}>
+                    <div>{describe(h, label)}</div>
+                    {h.note && <div>{h.note}</div>}
+                    <div className="meta">
+                      {h.actorEmail ?? "system"} ·{" "}
+                      {new Date(h.createdAt).toLocaleString()}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
+        )}
       </aside>
     </>
-  )
+  );
 }

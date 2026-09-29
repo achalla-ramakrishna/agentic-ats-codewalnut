@@ -36,8 +36,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 class GoogleCalendarClientTest {
 
     private static final ClientRegistration CALENDAR = CommonOAuth2Provider.GOOGLE
-            .getBuilder(GoogleCalendarClient.REGISTRATION_ID)
-            .clientId("fake-id").clientSecret("fake-secret").scope(GoogleCalendarClient.SCOPE).build();
+            .getBuilder(GoogleAccess.REGISTRATION_ID)
+            .clientId("fake-id").clientSecret("fake-secret").scope(GoogleAccess.CALENDAR_SCOPE, GoogleAccess.GMAIL_SEND_SCOPE).build();
     private static final CalendarClient.Invite INVITE = new CalendarClient.Invite("CodeWalnut interview", "Hello",
             Instant.parse("2030-01-15T05:30:00Z"), Instant.parse("2030-01-15T06:15:00Z"), "Asia/Kolkata",
             List.of("candidate@example.com", "panel@codewalnut.test"));
@@ -52,7 +52,7 @@ class GoogleCalendarClientTest {
     void setUp() {
         RestClient.Builder builder = RestClient.builder().baseUrl(GoogleCalendarClient.BASE_URL);
         google = MockRestServiceServer.bindTo(builder).build();
-        client = new GoogleCalendarClient(new InMemoryClientRegistrationRepository(CALENDAR), tokens, builder.build());
+        client = new GoogleCalendarClient(new GoogleAccess(new InMemoryClientRegistrationRepository(CALENDAR), tokens), builder.build());
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request, new MockHttpServletResponse()));
         SecurityContextHolder.getContext().setAuthentication(staff);
     }
@@ -64,8 +64,12 @@ class GoogleCalendarClientTest {
     }
 
     private void connect(Instant expiresAt) {
+        connect(expiresAt, java.util.Set.of(GoogleAccess.CALENDAR_SCOPE, GoogleAccess.GMAIL_SEND_SCOPE));
+    }
+
+    private void connect(Instant expiresAt, java.util.Set<String> scopes) {
         OAuth2AccessToken token = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, "tok-123",
-                Instant.now().minusSeconds(10), expiresAt);
+                Instant.now().minusSeconds(10), expiresAt, scopes);
         tokens.saveAuthorizedClient(new OAuth2AuthorizedClient(CALENDAR, staff.getName(), token), staff, request,
                 new MockHttpServletResponse());
     }
@@ -77,6 +81,9 @@ class GoogleCalendarClientTest {
 
         connect(Instant.now().plusSeconds(30));
         assertThat(client.status().connected()).as("about to expire counts as not connected").isFalse();
+
+        connect(Instant.now().plusSeconds(3600), java.util.Set.of(GoogleAccess.GMAIL_SEND_SCOPE));
+        assertThat(client.status().connected()).as("calendar permission unticked on the consent screen").isFalse();
 
         connect(Instant.now().plusSeconds(3600));
         assertThat(client.status().connected()).isTrue();
@@ -146,7 +153,7 @@ class GoogleCalendarClientTest {
 
     @Test
     void unavailableWithoutACalendarRegistration() {
-        GoogleCalendarClient unconfigured = new GoogleCalendarClient(null, tokens, RestClient.create());
+        GoogleCalendarClient unconfigured = new GoogleCalendarClient(new GoogleAccess(null, tokens), RestClient.create());
         assertThat(unconfigured.status()).isEqualTo(new CalendarClient.Status(false, false));
         assertThatThrownBy(() -> unconfigured.create(INVITE)).isInstanceOf(CalendarException.class)
                 .hasMessageContaining("isn't set up");

@@ -25,9 +25,6 @@ public final class InterviewDtos {
 
     public record CancelInterviewRequest(@Size(max = 500) String reason) {}
 
-    /** redirectUri: what to register in Google Cloud Console for the calendar connection. */
-    public record CalendarStatusResponse(boolean available, boolean connected, String redirectUri) {}
-
     public record InterviewResponse(
             UUID id, UUID applicationId, UUID jobId, String jobTitle, UUID candidateId, String candidateName,
             String title, Instant startAt, Instant endAt, String timeZone, List<String> interviewers,

@@ -9,6 +9,8 @@ public enum Capability {
     VIEW_JOBS,
     MANAGE_JOBS,
     VIEW_CANDIDATES,
+    /** Message and email candidates; take part in team chat. */
+    MESSAGE_CANDIDATES,
     VIEW_CLIENTS,
     MANAGE_CLIENTS,
     VIEW_INTERVIEWS,

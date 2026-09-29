@@ -3,14 +3,14 @@ import { ApiError } from '../api/client'
 import {
   browserTimeZone,
   cancelInterview,
-  connectCalendarUrl,
   formatWhen,
-  getCalendarStatus,
+  getGoogleStatus,
   listApplicationInterviews,
   scheduleInterview,
-  type CalendarStatus,
+  type GoogleStatus,
   type Interview,
 } from '../api/interviews'
+import { ConnectGoogle } from './ConnectGoogle'
 import { Badge, Button } from './ui'
 
 const DURATIONS = [30, 45, 60, 90]
@@ -31,30 +31,6 @@ export function defaultMessage(candidateName: string, jobTitle: string) {
   )
 }
 
-function ConnectCalendar({ status, applicationId }: { status: CalendarStatus | null; applicationId: string }) {
-  if (status && !status.available) {
-    return (
-      <div className="alert alert-info">
-        Google Calendar isn't set up for this app yet. An admin needs to enable it (see the Railway deploy guide).
-      </div>
-    )
-  }
-  const returnTo = `${window.location.pathname}?candidate=${applicationId}`
-  return (
-    <div className="alert alert-info stack" style={{ gap: 8 }}>
-      <span>
-        Interviews are created on <strong>your</strong> Google Calendar with a Google Meet link, and Google emails the
-        invitation to the candidate and interviewers. Connect your calendar once per sign-in.
-      </span>
-      <div>
-        <Button size="sm" onClick={() => window.location.assign(connectCalendarUrl(returnTo))}>
-          Connect Google Calendar
-        </Button>
-      </div>
-    </div>
-  )
-}
-
 function ScheduleForm({
   applicationId,
   candidateName,
@@ -70,7 +46,7 @@ function ScheduleForm({
   onScheduled: (i: Interview) => void
   onCancel: () => void
 }) {
-  const [status, setStatus] = useState<CalendarStatus | null>(null)
+  const [status, setStatus] = useState<GoogleStatus | null>(null)
   const [title, setTitle] = useState(`CodeWalnut interview – ${jobTitle}`)
   const [date, setDate] = useState(tomorrow())
   const [time, setTime] = useState('11:00')
@@ -82,7 +58,7 @@ function ScheduleForm({
   const timeZone = browserTimeZone()
 
   useEffect(() => {
-    getCalendarStatus()
+    getGoogleStatus()
       .then(setStatus)
       .catch(() => setStatus(null))
   }, [])
@@ -90,8 +66,14 @@ function ScheduleForm({
   if (!candidateEmail) {
     return <div className="alert alert-info">Add the candidate's email address first. The invitation is sent there.</div>
   }
-  if (status && !status.connected) {
-    return <ConnectCalendar status={status} applicationId={applicationId} />
+  if (status && (!status.available || !status.calendarConnected)) {
+    return (
+      <ConnectGoogle
+        status={status}
+        purpose="Interviews are created on your Google Calendar with a Google Meet link, and Google emails the invitation to the candidate and interviewers."
+        returnTo={`${window.location.pathname}?candidate=${applicationId}`}
+      />
+    )
   }
 
   async function onSubmit(event: FormEvent) {
@@ -118,7 +100,7 @@ function ScheduleForm({
       onScheduled(created)
     } catch (e) {
       if (e instanceof ApiError && e.status === 428) {
-        setStatus((s) => ({ available: true, redirectUri: s?.redirectUri ?? '', connected: false }))
+        setStatus((s) => ({ available: true, redirectUri: s?.redirectUri ?? '', calendarConnected: false, mailConnected: s?.mailConnected ?? false }))
       } else {
         setError(e instanceof Error ? e.message : 'Could not schedule the interview')
       }

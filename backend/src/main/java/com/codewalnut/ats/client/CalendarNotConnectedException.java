@@ -1,9 +1,9 @@
 package com.codewalnut.ats.client;
 
-/** The user needs to connect (or reconnect) their Google Calendar first. */
+/** The user needs to connect (or reconnect) Google (Calendar and Gmail) first. */
 public class CalendarNotConnectedException extends RuntimeException {
 
     public CalendarNotConnectedException() {
-        super("Connect your Google Calendar first");
+        super("Connect your Google account (Calendar and Gmail) first");
     }
 }

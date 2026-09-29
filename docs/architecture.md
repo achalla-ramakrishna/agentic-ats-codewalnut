@@ -34,6 +34,12 @@ session. `client/GoogleCalendarClient` creates the event with a Meet link and
 `sendUpdates=all`, so Google emails the invite (ADR-0005). The dev and demo
 profiles use `FakeCalendarClient`.
 
+Messages: per-application conversations (`message` table, append-only) on
+two channels, `CANDIDATE` (staff ↔ candidate) and `TEAM` (internal). Staff can
+also email a candidate message through `client/GmailClient` (scope
+`gmail.send`, same Google connection as the calendar, ADR-0006); dev and demo
+use `FakeMailClient`.
+
 ## Shape
 
 ```

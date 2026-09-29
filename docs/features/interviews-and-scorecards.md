@@ -103,7 +103,7 @@ Tests: `InterviewFlowTest`, `GoogleCalendarClientTest`,
 
 ## API
 
-Built: `GET /calendar/status`, `GET /calendar/connect?returnTo=`,
+Built: `GET /google/status`, `GET /google/connect?returnTo=`,
 `GET /interviews` (upcoming), `GET/POST /applications/{id}/interviews`,
 `POST /interviews/{id}/cancel`, `PATCH /candidates/{id}`,
 `GET /candidate/interviews`.
@@ -119,4 +119,5 @@ public: `GET/POST /book/{token}`.
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
+| 2026-09-29 | "Connect Google Calendar" became "Connect Google (Calendar & Gmail)" (`/google/status`, `/google/connect`), shared with email (ADR-0006) |
 | 2026-09-29 | First release: schedule on the organiser's Google Calendar with a Meet link, Google emails the invite (INT-12…INT-19, ADR-0005) |

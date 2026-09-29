@@ -55,6 +55,10 @@ public class Application {
     @Column(name = "consent_at")
     private Instant consentAt;
 
+    /** When the candidate last opened their messages for this application. */
+    @Column(name = "candidate_read_at")
+    private Instant candidateReadAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

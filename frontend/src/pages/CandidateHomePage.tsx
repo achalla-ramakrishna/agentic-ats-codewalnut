@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { formatWhen, listMyInterviews, type CandidateInterview } from '../api/interviews'
 import { listMyApplications, type MyApplication } from '../api/tracker'
 import type { CandidateMe } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
+import { CandidateThread } from '../components/CandidateThread'
 import { Badge, Button, Card, PageHeader } from '../components/ui'
 import './CandidateHomePage.css'
 
@@ -14,6 +15,15 @@ export function CandidateHomePage({ candidate }: { candidate: CandidateMe }) {
   const applied = (location.state as { applied?: string } | null)?.applied
   const [applications, setApplications] = useState<MyApplication[] | null>(null)
   const [interviews, setInterviews] = useState<CandidateInterview[]>([])
+  const [chatWith, setChatWith] = useState<MyApplication | null>(null)
+  const markRead = useCallback(() => {
+    setApplications((apps) => {
+      if (!apps || !chatWith) return apps
+      const current = apps.find((a) => a.id === chatWith.id)
+      if (!current || current.newMessages === 0) return apps
+      return apps.map((a) => (a.id === chatWith.id ? { ...a, newMessages: 0 } : a))
+    })
+  }, [chatWith])
 
   useEffect(() => {
     listMyApplications().then(setApplications).catch(() => setApplications([]))
@@ -78,15 +88,21 @@ export function CandidateHomePage({ candidate }: { candidate: CandidateMe }) {
                   <th>Role</th>
                   <th>Applied</th>
                   <th>Status</th>
+                  <th>Messages</th>
                 </tr>
               </thead>
               <tbody>
                 {applications.map((a, i) => (
-                  <tr key={`${a.jobTitle}-${i}`}>
+                  <tr key={a.id ?? i}>
                     <td>{a.slug ? <Link to={`/apply/${a.slug}`}>{a.jobTitle}</Link> : a.jobTitle}</td>
                     <td className="muted">{new Date(a.appliedAt).toLocaleDateString()}</td>
                     <td>
                       <Badge tone={a.status === 'Not progressing' ? 'neutral' : 'primary'}>{a.status}</Badge>
+                    </td>
+                    <td>
+                      <Button size="sm" variant={a.newMessages > 0 ? 'primary' : 'secondary'} onClick={() => setChatWith(a)}>
+                        {a.newMessages > 0 ? `${a.newMessages} new` : 'Open'}
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -94,6 +110,11 @@ export function CandidateHomePage({ candidate }: { candidate: CandidateMe }) {
             </table>
           )}
         </Card>
+        {chatWith && (
+          <Card className="stack" style={{ marginTop: 16 }}>
+            <CandidateThread key={chatWith.id} applicationId={chatWith.id} jobTitle={chatWith.jobTitle} onRead={markRead} />
+          </Card>
+        )}
       </main>
     </div>
   )

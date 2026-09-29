@@ -80,7 +80,7 @@ class PaasEnvironmentPostProcessorTest {
 
         assertThat(environment.getProperty(prefix + "client-id")).isEqualTo("abc");
         assertThat(environment.getProperty(prefix + "provider")).isEqualTo("google");
-        assertThat(environment.getProperty(prefix + "scope")).isEqualTo("https://www.googleapis.com/auth/calendar.events");
+        assertThat(environment.getProperty(prefix + "scope")).isEqualTo("https://www.googleapis.com/auth/calendar.events,https://www.googleapis.com/auth/gmail.send");
         assertThat(environment.getProperty(prefix + "redirect-uri")).isEqualTo("{baseUrl}/oauth2/callback/{registrationId}");
     }
 

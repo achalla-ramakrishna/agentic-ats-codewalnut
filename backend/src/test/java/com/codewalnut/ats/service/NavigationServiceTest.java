@@ -35,7 +35,14 @@ class NavigationServiceTest {
 
     @Test
     void adminSeesEverythingInOrder() {
-        assertThat(keysFor(Role.ADMIN)).containsExactly("dashboard", "jobs", "candidates", "clients",
+        assertThat(keysFor(Role.ADMIN)).containsExactly("dashboard", "jobs", "candidates", "messages", "clients",
                 "interviews", "approvals", "reports", "users", "audit-log");
+    }
+
+    @Test
+    void hiringManagersGetMessagesButNotInterviewersOrApprovers() {
+        assertThat(keysFor(Role.HIRING_MANAGER)).contains("messages");
+        assertThat(keysFor(Role.INTERVIEWER)).doesNotContain("messages");
+        assertThat(keysFor(Role.APPROVER)).doesNotContain("messages");
     }
 }

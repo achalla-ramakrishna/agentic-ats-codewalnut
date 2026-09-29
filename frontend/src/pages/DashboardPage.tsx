@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatWhen, listUpcomingInterviews, type Interview } from '../api/interviews'
+import { getInbox, type InboxItem } from '../api/messages'
 import { getDashboard, type Dashboard } from '../api/tracker'
 import { useMe } from '../auth/AuthContext'
 import { StageBar } from '../components/StageBar'
@@ -15,11 +16,17 @@ export function DashboardPage() {
   const [data, setData] = useState<Dashboard | null>(null)
   const [interviews, setInterviews] = useState<Interview[]>([])
   const seesInterviews = me.capabilities.includes('VIEW_INTERVIEWS')
+  const canMessage = me.capabilities.includes('MESSAGE_CANDIDATES')
+  const [waiting, setWaiting] = useState<InboxItem[]>([])
 
   useEffect(() => {
     getDashboard().then(setData).catch(() => setData({ openJobs: [], recentActivity: [] }))
     if (seesInterviews) listUpcomingInterviews().then(setInterviews).catch(() => setInterviews([]))
-  }, [seesInterviews])
+    if (canMessage)
+      getInbox()
+        .then((items) => setWaiting(items.filter((i) => i.awaitingReply)))
+        .catch(() => setWaiting([]))
+  }, [seesInterviews, canMessage])
 
   return (
     <div className="stack">
@@ -53,6 +60,25 @@ export function DashboardPage() {
           </Card>
         ))}
       </div>
+      {waiting.length > 0 && (
+        <Card className="stack">
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <h2>Candidates waiting for a reply</h2>
+            <Link to="/messages">All messages</Link>
+          </div>
+          <ul className="timeline">
+            {waiting.slice(0, 5).map((i) => (
+              <li key={i.applicationId}>
+                <div>
+                  <Link to={`/jobs/${i.jobId}?candidate=${i.applicationId}&tab=candidate`}>{i.candidateName}</Link> ({i.jobTitle}):{' '}
+                  {i.preview}
+                </div>
+                <div className="meta">{new Date(i.lastAt).toLocaleString()}</div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
       {interviews.length > 0 && (
         <Card className="stack">
           <div className="row" style={{ justifyContent: 'space-between' }}>
@@ -97,7 +123,9 @@ export function DashboardPage() {
                         ? 'interview scheduled'
                         : e.type === 'INTERVIEW_CANCELLED'
                           ? 'interview cancelled'
-                          : 'note'}
+                          : e.type === 'EMAIL_SENT'
+                            ? 'email sent'
+                            : 'note'}
                   {e.note && e.note !== 'Imported' ? ` — ${e.note}` : ''}
                 </div>
                 <div className="meta">

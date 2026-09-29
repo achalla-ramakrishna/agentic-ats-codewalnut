@@ -8,7 +8,8 @@ Stack: Spring Boot 3 (Java 21) + React/TypeScript (Vite) + MySQL 8.
 Status: sign-in, roles, users, audit log, and a simple **hiring tracker**
 (clients, openings, spreadsheet import, stages, notes, résumés, dashboard),
 plus **shareable job links** where candidates sign in with Google and apply, and
-**interview scheduling** on Google Calendar with a Meet link and an emailed invite.
+**interview scheduling** on Google Calendar with a Meet link and an emailed invite, and
+**messaging**: chat with candidates and within the team, and email from your Gmail with templates.
 
 - [`docs/SPEC.md`](docs/SPEC.md) — overview: goals, roles, pipeline, non-functional requirements, build plan
 - [`docs/features/`](docs/features/README.md) — one requirements file per feature, with stable requirement IDs
