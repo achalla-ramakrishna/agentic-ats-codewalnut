@@ -1,5 +1,7 @@
 package com.codewalnut.ats.controller;
 
+import com.codewalnut.ats.client.CalendarException;
+import com.codewalnut.ats.client.CalendarNotConnectedException;
 import com.codewalnut.ats.security.UnauthenticatedException;
 import com.codewalnut.ats.service.ConflictException;
 import com.codewalnut.ats.service.NotFoundException;
@@ -34,6 +36,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<Map<String, String>> handleConflict(ConflictException ex) {
         return error(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    /** 428: the SPA offers "Connect Google Calendar". */
+    @ExceptionHandler(CalendarNotConnectedException.class)
+    public ResponseEntity<Map<String, String>> handleCalendarNotConnected(CalendarNotConnectedException ex) {
+        return error(HttpStatus.PRECONDITION_REQUIRED, ex.getMessage());
+    }
+
+    @ExceptionHandler(CalendarException.class)
+    public ResponseEntity<Map<String, String>> handleCalendar(CalendarException ex) {
+        return error(HttpStatus.BAD_GATEWAY, ex.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

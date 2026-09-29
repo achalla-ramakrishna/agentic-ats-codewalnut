@@ -110,7 +110,7 @@ templates, rules and SLAs are in [pipeline.md](features/pipeline.md).
 | CAND | [Candidates](features/candidates.md) | 2 | Ready |
 | PIPE | [Pipeline](features/pipeline.md) | 2 | Ready |
 | MSG | [Email & communication](features/communication.md) | 3 | Ready |
-| INT | [Interviews & scorecards](features/interviews-and-scorecards.md) | 4 | Ready |
+| INT | [Interviews & scorecards](features/interviews-and-scorecards.md) | 4 | In progress (scheduling shipped) |
 | ASMT | [Coding assessments](features/assessments.md) | 5 | Draft |
 | SUB | [Client submissions & review](features/client-submissions.md) | 6 | Ready |
 | OFR | [Offers & placements](features/offers-and-placements.md) | 7 | Draft |
@@ -133,7 +133,8 @@ Decided in `docs/adr/0001-initial-architecture.md` and
 | Careers pages | Server-rendered by Spring Boot (Thymeleaf) for SEO |
 | Database | MySQL 8 everywhere — local dev, tests, CI and production — with Flyway migrations |
 | Background work | MySQL outbox table (`background_task`) + `@Scheduled` workers |
-| Auth | Google Workspace SSO for staff; magic links for candidates and client reviewers |
+| Auth | Google sign-in for staff and candidates (ADR-0004); magic links for client reviewers |
+| Calendar | Each recruiter's own Google Calendar + Meet; Google emails invites (ADR-0005) |
 | Search | MySQL `FULLTEXT` on candidates and parsed CVs |
 | Files | S3-compatible private storage, signed URLs |
 | AI | One `LlmService` — advisory only |

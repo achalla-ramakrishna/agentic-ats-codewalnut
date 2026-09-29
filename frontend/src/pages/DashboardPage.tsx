@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { formatWhen, listUpcomingInterviews, type Interview } from '../api/interviews'
 import { getDashboard, type Dashboard } from '../api/tracker'
 import { useMe } from '../auth/AuthContext'
 import { StageBar } from '../components/StageBar'
@@ -12,10 +13,13 @@ export function DashboardPage() {
   const stages = useStages()
   const label = (s: string | null) => stages.find((x) => x.key === s)?.label ?? s ?? ''
   const [data, setData] = useState<Dashboard | null>(null)
+  const [interviews, setInterviews] = useState<Interview[]>([])
+  const seesInterviews = me.capabilities.includes('VIEW_INTERVIEWS')
 
   useEffect(() => {
     getDashboard().then(setData).catch(() => setData({ openJobs: [], recentActivity: [] }))
-  }, [])
+    if (seesInterviews) listUpcomingInterviews().then(setInterviews).catch(() => setInterviews([]))
+  }, [seesInterviews])
 
   return (
     <div className="stack">
@@ -49,6 +53,34 @@ export function DashboardPage() {
           </Card>
         ))}
       </div>
+      {interviews.length > 0 && (
+        <Card className="stack">
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <h2>Upcoming interviews</h2>
+            <Link to="/interviews">All interviews</Link>
+          </div>
+          <ul className="timeline">
+            {interviews.slice(0, 5).map((i) => (
+              <li key={i.id}>
+                <div>
+                  <strong>{i.candidateName}</strong> ({i.jobTitle})
+                </div>
+                <div className="meta">
+                  {formatWhen(i)}
+                  {i.meetLink && (
+                    <>
+                      {' · '}
+                      <a href={i.meetLink} target="_blank" rel="noreferrer">
+                        Join
+                      </a>
+                    </>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
       {data && data.recentActivity.length > 0 && (
         <Card className="stack">
           <h2>Recent activity</h2>
@@ -61,7 +93,11 @@ export function DashboardPage() {
                     ? `added at ${label(e.toStage)}`
                     : e.type === 'STAGE_CHANGED'
                       ? `${label(e.fromStage)} → ${label(e.toStage)}`
-                      : 'note'}
+                      : e.type === 'INTERVIEW_SCHEDULED'
+                        ? 'interview scheduled'
+                        : e.type === 'INTERVIEW_CANCELLED'
+                          ? 'interview cancelled'
+                          : 'note'}
                   {e.note && e.note !== 'Imported' ? ` — ${e.note}` : ''}
                 </div>
                 <div className="meta">

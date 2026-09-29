@@ -3,7 +3,9 @@ package com.codewalnut.ats.controller;
 import com.codewalnut.ats.domain.CandidateAccount;
 import com.codewalnut.ats.dto.CandidateMeResponse;
 import com.codewalnut.ats.security.CurrentCandidateService;
+import com.codewalnut.ats.dto.InterviewDtos.CandidateInterviewResponse;
 import com.codewalnut.ats.dto.TrackerDtos.MyApplicationResponse;
+import com.codewalnut.ats.service.InterviewService;
 import com.codewalnut.ats.service.PublicJobService;
 import java.io.IOException;
 import java.util.List;
@@ -24,6 +26,7 @@ public class CandidateController {
 
     private final CurrentCandidateService currentCandidateService;
     private final PublicJobService publicJobService;
+    private final InterviewService interviewService;
 
     @GetMapping("/api/v1/candidate/applications")
     public List<MyApplicationResponse> myApplications() {
@@ -40,6 +43,11 @@ public class CandidateController {
             @RequestParam(defaultValue = "false") boolean consent,
             @RequestParam("resume") MultipartFile resume) throws IOException {
         return publicJobService.apply(currentCandidateService.require(), slug, name, phone, note, consent, resume);
+    }
+
+    @GetMapping("/api/v1/candidate/interviews")
+    public List<CandidateInterviewResponse> myInterviews() {
+        return interviewService.forCandidateEmail(currentCandidateService.require().getEmail());
     }
 
     @GetMapping("/api/v1/candidate/me")

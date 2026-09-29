@@ -27,6 +27,13 @@ server-side session (HTTP-only cookie) carrying `ROLE_STAFF` or
 `ROLE_CANDIDATE`. CSRF uses the
 `XSRF-TOKEN` cookie echoed as `X-XSRF-TOKEN`.
 
+Interviews: a recruiter connects their own Google Calendar through a second
+OAuth client registration (`google-calendar`, scope `calendar.events`,
+callback `/oauth2/callback/google-calendar`); the token stays in their
+session. `client/GoogleCalendarClient` creates the event with a Meet link and
+`sendUpdates=all`, so Google emails the invite (ADR-0005). The dev and demo
+profiles use `FakeCalendarClient`.
+
 ## Shape
 
 ```

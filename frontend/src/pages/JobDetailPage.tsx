@@ -16,6 +16,7 @@ import { ImportCandidates } from '../components/ImportCandidates'
 import { JobDetailsEditor } from '../components/JobDetailsEditor'
 import { StageSelect } from '../components/StageSelect'
 import { Button, Card, PageHeader } from '../components/ui'
+import { useOpenFromQuery } from '../components/useOpenFromQuery'
 import { useStages } from '../components/useStages'
 import '../components/tracker.css'
 
@@ -95,6 +96,7 @@ export function JobDetailPage() {
     listApplications(id).then(setRows).catch(() => setRows([]))
   }, [id])
   useEffect(load, [load])
+  useOpenFromQuery(rows, setOpen)
 
   async function onStage(row: ApplicationRow, stage: Stage) {
     const option = stages.find((s) => s.key === stage)
@@ -261,6 +263,7 @@ export function JobDetailPage() {
       </Card>
       {open && (
         <CandidateDrawer
+          key={open.id}
           row={open}
           canEdit={canEdit}
           onClose={() => setOpen(null)}

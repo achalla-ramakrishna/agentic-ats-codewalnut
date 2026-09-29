@@ -9,6 +9,7 @@ import { JobDetailPage } from './pages/JobDetailPage'
 import { JobsPage } from './pages/JobsPage'
 import { CandidateHomePage } from './pages/CandidateHomePage'
 import { ComingSoonPage } from './pages/ComingSoonPage'
+import { InterviewsPage } from './pages/InterviewsPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
 import { NoAccessPage } from './pages/NoAccessPage'
@@ -21,7 +22,7 @@ const SCREENS: Record<string, ReactElement> = {
   jobs: <JobsPage />,
   candidates: <CandidatesPage />,
   clients: <ClientsPage />,
-  interviews: <ComingSoonPage title="Interviews" chunk="chunk 4" spec="interviews-and-scorecards.md" />,
+  interviews: <InterviewsPage />,
   approvals: <ComingSoonPage title="Approvals" chunk="chunks 1 and 7" spec="requisitions.md" />,
   reports: <ComingSoonPage title="Reports" chunk="v1" spec="reports.md" />,
   users: <UsersPage />,

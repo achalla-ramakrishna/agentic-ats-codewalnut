@@ -100,6 +100,14 @@ public final class TrackerDtos {
             @NotNull Stage stage,
             @Size(max = 5000) String note) {}
 
+    /** Contact details; a blank value clears that field (the name can't be cleared). */
+    public record UpdateCandidateRequest(
+            @Size(max = 200) String name,
+            @Email @Size(max = 254) String email,
+            @Size(max = 30) String phone) {}
+
+    public record CandidateContactResponse(UUID id, String name, String email, String phone) {}
+
     public record ImportRequest(@NotBlank @Size(max = 200_000) String text, @NotNull Stage stage, boolean dryRun) {}
 
     public enum ImportOutcome { NEW, EXISTING_CANDIDATE, ALREADY_IN_OPENING, DUPLICATE_IN_PASTE, ERROR }

@@ -70,4 +70,5 @@ on the dashboard. It grows into the fuller features linked above.
 | Date | Change |
 | --- | --- |
 | 2026-09-28 | Created and shipped: clients, openings, import, pipeline stages, notes, history, two résumés per candidate, dashboard |
+| 2026-09-29 | Staff can edit a candidate's name, email and phone (see INT-15) |
 | 2026-09-29 | First stage renamed "Applied / Sourced"; openings gain job details and a share link ([job-links.md](job-links.md)) |

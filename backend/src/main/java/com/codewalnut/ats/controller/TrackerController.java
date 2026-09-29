@@ -3,6 +3,8 @@ package com.codewalnut.ats.controller;
 import com.codewalnut.ats.domain.Stage;
 import com.codewalnut.ats.dto.TrackerDtos.AddCandidateRequest;
 import com.codewalnut.ats.dto.TrackerDtos.ApplicationResponse;
+import com.codewalnut.ats.dto.TrackerDtos.CandidateContactResponse;
+import com.codewalnut.ats.dto.TrackerDtos.UpdateCandidateRequest;
 import com.codewalnut.ats.dto.TrackerDtos.ClientResponse;
 import com.codewalnut.ats.dto.TrackerDtos.CreateClientRequest;
 import com.codewalnut.ats.dto.TrackerDtos.CreateJobRequest;
@@ -109,6 +111,11 @@ public class TrackerController {
     @PatchMapping("/applications/{id}/stage")
     public ApplicationResponse moveStage(@PathVariable UUID id, @Valid @RequestBody MoveStageRequest request) {
         return trackerService.moveStage(currentUserService.require(), id, request);
+    }
+
+    @PatchMapping("/candidates/{id}")
+    public CandidateContactResponse updateCandidate(@PathVariable UUID id, @Valid @RequestBody UpdateCandidateRequest request) {
+        return trackerService.updateCandidate(currentUserService.require(), id, request);
     }
 
     @PostMapping("/applications/{id}/notes")

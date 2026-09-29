@@ -4,6 +4,7 @@ import { searchApplications, type ApplicationRow, type Stage } from '../api/trac
 import { useMe } from '../auth/AuthContext'
 import { CandidateDrawer } from '../components/CandidateDrawer'
 import { Card, PageHeader } from '../components/ui'
+import { useOpenFromQuery } from '../components/useOpenFromQuery'
 import { useStages } from '../components/useStages'
 import '../components/tracker.css'
 
@@ -22,6 +23,7 @@ export function CandidatesPage() {
     }, 250)
     return () => clearTimeout(t)
   }, [q, stage, reload])
+  useOpenFromQuery(rows, setOpen)
 
   return (
     <div className="stack">
@@ -77,6 +79,7 @@ export function CandidatesPage() {
       </Card>
       {open && (
         <CandidateDrawer
+          key={open.id}
           row={open}
           canEdit={me.capabilities.includes('MANAGE_JOBS')}
           onClose={() => setOpen(null)}

@@ -102,7 +102,7 @@ export interface HistoryEvent {
   applicationId: string
   candidateName: string
   jobTitle: string
-  type: 'CREATED' | 'STAGE_CHANGED' | 'NOTE'
+  type: 'CREATED' | 'STAGE_CHANGED' | 'NOTE' | 'INTERVIEW_SCHEDULED' | 'INTERVIEW_CANCELLED'
   fromStage: Stage | null
   toStage: Stage | null
   note: string | null

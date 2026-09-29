@@ -21,6 +21,9 @@ import org.springframework.util.StringUtils;
  *   <li>{@code GOOGLE_CLIENT_ID} + {@code GOOGLE_CLIENT_SECRET} → the Google sign-in client
  *       registration — unless the full {@code spring.security.oauth2.client.registration.google.*}
  *       properties are set, which win.
+ *   <li>The same Google client also gets a second registration, {@code google-calendar}, used
+ *       only when staff connect Google Calendar to schedule interviews (scope
+ *       {@code calendar.events}). Set {@code ATS_GOOGLE_CALENDAR_ENABLED=false} to leave it out.
  * </ul>
  */
 public class PaasEnvironmentPostProcessor implements EnvironmentPostProcessor {
@@ -28,6 +31,7 @@ public class PaasEnvironmentPostProcessor implements EnvironmentPostProcessor {
     static final String SOURCE_NAME = "mysqlUrlDatasource";
     static final String GOOGLE_SOURCE_NAME = "googleClientShortNames";
     private static final String GOOGLE_PREFIX = "spring.security.oauth2.client.registration.google.";
+    private static final String CALENDAR_PREFIX = "spring.security.oauth2.client.registration.google-calendar.";
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
@@ -47,18 +51,34 @@ public class PaasEnvironmentPostProcessor implements EnvironmentPostProcessor {
     }
 
     private static void applyGoogleClient(ConfigurableEnvironment environment) {
-        if (StringUtils.hasText(environment.getProperty(GOOGLE_PREFIX + "client-id"))) {
-            return;
-        }
-        String clientId = environment.getProperty("GOOGLE_CLIENT_ID");
-        String clientSecret = environment.getProperty("GOOGLE_CLIENT_SECRET");
-        if (!StringUtils.hasText(clientId) || !StringUtils.hasText(clientSecret)) {
-            return;
-        }
         Map<String, Object> props = new HashMap<>();
-        props.put(GOOGLE_PREFIX + "client-id", clientId.trim());
-        props.put(GOOGLE_PREFIX + "client-secret", clientSecret.trim());
-        environment.getPropertySources().addFirst(new MapPropertySource(GOOGLE_SOURCE_NAME, props));
+        String clientId = environment.getProperty(GOOGLE_PREFIX + "client-id");
+        String clientSecret = environment.getProperty(GOOGLE_PREFIX + "client-secret");
+        if (!StringUtils.hasText(clientId)) {
+            clientId = environment.getProperty("GOOGLE_CLIENT_ID");
+            clientSecret = environment.getProperty("GOOGLE_CLIENT_SECRET");
+            if (!StringUtils.hasText(clientId) || !StringUtils.hasText(clientSecret)) {
+                return;
+            }
+            clientId = clientId.trim();
+            clientSecret = clientSecret.trim();
+            props.put(GOOGLE_PREFIX + "client-id", clientId);
+            props.put(GOOGLE_PREFIX + "client-secret", clientSecret);
+        }
+        boolean calendarEnabled = !"false".equalsIgnoreCase(environment.getProperty("ATS_GOOGLE_CALENDAR_ENABLED"));
+        if (calendarEnabled && StringUtils.hasText(clientSecret)
+                && !StringUtils.hasText(environment.getProperty(CALENDAR_PREFIX + "client-id"))) {
+            props.put(CALENDAR_PREFIX + "provider", "google");
+            props.put(CALENDAR_PREFIX + "client-id", clientId);
+            props.put(CALENDAR_PREFIX + "client-secret", clientSecret);
+            props.put(CALENDAR_PREFIX + "client-name", "Google Calendar");
+            props.put(CALENDAR_PREFIX + "authorization-grant-type", "authorization_code");
+            props.put(CALENDAR_PREFIX + "redirect-uri", "{baseUrl}/oauth2/callback/{registrationId}");
+            props.put(CALENDAR_PREFIX + "scope", "https://www.googleapis.com/auth/calendar.events");
+        }
+        if (!props.isEmpty()) {
+            environment.getPropertySources().addFirst(new MapPropertySource(GOOGLE_SOURCE_NAME, props));
+        }
     }
 
     static Map<String, Object> toDatasourceProperties(String mysqlUrl) {

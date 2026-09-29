@@ -46,6 +46,28 @@ When the app is ready for real use, replace demo mode with Google sign-in.
    **Web application** → authorised redirect URI:
    `https://<your-railway-domain>/login/oauth2/code/google`
 
+### Google Calendar for interview scheduling
+
+Same Google Cloud project and OAuth client as sign-in:
+
+1. **APIs & Services → Library → Google Calendar API → Enable.**
+2. **Credentials →** your OAuth client **→ Authorised redirect URIs →** add
+   `https://<your-railway-domain>/oauth2/callback/google-calendar`
+   (keep the sign-in one too).
+3. **OAuth consent screen → Data access → Add scope →**
+   `https://www.googleapis.com/auth/calendar.events`. It is a *sensitive*
+   scope: until Google verifies the app, staff see "Google hasn't verified
+   this app" once when connecting — click **Advanced → Go to … (unsafe)**.
+   Candidates never see this; they are only asked for name and email.
+
+No new Railway variables: the calendar uses the same `GOOGLE_CLIENT_ID` /
+`GOOGLE_CLIENT_SECRET`. Deploy logs then say `Google Calendar: ENABLED`. (Set
+`ATS_GOOGLE_CALENDAR_ENABLED=false` to switch it off.)
+
+Each recruiter clicks **Connect Google Calendar** the first time they
+schedule in a session. Interviews go on *their* calendar, and Google emails the
+invitation with the Meet link to the candidate and interviewers (ADR-0005).
+
 ### Railway variables (app service)
 
 Remove `SPRING_PROFILES_ACTIVE` and `ATS_DEMO_ACCESS_CODE`, keep `MYSQL_URL`,
@@ -86,6 +108,10 @@ Never set `SPRING_PROFILES_ACTIVE=dev` on Railway.
 | Secret contains `","javascript_origins"…` | Pasted from the downloaded JSON file | Paste only the `GOCSPX-…` value |
 | Google: `redirect_uri_mismatch` | Redirect URI not registered exactly | Add `https://<domain>/login/oauth2/code/google` (no trailing slash); wait a few minutes |
 | "Sign-in was refused" for a colleague | Staff must be added first | Admin adds them under **Users** |
+| Connect Google Calendar: `redirect_uri_mismatch` | Calendar callback not registered | Add `https://<domain>/oauth2/callback/google-calendar` |
+| Scheduling says "Google Calendar refused … API is enabled" | Calendar API off in the project | Enable **Google Calendar API**, retry |
+| Google: "Access blocked: … admin" when connecting | Workspace admin restricts third-party apps | In Google Admin → Security → API controls, mark the app as trusted |
+| No Meet link on the interview | Meet disabled for the account in Workspace | Enable Google Meet for users in Google Admin |
 
 ## Reference
 

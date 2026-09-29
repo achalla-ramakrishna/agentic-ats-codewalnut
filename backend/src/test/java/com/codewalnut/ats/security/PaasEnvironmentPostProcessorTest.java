@@ -72,4 +72,24 @@ class PaasEnvironmentPostProcessorTest {
         assertThat(environment.getProperty("spring.security.oauth2.client.registration.google.client-id"))
                 .isEqualTo("long-form");
     }
+
+    @Test
+    void googleClientAlsoRegistersCalendarAccess() {
+        var environment = env(Map.of("GOOGLE_CLIENT_ID", "abc", "GOOGLE_CLIENT_SECRET", "s3cret"));
+        String prefix = "spring.security.oauth2.client.registration.google-calendar.";
+
+        assertThat(environment.getProperty(prefix + "client-id")).isEqualTo("abc");
+        assertThat(environment.getProperty(prefix + "provider")).isEqualTo("google");
+        assertThat(environment.getProperty(prefix + "scope")).isEqualTo("https://www.googleapis.com/auth/calendar.events");
+        assertThat(environment.getProperty(prefix + "redirect-uri")).isEqualTo("{baseUrl}/oauth2/callback/{registrationId}");
+    }
+
+    @Test
+    void calendarCanBeSwitchedOff() {
+        var environment = env(Map.of("GOOGLE_CLIENT_ID", "abc", "GOOGLE_CLIENT_SECRET", "s3cret",
+                "ATS_GOOGLE_CALENDAR_ENABLED", "false"));
+
+        assertThat(environment.getProperty("spring.security.oauth2.client.registration.google.client-id")).isEqualTo("abc");
+        assertThat(environment.getProperty("spring.security.oauth2.client.registration.google-calendar.client-id")).isNull();
+    }
 }

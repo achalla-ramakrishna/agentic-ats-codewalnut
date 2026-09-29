@@ -11,6 +11,8 @@ import {
   type DocumentKind,
   type HistoryEvent,
 } from '../api/tracker'
+import { updateCandidate } from '../api/interviews'
+import { InterviewsPanel } from './InterviewsPanel'
 import { Button } from './ui'
 import { useStages } from './useStages'
 
@@ -20,9 +22,68 @@ function describe(event: HistoryEvent, label: (s: string | null) => string) {
       return `Added at ${label(event.toStage)}`
     case 'STAGE_CHANGED':
       return `${label(event.fromStage)} → ${label(event.toStage)}`
+    case 'INTERVIEW_SCHEDULED':
+      return 'Interview scheduled'
+    case 'INTERVIEW_CANCELLED':
+      return 'Interview cancelled'
     default:
       return 'Note'
   }
+}
+
+function ContactForm({
+  contact,
+  onSaved,
+  onCancel,
+}: {
+  contact: { id: string; name: string; email: string | null; phone: string | null }
+  onSaved: (c: { name: string; email: string | null; phone: string | null }) => void
+  onCancel: () => void
+}) {
+  const [name, setName] = useState(contact.name)
+  const [email, setEmail] = useState(contact.email ?? '')
+  const [phone, setPhone] = useState(contact.phone ?? '')
+  const [error, setError] = useState<string | null>(null)
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault()
+    setError(null)
+    try {
+      onSaved(await updateCandidate(contact.id, { name, email, phone }))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save')
+    }
+  }
+
+  return (
+    <form className="stack" onSubmit={onSubmit} aria-label="Contact details" style={{ gap: 8 }}>
+      {error && (
+        <div role="alert" className="alert alert-error">
+          {error}
+        </div>
+      )}
+      <label className="field">
+        Name
+        <input className="input" required value={name} onChange={(e) => setName(e.target.value)} />
+      </label>
+      <label className="field">
+        Email
+        <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+      </label>
+      <label className="field">
+        Phone
+        <input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} />
+      </label>
+      <div className="row">
+        <Button type="submit" size="sm" disabled={!name.trim()}>
+          Save
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  )
 }
 
 function ResumeSlot({
@@ -104,6 +165,8 @@ export function CandidateDrawer({
   const [documents, setDocuments] = useState<CandidateDocument[]>([])
   const [note, setNote] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [contact, setContact] = useState({ name: row.name, email: row.email, phone: row.phone })
+  const [editingContact, setEditingContact] = useState(false)
 
   const load = useCallback(() => {
     getHistory(row.id).then(setHistory).catch(() => undefined)
@@ -143,24 +206,43 @@ export function CandidateDrawer({
       <aside className="drawer" aria-label={`Candidate ${row.name}`}>
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <div>
-            <h2>{row.name}</h2>
+            <h2>{contact.name}</h2>
             <div className="muted">{row.jobTitle}</div>
           </div>
           <Button variant="ghost" onClick={onClose}>
             Close
           </Button>
         </div>
-        <div className="stack" style={{ gap: 4 }}>
-          <div>
-            <span className="muted">Email:</span> {row.email ?? '—'}
+        {editingContact ? (
+          <ContactForm
+            contact={{ id: row.candidateId, ...contact }}
+            onCancel={() => setEditingContact(false)}
+            onSaved={(c) => {
+              setContact({ name: c.name, email: c.email, phone: c.phone })
+              setEditingContact(false)
+              onChanged()
+            }}
+          />
+        ) : (
+          <div className="stack" style={{ gap: 4 }}>
+            <div>
+              <span className="muted">Email:</span> {contact.email ?? '—'}
+            </div>
+            <div>
+              <span className="muted">Phone:</span> {contact.phone ?? '—'}
+            </div>
+            <div>
+              <span className="muted">Stage:</span> <strong>{row.stageLabel}</strong>
+            </div>
+            {canEdit && (
+              <div>
+                <Button size="sm" variant="ghost" onClick={() => setEditingContact(true)}>
+                  Edit contact details
+                </Button>
+              </div>
+            )}
           </div>
-          <div>
-            <span className="muted">Phone:</span> {row.phone ?? '—'}
-          </div>
-          <div>
-            <span className="muted">Stage:</span> <strong>{row.stageLabel}</strong>
-          </div>
-        </div>
+        )}
         {error && (
           <div role="alert" className="alert alert-error">
             {error}
@@ -170,6 +252,17 @@ export function CandidateDrawer({
           <ResumeSlot kind="ORIGINAL_RESUME" documents={documents} canEdit={canEdit} onUpload={onUpload} />
           <ResumeSlot kind="CODEWALNUT_RESUME" documents={documents} canEdit={canEdit} onUpload={onUpload} />
         </div>
+        <InterviewsPanel
+          applicationId={row.id}
+          candidateName={contact.name}
+          candidateEmail={contact.email}
+          jobTitle={row.jobTitle}
+          canEdit={canEdit}
+          onChanged={() => {
+            load()
+            onChanged()
+          }}
+        />
         {canEdit && (
           <form className="stack" onSubmit={onNote} style={{ gap: 8 }}>
             <label className="field">

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { formatWhen, listMyInterviews, type CandidateInterview } from '../api/interviews'
 import { listMyApplications, type MyApplication } from '../api/tracker'
 import type { CandidateMe } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
@@ -12,9 +13,11 @@ export function CandidateHomePage({ candidate }: { candidate: CandidateMe }) {
   const location = useLocation()
   const applied = (location.state as { applied?: string } | null)?.applied
   const [applications, setApplications] = useState<MyApplication[] | null>(null)
+  const [interviews, setInterviews] = useState<CandidateInterview[]>([])
 
   useEffect(() => {
     listMyApplications().then(setApplications).catch(() => setApplications([]))
+    listMyInterviews().then(setInterviews).catch(() => setInterviews([]))
   }, [])
 
   return (
@@ -40,6 +43,27 @@ export function CandidateHomePage({ candidate }: { candidate: CandidateMe }) {
           <div className="alert alert-info" style={{ marginBottom: 16 }}>
             Thanks — your application for <strong>{applied}</strong> was received. We'll be in touch.
           </div>
+        )}
+        {interviews.length > 0 && (
+          <Card className="stack" style={{ marginBottom: 16 }}>
+            <h2>Upcoming interviews</h2>
+            {interviews.map((i, n) => (
+              <div key={`${i.startAt}-${n}`} className="stack" style={{ gap: 4 }}>
+                <strong>{i.title}</strong>
+                <span>{formatWhen(i)}</span>
+                {i.meetLink && (
+                  <div>
+                    <a className="btn btn-primary btn-sm" href={i.meetLink} target="_blank" rel="noreferrer">
+                      Join Google Meet
+                    </a>
+                  </div>
+                )}
+              </div>
+            ))}
+            <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+              The invitation was also emailed to you. To reschedule, reply to that email.
+            </p>
+          </Card>
         )}
         <Card className="stack">
           <h2>My applications</h2>
