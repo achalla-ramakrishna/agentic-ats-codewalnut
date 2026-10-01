@@ -72,3 +72,4 @@ Admin (requests, retention settings); Candidates (consent, requests).
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
+| 2026-10-01 | Government IDs restricted to `VIEW_ID_DOCUMENTS`; masked Aadhaar only, no ID numbers stored; sharing with clients is explicit, revocable and audited (BGV-05, CLA-04…09, ADR-0007) |

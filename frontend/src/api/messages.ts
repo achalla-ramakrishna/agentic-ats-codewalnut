@@ -1,6 +1,6 @@
 import { api } from './client'
 
-export type MessageChannel = 'CANDIDATE' | 'TEAM'
+export type MessageChannel = 'CANDIDATE' | 'TEAM' | 'CLIENT'
 
 export interface Message {
   id: string
@@ -27,8 +27,10 @@ export interface InboxItem {
   jobId: string
   jobTitle: string
   candidateName: string
+  channel: MessageChannel
+  clientName: string | null
   lastAuthorName: string
-  lastFromCandidate: boolean
+  lastFromExternal: boolean
   preview: string
   lastAt: string
   awaitingReply: boolean

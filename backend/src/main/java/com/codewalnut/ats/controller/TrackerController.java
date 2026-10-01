@@ -3,8 +3,9 @@ package com.codewalnut.ats.controller;
 import com.codewalnut.ats.domain.Stage;
 import com.codewalnut.ats.dto.TrackerDtos.AddCandidateRequest;
 import com.codewalnut.ats.dto.TrackerDtos.ApplicationResponse;
-import com.codewalnut.ats.dto.TrackerDtos.CandidateContactResponse;
-import com.codewalnut.ats.dto.TrackerDtos.UpdateCandidateRequest;
+import com.codewalnut.ats.dto.ProfileDtos.CandidateProfile;
+import com.codewalnut.ats.dto.ProfileDtos.UpdateProfileRequest;
+import com.codewalnut.ats.service.CandidateProfileService;
 import com.codewalnut.ats.dto.TrackerDtos.ClientResponse;
 import com.codewalnut.ats.dto.TrackerDtos.CreateClientRequest;
 import com.codewalnut.ats.dto.TrackerDtos.CreateJobRequest;
@@ -41,6 +42,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class TrackerController {
 
     private final TrackerService trackerService;
+    private final CandidateProfileService candidateProfileService;
     private final CurrentUserService currentUserService;
 
     @GetMapping("/stages")
@@ -113,9 +115,14 @@ public class TrackerController {
         return trackerService.moveStage(currentUserService.require(), id, request);
     }
 
+    @GetMapping("/candidates/{id}/profile")
+    public CandidateProfile profile(@PathVariable UUID id) {
+        return candidateProfileService.profile(currentUserService.require(), id);
+    }
+
     @PatchMapping("/candidates/{id}")
-    public CandidateContactResponse updateCandidate(@PathVariable UUID id, @Valid @RequestBody UpdateCandidateRequest request) {
-        return trackerService.updateCandidate(currentUserService.require(), id, request);
+    public CandidateProfile updateCandidate(@PathVariable UUID id, @Valid @RequestBody UpdateProfileRequest request) {
+        return candidateProfileService.update(currentUserService.require(), id, request);
     }
 
     @PostMapping("/applications/{id}/notes")

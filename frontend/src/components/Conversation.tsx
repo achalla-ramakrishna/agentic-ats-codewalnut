@@ -18,6 +18,7 @@ export function Conversation({
   channel,
   candidateName,
   candidateEmail,
+  clientName,
   jobTitle,
   me,
   initialTemplate,
@@ -27,6 +28,7 @@ export function Conversation({
   channel: MessageChannel
   candidateName: string
   candidateEmail: string | null
+  clientName?: string | null
   jobTitle: string
   me: { email: string; name: string | null }
   initialTemplate?: string
@@ -116,11 +118,17 @@ export function Conversation({
       <p className="muted" style={{ margin: 0, fontSize: 13 }}>
         {isCandidate
           ? `Messages with ${candidateName}. They read and reply in their CodeWalnut candidate page${candidateEmail ? '' : ' (add their email so they can sign in)'}.`
-          : 'Internal discussion. Only CodeWalnut staff see this, never the candidate.'}
+          : channel === 'CLIENT'
+            ? `Messages with ${clientName ?? 'the client'}'s team about ${candidateName}. They see this once you share the candidate with them; the candidate never does.`
+            : 'Internal discussion. Only CodeWalnut staff see this, never the candidate.'}
       </p>
       {messages && messages.length === 0 && <span className="muted">No messages yet.</span>}
       {messages && messages.length > 0 && (
-        <ul className="chat-list" ref={listRef} aria-label={isCandidate ? 'Candidate conversation' : 'Team conversation'}>
+        <ul
+          className="chat-list"
+          ref={listRef}
+          aria-label={isCandidate ? 'Candidate conversation' : channel === 'CLIENT' ? 'Client conversation' : 'Team conversation'}
+        >
           {messages.map((m) => {
             const mine = m.authorType === 'STAFF' && m.authorEmail === me.email
             const who = m.authorType === 'CANDIDATE' ? candidateName : (m.authorName ?? m.authorEmail)
@@ -143,7 +151,12 @@ export function Conversation({
           {error}
         </div>
       )}
-      <form className="stack" onSubmit={onSubmit} aria-label={isCandidate ? 'Message candidate' : 'Message team'} style={{ gap: 8 }}>
+      <form
+        className="stack"
+        onSubmit={onSubmit}
+        aria-label={isCandidate ? 'Message candidate' : channel === 'CLIENT' ? 'Message client' : 'Message team'}
+        style={{ gap: 8 }}
+      >
         {isCandidate && (
           <label className="field">
             Start from a template
@@ -164,18 +177,24 @@ export function Conversation({
           </label>
         )}
         <label className="field">
-          {isCandidate ? 'Message' : 'Message to the team'}
+          {isCandidate ? 'Message' : channel === 'CLIENT' ? `Message to ${clientName ?? 'the client'}` : 'Message to the team'}
           <textarea
             className="textarea"
             style={{ minHeight: isCandidate ? 140 : 70, fontFamily: 'inherit', fontSize: 14 }}
             value={body}
             maxLength={10_000}
             onChange={(e) => setBody(e.target.value)}
-            placeholder={isCandidate ? 'Write to the candidate…' : 'e.g. @Priya can you take the technical round on Friday?'}
+            placeholder={
+              isCandidate
+                ? 'Write to the candidate…'
+                : channel === 'CLIENT'
+                  ? 'e.g. The Aadhaar and CodeWalnut résumé are now shared with you.'
+                  : 'e.g. @Priya can you take the technical round on Friday?'
+            }
           />
         </label>
         {isCandidate && (
-          <label className="row" style={{ gap: 8, fontSize: 14 }}>
+          <label className="row" style={{ gap: 8, fontSize: 14, flexWrap: 'nowrap', alignItems: 'flex-start' }}>
             <input
               type="checkbox"
               checked={sendEmail}

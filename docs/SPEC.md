@@ -63,6 +63,7 @@ review what CodeWalnut submits to them, via secure links (ADR-0002).
 | Interviewer | Engineers on panels | Assigned interviews, scorecards |
 | Approver | Finance / leadership | Approve requisitions and offers above thresholds |
 | Client Reviewer | External, client side | Review submissions via link, feedback, interview slots |
+| Client Contact | External, client side (e.g. Blend's hiring manager) | Sign in with Google; see only candidates and details CodeWalnut shared; message CodeWalnut (ADR-0007) |
 | Candidate | External | Apply, book slots, take assessments, respond to offers |
 
 Everyone signs in with Google: `codewalnut.com` accounts that an Admin has
@@ -104,6 +105,8 @@ templates, rules and SLAs are in [pipeline.md](features/pipeline.md).
 | AUDIT | [Audit log](features/audit-log.md) | 0 | In progress |
 | TRK | [Hiring tracker (first release)](features/hiring-tracker.md) | 1-lite | Done |
 | LINK | [Shareable job links](features/job-links.md) | 1-lite | Done |
+| BGV | [Candidate profile & background verification](features/candidate-profile-and-bgv.md) | 1-lite | Done |
+| CLA | [Client access (contacts, sharing, client chat)](features/client-access.md) | 1-lite | Done |
 | CLI | [Clients](features/clients.md) | 1 | Ready |
 | REQ | [Requisitions](features/requisitions.md) | 1 | Ready |
 | JOB | [Jobs & careers page](features/jobs-and-careers-page.md) | 1 | Ready |
@@ -192,7 +195,7 @@ ADR for any significant decision.
 | # | Chunk | Weeks | Features | Done when |
 | --- | --- | --- | --- | --- |
 | 0 | Foundations | 1 | AUTH, AUDIT, ADM (users) | A user signs in and sees role-based navigation |
-| 1-lite | Hiring tracker (done) | — | TRK, LINK | Blend interns tracked end to end: openings, import, stages, notes, résumés, dashboard; candidates apply through a shared job link |
+| 1-lite | Hiring tracker (done) | — | TRK, LINK, BGV, CLA | Blend interns tracked end to end: openings, import, stages, notes, résumés, dashboard; candidates apply through a shared job link |
 | 1 | Clients, requisitions & jobs | 2 | CLI, REQ, JOB | A public applicant appears on an internal job and a confidential client job |
 | 2 | Candidates & pipeline | 3–4 | CAND, PIPE, AI-01 | A recruiter runs a full pipeline without a spreadsheet |
 | 3 | Email | 5 | MSG | All candidate emails live on the timeline |
@@ -211,6 +214,6 @@ Feature-specific questions live in each feature file.
 - [ ] Volume: open roles, applicants/month, number of recruiters?
 - [x] Internal only, or also for clients? → **Both** (ADR-0002).
 - [x] Client engagement models? → **Both** deployed and direct placement, MVP.
-- [x] Client login in MVP? → **No**, review link only; client portal in v1.
+- [x] Client login in MVP? → First **No** (review link only); then **yes, narrowly**: client contacts sign in and see only explicitly shared candidates (ADR-0007).
 - [ ] Hosting preference; ISO 27001 / SOC 2 or client compliance constraints?
 - [ ] Product owner and pilot recruiter?

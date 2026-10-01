@@ -63,15 +63,17 @@ export function DashboardPage() {
       {waiting.length > 0 && (
         <Card className="stack">
           <div className="row" style={{ justifyContent: 'space-between' }}>
-            <h2>Candidates waiting for a reply</h2>
+            <h2>Waiting for your reply</h2>
             <Link to="/messages">All messages</Link>
           </div>
           <ul className="timeline">
             {waiting.slice(0, 5).map((i) => (
               <li key={i.applicationId}>
                 <div>
-                  <Link to={`/jobs/${i.jobId}?candidate=${i.applicationId}&tab=candidate`}>{i.candidateName}</Link> ({i.jobTitle}):{' '}
-                  {i.preview}
+                  <Link to={`/jobs/${i.jobId}?candidate=${i.applicationId}&tab=${i.channel === 'CLIENT' ? 'client' : 'candidate'}`}>
+                    {i.candidateName}
+                  </Link>{' '}
+                  ({i.channel === 'CLIENT' ? `${i.clientName ?? 'Client'} asked` : i.jobTitle}): {i.preview}
                 </div>
                 <div className="meta">{new Date(i.lastAt).toLocaleString()}</div>
               </li>

@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { getCandidateMe, getMe, getSession, logout as apiLogout } from '../api/auth'
+import { getClientMe, type ClientMe } from '../api/clients'
 import type { CandidateMe, Me } from '../api/types'
 
 type AuthState =
@@ -7,6 +8,7 @@ type AuthState =
   | { status: 'signed-out' }
   | { status: 'signed-in'; me: Me }
   | { status: 'candidate'; candidate: CandidateMe }
+  | { status: 'client'; client: ClientMe }
   | { status: 'error'; message: string }
 
 interface AuthContextValue {
@@ -27,6 +29,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setState({ status: 'signed-in', me: await getMe() })
       } else if (session.type === 'CANDIDATE') {
         setState({ status: 'candidate', candidate: await getCandidateMe() })
+      } else if (session.type === 'CLIENT') {
+        setState({ status: 'client', client: await getClientMe() })
       } else {
         setState({ status: 'signed-out' })
       }

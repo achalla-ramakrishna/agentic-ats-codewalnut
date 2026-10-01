@@ -7,6 +7,7 @@ import com.codewalnut.ats.domain.ApplicationEvent;
 import com.codewalnut.ats.domain.ApplicationEventType;
 import com.codewalnut.ats.domain.AuditAction;
 import com.codewalnut.ats.domain.CandidateAccount;
+import com.codewalnut.ats.domain.ClientContact;
 import com.codewalnut.ats.domain.Message;
 import com.codewalnut.ats.domain.MessageAuthorType;
 import com.codewalnut.ats.domain.MessageChannel;
@@ -48,6 +49,7 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final ApplicationEventRepository eventRepository;
     private final MailClient mailClient;
+    private final ClientPortalService clientPortalService;
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
 
@@ -67,6 +69,9 @@ public class MessageService {
     public MessageResponse post(AppUser actor, UUID applicationId, PostMessageRequest request, String portalUrl) {
         accessPolicy.require(actor, Capability.MESSAGE_CANDIDATES);
         Application application = application(applicationId);
+        if (request.channel() == MessageChannel.CLIENT && application.getJob().getClient() == null) {
+            throw new IllegalArgumentException("channel: this opening is internal, so there is no client to message");
+        }
         String body = request.body().strip();
         boolean email = request.sendEmail() && request.channel() == MessageChannel.CANDIDATE;
         String subject = null;
@@ -92,7 +97,7 @@ public class MessageService {
                 .emailed(email)
                 .emailMessageId(providerId)
                 .build());
-        if (request.channel() == MessageChannel.CANDIDATE) {
+        if (request.channel() != MessageChannel.TEAM) {
             application.setUpdatedAt(Instant.now());
         }
         if (email) {
@@ -109,25 +114,59 @@ public class MessageService {
         return MessageResponse.from(message);
     }
 
-    /** Latest candidate conversations, those waiting for our reply first. */
+    /** Latest conversations with candidates and clients, those waiting for our reply first. */
     @Transactional(readOnly = true)
     public List<InboxItem> inbox(AppUser actor) {
         accessPolicy.require(actor, Capability.MESSAGE_CANDIDATES);
-        Map<UUID, Message> latest = new LinkedHashMap<>();
-        for (Message m : messageRepository.findByChannelOrderByCreatedAtDesc(MessageChannel.CANDIDATE, PageRequest.of(0, 1000))) {
-            latest.putIfAbsent(m.getApplication().getId(), m);
+        Map<String, Message> latest = new LinkedHashMap<>();
+        for (Message m : messageRepository.findByChannelInOrderByCreatedAtDesc(
+                List.of(MessageChannel.CANDIDATE, MessageChannel.CLIENT), PageRequest.of(0, 1000))) {
+            latest.putIfAbsent(m.getApplication().getId() + "/" + m.getChannel(), m);
         }
         List<InboxItem> items = new ArrayList<>();
         for (Message m : latest.values()) {
             Application a = m.getApplication();
-            boolean fromCandidate = m.getAuthorType() == MessageAuthorType.CANDIDATE;
+            boolean external = m.getAuthorType() != MessageAuthorType.STAFF;
+            String author = m.getAuthorName() != null ? m.getAuthorName() : m.getAuthorEmail();
             items.add(new InboxItem(a.getId(), a.getJob().getId(), a.getJob().getTitle(), a.getCandidate().getName(),
-                    fromCandidate ? a.getCandidate().getName() : (m.getAuthorName() != null ? m.getAuthorName() : m.getAuthorEmail()),
-                    fromCandidate, preview(m.getBody()), m.getCreatedAt(), fromCandidate));
+                    m.getChannel(), a.getJob().getClient() != null ? a.getJob().getClient().getName() : null,
+                    author, external, preview(m.getBody()), m.getCreatedAt(), external));
         }
         items.sort(Comparator.comparing(InboxItem::awaitingReply).reversed()
                 .thenComparing(InboxItem::lastAt, Comparator.reverseOrder()));
         return items.size() > 200 ? items.subList(0, 200) : items;
+    }
+
+    // ---- client contacts ----
+
+    @Transactional(readOnly = true)
+    public List<CandidateMessageResponse> clientThread(ClientContact contact, UUID applicationId) {
+        Application application = clientPortalService.sharedApplication(contact, applicationId);
+        return messageRepository.findByApplicationIdAndChannelOrderByCreatedAtAsc(application.getId(), MessageChannel.CLIENT)
+                .stream()
+                .map(m -> CandidateMessageResponse.forViewer(m, MessageAuthorType.CLIENT, contact.getEmail()))
+                .toList();
+    }
+
+    @Transactional
+    public CandidateMessageResponse clientPost(ClientContact contact, UUID applicationId, String text) {
+        Application application = clientPortalService.sharedApplication(contact, applicationId);
+        long recent = messageRepository.countByApplicationIdAndChannelAndAuthorTypeAndCreatedAtAfter(application.getId(),
+                MessageChannel.CLIENT, MessageAuthorType.CLIENT, Instant.now().minus(Duration.ofHours(1)));
+        if (recent >= CANDIDATE_HOURLY_LIMIT) {
+            throw new IllegalArgumentException("You've sent a lot of messages in the last hour. Please wait a little.");
+        }
+        Message message = messageRepository.save(Message.builder()
+                .application(application)
+                .channel(MessageChannel.CLIENT)
+                .authorType(MessageAuthorType.CLIENT)
+                .authorEmail(contact.getEmail())
+                .authorName(contact.getName() != null ? contact.getName() + " (" + contact.getClient().getName() + ")"
+                        : contact.getClient().getName())
+                .body(text.strip())
+                .build());
+        application.setUpdatedAt(Instant.now());
+        return CandidateMessageResponse.forViewer(message, MessageAuthorType.CLIENT, contact.getEmail());
     }
 
     // ---- candidate ----

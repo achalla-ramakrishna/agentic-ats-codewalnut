@@ -6,7 +6,7 @@ import '../components/tracker.css'
 
 const REFRESH_MS = 30_000
 
-/** Candidate conversations, those waiting for our reply first (docs/features/communication.md). */
+/** Conversations with candidates and clients, those waiting for our reply first (docs/features/communication.md). */
 export function MessagesPage() {
   const [items, setItems] = useState<InboxItem[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -32,8 +32,8 @@ export function MessagesPage() {
         title="Messages"
         description={
           waiting > 0
-            ? `${waiting} candidate${waiting === 1 ? ' is' : 's are'} waiting for a reply.`
-            : 'Conversations with candidates. Start one from a candidate’s “Chat with candidate” tab.'
+            ? `${waiting} conversation${waiting === 1 ? ' is' : 's are'} waiting for your reply.`
+            : 'Conversations with candidates and clients. Start one from a candidate’s chat tabs.'
         }
       />
       {error && (
@@ -54,6 +54,7 @@ export function MessagesPage() {
               <thead>
                 <tr>
                   <th>Candidate</th>
+                  <th>With</th>
                   <th>Opening</th>
                   <th>Last message</th>
                   <th>When</th>
@@ -62,13 +63,16 @@ export function MessagesPage() {
               </thead>
               <tbody>
                 {items.map((i) => (
-                  <tr key={i.applicationId}>
+                  <tr key={`${i.applicationId}-${i.channel}`}>
                     <td>
-                      <Link to={`/jobs/${i.jobId}?candidate=${i.applicationId}&tab=candidate`}>{i.candidateName}</Link>
+                      <Link to={`/jobs/${i.jobId}?candidate=${i.applicationId}&tab=${i.channel === 'CLIENT' ? 'client' : 'candidate'}`}>
+                        {i.candidateName}
+                      </Link>
                     </td>
+                    <td className="muted">{i.channel === 'CLIENT' ? (i.clientName ?? 'Client') : 'Candidate'}</td>
                     <td className="muted">{i.jobTitle}</td>
                     <td style={{ maxWidth: 360 }}>
-                      <span className="muted">{i.lastFromCandidate ? '' : `${i.lastAuthorName}: `}</span>
+                      <span className="muted">{`${i.lastAuthorName}: `}</span>
                       {i.preview}
                     </td>
                     <td className="muted">{new Date(i.lastAt).toLocaleString()}</td>

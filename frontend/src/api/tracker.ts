@@ -6,7 +6,14 @@ export type Stage =
 
 export type HiringType = 'INTERNAL' | 'CLIENT_DEPLOYED' | 'DIRECT_PLACEMENT'
 export type JobStatus = 'OPEN' | 'ON_HOLD' | 'CLOSED'
-export type DocumentKind = 'ORIGINAL_RESUME' | 'CODEWALNUT_RESUME'
+export type DocumentKind =
+  | 'ORIGINAL_RESUME'
+  | 'CODEWALNUT_RESUME'
+  | 'AADHAAR'
+  | 'PAN'
+  | 'DEGREE_CERTIFICATE'
+  | 'PHOTO'
+  | 'OTHER'
 export type WorkMode = 'ONSITE' | 'HYBRID' | 'REMOTE'
 
 export const WORK_MODES: { key: WorkMode; label: string }[] = [
@@ -70,6 +77,7 @@ export interface ApplicationRow {
   id: string
   jobId: string
   jobTitle: string
+  clientName: string | null
   candidateId: string
   name: string
   email: string | null
@@ -104,7 +112,16 @@ export interface HistoryEvent {
   applicationId: string
   candidateName: string
   jobTitle: string
-  type: 'CREATED' | 'STAGE_CHANGED' | 'NOTE' | 'INTERVIEW_SCHEDULED' | 'INTERVIEW_CANCELLED' | 'EMAIL_SENT'
+  type:
+    | 'CREATED'
+    | 'STAGE_CHANGED'
+    | 'NOTE'
+    | 'INTERVIEW_SCHEDULED'
+    | 'INTERVIEW_CANCELLED'
+    | 'EMAIL_SENT'
+    | 'DOCS_REQUESTED'
+    | 'DOC_UPLOADED'
+    | 'SHARED_WITH_CLIENT'
   fromStage: Stage | null
   toStage: Stage | null
   note: string | null
@@ -186,7 +203,18 @@ export const documentUrl = (id: string, inline = false) => `/api/v1/documents/${
 export const DOCUMENT_LABELS: Record<DocumentKind, string> = {
   ORIGINAL_RESUME: 'Original résumé',
   CODEWALNUT_RESUME: 'CodeWalnut résumé',
+  AADHAAR: 'Aadhaar card (masked)',
+  PAN: 'PAN card',
+  DEGREE_CERTIFICATE: 'Degree certificate / marksheet',
+  PHOTO: 'Passport-size photo',
+  OTHER: 'Other document',
 }
+
+/** Background-verification documents, in display order. Aadhaar and PAN are government IDs. */
+export const BGV_KINDS: DocumentKind[] = ['AADHAAR', 'PAN', 'DEGREE_CERTIFICATE', 'PHOTO', 'OTHER']
+export const ID_KINDS: DocumentKind[] = ['AADHAAR', 'PAN']
+/** Kinds a candidate can upload themselves (everything except the CodeWalnut résumé). */
+export const CANDIDATE_KINDS: DocumentKind[] = ['ORIGINAL_RESUME', ...BGV_KINDS]
 
 // ---- shareable job links ----
 

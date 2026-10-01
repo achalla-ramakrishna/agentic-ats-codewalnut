@@ -15,8 +15,6 @@ import com.codewalnut.ats.domain.JobStatus;
 import com.codewalnut.ats.domain.Stage;
 import com.codewalnut.ats.dto.TrackerDtos.AddCandidateRequest;
 import com.codewalnut.ats.dto.TrackerDtos.ApplicationResponse;
-import com.codewalnut.ats.dto.TrackerDtos.CandidateContactResponse;
-import com.codewalnut.ats.dto.TrackerDtos.UpdateCandidateRequest;
 import com.codewalnut.ats.dto.TrackerDtos.CreateClientRequest;
 import com.codewalnut.ats.dto.TrackerDtos.CreateJobRequest;
 import com.codewalnut.ats.dto.TrackerDtos.DashboardResponse;
@@ -298,44 +296,6 @@ public class TrackerService {
                 .actorEmail(actor.getEmail())
                 .build());
         return ApplicationResponse.from(application, note != null ? note : lastNote(applicationId));
-    }
-
-    @Transactional
-    public CandidateContactResponse updateCandidate(AppUser actor, UUID candidateId, UpdateCandidateRequest request) {
-        accessPolicy.require(actor, Capability.MANAGE_JOBS);
-        Candidate candidate = candidateRepository.findById(candidateId)
-                .orElseThrow(() -> new NotFoundException("Candidate not found"));
-        List<String> changed = new java.util.ArrayList<>();
-        if (request.name() != null && !request.name().isBlank()) {
-            String name = request.name().trim().replaceAll("\\s+", " ");
-            if (!name.equals(candidate.getName())) {
-                candidate.setName(name);
-                changed.add("name");
-            }
-        }
-        if (request.email() != null) {
-            String email = request.email().isBlank() ? null : request.email().trim().toLowerCase(Locale.ROOT);
-            if (!java.util.Objects.equals(email, candidate.getEmail())) {
-                if (email != null && candidateRepository.findByEmail(email).filter(c -> !c.getId().equals(candidateId)).isPresent()) {
-                    throw new ConflictException("Another candidate already has this email address");
-                }
-                candidate.setEmail(email);
-                changed.add("email");
-            }
-        }
-        if (request.phone() != null) {
-            String phone = request.phone().isBlank() ? null : request.phone().replaceAll("[^0-9+]", "");
-            if (!java.util.Objects.equals(phone, candidate.getPhone())) {
-                candidate.setPhone(phone);
-                changed.add("phone");
-            }
-        }
-        if (!changed.isEmpty()) {
-            candidateRepository.save(candidate);
-            // Which fields changed, never the values: contact details stay out of the audit log.
-            auditService.record(actor, AuditAction.CANDIDATE_UPDATED, "Candidate", candidateId, Map.of("changed", changed));
-        }
-        return new CandidateContactResponse(candidate.getId(), candidate.getName(), candidate.getEmail(), candidate.getPhone());
     }
 
     @Transactional

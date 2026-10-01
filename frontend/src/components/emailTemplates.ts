@@ -47,8 +47,11 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
     label: 'Request documents',
     subject: 'Documents needed – {jobTitle}',
     body:
-      'Hi {firstName},\n\nTo move forward with your application for {jobTitle}, could you please share:\n\n' +
-      '- Your latest résumé\n- Your degree certificate or final-semester marksheet\n- A government ID\n\nBest regards,\n{senderName}\nCodeWalnut',
+      'Hi {firstName},\n\nTo complete your onboarding and background verification for {jobTitle}, please upload these on your CodeWalnut candidate page:\n\n' +
+      '- Masked Aadhaar card (download it from myaadhaar.uidai.gov.in; only the last 4 digits are visible)\n' +
+      '- PAN card\n- Degree certificate or final-semester marksheet\n- A recent passport-size photo\n\n' +
+      'Please also check that your mobile number, date of birth and addresses are filled in under "My profile".\n\n' +
+      'Sign in with Google using this email address. Please do not send these documents by email.\n\nBest regards,\n{senderName}\nCodeWalnut',
   },
   {
     key: 'selected',

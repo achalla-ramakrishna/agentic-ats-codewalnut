@@ -6,5 +6,8 @@ public enum ApplicationEventType {
     NOTE,
     INTERVIEW_SCHEDULED,
     INTERVIEW_CANCELLED,
-    EMAIL_SENT
+    EMAIL_SENT,
+    DOCS_REQUESTED,
+    DOC_UPLOADED,
+    SHARED_WITH_CLIENT
 }

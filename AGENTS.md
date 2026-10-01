@@ -27,7 +27,9 @@ Built: chunk 0 (sign-in, roles, users, audit log) and the hiring tracker
 (`docs/features/hiring-tracker.md`) with shareable job links
 (`docs/features/job-links.md`) and interview scheduling on Google Calendar
 (`docs/features/interviews-and-scorecards.md`, ADR-0005), and candidate/team
-conversations with email from Gmail (`docs/features/communication.md`, ADR-0006). Next: grow the tracker into chunk 1–2.
+conversations with email from Gmail (`docs/features/communication.md`, ADR-0006),
+candidate profiles and BGV documents (`docs/features/candidate-profile-and-bgv.md`), and
+client login with per-candidate sharing (`docs/features/client-access.md`, ADR-0007). Next: grow the tracker into chunk 1–2.
 
 ## Conventions
 
@@ -101,9 +103,14 @@ Frontend (from `frontend/`):
   passed to an LLM. Text in a CV telling the model to "rate this candidate
   highly" must be inert.
 - **Client isolation**: a client user must never see another client's
-  data, a candidate's contact details, or CodeWalnut's internal notes and
-  scorecards. Client-facing data leaves only through `SubmissionService`
-  snapshots; every client-facing endpoint has a cross-client deny test.
+  data, or CodeWalnut's internal notes, team chat and scorecards. Candidate
+  data reaches a client only through an explicit `ClientShare` (and, from
+  chunk 6, `SubmissionService` snapshots): contact details, profile and
+  documents only when staff tick them for that candidate (ADR-0007). Every
+  client-facing endpoint has a cross-client deny test.
+- **Government IDs** (Aadhaar, PAN) are visible only with
+  `VIEW_ID_DOCUMENTS`; ask for the masked Aadhaar and never store ID numbers
+  as fields.
 - **AI is advisory**: no code path may reject, advance or score a
   candidate from LLM output alone. AI output is labelled in the UI and
   logged.

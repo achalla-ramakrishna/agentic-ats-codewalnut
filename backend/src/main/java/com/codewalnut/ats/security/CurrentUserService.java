@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * Resolves the signed-in staff AppUser from the session on every request, so role changes and
- * deactivation take effect immediately rather than at the next sign-in. Candidate sessions are
- * refused (403) — no staff API is reachable by a candidate.
+ * deactivation take effect immediately rather than at the next sign-in. Candidate and client
+ * sessions are refused (403) — no staff API is reachable by them.
  */
 @Component
 @RequiredArgsConstructor
@@ -27,7 +27,8 @@ public class CurrentUserService {
             throw new UnauthenticatedException("Not signed in");
         }
         if (auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals(SessionType.CANDIDATE.authority()))) {
+                .anyMatch(a -> a.getAuthority().equals(SessionType.CANDIDATE.authority())
+                        || a.getAuthority().equals(SessionType.CLIENT.authority()))) {
             throw new AccessDeniedException("Staff only");
         }
         String email = auth.getName().toLowerCase(Locale.ROOT);

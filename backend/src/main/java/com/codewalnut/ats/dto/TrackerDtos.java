@@ -79,8 +79,8 @@ public final class TrackerDtos {
     public record MyApplicationResponse(UUID id, String slug, String jobTitle, String status, Instant appliedAt, long newMessages) {}
 
     public record ApplicationResponse(
-            UUID id, UUID jobId, String jobTitle, UUID candidateId, String name, String email, String phone,
-            Stage stage, String stageLabel, Instant updatedAt, String lastNote, Set<DocumentKind> documents) {
+            UUID id, UUID jobId, String jobTitle, String clientName, UUID candidateId, String name, String email,
+            String phone, Stage stage, String stageLabel, Instant updatedAt, String lastNote, Set<DocumentKind> documents) {
 
         public static ApplicationResponse from(Application a, String lastNote) {
             return from(a, lastNote, Set.of());
@@ -88,7 +88,7 @@ public final class TrackerDtos {
 
         public static ApplicationResponse from(Application a, String lastNote, Set<DocumentKind> documents) {
             return new ApplicationResponse(a.getId(), a.getJob().getId(), a.getJob().getTitle(),
-                    a.getCandidate().getId(), a.getCandidate().getName(), a.getCandidate().getEmail(),
+                    a.getJob().getClient() != null ? a.getJob().getClient().getName() : null, a.getCandidate().getId(), a.getCandidate().getName(), a.getCandidate().getEmail(),
                     a.getCandidate().getPhone(), a.getStage(), a.getStage().getLabel(), a.getUpdatedAt(), lastNote,
                     documents);
         }
@@ -100,14 +100,6 @@ public final class TrackerDtos {
             @Size(max = 30) String phone,
             @NotNull Stage stage,
             @Size(max = 5000) String note) {}
-
-    /** Contact details; a blank value clears that field (the name can't be cleared). */
-    public record UpdateCandidateRequest(
-            @Size(max = 200) String name,
-            @Email @Size(max = 254) String email,
-            @Size(max = 30) String phone) {}
-
-    public record CandidateContactResponse(UUID id, String name, String email, String phone) {}
 
     public record ImportRequest(@NotBlank @Size(max = 200_000) String text, @NotNull Stage stage, boolean dryRun) {}
 

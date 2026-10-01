@@ -106,3 +106,4 @@ flow back into the pipeline.
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md; review link confirmed as enough for MVP, commercials deferred to v1 |
+| 2026-10-01 | Client contacts can now sign in and see explicitly shared candidates ([client-access.md](client-access.md), ADR-0007); submissions with snapshots and feedback stay in this chunk |

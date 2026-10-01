@@ -2,7 +2,12 @@ package com.codewalnut.ats.controller;
 
 import com.codewalnut.ats.domain.CandidateDocument;
 import com.codewalnut.ats.domain.DocumentKind;
+import com.codewalnut.ats.dto.ProfileDtos.DocumentKindOption;
+import com.codewalnut.ats.dto.ProfileDtos.DocumentRequestResponse;
+import com.codewalnut.ats.dto.ProfileDtos.RequestDocumentsRequest;
 import com.codewalnut.ats.repository.CandidateDocumentRepository;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestBody;
 import com.codewalnut.ats.security.CurrentUserService;
 import com.codewalnut.ats.service.DocumentService;
 import java.io.IOException;
@@ -44,9 +49,31 @@ public class DocumentController {
         return documentService.upload(currentUserService.require(), id, kind, file);
     }
 
+    @GetMapping("/document-kinds")
+    public List<DocumentKindOption> kinds() {
+        return java.util.Arrays.stream(DocumentKind.values())
+                .map(k -> new DocumentKindOption(k, k.getLabel(), k.isSensitive(), k.isCandidateUploadable()))
+                .toList();
+    }
+
+    @GetMapping("/candidates/{id}/document-requests")
+    public List<DocumentRequestResponse> requests(@PathVariable UUID id) {
+        return documentService.requests(currentUserService.require(), id);
+    }
+
+    @PostMapping("/candidates/{id}/document-requests")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<DocumentRequestResponse> request(@PathVariable UUID id, @Valid @RequestBody RequestDocumentsRequest body) {
+        return documentService.request(currentUserService.require(), id, body.kinds());
+    }
+
     @GetMapping("/documents/{id}")
     public ResponseEntity<byte[]> download(@PathVariable UUID id, @RequestParam(defaultValue = "false") boolean inline) {
-        CandidateDocument document = documentService.download(currentUserService.require(), id);
+        return file(documentService.download(currentUserService.require(), id), inline);
+    }
+
+    /** The file as a download (or inline view), never cached, never content-sniffed. */
+    static ResponseEntity<byte[]> file(CandidateDocument document, boolean inline) {
         ContentDisposition disposition = (inline ? ContentDisposition.inline() : ContentDisposition.attachment())
                 .filename(document.getFileName())
                 .build();

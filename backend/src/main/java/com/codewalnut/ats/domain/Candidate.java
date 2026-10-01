@@ -39,6 +39,34 @@ public class Candidate {
     @Column(length = 30)
     private String phone;
 
+    @Column(name = "date_of_birth")
+    private java.time.LocalDate dateOfBirth;
+
+    @Column(name = "current_address", length = 1000)
+    private String currentAddress;
+
+    @Column(name = "permanent_address", length = 1000)
+    private String permanentAddress;
+
+    @Column(length = 200)
+    private String college;
+
+    @Column(length = 200)
+    private String degree;
+
+    @Column(name = "graduation_year")
+    private Integer graduationYear;
+
+    @Column(name = "linkedin_url", length = 300)
+    private String linkedinUrl;
+
+    /** Name and phone of someone to contact in an emergency. */
+    @Column(name = "emergency_contact", length = 300)
+    private String emergencyContact;
+
+    @Column(name = "profile_updated_at")
+    private Instant profileUpdatedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

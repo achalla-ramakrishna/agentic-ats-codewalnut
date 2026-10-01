@@ -14,7 +14,7 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
 
     List<Message> findByApplicationIdAndChannelOrderByCreatedAtAsc(UUID applicationId, MessageChannel channel);
 
-    List<Message> findByChannelOrderByCreatedAtDesc(MessageChannel channel, Pageable pageable);
+    List<Message> findByChannelInOrderByCreatedAtDesc(java.util.Collection<MessageChannel> channels, Pageable pageable);
 
     long countByApplicationIdAndChannelAndAuthorTypeAndCreatedAtAfter(
             UUID applicationId, MessageChannel channel, MessageAuthorType authorType, Instant after);

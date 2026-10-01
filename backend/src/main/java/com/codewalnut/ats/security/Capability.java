@@ -11,6 +11,10 @@ public enum Capability {
     VIEW_CANDIDATES,
     /** Message and email candidates; take part in team chat. */
     MESSAGE_CANDIDATES,
+    /** See and upload government ID documents (Aadhaar, PAN). */
+    VIEW_ID_DOCUMENTS,
+    /** Choose what a client sees about a candidate. */
+    SHARE_WITH_CLIENTS,
     VIEW_CLIENTS,
     MANAGE_CLIENTS,
     VIEW_INTERVIEWS,

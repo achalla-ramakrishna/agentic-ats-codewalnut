@@ -32,20 +32,32 @@ public final class MessageDtos {
         }
     }
 
-    /** What a candidate sees: no staff email addresses, no ids of other records. */
+    /**
+     * What a candidate or client contact sees: no staff email addresses, no ids of other records.
+     */
     public record CandidateMessageResponse(
             boolean fromMe, String authorName, String subject, String body, Instant createdAt) {
 
         public static CandidateMessageResponse from(Message m) {
-            boolean mine = m.getAuthorType() == MessageAuthorType.CANDIDATE;
+            return forViewer(m, MessageAuthorType.CANDIDATE, m.getAuthorEmail());
+        }
+
+        public static CandidateMessageResponse forViewer(Message m, MessageAuthorType viewer, String viewerEmail) {
+            boolean mine = m.getAuthorType() == viewer && m.getAuthorEmail().equalsIgnoreCase(viewerEmail);
             String author = mine ? "You"
-                    : (m.getAuthorName() != null ? m.getAuthorName() + ", CodeWalnut" : "CodeWalnut");
+                    : m.getAuthorType() == MessageAuthorType.STAFF
+                            ? (m.getAuthorName() != null ? m.getAuthorName() + ", CodeWalnut" : "CodeWalnut")
+                            : (m.getAuthorName() != null ? m.getAuthorName() : m.getAuthorEmail());
             return new CandidateMessageResponse(mine, author, m.getSubject(), m.getBody(), m.getCreatedAt());
         }
     }
 
-    /** One candidate conversation in the staff inbox. */
+    /**
+     * One conversation in the staff inbox: with a candidate (CANDIDATE) or with the client about a
+     * candidate (CLIENT). lastFromExternal: the last message came from the candidate or client.
+     */
     public record InboxItem(
-            UUID applicationId, UUID jobId, String jobTitle, String candidateName, String lastAuthorName,
-            boolean lastFromCandidate, String preview, Instant lastAt, boolean awaitingReply) {}
+            UUID applicationId, UUID jobId, String jobTitle, String candidateName, MessageChannel channel,
+            String clientName, String lastAuthorName, boolean lastFromExternal, String preview, Instant lastAt,
+            boolean awaitingReply) {}
 }

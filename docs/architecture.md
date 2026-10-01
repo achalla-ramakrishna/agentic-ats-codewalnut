@@ -40,6 +40,14 @@ also email a candidate message through `client/GmailClient` (scope
 `gmail.send`, same Google connection as the calendar, ADR-0006); dev and demo
 use `FakeMailClient`.
 
+Client access (ADR-0007): `SignInService` routes an active `ClientContact`
+to a `CLIENT` session (`CurrentClientService`, `/api/v1/client/**`). Candidate
+data reaches a client only through a `ClientShare` (one per application:
+contact details, profile and chosen document versions, revocable); the
+client portal reads only active shares of the contact's own client.
+Background-verification documents (`DocumentKind` Aadhaar, PAN, degree,
+photo) live with résumés; government IDs need `VIEW_ID_DOCUMENTS`.
+
 ## Shape
 
 ```

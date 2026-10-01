@@ -111,4 +111,5 @@ Planned:
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
+| 2026-10-01 | Client chat per shared candidate (`CLIENT` channel, CLA-10); the Request documents template points candidates to upload in their page |
 | 2026-09-29 | First release: candidate and team chat, email from the sender's Gmail with templates, stage-change prompts, Messages inbox (MSG-09…MSG-17, ADR-0006) |

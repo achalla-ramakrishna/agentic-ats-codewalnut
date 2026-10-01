@@ -29,6 +29,8 @@ here holds the detailed, testable requirements for one feature.
 | AUDIT | [Audit log](audit-log.md) | 0 | In progress |
 | TRK | [Hiring tracker (first release)](hiring-tracker.md) | 1-lite | Done |
 | LINK | [Shareable job links](job-links.md) | 1-lite | Done |
+| BGV | [Candidate profile & background verification](candidate-profile-and-bgv.md) | 1-lite | Done |
+| CLA | [Client access (contacts, sharing, client chat)](client-access.md) | 1-lite | Done |
 | CLI | [Clients](clients.md) | 1 | Ready |
 | REQ | [Requisitions](requisitions.md) | 1 | Ready |
 | JOB | [Jobs & careers page](jobs-and-careers-page.md) | 1 | Ready |

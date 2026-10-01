@@ -62,7 +62,7 @@ export interface Page<T> {
   totalPages: number
 }
 
-export type SessionType = 'STAFF' | 'CANDIDATE'
+export type SessionType = 'STAFF' | 'CANDIDATE' | 'CLIENT'
 
 export interface Session {
   type: SessionType | null

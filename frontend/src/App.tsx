@@ -4,6 +4,7 @@ import { useAuth } from './auth/AuthContext'
 import { AppShell } from './components/AppShell'
 import { AuditLogPage } from './pages/AuditLogPage'
 import { CandidatesPage } from './pages/CandidatesPage'
+import { ClientHomePage } from './pages/ClientHomePage'
 import { ClientsPage } from './pages/ClientsPage'
 import { JobDetailPage } from './pages/JobDetailPage'
 import { JobsPage } from './pages/JobsPage'
@@ -69,6 +70,9 @@ export function App() {
         <Route path="*" element={<CandidateHomePage candidate={state.candidate} />} />
       </Routes>
     )
+  }
+  if (state.status === 'client') {
+    return <ClientHomePage client={state.client} />
   }
   if (state.status === 'signed-out') {
     return (

@@ -7,6 +7,33 @@ const REFRESH_MS = 30_000
 
 /** The candidate's conversation with CodeWalnut about one application. */
 export function CandidateThread({ applicationId, jobTitle, onRead }: { applicationId: string; jobTitle: string; onRead?: () => void }) {
+  const load = useCallback(() => listMyMessages(applicationId), [applicationId])
+  const send = useCallback((body: string) => postMyMessage(applicationId, body), [applicationId])
+  return (
+    <ExternalThread
+      title={`Messages about ${jobTitle}`}
+      emptyText="No messages yet. Have a question about your application? Ask here and our team will reply."
+      load={load}
+      send={send}
+      onRead={onRead}
+    />
+  )
+}
+
+/** A conversation with CodeWalnut, as seen by someone outside it (a candidate or a client contact). */
+export function ExternalThread({
+  title,
+  emptyText,
+  load: fetchMessages,
+  send,
+  onRead,
+}: {
+  title: string
+  emptyText: string
+  load: () => Promise<CandidateMessage[]>
+  send: (body: string) => Promise<unknown>
+  onRead?: () => void
+}) {
   const [messages, setMessages] = useState<CandidateMessage[] | null>(null)
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
@@ -14,13 +41,13 @@ export function CandidateThread({ applicationId, jobTitle, onRead }: { applicati
   const listRef = useRef<HTMLUListElement>(null)
 
   const load = useCallback(() => {
-    listMyMessages(applicationId)
+    fetchMessages()
       .then((m) => {
         setMessages(m)
         onRead?.()
       })
       .catch(() => setMessages((m) => m ?? []))
-  }, [applicationId, onRead])
+  }, [fetchMessages, onRead])
 
   useEffect(() => {
     load()
@@ -39,7 +66,7 @@ export function CandidateThread({ applicationId, jobTitle, onRead }: { applicati
     setBusy(true)
     setError(null)
     try {
-      await postMyMessage(applicationId, text)
+      await send(text)
       setText('')
       load()
     } catch (e) {
@@ -51,10 +78,10 @@ export function CandidateThread({ applicationId, jobTitle, onRead }: { applicati
 
   return (
     <div className="chat">
-      <h3 style={{ margin: 0 }}>Messages about {jobTitle}</h3>
+      <h3 style={{ margin: 0 }}>{title}</h3>
       {messages && messages.length === 0 && (
         <p className="muted" style={{ margin: 0 }}>
-          No messages yet. Have a question about your application? Ask here and our team will reply.
+          {emptyText}
         </p>
       )}
       {messages && messages.length > 0 && (

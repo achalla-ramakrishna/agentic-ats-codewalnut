@@ -168,3 +168,4 @@ Passwords, self-registration, staff MFA beyond what Google enforces.
 | 2026-09-25 | Google sign-in opened to any Google account: AUTH-02, AUTH-03 changed; AUTH-18…20 added (candidates with personal Gmail); ADR-0004 |
 | 2026-09-25 | AUTH-21: demo profile with access code, so the Railway preview works before Google sign-in is configured |
 | 2026-09-29 | New capability `MESSAGE_CANDIDATES` for Admin, Recruiter, Hiring Manager, Account Manager (MSG-09) |
+| 2026-10-01 | Client contacts sign in with Google into a `CLIENT` session (CLA-02); new capabilities `VIEW_ID_DOCUMENTS` and `SHARE_WITH_CLIENTS` for Admin, Recruiter, Account Manager (ADR-0007) |

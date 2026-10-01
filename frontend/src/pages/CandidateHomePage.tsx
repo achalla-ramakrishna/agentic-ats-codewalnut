@@ -5,6 +5,7 @@ import { listMyApplications, type MyApplication } from '../api/tracker'
 import type { CandidateMe } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import { CandidateThread } from '../components/CandidateThread'
+import { MyProfileCard } from '../components/MyProfileCard'
 import { Badge, Button, Card, PageHeader } from '../components/ui'
 import './CandidateHomePage.css'
 
@@ -115,6 +116,7 @@ export function CandidateHomePage({ candidate }: { candidate: CandidateMe }) {
             <CandidateThread key={chatWith.id} applicationId={chatWith.id} jobTitle={chatWith.jobTitle} onRead={markRead} />
           </Card>
         )}
+        <MyProfileCard />
       </main>
     </div>
   )
