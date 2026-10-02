@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   addCandidate,
@@ -20,6 +20,23 @@ import { Button, Card, PageHeader } from '../components/ui'
 import { useOpenFromQuery } from '../components/useOpenFromQuery'
 import { useStages } from '../components/useStages'
 import '../components/tracker.css'
+
+/**
+ * A search made only of digits (and spaces, +, -, brackets) is a phone number: matched on
+ * digits, ignoring a +91 prefix. Otherwise every word must appear in the name or email.
+ */
+export function matchesSearch(row: ApplicationRow, query: string): boolean {
+  const q = query.trim().toLowerCase()
+  if (!q) return true
+  if (/^[\d\s+()-]+$/.test(q)) {
+    let digits = q.replace(/\D/g, '')
+    if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2)
+    return digits.length >= 3 && (row.phone ?? '').replace(/\D/g, '').includes(digits)
+  }
+  return q
+    .split(/\s+/)
+    .every((word) => row.name.toLowerCase().includes(word) || (row.email ?? '').toLowerCase().includes(word))
+}
 
 function AddCandidateForm({ jobId, onAdded, onCancel }: { jobId: string; onAdded: () => void; onCancel: () => void }) {
   const [name, setName] = useState('')
@@ -87,6 +104,8 @@ export function JobDetailPage() {
   const [job, setJob] = useState<Job | null>(null)
   const [rows, setRows] = useState<ApplicationRow[] | null>(null)
   const [filter, setFilter] = useState<Stage | null>(null)
+  const [query, setQuery] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
   const [panel, setPanel] = useState<'none' | 'add' | 'import'>('none')
   const [open, setOpen] = useState<ApplicationRow | null>(null)
   const [openTab, setOpenTab] = useState<DrawerTab>('profile')
@@ -127,10 +146,26 @@ export function JobDetailPage() {
     }
   }
 
+  // Press "/" anywhere on the page to jump to the search box.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null
+      const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
+      if (e.key === '/' && !typing) {
+        e.preventDefault()
+        searchRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   if (error && !job) return <p role="alert" className="alert alert-error">{error}</p>
   if (!job) return <p className="muted">Loading…</p>
 
-  const visible = (rows ?? []).filter((r) => !filter || r.stage === filter)
+  const visible = (rows ?? []).filter((r) => (!filter || r.stage === filter) && matchesSearch(r, query))
+  const filtering = query.trim() !== '' || filter !== null
+
 
   return (
     <div className="stack">
@@ -215,6 +250,28 @@ export function JobDetailPage() {
           }}
         />
       )}
+      <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
+        <input
+          ref={searchRef}
+          className="input"
+          type="search"
+          aria-label="Search candidates in this opening"
+          placeholder="Search by name, email or phone  ( / )"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setQuery('')
+            if (e.key === 'Enter' && visible.length === 1) openDrawer(visible[0])
+          }}
+          style={{ flex: '1 1 320px', maxWidth: 480 }}
+        />
+        {rows && filtering && (
+          <span className="muted" role="status" style={{ fontSize: 14 }}>
+            Showing {visible.length} of {rows.length}
+            {visible.length === 1 && query.trim() ? ' · press Enter to open' : ''}
+          </span>
+        )}
+      </div>
       <div className="stage-chips" role="group" aria-label="Filter by stage">
         <button type="button" className="stage-chip" aria-pressed={filter === null} onClick={() => setFilter(null)}>
           All <strong>{job.total}</strong>
@@ -241,6 +298,24 @@ export function JobDetailPage() {
           <p className="muted" style={{ margin: 0 }}>
             No candidates yet. Use <strong>Import from spreadsheet</strong> to paste your list.
           </p>
+        )}
+        {rows && rows.length > 0 && visible.length === 0 && (
+          <div className="row" style={{ gap: 12 }}>
+            <span className="muted">
+              No candidates match{query.trim() ? ` “${query.trim()}”` : ''}
+              {filter ? ` in ${stages.find((s) => s.key === filter)?.label ?? filter}` : ''}.
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setQuery('')
+                setFilter(null)
+              }}
+            >
+              Clear search
+            </Button>
+          </div>
         )}
         {visible.length > 0 && (
           <div className="table-wrap">

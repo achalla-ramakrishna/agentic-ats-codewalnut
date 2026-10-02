@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-02-opening-search',
+    date: '2026-10-02',
+    title: 'Search candidates in an opening',
+    summary: 'No more scrolling: type a name, email or phone number at the top of the candidate list to find someone in that opening.',
+    steps: [
+      'Open an opening and type in the search box above the stage buttons (or press / to jump there).',
+      'It works together with the stage buttons, e.g. Interviewed + “kumar”.',
+      'When only one candidate matches, press Enter to open them. Esc clears the search.',
+    ],
+    capability: 'VIEW_CANDIDATES',
+  },
+  {
     id: '2026-10-02-whatsapp',
     date: '2026-10-02',
     title: 'WhatsApp from the candidate chat',
