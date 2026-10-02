@@ -72,7 +72,8 @@ describe("What's new", () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Dismiss' }))
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
-    expect(JSON.parse(localStorage.getItem('ats.whatsNew.seen.panel@codewalnut.test')!)).toContain(WHATS_NEW[0].id)
+    const visible = WHATS_NEW.filter((e) => !e.capability || interviewer.capabilities.includes(e.capability))
+    expect(JSON.parse(localStorage.getItem('ats.whatsNew.seen.panel@codewalnut.test')!)).toEqual(visible.map((e) => e.id))
   })
 
   it('entries have unique ids and are newest first', () => {
