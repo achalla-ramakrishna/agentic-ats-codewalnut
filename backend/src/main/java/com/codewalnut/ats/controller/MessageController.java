@@ -6,6 +6,7 @@ import com.codewalnut.ats.dto.MessageDtos.CandidatePostRequest;
 import com.codewalnut.ats.dto.MessageDtos.InboxItem;
 import com.codewalnut.ats.dto.MessageDtos.MessageResponse;
 import com.codewalnut.ats.dto.MessageDtos.PostMessageRequest;
+import com.codewalnut.ats.dto.MessageDtos.WhatsAppStatusResponse;
 import com.codewalnut.ats.security.CurrentCandidateService;
 import com.codewalnut.ats.security.CurrentUserService;
 import com.codewalnut.ats.service.MessageService;
@@ -41,6 +42,11 @@ public class MessageController {
     public MessageResponse post(@PathVariable UUID id, @Valid @RequestBody PostMessageRequest request) {
         String portal = ServletUriComponentsBuilder.fromCurrentContextPath().path("/").toUriString();
         return messageService.post(currentUserService.require(), id, request, portal);
+    }
+
+    @GetMapping("/api/v1/whatsapp/status")
+    public WhatsAppStatusResponse whatsAppStatus() {
+        return messageService.whatsAppStatus(currentUserService.require());
     }
 
     @GetMapping("/api/v1/messages/inbox")

@@ -92,6 +92,7 @@ export function ExternalThread({
               <div className="chat-body">{m.body}</div>
               <div className="chat-meta">
                 {m.authorName} · {new Date(m.createdAt).toLocaleString()}
+                {m.viaWhatsApp ? ' · WhatsApp' : ''}
               </div>
             </li>
           ))}

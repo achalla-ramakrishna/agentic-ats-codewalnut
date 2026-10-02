@@ -1,6 +1,9 @@
 package com.codewalnut.ats.service;
 
+import com.codewalnut.ats.client.CalendarException;
 import com.codewalnut.ats.client.MailClient;
+import com.codewalnut.ats.client.WhatsAppClient;
+import com.codewalnut.ats.config.WhatsAppProperties;
 import com.codewalnut.ats.domain.AppUser;
 import com.codewalnut.ats.domain.Application;
 import com.codewalnut.ats.domain.ApplicationEvent;
@@ -15,6 +18,9 @@ import com.codewalnut.ats.dto.MessageDtos.CandidateMessageResponse;
 import com.codewalnut.ats.dto.MessageDtos.InboxItem;
 import com.codewalnut.ats.dto.MessageDtos.MessageResponse;
 import com.codewalnut.ats.dto.MessageDtos.PostMessageRequest;
+import com.codewalnut.ats.dto.MessageDtos.WhatsAppStatusResponse;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import com.codewalnut.ats.repository.ApplicationEventRepository;
 import com.codewalnut.ats.repository.ApplicationRepository;
 import com.codewalnut.ats.repository.MessageRepository;
@@ -49,6 +55,8 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final ApplicationEventRepository eventRepository;
     private final MailClient mailClient;
+    private final WhatsAppClient whatsAppClient;
+    private final WhatsAppProperties whatsAppProperties;
     private final ClientPortalService clientPortalService;
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
@@ -73,7 +81,17 @@ public class MessageService {
             throw new IllegalArgumentException("channel: this opening is internal, so there is no client to message");
         }
         String body = request.body().strip();
-        boolean email = request.sendEmail() && request.channel() == MessageChannel.CANDIDATE;
+        boolean toCandidate = request.channel() == MessageChannel.CANDIDATE;
+        boolean email = request.sendEmail() && toCandidate;
+        boolean whatsapp = request.sendWhatsApp() && toCandidate;
+        String phone = null;
+        if (whatsapp) {
+            phone = PhoneNumbers.forWhatsApp(application.getCandidate().getPhone(), whatsAppProperties.defaultCountryCode());
+            if (phone == null) {
+                throw new IllegalArgumentException("phone: add the candidate's mobile number first (with country code if outside India)");
+            }
+        }
+        // Email first: if it fails nothing has gone out yet, so nothing is saved.
         String subject = null;
         String providerId = null;
         if (email) {
@@ -86,6 +104,30 @@ public class MessageService {
                     : "Your application for " + application.getJob().getTitle() + " at CodeWalnut";
             providerId = mailClient.send(new MailClient.Email(to, subject, emailBody(body, to, portalUrl)));
         }
+        List<String> warnings = new ArrayList<>();
+        String whatsappStatus = null;
+        String whatsappId = null;
+        String whatsappLink = null;
+        if (whatsapp) {
+            String text = body + "\n\nReply here or see your application at " + portalUrl;
+            if (whatsAppClient.apiEnabled()) {
+                try {
+                    whatsappId = whatsAppClient.send(new WhatsAppClient.Outgoing(phone,
+                            firstName(application.getCandidate().getName()), application.getJob().getTitle(), text,
+                            withinReplyWindow(applicationId)));
+                    whatsappStatus = "SENT";
+                } catch (CalendarException e) {
+                    if (!email) {
+                        throw e; // nothing went out
+                    }
+                    warnings.add("The email was sent, but WhatsApp failed: " + e.getMessage());
+                }
+            } else {
+                // No Business API: the recruiter's browser opens WhatsApp with the text ready.
+                whatsappStatus = "OPENED";
+                whatsappLink = "https://wa.me/" + phone + "?text=" + URLEncoder.encode(text, StandardCharsets.UTF_8).replace("+", "%20");
+            }
+        }
         Message message = messageRepository.save(Message.builder()
                 .application(application)
                 .channel(request.channel())
@@ -96,6 +138,8 @@ public class MessageService {
                 .body(body)
                 .emailed(email)
                 .emailMessageId(providerId)
+                .whatsappStatus(whatsappStatus)
+                .whatsappMessageId(whatsappId)
                 .build());
         if (request.channel() != MessageChannel.TEAM) {
             application.setUpdatedAt(Instant.now());
@@ -111,7 +155,35 @@ public class MessageService {
             auditService.record(actor, AuditAction.EMAIL_SENT, "Message", message.getId(),
                     Map.of("applicationId", applicationId));
         }
-        return MessageResponse.from(message);
+        if (whatsappStatus != null) {
+            eventRepository.save(ApplicationEvent.builder()
+                    .application(application)
+                    .type(ApplicationEventType.WHATSAPP_SENT)
+                    .note(("SENT".equals(whatsappStatus) ? "WhatsApp sent: " : "WhatsApp opened to send: ") + preview(body))
+                    .actorEmail(actor.getEmail())
+                    .build());
+            auditService.record(actor, AuditAction.WHATSAPP_SENT, "Message", message.getId(),
+                    Map.of("applicationId", applicationId, "via", "SENT".equals(whatsappStatus) ? "api" : "click-to-chat"));
+        }
+        return MessageResponse.sent(message, whatsappLink, warnings);
+    }
+
+    public WhatsAppStatusResponse whatsAppStatus(AppUser actor) {
+        accessPolicy.require(actor, Capability.MESSAGE_CANDIDATES);
+        return new WhatsAppStatusResponse(whatsAppClient.apiEnabled(), whatsAppProperties.webhookEnabled());
+    }
+
+    /** WhatsApp allows free text only within 24 hours of the candidate's last WhatsApp message. */
+    private boolean withinReplyWindow(UUID applicationId) {
+        return messageRepository.findFirstByApplicationIdAndAuthorTypeAndWhatsappStatusOrderByCreatedAtDesc(
+                        applicationId, MessageAuthorType.CANDIDATE, "RECEIVED")
+                .map(m -> m.getCreatedAt().isAfter(Instant.now().minus(Duration.ofHours(23))))
+                .orElse(false);
+    }
+
+    private static String firstName(String name) {
+        String[] parts = name.strip().split("\\s+");
+        return parts.length > 0 ? parts[0] : name;
     }
 
     /** Latest conversations with candidates and clients, those waiting for our reply first. */

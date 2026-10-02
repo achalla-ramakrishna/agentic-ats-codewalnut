@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { ApiError } from '../api/client'
 import { getGoogleStatus, type GoogleStatus } from '../api/interviews'
-import { listMessages, postMessage, type Message, type MessageChannel } from '../api/messages'
+import { getWhatsAppStatus, listMessages, postMessage, whatsappLabel, type Message, type MessageChannel } from '../api/messages'
 import { ConnectGoogle } from './ConnectGoogle'
 import { EMAIL_TEMPLATES, fillTemplate } from './emailTemplates'
 import { Button } from './ui'
@@ -18,6 +18,7 @@ export function Conversation({
   channel,
   candidateName,
   candidateEmail,
+  candidatePhone = null,
   clientName,
   jobTitle,
   me,
@@ -28,6 +29,7 @@ export function Conversation({
   channel: MessageChannel
   candidateName: string
   candidateEmail: string | null
+  candidatePhone?: string | null
   clientName?: string | null
   jobTitle: string
   me: { email: string; name: string | null }
@@ -46,6 +48,8 @@ export function Conversation({
   const [subject, setSubject] = useState(start ? fill(start.subject) : defaultSubject)
   const [body, setBody] = useState(start ? fill(start.body) : '')
   const [sendEmail, setSendEmail] = useState(isCandidate && !!candidateEmail)
+  const [sendWhatsApp, setSendWhatsApp] = useState(isCandidate && !!candidatePhone)
+  const [whatsAppApi, setWhatsAppApi] = useState<{ apiEnabled: boolean; repliesEnabled: boolean } | null>(null)
   const [google, setGoogle] = useState<GoogleStatus | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -65,7 +69,9 @@ export function Conversation({
   }, [load])
 
   useEffect(() => {
-    if (isCandidate) getGoogleStatus().then(setGoogle).catch(() => setGoogle(null))
+    if (!isCandidate) return
+    getGoogleStatus().then(setGoogle).catch(() => setGoogle(null))
+    getWhatsAppStatus().then(setWhatsAppApi).catch(() => setWhatsAppApi(null))
   }, [isCandidate])
 
   useEffect(() => {
@@ -89,20 +95,38 @@ export function Conversation({
     setError(null)
     setNotice(null)
     setBusy(true)
+    const whatsApp = isCandidate && sendWhatsApp
+    // Without the Business API, WhatsApp opens in a new tab. Open it now, while the click still
+    // counts as the user's action (browsers block pop-ups opened after a network call).
+    const waWindow = whatsApp && !whatsAppApi?.apiEnabled ? window.open('about:blank', '_blank') : null
     try {
-      await postMessage(applicationId, {
+      const sent = await postMessage(applicationId, {
         channel,
         body,
         subject: sendEmail ? subject : undefined,
         sendEmail: isCandidate && sendEmail,
+        sendWhatsApp: whatsApp,
       })
+      if (sent.whatsappLink) {
+        if (waWindow) waWindow.location.href = sent.whatsappLink
+        else window.open(sent.whatsappLink, '_blank')
+      } else {
+        waWindow?.close()
+      }
       setBody('')
       setSubject(defaultSubject)
       setTemplate('')
-      setNotice(isCandidate && sendEmail ? `Emailed to ${candidateEmail} from your Gmail.` : null)
+      const parts = [
+        sent.emailed ? `Emailed to ${candidateEmail} from your Gmail.` : null,
+        sent.whatsapp === 'OPENED' ? 'WhatsApp opened in a new tab with your message ready: press Send there.' : null,
+        sent.whatsapp === 'SENT' ? "Sent on WhatsApp from CodeWalnut's number." : null,
+        ...(sent.warnings ?? []),
+      ].filter(Boolean)
+      setNotice(parts.length ? parts.join(' ') : null)
       load()
       onSent?.()
     } catch (e) {
+      waWindow?.close()
       if (e instanceof ApiError && e.status === 428) {
         setGoogle((g) => ({ available: true, calendarConnected: g?.calendarConnected ?? false, mailConnected: false, redirectUri: g?.redirectUri ?? '' }))
       } else {
@@ -139,6 +163,7 @@ export function Conversation({
                 <div className="chat-meta">
                   {mine ? 'You' : who} · {new Date(m.createdAt).toLocaleString()}
                   {m.emailed ? ' · emailed' : ''}
+                  {whatsappLabel(m.whatsapp) ? ` · ${whatsappLabel(m.whatsapp)}` : ''}
                 </div>
               </li>
             )
@@ -194,15 +219,26 @@ export function Conversation({
           />
         </label>
         {isCandidate && (
-          <label className="row" style={{ gap: 8, fontSize: 14, flexWrap: 'nowrap', alignItems: 'flex-start' }}>
-            <input
-              type="checkbox"
-              checked={sendEmail}
-              disabled={!candidateEmail}
-              onChange={(e) => setSendEmail(e.target.checked)}
-            />
-            {candidateEmail ? `Also email it to ${candidateEmail} from my Gmail` : 'No email address on file, so this is in-app only'}
-          </label>
+          <div className="stack" style={{ gap: 4 }} role="group" aria-label="Also send by">
+            <span className="muted" style={{ fontSize: 13 }}>
+              Always saved here and shown on their candidate page. Also send by:
+            </span>
+            <label className="row" style={{ gap: 8, fontSize: 14, flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+              <input type="checkbox" checked={sendEmail} disabled={!candidateEmail} onChange={(e) => setSendEmail(e.target.checked)} />
+              {candidateEmail ? `Email to ${candidateEmail} (from my Gmail)` : 'Email: no email address on file'}
+            </label>
+            <label className="row" style={{ gap: 8, fontSize: 14, flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+              <input type="checkbox" checked={sendWhatsApp} disabled={!candidatePhone} onChange={(e) => setSendWhatsApp(e.target.checked)} />
+              {candidatePhone ? `WhatsApp to ${candidatePhone}` : 'WhatsApp: no mobile number on file'}
+            </label>
+            {sendWhatsApp && (
+              <span className="muted" style={{ fontSize: 12, paddingLeft: 24 }}>
+                {whatsAppApi?.apiEnabled
+                  ? `Sent from CodeWalnut's WhatsApp Business number.${whatsAppApi.repliesEnabled ? ' Replies appear here.' : ''}`
+                  : 'Opens WhatsApp (app or web) with your message ready; press Send there. Replies arrive in your WhatsApp.'}
+              </span>
+            )}
+          </div>
         )}
         {needsGoogle && (
           <ConnectGoogle
@@ -213,7 +249,15 @@ export function Conversation({
         )}
         <div>
           <Button type="submit" size="sm" disabled={busy || !body.trim() || needsGoogle || (sendEmail && !subject.trim())}>
-            {busy ? 'Sending…' : isCandidate && sendEmail ? 'Send email' : 'Send'}
+            {busy
+              ? 'Sending…'
+              : isCandidate && sendEmail && sendWhatsApp
+                ? 'Send email & WhatsApp'
+                : isCandidate && sendEmail
+                  ? 'Send email'
+                  : isCandidate && sendWhatsApp
+                    ? 'Send WhatsApp'
+                    : 'Send'}
           </Button>
         </div>
       </form>

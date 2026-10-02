@@ -119,6 +119,8 @@ describe('JobDetailPage', () => {
 
   it('offers to email the candidate after a stage change, with the matching template', async () => {
     vi.stubGlobal('prompt', vi.fn(() => 'Not the right fit for this role'))
+    const tab = { location: { href: '' }, close: vi.fn() }
+    vi.stubGlobal('open', vi.fn(() => tab))
     const fetchMock = fakeFetch([
       { path: '/auth/session', body: { type: 'STAFF' } },
       { path: '/me', body: recruiter },
@@ -151,9 +153,10 @@ describe('JobDetailPage', () => {
     expect(message.value).toContain('not to move forward')
     expect(message.value).toContain('Dev Recruiter')
 
-    await userEvent.click(await within(drawer).findByRole('button', { name: 'Send email' }))
+    await userEvent.click(await within(drawer).findByRole('button', { name: 'Send email & WhatsApp' }))
     expect(await within(drawer).findByText('Emailed to asha@example.com from your Gmail.')).toBeInTheDocument()
+    expect(tab.close).toHaveBeenCalled()
     const post = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/messages') && init?.method === 'POST')!
-    expect(JSON.parse(post[1]!.body as string)).toMatchObject({ channel: 'CANDIDATE', sendEmail: true })
+    expect(JSON.parse(post[1]!.body as string)).toMatchObject({ channel: 'CANDIDATE', sendEmail: true, sendWhatsApp: true })
   })
 })

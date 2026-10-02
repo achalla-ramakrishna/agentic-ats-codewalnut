@@ -127,6 +127,7 @@ export function CandidateDrawer({
             channel={tab === 'candidate' ? 'CANDIDATE' : tab === 'client' ? 'CLIENT' : 'TEAM'}
             candidateName={contact.name}
             candidateEmail={contact.email}
+            candidatePhone={contact.phone}
             clientName={row.clientName}
             jobTitle={row.jobTitle}
             me={{ email: me.email, name: me.name }}

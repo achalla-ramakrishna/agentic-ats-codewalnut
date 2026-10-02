@@ -29,7 +29,8 @@ Built: chunk 0 (sign-in, roles, users, audit log) and the hiring tracker
 (`docs/features/interviews-and-scorecards.md`, ADR-0005), and candidate/team
 conversations with email from Gmail (`docs/features/communication.md`, ADR-0006),
 candidate profiles and BGV documents (`docs/features/candidate-profile-and-bgv.md`), and
-client login with per-candidate sharing (`docs/features/client-access.md`, ADR-0007). Next: grow the tracker into chunk 1–2.
+client login with per-candidate sharing (`docs/features/client-access.md`, ADR-0007), and
+WhatsApp from the candidate chat (ADR-0008). Next: grow the tracker into chunk 1–2.
 
 ## Conventions
 

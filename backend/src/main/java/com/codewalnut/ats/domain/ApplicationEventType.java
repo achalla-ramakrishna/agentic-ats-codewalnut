@@ -9,5 +9,6 @@ public enum ApplicationEventType {
     EMAIL_SENT,
     DOCS_REQUESTED,
     DOC_UPLOADED,
-    SHARED_WITH_CLIENT
+    SHARED_WITH_CLIENT,
+    WHATSAPP_SENT
 }

@@ -7,6 +7,9 @@ import com.codewalnut.ats.client.GmailClient;
 import com.codewalnut.ats.client.GoogleAccess;
 import com.codewalnut.ats.client.GoogleCalendarClient;
 import com.codewalnut.ats.client.MailClient;
+import com.codewalnut.ats.client.FakeWhatsAppClient;
+import com.codewalnut.ats.client.WhatsAppClient;
+import com.codewalnut.ats.client.WhatsAppCloudClient;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,11 +19,11 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepo
 import org.springframework.web.client.RestClient;
 
 /**
- * Real Google Calendar and Gmail in production; fakes in dev and demo so nothing is ever sent
- * from them.
+ * Real Google Calendar, Gmail and WhatsApp in production; fakes in dev and demo so nothing is
+ * ever sent from them.
  */
 @Configuration
-public class GoogleConfig {
+public class IntegrationsConfig {
 
     @Bean
     @Profile({"dev", "demo"})
@@ -51,5 +54,17 @@ public class GoogleConfig {
     @Profile("!dev & !demo")
     public MailClient gmailClient(GoogleAccess google, RestClient.Builder restClientBuilder) {
         return new GmailClient(google, restClientBuilder.clone().baseUrl(GmailClient.BASE_URL).build());
+    }
+
+    @Bean
+    @Profile({"dev", "demo"})
+    public FakeWhatsAppClient fakeWhatsAppClient() {
+        return new FakeWhatsAppClient();
+    }
+
+    @Bean
+    @Profile("!dev & !demo")
+    public WhatsAppClient whatsAppClient(WhatsAppProperties properties, RestClient.Builder restClientBuilder) {
+        return new WhatsAppCloudClient(properties, restClientBuilder.clone().baseUrl(WhatsAppCloudClient.BASE_URL).build());
     }
 }

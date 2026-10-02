@@ -40,6 +40,11 @@ also email a candidate message through `client/GmailClient` (scope
 `gmail.send`, same Google connection as the calendar, ADR-0006); dev and demo
 use `FakeMailClient`.
 
+WhatsApp (ADR-0008): staff messages to a candidate can also go by WhatsApp —
+a `wa.me` click-to-chat link by default, or `client/WhatsAppCloudClient`
+(Meta Cloud API) when configured. Replies and receipts come in on
+`/webhooks/whatsapp` (HMAC-signed, idempotent) via `WhatsAppInboundService`.
+
 Client access (ADR-0007): `SignInService` routes an active `ClientContact`
 to a `CLIENT` session (`CurrentClientService`, `/api/v1/client/**`). Candidate
 data reaches a client only through a `ClientShare` (one per application:

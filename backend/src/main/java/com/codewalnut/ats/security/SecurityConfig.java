@@ -70,6 +70,8 @@ public class SecurityConfig {
                 .requestCache(cache -> cache.requestCache(new NullRequestCache()))
                 .securityContext(ctx -> ctx.securityContextRepository(securityContextRepository))
                 .csrf(csrf -> csrf
+                        // Provider webhooks have no session; they are authenticated by signature.
+                        .ignoringRequestMatchers("/webhooks/**")
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
                 .logout(logout -> logout

@@ -36,7 +36,7 @@ Recruiters mainly; Hiring and Account Managers occasionally; Admin manages templ
 | MSG-05 | Scheduled send and cancellable delayed rejection emails. | MVP |
 | MSG-06 | Delivery status (sent, bounced) shown; bounces flag the candidate's email. | MVP |
 | MSG-07 | Unsubscribe from non-essential emails (marketing/re-engagement), respected by bulk sends. | MVP |
-| MSG-08 | WhatsApp / SMS notifications. | Later |
+| MSG-08 | WhatsApp / SMS notifications. | Later (WhatsApp: see MSG-21…) |
 
 ### First release: conversations and email from Gmail (shipped 2026-09-29)
 
@@ -56,6 +56,19 @@ Decided in ADR-0006. Simpler than MSG-01…07: no system sender, no mailbox sync
 | MSG-18 | Candidate replies to emails flow back into the ATS (mailbox sync, MSG-04). | v1 |
 | MSG-19 | Automatic emails without a staff session (acknowledgement on apply, MSG-03) via a system sender. | v1 |
 | MSG-20 | Email or chat notification to staff when a candidate replies; @mentions in team chat. | v1 |
+
+### WhatsApp (shipped 2026-10-02)
+
+Decided in ADR-0008. Supersedes MSG-08 for WhatsApp (SMS stays Later).
+
+| ID | Requirement | Priority |
+| --- | --- | --- |
+| MSG-21 | In "Chat with candidate" the recruiter writes once and ticks Email and/or WhatsApp (WhatsApp ticked by default when there's a mobile number). The message is always saved in the conversation for that job and shown on the candidate's page. | Done |
+| MSG-22 | Without the WhatsApp Business API, WhatsApp opens with the candidate's number and the message ready (click-to-chat); the ATS records "WhatsApp opened" in the conversation, history and audit log. | Done |
+| MSG-23 | With the Business API configured, the message is sent from CodeWalnut's number: approved template outside the 24-hour window, free text inside it; status shown (sent, delivered, read, failed). If only WhatsApp was chosen and it fails, nothing is saved; if email worked and WhatsApp failed, a warning is shown. | Done |
+| MSG-24 | Candidate WhatsApp replies (via the signed webhook) appear in their conversation and count as waiting for a reply; duplicates are ignored; unknown numbers are ignored. | Done |
+| MSG-25 | Webhook calls without a valid `X-Hub-Signature-256` are refused; the webhook is off (404) unless configured. | Done |
+| MSG-26 | Files candidates send on WhatsApp are downloaded into their documents. | v1 |
 
 ## Business rules
 
@@ -79,7 +92,8 @@ Decided in ADR-0006. Simpler than MSG-01…07: no system sender, no mailbox sync
 - **MSG-AC5** Given team chat messages, then the candidate's view contains
   none of them.
 
-Tests: `MessageFlowTest`, `GmailClientTest`, `MimeMessagesTest` (backend);
+Tests: `MessageFlowTest`, `GmailClientTest`, `MimeMessagesTest`, `WhatsAppFlowTest`,
+`WhatsAppWebhookTest`, `WhatsAppCloudClientTest`, `PhoneNumbersTest` (backend);
 `Conversation.test.tsx`, `CandidateThread.test.tsx`, `JobDetailPage.test.tsx`
 (frontend).
 
@@ -94,7 +108,8 @@ Tests: `MessageFlowTest`, `GmailClientTest`, `MimeMessagesTest` (backend);
 
 ## API
 
-Built: `GET/POST /applications/{id}/messages?channel=CANDIDATE|TEAM`,
+Built: `GET/POST /applications/{id}/messages?channel=CANDIDATE|TEAM|CLIENT`,
+`GET /whatsapp/status`, `GET/POST /webhooks/whatsapp` (Meta, signature-checked),
 `GET /messages/inbox`, `GET/POST /candidate/applications/{id}/messages`,
 `GET /google/status`, `GET /google/connect?returnTo=`.
 
@@ -111,5 +126,6 @@ Planned:
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
+| 2026-10-02 | WhatsApp from the candidate conversation: click-to-chat now, Business API and replies when configured (MSG-21…MSG-25, ADR-0008) |
 | 2026-10-01 | Client chat per shared candidate (`CLIENT` channel, CLA-10); the Request documents template points candidates to upload in their page |
 | 2026-09-29 | First release: candidate and team chat, email from the sender's Gmail with templates, stage-change prompts, Messages inbox (MSG-09…MSG-17, ADR-0006) |

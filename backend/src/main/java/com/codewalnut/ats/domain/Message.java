@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.UuidGenerator;
 
-/** One message in an application's conversation. Append-only. */
+/** One message in an application's conversation. Append-only (only the WhatsApp delivery status changes). */
 @Entity
 @Immutable
 @Table(name = "message")
@@ -63,6 +63,13 @@ public class Message {
 
     @Column(name = "email_message_id", length = 255)
     private String emailMessageId;
+
+    /** OPENED, SENT, DELIVERED, READ, FAILED or RECEIVED; null when WhatsApp wasn't used. */
+    @Column(name = "whatsapp_status", length = 20)
+    private String whatsappStatus;
+
+    @Column(name = "whatsapp_message_id", length = 255)
+    private String whatsappMessageId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
