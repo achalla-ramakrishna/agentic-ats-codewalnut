@@ -3,12 +3,14 @@ import { NavLink } from 'react-router-dom'
 import { useAuth, useMe } from '../auth/AuthContext'
 import { ROLE_LABELS } from '../api/types'
 import { Badge, Button } from './ui'
+import { useWhatsNew } from './useWhatsNew'
 import './AppShell.css'
 
 /** Layout for signed-in users. Navigation comes from the server (GET /me). */
 export function AppShell({ children }: { children: ReactNode }) {
   const me = useMe()
   const { signOut } = useAuth()
+  const { unseen } = useWhatsNew()
 
   return (
     <div className="shell">
@@ -23,6 +25,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               {item.label}
             </NavLink>
           ))}
+          <NavLink to="/whats-new" className="nav-whats-new">
+            What&apos;s new
+            {unseen.length > 0 && (
+              <span className="nav-count" aria-label={`${unseen.length} new`}>
+                {unseen.length}
+              </span>
+            )}
+          </NavLink>
         </nav>
         <div className="sidebar-footer">
           <span className="who">{me.name ?? me.email}</span>

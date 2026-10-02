@@ -47,3 +47,4 @@ templates, lists, custom fields, integrations and data import.
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
+| 2026-10-02 | "What's new" page with release notes per feature, a menu badge and a dashboard note for unseen updates; entries live in `frontend/src/whatsNew.ts` (AGENTS.md) |

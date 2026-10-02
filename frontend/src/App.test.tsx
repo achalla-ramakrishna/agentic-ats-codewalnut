@@ -56,8 +56,10 @@ describe('App', () => {
     renderAt('/')
 
     const nav = await screen.findByRole('navigation', { name: 'Main' })
-    const links = Array.from(nav.querySelectorAll('a')).map((a) => a.textContent)
+    const links = Array.from(nav.querySelectorAll('a:not(.nav-whats-new)')).map((a) => a.textContent)
     expect(links).toEqual(['Dashboard', 'Interviews'])
+    // "What's new" is for everyone, not a permission-gated page.
+    expect(nav.querySelector('a.nav-whats-new')).toHaveAttribute('href', '/whats-new')
     expect(screen.getByText('Interviewer')).toBeInTheDocument()
   })
 

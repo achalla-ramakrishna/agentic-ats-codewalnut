@@ -5,6 +5,7 @@ import { getInbox, type InboxItem } from '../api/messages'
 import { getDashboard, type Dashboard } from '../api/tracker'
 import { useMe } from '../auth/AuthContext'
 import { StageBar } from '../components/StageBar'
+import { useWhatsNew } from '../components/useWhatsNew'
 import { Card, PageHeader } from '../components/ui'
 import { useStages } from '../components/useStages'
 import '../components/tracker.css'
@@ -14,6 +15,7 @@ export function DashboardPage() {
   const stages = useStages()
   const label = (s: string | null) => stages.find((x) => x.key === s)?.label ?? s ?? ''
   const [data, setData] = useState<Dashboard | null>(null)
+  const { unseen, markAllSeen } = useWhatsNew()
   const [interviews, setInterviews] = useState<Interview[]>([])
   const seesInterviews = me.capabilities.includes('VIEW_INTERVIEWS')
   const canMessage = me.capabilities.includes('MESSAGE_CANDIDATES')
@@ -31,6 +33,20 @@ export function DashboardPage() {
   return (
     <div className="stack">
       <PageHeader title={`Welcome${me.name ? `, ${me.name.split(' ')[0]}` : ''}`} description="Open roles and what changed recently." />
+      {unseen.length > 0 && (
+        <div className="alert alert-info row" role="status" style={{ justifyContent: 'space-between' }}>
+          <span>
+            <strong>New: {unseen[0].title}.</strong> {unseen[0].summary}
+            {unseen.length > 1 ? ` (+${unseen.length - 1} more)` : ''}
+          </span>
+          <span className="row" style={{ gap: 8 }}>
+            <Link to="/whats-new">See what&apos;s new</Link>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={markAllSeen}>
+              Dismiss
+            </button>
+          </span>
+        </div>
+      )}
       {data && data.openJobs.length === 0 && (
         <Card>
           <p style={{ margin: 0 }}>

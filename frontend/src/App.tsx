@@ -17,6 +17,7 @@ import { LoginPage } from './pages/LoginPage'
 import { NoAccessPage } from './pages/NoAccessPage'
 import { PublicJobPage, RETURN_TO_KEY } from './pages/PublicJobPage'
 import { UsersPage } from './pages/UsersPage'
+import { WhatsNewPage } from './pages/WhatsNewPage'
 
 /** Screen per navigation key. The server decides which keys a user gets. */
 const SCREENS: Record<string, ReactElement> = {
@@ -101,6 +102,7 @@ function StaffApp() {
           <Route key={item.key} path={item.path} element={SCREENS[item.key] ?? <NoAccessPage />} />
         ))}
         {state.me.navigation.some((item) => item.key === 'jobs') && <Route path="/jobs/:id" element={<JobDetailPage />} />}
+        <Route path="/whats-new" element={<WhatsNewPage />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NoAccessPage />} />
       </Routes>

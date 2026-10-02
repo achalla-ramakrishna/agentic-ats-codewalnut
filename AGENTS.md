@@ -65,6 +65,10 @@ WhatsApp from the candidate chat (ADR-0008). Next: grow the tracker into chunk 1
 - **Integrations** go through their adapter in `client/`; nothing else
   calls a provider API directly. Every outbound call is idempotent and
   runs as a `BackgroundTask` so it is retried on failure.
+- **What's new**: any change users will notice adds an entry at the top of
+  `frontend/src/whatsNew.ts` in the same PR: a plain-words title, one-line
+  summary, the steps to try it, and the `capability` that can use it. Never
+  reuse or change an entry's `id` (it is how "seen" is remembered).
 - **Commits**: small, one logical change, imperative subject line.
 - **Tests**: every service/endpoint change ships with a test; permission
   rules get explicit allow *and* deny tests. Don't merge red.
