@@ -19,6 +19,7 @@ const recruiter: Me = {
 }
 
 const stages = [
+  { key: 'SOURCED', label: 'Applied / Sourced', exit: false },
   { key: 'INTERVIEWED', label: 'Interviewed', exit: false },
   { key: 'SUBMITTED_TO_CLIENT', label: 'Submitted to client', exit: false },
   { key: 'REJECTED', label: 'Rejected', exit: true },
@@ -117,7 +118,7 @@ describe('JobDetailPage', () => {
     expect(screen.getByRole('button', { name: 'Import 1' })).toBeEnabled()
 
     const call = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/import'))!
-    expect(JSON.parse(call[1]!.body as string)).toMatchObject({ stage: 'INTERVIEWED', dryRun: true })
+    expect(JSON.parse(call[1]!.body as string)).toMatchObject({ stage: 'SOURCED', dryRun: true })
   })
 
   it('offers to email the candidate after a stage change, with the matching template', async () => {

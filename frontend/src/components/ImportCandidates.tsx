@@ -14,7 +14,7 @@ const OUTCOME: Record<ImportOutcome, { text: string; tone: 'primary' | 'neutral'
 /** Paste rows from Excel / Google Sheets, preview, then import. */
 export function ImportCandidates({ jobId, onDone, onCancel }: { jobId: string; onDone: (added: number) => void; onCancel: () => void }) {
   const [text, setText] = useState('')
-  const [stage, setStage] = useState<Stage>('INTERVIEWED')
+  const [stage, setStage] = useState<Stage>('SOURCED')
   const [preview, setPreview] = useState<ImportResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)

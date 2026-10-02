@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-02-default-stage-applied',
+    date: '2026-10-02',
+    title: 'New candidates start at Applied / Sourced',
+    summary: 'Imported and hand-added candidates now start at Applied / Sourced instead of Interviewed. You can still pick another stage before adding or importing.',
+    steps: ['Openings → Import from spreadsheet or Add candidate: the Stage box now starts at Applied / Sourced.'],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-02-opening-search',
     date: '2026-10-02',
     title: 'Search candidates in an opening',

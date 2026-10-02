@@ -42,7 +42,7 @@ function AddCandidateForm({ jobId, onAdded, onCancel }: { jobId: string; onAdded
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
-  const [stage, setStage] = useState<Stage>('INTERVIEWED')
+  const [stage, setStage] = useState<Stage>('SOURCED')
   const [error, setError] = useState<string | null>(null)
 
   async function onSubmit(event: FormEvent) {
