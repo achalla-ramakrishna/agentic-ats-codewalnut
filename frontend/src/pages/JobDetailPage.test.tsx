@@ -215,6 +215,41 @@ describe('JobDetailPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Clear search' }))
     expect(screen.getByRole('button', { name: 'Asha Rao' })).toBeInTheDocument()
   })
+
+  it('turns a typed instruction into AI suggestions to review', async () => {
+    const fetchMock = fakeFetch([
+      { path: '/auth/session', body: { type: 'STAFF' } },
+      { path: '/me', body: recruiter },
+      { path: '/stages', body: stages },
+      { path: '/jobs/j1/applications', body: [row] },
+      { path: '/jobs/j1', body: job },
+      { path: '/assistant/status', body: { available: true } },
+      {
+        method: 'POST',
+        path: '/jobs/j1/assistant',
+        body: {
+          instruction: 'asha is shortlisted',
+          summary: 'Move 1 candidate to Shortlisted.',
+          aiGenerated: true,
+          actions: [{ type: 'MOVE_STAGE', applicationId: 'a1', candidateName: 'Asha Rao', fromStage: 'INTERVIEWED', fromLabel: 'Interviewed', toStage: 'SHORTLISTED', toLabel: 'Shortlisted', note: null, needsReason: false }],
+          unresolved: [],
+          notes: [],
+        },
+      },
+    ])
+    renderJob()
+
+    const search = await screen.findByLabelText('Search candidates in this opening')
+    await userEvent.type(search, 'asha is shortlisted')
+    await userEvent.click(await screen.findByRole('button', { name: '✨ Ask AI' }))
+
+    const card = await screen.findByRole('region', { name: 'AI assistant suggestion' })
+    expect(within(card).getByText(/Interviewed →/)).toBeInTheDocument()
+    expect(search).toHaveValue('')
+    const ask = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/jobs/j1/assistant'))!
+    expect(JSON.parse(ask[1]!.body as string)).toEqual({ instruction: 'asha is shortlisted' })
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'PATCH')).toBe(false)
+  })
 })
 
 describe('matchesSearch', () => {

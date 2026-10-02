@@ -1,6 +1,13 @@
 package com.codewalnut.ats.config;
 
+import com.anthropic.client.okhttp.AnthropicOkHttpClient;
+import com.codewalnut.ats.client.AssistantClient;
 import com.codewalnut.ats.client.CalendarClient;
+import com.codewalnut.ats.client.ClaudeAssistantClient;
+import com.codewalnut.ats.client.DisabledAssistantClient;
+import com.codewalnut.ats.client.RuleBasedAssistantClient;
+import java.time.Duration;
+import org.springframework.beans.factory.annotation.Value;
 import com.codewalnut.ats.client.FakeCalendarClient;
 import com.codewalnut.ats.client.FakeMailClient;
 import com.codewalnut.ats.client.GmailClient;
@@ -66,5 +73,27 @@ public class IntegrationsConfig {
     @Profile("!dev & !demo")
     public WhatsAppClient whatsAppClient(WhatsAppProperties properties, RestClient.Builder restClientBuilder) {
         return new WhatsAppCloudClient(properties, restClientBuilder.clone().baseUrl(WhatsAppCloudClient.BASE_URL).build());
+    }
+
+    @Bean
+    @Profile({"dev", "demo"})
+    public AssistantClient ruleBasedAssistantClient() {
+        return new RuleBasedAssistantClient();
+    }
+
+    /** Claude when ANTHROPIC_API_KEY is set; otherwise the assistant is off. */
+    @Bean
+    @Profile("!dev & !demo")
+    public AssistantClient assistantClient(
+            @Value("${ANTHROPIC_API_KEY:}") String apiKey,
+            @Value("${ats.assistant.model:claude-opus-5-5}") String model) {
+        if (apiKey == null || apiKey.isBlank()) {
+            return new DisabledAssistantClient();
+        }
+        return new ClaudeAssistantClient(AnthropicOkHttpClient.builder()
+                .apiKey(apiKey.trim())
+                .timeout(Duration.ofSeconds(90))
+                .maxRetries(2)
+                .build(), model);
     }
 }

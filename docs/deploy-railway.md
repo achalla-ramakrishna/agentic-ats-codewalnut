@@ -71,6 +71,18 @@ they schedule or email in a session. Interviews go on *their* calendar and
 emails go from *their* Gmail, so replies land in their inbox (ADR-0005,
 ADR-0006). `gmail.send` can only send — the app never reads anyone's mailbox.
 
+### AI assistant (optional)
+
+On an opening, recruiters can type "sagar, sucheth and amogh are shortlisted"
+and click **Ask AI**; the AI suggests the changes and they click Apply.
+
+1. **console.anthropic.com** → sign in → **API keys** → **Create key**.
+   Add a payment method under **Billing** (each instruction costs a fraction
+   of a rupee to a few rupees, depending on the opening's size).
+2. Railway variable (app service): `ANTHROPIC_API_KEY=<the key>` → Deploy.
+
+Without the key the **Ask AI** button simply doesn't appear.
+
 ### WhatsApp (optional)
 
 Works with no setup: ticking **WhatsApp** in a candidate chat opens WhatsApp

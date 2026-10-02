@@ -40,6 +40,12 @@ also email a candidate message through `client/GmailClient` (scope
 `gmail.send`, same Google connection as the calendar, ADR-0006); dev and demo
 use `FakeMailClient`.
 
+AI assistant (ADR-0009): `AssistantService` sends the opening's candidate
+names and stages plus the recruiter's instruction to Claude through
+`client/ClaudeAssistantClient` (official Anthropic Java SDK, structured
+output), validates the proposed actions and returns them for review; the
+UI applies them through the normal stage and note endpoints.
+
 WhatsApp (ADR-0008): staff messages to a candidate can also go by WhatsApp —
 a `wa.me` click-to-chat link by default, or `client/WhatsAppCloudClient`
 (Meta Cloud API) when configured. Replies and receipts come in on

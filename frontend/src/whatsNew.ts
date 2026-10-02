@@ -16,6 +16,20 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-02-ai-assistant',
+    date: '2026-10-02',
+    title: 'Tell the AI what happened',
+    summary:
+      'In an opening, type something like “sagar, sucheth and amogh are shortlisted” and the AI assistant prepares the changes for you. You check them and click Apply.',
+    steps: [
+      'Open an opening and type your instruction in the search box.',
+      'Click ✨ Ask AI (or press Ctrl+Enter).',
+      'Check the suggested changes. If a name matches two people, pick the right one. Rejections need a reason.',
+      'Click Apply. Nothing changes before that.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-02-default-stage-applied',
     date: '2026-10-02',
     title: 'New candidates start at Applied / Sourced',

@@ -10,7 +10,9 @@ import {
   type Job,
   type Stage,
 } from '../api/tracker'
+import { askAssistant, getAssistantStatus, type AssistantPlan } from '../api/assistant'
 import { useMe } from '../auth/AuthContext'
+import { AssistantPlanCard } from '../components/AssistantPlanCard'
 import { CandidateDrawer, type DrawerTab } from '../components/CandidateDrawer'
 import { TEMPLATE_FOR_STAGE } from '../components/emailTemplates'
 import { ImportCandidates } from '../components/ImportCandidates'
@@ -106,6 +108,10 @@ export function JobDetailPage() {
   const [filter, setFilter] = useState<Stage | null>(null)
   const [query, setQuery] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
+  const [assistantOn, setAssistantOn] = useState(false)
+  const [plan, setPlan] = useState<AssistantPlan | null>(null)
+  const [asking, setAsking] = useState(false)
+  const [askError, setAskError] = useState<string | null>(null)
   const [panel, setPanel] = useState<'none' | 'add' | 'import'>('none')
   const [open, setOpen] = useState<ApplicationRow | null>(null)
   const [openTab, setOpenTab] = useState<DrawerTab>('profile')
@@ -143,6 +149,28 @@ export function JobDetailPage() {
       setEmailPrompt(template && canMessage ? { row, stageLabel: option?.label ?? stage, template } : null)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not change the stage')
+    }
+  }
+
+  useEffect(() => {
+    if (!canEdit) return
+    getAssistantStatus()
+      .then((s) => setAssistantOn(s.available))
+      .catch(() => setAssistantOn(false))
+  }, [canEdit])
+
+  async function onAsk() {
+    const instruction = query.trim()
+    if (!instruction) return
+    setAsking(true)
+    setAskError(null)
+    try {
+      setPlan(await askAssistant(id, instruction))
+      setQuery('')
+    } catch (e) {
+      setAskError(e instanceof Error ? e.message : 'The assistant could not help with that')
+    } finally {
+      setAsking(false)
     }
   }
 
@@ -256,15 +284,23 @@ export function JobDetailPage() {
           className="input"
           type="search"
           aria-label="Search candidates in this opening"
-          placeholder="Search by name, email or phone  ( / )"
+          placeholder={assistantOn ? 'Search, or tell the AI: “sagar, amogh are shortlisted”  ( / )' : 'Search by name, email or phone  ( / )'}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Escape') setQuery('')
-            if (e.key === 'Enter' && visible.length === 1) openDrawer(visible[0])
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && assistantOn) {
+              e.preventDefault()
+              void onAsk()
+            } else if (e.key === 'Enter' && visible.length === 1) openDrawer(visible[0])
           }}
-          style={{ flex: '1 1 320px', maxWidth: 480 }}
+          style={{ flex: '1 1 320px', maxWidth: 520 }}
         />
+        {assistantOn && (
+          <Button variant="secondary" disabled={asking || !query.trim()} onClick={() => void onAsk()} title="Ctrl+Enter">
+            {asking ? 'Thinking…' : '✨ Ask AI'}
+          </Button>
+        )}
         {rows && filtering && (
           <span className="muted" role="status" style={{ fontSize: 14 }}>
             Showing {visible.length} of {rows.length}
@@ -272,6 +308,19 @@ export function JobDetailPage() {
           </span>
         )}
       </div>
+      {askError && (
+        <div role="alert" className="alert alert-error">
+          {askError}
+        </div>
+      )}
+      {plan && (
+        <AssistantPlanCard
+          key={plan.instruction}
+          plan={plan}
+          onApplied={load}
+          onClose={() => setPlan(null)}
+        />
+      )}
       <div className="stage-chips" role="group" aria-label="Filter by stage">
         <button type="button" className="stage-chip" aria-pressed={filter === null} onClick={() => setFilter(null)}>
           All <strong>{job.total}</strong>
