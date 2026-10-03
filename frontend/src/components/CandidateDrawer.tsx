@@ -6,6 +6,7 @@ import { DocumentsSection } from './DocumentsSection'
 import { InterviewsPanel } from './InterviewsPanel'
 import { ProfileSection } from './ProfileSection'
 import { ResumeInsightSection } from './ResumeInsightSection'
+import { TestsSection } from './TestsSection'
 import { ShareWithClient } from './ShareWithClient'
 import { Button } from './ui'
 import { useStages } from './useStages'
@@ -148,6 +149,12 @@ export function CandidateDrawer({
               }}
             />
             <ResumeInsightSection applicationId={row.id} canEdit={canEdit} />
+            <TestsSection
+              applicationId={row.id}
+              canSend={canEdit && canMessage}
+              hasEmail={!!contact.email}
+              hasPhone={!!contact.phone}
+            />
             {error && (
               <div role="alert" className="alert alert-error">
                 {error}

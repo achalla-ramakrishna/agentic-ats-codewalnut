@@ -122,7 +122,9 @@ Frontend (from `frontend/`):
   when a person clicks Apply, through the normal endpoints. Résumé match
   scores and suggestions (ADR-0010) are advisory and explained: the score
   is computed by the app from per-requirement evidence, prompts ignore
-  personal attributes, and nothing moves a candidate. All model calls go
+  personal attributes, and nothing moves a candidate. Test scores
+  (ADR-0011) are a signal too: no auto-advance or auto-reject, and
+  AI-drafted questions are labelled until a person checks them. All model calls go
   through a `client/` adapter using the official Anthropic SDK.
 - **Least privilege** for integrations: request only the OAuth scopes a
   feature needs (e.g. calendar free-busy + event create, not full

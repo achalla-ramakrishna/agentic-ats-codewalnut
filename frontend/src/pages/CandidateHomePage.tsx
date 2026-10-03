@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { listMyTests, type MyTest } from '../api/assessments'
 import { formatWhen, listMyInterviews, type CandidateInterview } from '../api/interviews'
 import { listMyApplications, type MyApplication } from '../api/tracker'
 import type { CandidateMe } from '../api/types'
@@ -16,6 +17,7 @@ export function CandidateHomePage({ candidate }: { candidate: CandidateMe }) {
   const applied = (location.state as { applied?: string } | null)?.applied
   const [applications, setApplications] = useState<MyApplication[] | null>(null)
   const [interviews, setInterviews] = useState<CandidateInterview[]>([])
+  const [tests, setTests] = useState<MyTest[]>([])
   const [chatWith, setChatWith] = useState<MyApplication | null>(null)
   const markRead = useCallback(() => {
     setApplications((apps) => {
@@ -29,6 +31,7 @@ export function CandidateHomePage({ candidate }: { candidate: CandidateMe }) {
   useEffect(() => {
     listMyApplications().then(setApplications).catch(() => setApplications([]))
     listMyInterviews().then(setInterviews).catch(() => setInterviews([]))
+    listMyTests().then(setTests).catch(() => setTests([]))
   }, [])
 
   return (
@@ -54,6 +57,36 @@ export function CandidateHomePage({ candidate }: { candidate: CandidateMe }) {
           <div className="alert alert-info" style={{ marginBottom: 16 }}>
             Thanks — your application for <strong>{applied}</strong> was received. We'll be in touch.
           </div>
+        )}
+        {tests.length > 0 && (
+          <Card className="stack" style={{ marginBottom: 16 }} aria-label="Your tests">
+            <h2>Your tests</h2>
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }} className="stack">
+              {tests.map((t) => (
+                <li key={t.id} className="row" style={{ justifyContent: 'space-between' }}>
+                  <span>
+                    <strong>{t.title}</strong>{' '}
+                    <span className="muted">
+                      for {t.jobTitle} · {t.questionCount} questions · {t.durationMinutes} min
+                      {t.status === 'SENT' && ` · due ${new Date(t.dueAt).toLocaleDateString()}`}
+                    </span>
+                  </span>
+                  {t.status === 'SENT' && (
+                    <Link className="btn btn-primary btn-sm" to={`/tests/${t.id}`}>
+                      Take the test
+                    </Link>
+                  )}
+                  {t.status === 'STARTED' && (
+                    <Link className="btn btn-primary btn-sm" to={`/tests/${t.id}`}>
+                      Continue
+                    </Link>
+                  )}
+                  {t.status === 'SUBMITTED' && <Badge>Submitted</Badge>}
+                  {t.status === 'EXPIRED' && <span className="muted">Past due — message us for more time</span>}
+                </li>
+              ))}
+            </ul>
+          </Card>
         )}
         {interviews.length > 0 && (
           <Card className="stack" style={{ marginBottom: 16 }}>

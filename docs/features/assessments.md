@@ -1,13 +1,13 @@
-# Coding assessments
+# Tests and coding assessments
 
 | | |
 | --- | --- |
 | **ID prefix** | ASMT |
-| **Status** | Draft |
+| **Status** | Built-in tests done (first release); provider integration later |
 | **Chunk** | 5 |
 | **Owner** | TBD |
 | **Related** | [pipeline.md](pipeline.md) |
-| **Last updated** | 2026-09-25 |
+| **Last updated** | 2026-10-03 |
 
 ## Summary
 
@@ -37,6 +37,21 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | ASMT-05 | Score ≥ threshold → auto-advance (configurable) or flag for review; below → flag, never auto-reject. | MVP |
 | ASMT-06 | Result (score, max, percentile if given, report link) shown on the application and in the debrief. | MVP |
 | ASMT-07 | Plagiarism / proctoring flags from the provider shown if available. | v1 |
+
+### Built-in tests (shipped 2026-10-03, ADR-0011)
+
+| ID | Requirement | Priority |
+| --- | --- | --- |
+| ASMT-08 | **Tests** page (`MANAGE_JOBS`): create a test (title, kind: aptitude / Java / Python / JavaScript / SQL / other, time limit 5–180 min, pass mark), add questions: one right answer, several right answers, or short answer, each with optional code, points and an explanation. | Done |
+| ASMT-09 | **Draft with AI**: topic, level and count; drafted questions are labelled "AI draft — check it" until edited; marking ready asks for confirmation while unchecked drafts remain. Dev/demo use a built-in starter bank. | Done |
+| ASMT-10 | Draft → **Mark ready** locks the questions; **Back to draft** only while nobody was sent it; **Duplicate** makes an editable copy; **Archive** hides it. | Done |
+| ASMT-11 | **Send test** from the candidate drawer (`MANAGE_JOBS` + `MESSAGE_CANDIDATES`): pick a ready test, due in 1–7 days, optional note, by email and/or WhatsApp; the message with the link lands in the candidate chat. Needs the candidate's email; one open copy of the same test per candidate. | Done |
+| ASMT-12 | The candidate opens the link, signs in with Google (same email), sees the rules and starts; the timer (server-enforced, 30 s grace) runs even if they close the page; answers save every few seconds; at zero, saved answers are submitted. Candidates never receive correct answers or their score. | Done |
+| ASMT-13 | Scoring: all-or-nothing per question; short answers ignore case, spaces and quotes. Result = score / max, %, passed if ≥ pass mark. History notes "Test sent" and "Test submitted — 80%". | Done |
+| ASMT-14 | Results: drawer (status, score, per-question answers for staff), opening Test column and **Passed a test** filter, AI suggestions (closest to selection orders by stage, then test, then match) and the AI assistant. | Done |
+| ASMT-15 | Tests not started after 2 days are highlighted with **Remind**; expired ones can be reminded with 2 more days; staff can **Withdraw** a test. | Done |
+| ASMT-16 | Code-writing questions run in a sandbox. | v1 |
+| ASMT-17 | Automatic reminders (needs a sender that works without a staff session, e.g. WhatsApp Business API or a shared mailbox). | v1 |
 
 ## Business rules
 
@@ -72,3 +87,7 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
+| 2026-10-03 | Built-in tests: library, AI drafting, send, timed taking, auto-score, results, reminders (ASMT-08…ASMT-15, ADR-0011) |
+
+Tests: `AssessmentFlowTest`, `ClaudeAssessmentDrafterTest` (backend); `TestsPage.test.tsx`,
+`TakeTestPage.test.tsx`, `TestsSection.test.tsx` (frontend).

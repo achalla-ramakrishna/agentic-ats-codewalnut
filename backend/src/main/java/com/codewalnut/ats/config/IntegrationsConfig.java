@@ -2,7 +2,11 @@ package com.codewalnut.ats.config;
 
 import com.anthropic.client.AnthropicClient;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
+import com.codewalnut.ats.client.AssessmentDrafter;
+import com.codewalnut.ats.client.ClaudeAssessmentDrafter;
 import com.codewalnut.ats.client.ClaudeResumeAnalyzer;
+import com.codewalnut.ats.client.DisabledAssessmentDrafter;
+import com.codewalnut.ats.client.SampleAssessmentDrafter;
 import com.codewalnut.ats.client.DisabledResumeAnalyzer;
 import com.codewalnut.ats.client.KeywordResumeAnalyzer;
 import com.codewalnut.ats.client.ResumeAnalyzer;
@@ -85,6 +89,21 @@ public class IntegrationsConfig {
     @Profile({"dev", "demo"})
     public AssistantClient ruleBasedAssistantClient() {
         return new RuleBasedAssistantClient();
+    }
+
+    @Bean
+    @Profile({"dev", "demo"})
+    public AssessmentDrafter sampleAssessmentDrafter() {
+        return new SampleAssessmentDrafter();
+    }
+
+    /** Claude drafts test questions when ANTHROPIC_API_KEY is set; otherwise they're written by hand. */
+    @Bean
+    @Profile("!dev & !demo")
+    public AssessmentDrafter assessmentDrafter(@Value("${ANTHROPIC_API_KEY:}") String apiKey,
+            @Value("${ats.assistant.model:claude-opus-5-5}") String model) {
+        return anthropic(apiKey).<AssessmentDrafter>map(c -> new ClaudeAssessmentDrafter(c, model))
+                .orElseGet(DisabledAssessmentDrafter::new);
     }
 
     @Bean

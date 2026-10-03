@@ -12,6 +12,7 @@ import {
 } from '../api/tracker'
 import { askAssistant, getAssistantStatus, type AssistantPlan } from '../api/assistant'
 import { getInsights, type InsightSummary, type InsightsResponse } from '../api/insights'
+import { listJobTests, testStatusLabel, type InviteView } from '../api/assessments'
 import { useMe } from '../auth/AuthContext'
 import { AssistantPlanCard } from '../components/AssistantPlanCard'
 import { CandidateDrawer, type DrawerTab } from '../components/CandidateDrawer'
@@ -146,6 +147,8 @@ export function JobDetailPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [skill, setSkill] = useState('')
   const [year, setYear] = useState('')
+  const [tests, setTests] = useState<InviteView[]>([])
+  const [passedOnly, setPassedOnly] = useState(false)
   const [open, setOpen] = useState<ApplicationRow | null>(null)
   const [openTab, setOpenTab] = useState<DrawerTab>('profile')
   const [openTemplate, setOpenTemplate] = useState<string | undefined>()
@@ -158,6 +161,7 @@ export function JobDetailPage() {
     getJob(id).then(setJob).catch((e: unknown) => setError(e instanceof Error ? e.message : 'Not found'))
     listApplications(id).then(setRows).catch(() => setRows([]))
     getInsights(id).then(setInsights).catch(() => setInsights(null))
+    listJobTests(id).then(setTests).catch(() => setTests([]))
   }, [id])
   useEffect(load, [load])
   const openDrawer = useCallback((row: ApplicationRow, tab: DrawerTab = 'profile', template?: string) => {
@@ -236,12 +240,17 @@ export function JobDetailPage() {
   if (!job) return <p className="muted">Loading…</p>
 
   const byApplication = new Map((insights?.insights ?? []).map((i) => [i.applicationId, i]))
+  // Newest first from the server: keep each candidate's latest test.
+  const latestTest = new Map<string, InviteView>()
+  for (const t of tests) if (t.status !== 'CANCELLED' && !latestTest.has(t.applicationId)) latestTest.set(t.applicationId, t)
+  const passed = new Set(tests.filter((t) => t.passed).map((t) => t.applicationId))
   const visible = (rows ?? [])
     .filter(
       (r) =>
         (!filter || r.stage === filter) &&
         matchesSearch(r, query) &&
-        matchesInsight(byApplication.get(r.id), categories, skill, year),
+        matchesInsight(byApplication.get(r.id), categories, skill, year) &&
+        (!passedOnly || passed.has(r.id)),
     )
     .sort((a, b) => {
       if (sort === 'match') {
@@ -252,7 +261,7 @@ export function JobDetailPage() {
       if (sort === 'recent') return b.updatedAt.localeCompare(a.updatedAt)
       return 0
     })
-  const filtering = query.trim() !== '' || filter !== null || categories.length > 0 || skill !== '' || year !== ''
+  const filtering = query.trim() !== '' || filter !== null || categories.length > 0 || skill !== '' || year !== '' || passedOnly
   const read = (insights?.insights ?? []).filter((i) => i.status === 'DONE')
   const skillOptions = Array.from(
     read.flatMap((i) => i.skills).reduce((m, s) => m.set(s.toLowerCase(), m.get(s.toLowerCase()) ?? s), new Map<string, string>()).values(),
@@ -269,6 +278,7 @@ export function JobDetailPage() {
     setCategories([])
     setSkill('')
     setYear('')
+    setPassedOnly(false)
   }
 
 
@@ -434,8 +444,13 @@ export function JobDetailPage() {
           )
         })}
       </div>
-      {read.length > 0 && (
+      {(read.length > 0 || passed.size > 0) && (
         <div className="row" role="group" aria-label="Filter by résumé" style={{ gap: 8, flexWrap: 'wrap' }}>
+          {passed.size > 0 && (
+            <button type="button" className="stage-chip" aria-pressed={passedOnly} onClick={() => setPassedOnly(!passedOnly)}>
+              Passed a test <strong>{passed.size}</strong>
+            </button>
+          )}
           {CATEGORIES.map((c) => {
             const n = read.filter(c.test).length
             const on = categories.includes(c.key)
@@ -506,6 +521,7 @@ export function JobDetailPage() {
                   <th>Phone</th>
                   <th>Résumés</th>
                   {showMatch && <th title="Share of the opening’s requirements the résumé shows (AI, advisory)">Match</th>}
+                  {tests.length > 0 && <th>Test</th>}
                   <th>Stage</th>
                   <th>Latest note</th>
                   <th>Updated</th>
@@ -534,6 +550,11 @@ export function JobDetailPage() {
                     {showMatch && (
                       <td>
                         <FitBadge insight={byApplication.get(r.id)} />
+                      </td>
+                    )}
+                    {tests.length > 0 && (
+                      <td className={latestTest.get(r.id)?.needsNudge ? 'test-nudge' : 'muted'} title={latestTest.get(r.id)?.title}>
+                        {latestTest.has(r.id) ? testStatusLabel(latestTest.get(r.id)!) : '—'}
                       </td>
                     )}
                     <td>

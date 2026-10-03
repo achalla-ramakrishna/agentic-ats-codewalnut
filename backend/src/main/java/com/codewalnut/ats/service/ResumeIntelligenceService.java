@@ -11,6 +11,7 @@ import com.codewalnut.ats.domain.JobOpening;
 import com.codewalnut.ats.domain.JobStatus;
 import com.codewalnut.ats.domain.ResumeIntake;
 import com.codewalnut.ats.domain.Stage;
+import com.codewalnut.ats.dto.AssessmentDtos.InviteView;
 import com.codewalnut.ats.dto.InsightDtos.AnalyzeResult;
 import com.codewalnut.ats.dto.InsightDtos.InsightDetail;
 import com.codewalnut.ats.dto.InsightDtos.InsightSummary;
@@ -81,6 +82,7 @@ public class ResumeIntelligenceService {
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
+    private final AssessmentInviteService tests;
 
     // ---- bulk upload ----
 
@@ -312,6 +314,13 @@ public class ResumeIntelligenceService {
         Map<UUID, InsightSummary> byApplication = summaries.stream()
                 .collect(Collectors.toMap(InsightSummary::applicationId, Function.identity()));
 
+        Map<UUID, InviteView> latestTest = new java.util.HashMap<>();
+        for (InviteView t : tests.latestSubmitted(applications.stream().map(Application::getId).toList())) {
+            latestTest.putIfAbsent(t.applicationId(), t);
+        }
+        Comparator<Application> byTest = Comparator.comparing(
+                (Application a) -> latestTest.containsKey(a.getId()) ? latestTest.get(a.getId()).percent() : null,
+                Comparator.nullsLast(Comparator.reverseOrder()));
         Comparator<Application> byFit = Comparator.comparing(
                 (Application a) -> fit(byApplication.get(a.getId())), Comparator.nullsLast(Comparator.reverseOrder()));
         List<Suggestion> contactNext = applications.stream()
@@ -319,13 +328,14 @@ public class ResumeIntelligenceService {
                 .filter(a -> Objects.requireNonNullElse(fit(byApplication.get(a.getId())), -1) >= CONTACT_THRESHOLD)
                 .sorted(byFit)
                 .limit(SUGGESTIONS)
-                .map(a -> suggestion(a, byApplication.get(a.getId()), profiles.get(a.getId()), false))
+                .map(a -> suggestion(a, byApplication.get(a.getId()), profiles.get(a.getId()), latestTest.get(a.getId()), false))
                 .toList();
         List<Suggestion> closest = applications.stream()
                 .filter(a -> ADVANCED.contains(a.getStage()))
-                .sorted(Comparator.comparing((Application a) -> a.getStage().ordinal()).reversed().thenComparing(byFit))
+                .sorted(Comparator.comparing((Application a) -> a.getStage().ordinal()).reversed()
+                        .thenComparing(byTest).thenComparing(byFit))
                 .limit(SUGGESTIONS)
-                .map(a -> suggestion(a, byApplication.get(a.getId()), profiles.get(a.getId()), true))
+                .map(a -> suggestion(a, byApplication.get(a.getId()), profiles.get(a.getId()), latestTest.get(a.getId()), true))
                 .toList();
 
         int withReading = (int) applications.stream().filter(a -> insights.containsKey(a.getId())).count();
@@ -373,7 +383,8 @@ public class ResumeIntelligenceService {
 
     // ---- helpers ----
 
-    private Suggestion suggestion(Application a, InsightSummary summary, ResumeInsight profile, boolean advanced) {
+    private Suggestion suggestion(Application a, InsightSummary summary, ResumeInsight profile, InviteView test,
+            boolean advanced) {
         List<String> parts = new ArrayList<>();
         if (advanced) {
             parts.add("At " + a.getStage().getLabel());
@@ -383,6 +394,9 @@ public class ResumeIntelligenceService {
                     + (summary.partial() > 0 ? " (" + summary.partial() + " partly)" : ""));
         } else if (advanced && (summary == null || !"DONE".equals(summary.status()))) {
             parts.add("résumé not read yet");
+        }
+        if (test != null) {
+            parts.add(test.title() + " test " + test.percent() + "%" + (Boolean.TRUE.equals(test.passed()) ? " (passed)" : ""));
         }
         if (profile != null && profile.strengths() != null && !profile.strengths().isEmpty()) {
             parts.add(profile.strengths().get(0));

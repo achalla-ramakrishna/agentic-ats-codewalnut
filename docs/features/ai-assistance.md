@@ -73,6 +73,7 @@ hiring decision.
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
 | 2026-10-02 | Assistant on the opening page: instruction → reviewed proposals → Apply (AI-12…AI-17, ADR-0009) |
+| 2026-10-03 | AI drafts test questions for review (ASMT-09, ADR-0011) |
 | 2026-10-03 | Résumé intelligence: bulk upload, AI readings, match %, suggestions, filters, questions (AI-19…AI-29, ADR-0010); AI-07 superseded in part |
 
 Tests: `ResumeIntelligenceFlowTest`, `ClaudeResumeAnalyzerTest`, `ResumeTextTest`,

@@ -105,6 +105,7 @@ describe('JobDetailPage', () => {
       { path: '/stages', body: stages },
       { path: '/jobs/j1/applications', body: [row] },
       { path: '/jobs/j1/insights', body: noInsights },
+      { path: '/jobs/j1/tests', body: [] },
       { path: '/jobs/j1', body: job },
     ])
     renderJob()
@@ -136,6 +137,7 @@ describe('JobDetailPage', () => {
         },
       },
       { path: '/jobs/j1/insights', body: noInsights },
+      { path: '/jobs/j1/tests', body: [] },
       { path: '/jobs/j1', body: { ...job, stageCounts: {}, total: 0 } },
     ])
     renderJob()
@@ -163,6 +165,7 @@ describe('JobDetailPage', () => {
       { path: '/stages', body: stages },
       { path: '/jobs/j1/applications', body: [row] },
       { path: '/jobs/j1/insights', body: noInsights },
+      { path: '/jobs/j1/tests', body: [] },
       { path: '/jobs/j1', body: job },
       { method: 'PATCH', path: '/applications/a1/stage', body: { ...row, stage: 'REJECTED', stageLabel: 'Rejected' } },
       { path: '/applications/a1/history', body: [] },
@@ -209,6 +212,7 @@ describe('JobDetailPage', () => {
       { path: '/stages', body: stages },
       { path: '/jobs/j1/applications', body: more },
       { path: '/jobs/j1/insights', body: noInsights },
+      { path: '/jobs/j1/tests', body: [] },
       { path: '/jobs/j1', body: { ...job, total: 3 } },
       { path: '/applications/a3/history', body: [] },
       { path: '/candidates/p3/profile', body: { id: 'p3', name: 'Meera Iyer', email: 'meera@example.com', phone: '9123456780' } },
@@ -241,6 +245,7 @@ describe('JobDetailPage', () => {
       { path: '/stages', body: stages },
       { path: '/jobs/j1/applications', body: [row] },
       { path: '/jobs/j1/insights', body: noInsights },
+      { path: '/jobs/j1/tests', body: [] },
       { path: '/jobs/j1', body: job },
     ])
     renderJob()
@@ -258,6 +263,7 @@ describe('JobDetailPage', () => {
       { path: '/stages', body: stages },
       { path: '/jobs/j1/applications', body: [row] },
       { path: '/jobs/j1/insights', body: noInsights },
+      { path: '/jobs/j1/tests', body: [] },
       { path: '/jobs/j1', body: job },
       { path: '/assistant/status', body: { available: true } },
       {
@@ -310,6 +316,7 @@ describe('JobDetailPage', () => {
           contactNext: [{ applicationId: 'a2', candidateName: 'Ravi Teja', stageLabel: 'Applied / Sourced', fitPercent: 90, reason: 'Meets 3 of 3 requirements' }],
         },
       },
+      { path: '/jobs/j1/tests', body: [] },
       { path: '/jobs/j1', body: { ...job, total: 2 } },
     ])
     renderJob()
@@ -337,6 +344,7 @@ describe('JobDetailPage', () => {
       { path: '/stages', body: stages },
       { path: '/jobs/j1/applications', body: [row] },
       { path: '/jobs/j1/insights', body: noInsights },
+      { path: '/jobs/j1/tests', body: [] },
       { path: '/jobs/j1', body: job },
       { path: '/assistant/status', body: { available: true } },
       { path: '/applications/a1/insight', body: { applicationId: 'a1', status: 'NONE' } },

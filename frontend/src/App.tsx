@@ -1,5 +1,5 @@
 import { useEffect, type ReactElement } from 'react'
-import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
 import { AppShell } from './components/AppShell'
 import { AuditLogPage } from './pages/AuditLogPage'
@@ -16,6 +16,8 @@ import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
 import { NoAccessPage } from './pages/NoAccessPage'
 import { PublicJobPage, RETURN_TO_KEY } from './pages/PublicJobPage'
+import { TakeTestPage } from './pages/TakeTestPage'
+import { TestsPage } from './pages/TestsPage'
 import { UsersPage } from './pages/UsersPage'
 import { WhatsNewPage } from './pages/WhatsNewPage'
 
@@ -26,6 +28,7 @@ const SCREENS: Record<string, ReactElement> = {
   candidates: <CandidatesPage />,
   clients: <ClientsPage />,
   interviews: <InterviewsPage />,
+  tests: <TestsPage />,
   messages: <MessagesPage />,
   approvals: <ComingSoonPage title="Approvals" chunk="chunks 1 and 7" spec="requisitions.md" />,
   reports: <ComingSoonPage title="Reports" chunk="v1" spec="reports.md" />,
@@ -45,8 +48,21 @@ function useReturnAfterSignIn(ready: boolean) {
     } catch {
       target = null
     }
-    if (target && target.startsWith('/apply/')) navigate(target, { replace: true })
+    if (target && (target.startsWith('/apply/') || target.startsWith('/tests/'))) navigate(target, { replace: true })
   }, [ready, navigate])
+}
+
+/** A test link opened while signed out: sign in, then come back to the test. */
+function LoginForTest() {
+  const location = useLocation()
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(RETURN_TO_KEY, location.pathname)
+    } catch {
+      // Storage blocked: after sign-in the candidate finds the test on their home page.
+    }
+  }, [location.pathname])
+  return <LoginPage />
 }
 
 export function App() {
@@ -68,6 +84,7 @@ export function App() {
     return (
       <Routes>
         <Route path="/apply/:slug" element={<PublicJobPage />} />
+        <Route path="/tests/:id" element={<TakeTestPage />} />
         <Route path="*" element={<CandidateHomePage candidate={state.candidate} />} />
       </Routes>
     )
@@ -79,6 +96,7 @@ export function App() {
     return (
       <Routes>
         <Route path="/apply/:slug" element={<PublicJobPage />} />
+        <Route path="/tests/:id" element={<LoginForTest />} />
         <Route path="*" element={<LoginPage />} />
       </Routes>
     )

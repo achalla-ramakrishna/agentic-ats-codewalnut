@@ -57,6 +57,13 @@ reading after commit. Match % and suggestions are computed in the service;
 the assistant receives compact profiles from the readings to answer
 questions. Dev and demo use the offline `KeywordResumeAnalyzer`.
 
+Tests (ADR-0011): `AssessmentService` manages the library and asks
+`client/ClaudeAssessmentDrafter` for question drafts (dev/demo:
+`SampleAssessmentDrafter`). `AssessmentInviteService` sends a test through
+`MessageService.post` (chat + optional email/WhatsApp), serves questions to
+the candidate without answers, enforces the timer and scores on submit or
+when an overdue invite is next read.
+
 WhatsApp (ADR-0008): staff messages to a candidate can also go by WhatsApp —
 a `wa.me` click-to-chat link by default, or `client/WhatsAppCloudClient`
 (Meta Cloud API) when configured. Replies and receipts come in on

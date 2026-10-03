@@ -223,3 +223,38 @@
   width: 18px;
   text-align: center;
 }
+
+/* Tests */
+.test-code {
+  margin: 4px 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  white-space: pre;
+  overflow-x: auto;
+}
+.test-code-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.test-timer {
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+  padding: 2px 10px;
+  border-radius: 6px;
+  background: #eef2f7;
+}
+.test-timer.low {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.test-option {
+  font-family: inherit;
+  white-space: pre-wrap;
+}
+.test-nudge {
+  color: #854d0e;
+  font-weight: 500;
+}

@@ -16,6 +16,22 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-03-tests',
+    date: '2026-10-03',
+    title: 'Send aptitude, Java and Python tests',
+    summary:
+      'Build tests in the ATS (the AI can draft the questions for you to check), send them to applicants by email or WhatsApp, and see the score as soon as they finish. Candidates take them on their CodeWalnut page against a timer.',
+    steps: [
+      'Menu → Tests → New test. Pick the kind (Aptitude, Java, Python…), time limit and pass mark.',
+      'Click Draft (✨ AI) or add your own questions. Check every AI draft and its answer, then Mark ready.',
+      'Open a candidate in an opening → Profile → Tests → Send test. Pick the test, the due date, Email and/or WhatsApp.',
+      'Scores appear in the drawer and in the opening’s Test column. Use “Passed a test” to filter.',
+      'Not started after 2 days? The Test column highlights it; click Remind in the drawer.',
+    ],
+    link: { to: '/tests', label: 'Open Tests' },
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-03-resume-intelligence',
     date: '2026-10-03',
     title: 'Upload résumés and let the AI sort them',

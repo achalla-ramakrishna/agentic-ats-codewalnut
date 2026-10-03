@@ -31,7 +31,8 @@ class AssistantServiceTest {
     private final ApplicationRepository applications = mock(ApplicationRepository.class);
     private final AssistantClient client = mock(AssistantClient.class);
     private final AssistantService service = new AssistantService(jobs, applications, client, mock(AccessPolicy.class),
-            mock(AuditService.class), mock(ResumeIntelligenceService.class));
+            mock(AuditService.class), mock(ResumeIntelligenceService.class),
+            mock(AssessmentInviteService.class));
 
     @Test
     void dropsMadeUpIdsUnknownStagesAndDuplicates() {

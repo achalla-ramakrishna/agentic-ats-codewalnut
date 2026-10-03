@@ -60,6 +60,7 @@ public class AssistantService {
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
     private final ResumeIntelligenceService intelligence;
+    private final AssessmentInviteService tests;
     private final Map<String, Deque<Instant>> recent = new ConcurrentHashMap<>();
 
     public AssistantStatus status(AppUser actor) {
@@ -76,12 +77,13 @@ public class AssistantService {
         Map<UUID, Application> byId = new LinkedHashMap<>();
         applications.forEach(a -> byId.put(a.getId(), a));
         Map<UUID, ResumeInsight> profiles = intelligence.profiles(applications);
+        Map<UUID, String> testLines = tests.summaries(byId.keySet());
         AssistantPlan plan = assistantClient.plan(new AssistantClient.Request(
                 instruction.strip(),
                 job.getTitle(),
                 applications.stream()
                         .map(a -> new AssistantClient.Candidate(a.getId().toString(), a.getCandidate().getName(),
-                                a.getStage().getLabel(), profileText(profiles.get(a.getId()))))
+                                a.getStage().getLabel(), withTests(profileText(profiles.get(a.getId())), testLines.get(a.getId()))))
                         .toList(),
                 Arrays.stream(Stage.values()).map(s -> new AssistantClient.StageOption(s.name(), s.getLabel())).toList()));
 
@@ -194,6 +196,13 @@ public class AssistantService {
         }
         String text = String.join(" · ", parts);
         return text.length() > 1200 ? text.substring(0, 1200) : text;
+    }
+
+    static String withTests(String profile, String tests) {
+        if (tests == null) {
+            return profile;
+        }
+        return profile == null ? tests : profile + " · " + tests;
     }
 
     private static void add(List<String> parts, String value) {
