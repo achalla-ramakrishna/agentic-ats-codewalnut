@@ -17,6 +17,7 @@ import {
 } from '../api/assessments'
 import { getWhatsAppStatus } from '../api/messages'
 import { Figure } from './Figure'
+import { Link } from 'react-router-dom'
 import { Badge, Button } from './ui'
 
 /** WhatsApp without the Business API opens a window the browser must allow: open it before the request. */
@@ -83,11 +84,16 @@ export function TestsSection({
   canSend,
   hasEmail,
   hasPhone,
+  startOpen = false,
+  onSent,
 }: {
   applicationId: string
   canSend: boolean
   hasEmail: boolean
   hasPhone: boolean
+  /** Open the send form straight away (the drawer's Send test button). */
+  startOpen?: boolean
+  onSent?: () => void
 }) {
   const [invites, setInvites] = useState<InviteView[] | null>(null)
   const [tests, setTests] = useState<AssessmentSummary[]>([])
@@ -107,6 +113,11 @@ export function TestsSection({
     listApplicationTests(applicationId).then(setInvites).catch(() => setInvites([]))
   }, [applicationId])
   useEffect(load, [load])
+  useEffect(() => {
+    if (startOpen && canSend) openSend()
+    // Only on mount: the drawer re-mounts this section for each Send test click.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [copied, setCopied] = useState<string | null>(null)
 
@@ -149,6 +160,7 @@ export function TestsSection({
       setSending(false)
       setNote('')
       load()
+      onSent?.()
     } catch (e) {
       win?.close()
       setError(e instanceof Error ? e.message : 'Could not send the test')
@@ -216,7 +228,8 @@ export function TestsSection({
         <form className="stack card" onSubmit={onSend} aria-label="Send a test" style={{ gap: 8 }}>
           {tests.length === 0 ? (
             <p className="muted" style={{ margin: 0 }}>
-              No tests are ready yet. Create one under <strong>Tests</strong> in the menu and mark it ready.
+              No tests are ready yet. <Link to="/tests">Build one from the question bank</Link> (aptitude, Java, Python and more), mark it
+              ready, then come back here.
             </p>
           ) : (
             <>

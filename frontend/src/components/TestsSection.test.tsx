@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fakeFetch } from '../test/fakeFetch'
 import { TestsSection } from './TestsSection'
@@ -42,7 +43,11 @@ describe('TestsSection', () => {
       },
       { path: '/whatsapp/status', body: { apiEnabled: false, repliesEnabled: false } },
     ])
-    render(<TestsSection applicationId="a1" canSend hasEmail hasPhone />)
+    render(
+      <MemoryRouter>
+        <TestsSection applicationId="a1" canSend hasEmail hasPhone />
+      </MemoryRouter>,
+    )
 
     expect(await screen.findByText('80% · passed')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Send test' }))
@@ -55,5 +60,20 @@ describe('TestsSection', () => {
     expect(await screen.findByText(/Sent “Aptitude”/)).toBeInTheDocument()
     const send = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/applications/a1/tests') && init?.method === 'POST')!
     expect(JSON.parse(send[1]!.body as string)).toMatchObject({ assessmentId: 't2', dueDays: 3, sendEmail: true, sendWhatsApp: false })
+  })
+
+  it('opens the send form straight away from the drawer, and points to the builder when nothing is ready', async () => {
+    fakeFetch([
+      { path: '/applications/a1/tests', body: [] },
+      { path: '/assessments', body: [{ id: 't3', title: 'Draft one', category: 'JAVA', status: 'DRAFT', questionCount: 1, durationMinutes: 20 }] },
+      { path: '/whatsapp/status', body: { apiEnabled: false, repliesEnabled: false } },
+    ])
+    render(
+      <MemoryRouter>
+        <TestsSection applicationId="a1" canSend hasEmail hasPhone startOpen />
+      </MemoryRouter>,
+    )
+    expect(await screen.findByRole('form', { name: 'Send a test' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Build one from the question bank' })).toHaveAttribute('href', '/tests')
   })
 })

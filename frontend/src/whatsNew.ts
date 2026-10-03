@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-03-drawer-send-test',
+    date: '2026-10-03',
+    title: 'Send a test right from the candidate',
+    summary: 'Click a candidate in an opening and use Send test at the top of their panel. Their tests, scores and answers are in the new Tests tab.',
+    steps: ['Openings → open an opening → click a candidate → Send test.', 'Pick the test and the days to finish → Send test.'],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-03-send-to-candidates',
     date: '2026-10-03',
     title: 'Send a test to many candidates at once',

@@ -36,7 +36,7 @@ function describe(event: HistoryEvent, label: (s: string | null) => string) {
   }
 }
 
-export type DrawerTab = 'profile' | 'candidate' | 'client' | 'team'
+export type DrawerTab = 'profile' | 'tests' | 'candidate' | 'client' | 'team'
 
 /** Everything about one candidate in one opening: profile, documents, sharing, interviews, chats, history. */
 export function CandidateDrawer({
@@ -68,6 +68,9 @@ export function CandidateDrawer({
   const [error, setError] = useState<string | null>(null)
   const [contact, setContact] = useState({ name: row.name, email: row.email, phone: row.phone })
   const [docsVersion, setDocsVersion] = useState(0)
+  const canSendTest = canEdit && canMessage
+  /** Bumped by the header's Send test button so the Tests tab opens with the send form showing. */
+  const [sendRequest, setSendRequest] = useState(0)
 
   const load = useCallback(() => {
     getHistory(row.id).then(setHistory).catch(() => undefined)
@@ -94,6 +97,7 @@ export function CandidateDrawer({
 
   const tabs: [DrawerTab, string][] = [
     ['profile', 'Profile'],
+    ['tests', 'Tests'],
     ['candidate', 'Chat with candidate'],
     ...(hasClient ? ([['client', `Chat with ${row.clientName}`]] as [DrawerTab, string][]) : []),
     ['team', 'Team chat'],
@@ -111,9 +115,22 @@ export function CandidateDrawer({
               {hasClient ? ` · ${row.clientName}` : ''}
             </div>
           </div>
-          <Button variant="ghost" onClick={onClose}>
-            Close
-          </Button>
+          <span className="row" style={{ gap: 6 }}>
+            {canSendTest && (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setTab('tests')
+                  setSendRequest((n) => n + 1)
+                }}
+              >
+                Send test
+              </Button>
+            )}
+            <Button variant="ghost" onClick={onClose}>
+              Close
+            </Button>
+          </span>
         </div>
         {canMessage && (
           <div className="tabs" role="tablist" aria-label="Candidate sections">
@@ -124,7 +141,18 @@ export function CandidateDrawer({
             ))}
           </div>
         )}
-        {tab !== 'profile' && (
+        {tab === 'tests' && (
+          <TestsSection
+            key={`tests-${sendRequest}`}
+            applicationId={row.id}
+            canSend={canSendTest}
+            hasEmail={!!contact.email}
+            hasPhone={!!contact.phone}
+            startOpen={sendRequest > 0}
+            onSent={changed}
+          />
+        )}
+        {tab !== 'profile' && tab !== 'tests' && (
           <Conversation
             key={`${tab}-${template ?? ''}`}
             applicationId={row.id}
@@ -151,12 +179,9 @@ export function CandidateDrawer({
               }}
             />
             <ResumeInsightSection applicationId={row.id} canEdit={canEdit} />
-            <TestsSection
-              applicationId={row.id}
-              canSend={canEdit && canMessage}
-              hasEmail={!!contact.email}
-              hasPhone={!!contact.phone}
-            />
+            {!canMessage && (
+              <TestsSection applicationId={row.id} canSend={false} hasEmail={!!contact.email} hasPhone={!!contact.phone} />
+            )}
             {error && (
               <div role="alert" className="alert alert-error">
                 {error}
