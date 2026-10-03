@@ -64,8 +64,16 @@ export interface Page<T> {
 
 export type SessionType = 'STAFF' | 'CANDIDATE' | 'CLIENT'
 
+/** Set while an admin views the app as someone else (ADR-0013). */
+export interface ViewAsInfo {
+  kind: 'CANDIDATE' | 'CLIENT' | 'ROLE'
+  label: string
+  expiresAt: string
+}
+
 export interface Session {
   type: SessionType | null
+  viewAs?: ViewAsInfo | null
 }
 
 export interface CandidateMe {

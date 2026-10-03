@@ -116,6 +116,10 @@ Frontend (from `frontend/`):
 - **Government IDs** (Aadhaar, PAN) are visible only with
   `VIEW_ID_DOCUMENTS`; ask for the masked Aadhaar and never store ID numbers
   as fields.
+- **View as is read-only** (ADR-0013): while an admin views as someone,
+  the server refuses every write; new GET endpoints must not change state
+  (or must skip it when `ViewAs.active()`), and identity always comes from
+  the `Current*Service` resolvers, never straight from the security context.
 - **AI is advisory**: no code path may reject, advance or score a
   candidate from LLM output alone. AI output is labelled in the UI and
   logged. The opening assistant (ADR-0009) only proposes; changes happen

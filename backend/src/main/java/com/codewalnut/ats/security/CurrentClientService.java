@@ -21,6 +21,15 @@ public class CurrentClientService {
     private final ClientContactRepository contactRepository;
 
     public ClientContact require() {
+        var viewAs = ViewAs.current();
+        if (viewAs.isPresent()) {
+            if (viewAs.get().kind() != ViewAs.Kind.CLIENT) {
+                throw new AccessDeniedException("Client contacts only");
+            }
+            return contactRepository.findByEmail(viewAs.get().email())
+                    .filter(ClientContact::isActive)
+                    .orElseThrow(() -> new UnauthenticatedException("This client contact has been removed"));
+        }
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
             throw new UnauthenticatedException("Not signed in");

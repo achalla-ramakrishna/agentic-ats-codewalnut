@@ -30,7 +30,7 @@ templates, lists, custom fields, integrations and data import.
 | ADM-10 | Bulk import of candidates (and optionally open jobs) from CSV/XLSX with column mapping, dry-run preview, duplicate check and consent source. | MVP |
 | ADM-11 | Careers page branding: logo, colours, intro text, privacy-notice link. | MVP |
 | ADM-12 | Slack notifications settings. | v1 |
-| ADM-13 | **View as** (parked 2026-10-03, requested by the product owner): an Admin picks a candidate, a client contact (e.g. a hiring manager) or a staff role and sees the app as them, to test now that sign-in is Google-only. Admin only; a fixed banner "Viewing as … — Exit"; start and end audited; time-limited (e.g. 30 min); read-only by default, so nothing is applied, sent or signed in someone else's name; never shows ID documents the admin couldn't see anyway. Alternative for testing only: demo test accounts (codewalnut.test) on a separate preview environment. | Parked |
+| ADM-13 | **View as** (menu → View as, Admins only): see the app as a candidate (any with an email), an active client contact (e.g. Blend's hiring manager) or a staff role (own account with only that role). Fixed banner "Viewing as … — Back to admin"; read-only on the server (every write refused); 30 minutes; start and stop audited (ADR-0013). | Done |
 
 ## Business rules
 
@@ -50,3 +50,4 @@ templates, lists, custom fields, integrations and data import.
 | 2026-09-25 | Created from SPEC.md |
 | 2026-10-02 | "What's new" page with release notes per feature, a menu badge and a dashboard note for unseen updates; entries live in `frontend/src/whatsNew.ts` (AGENTS.md) |
 | 2026-10-03 | ADM-13 "View as" for admins added as parked, to take up later |
+| 2026-10-03 | ADM-13 View as shipped (ADR-0013) |

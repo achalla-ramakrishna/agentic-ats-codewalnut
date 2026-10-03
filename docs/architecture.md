@@ -64,6 +64,10 @@ Tests (ADR-0011): `AssessmentService` manages the library and asks
 the candidate without answers, enforces the timer and scores on submit or
 when an overdue invite is next read.
 
+View as (ADR-0013): a session attribute makes the `Current*Service`
+resolvers return a candidate, client contact or role-limited copy of the
+admin; `ViewAsReadOnlyFilter` refuses API writes while it is set.
+
 CodeWalnut résumés (ADR-0012): `CodeWalnutResumeService` asks
 `client/ClaudeResumeWriter` (dev/demo: `PlainResumeWriter`) for a
 `BrandedResume`, strips phones and links, stores it per application, and

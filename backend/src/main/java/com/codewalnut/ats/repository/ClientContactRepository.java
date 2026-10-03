@@ -10,5 +10,7 @@ public interface ClientContactRepository extends JpaRepository<ClientContact, UU
 
     Optional<ClientContact> findByEmail(String email);
 
+    List<ClientContact> findByActiveTrueOrderByEmailAsc();
+
     List<ClientContact> findByClientIdOrderByEmailAsc(UUID clientId);
 }

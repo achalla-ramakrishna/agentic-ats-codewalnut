@@ -246,7 +246,9 @@ public class MessageService {
     @Transactional
     public List<CandidateMessageResponse> candidateThread(CandidateAccount account, UUID applicationId) {
         Application application = own(account, applicationId);
-        application.setCandidateReadAt(Instant.now());
+        if (!com.codewalnut.ats.security.ViewAs.active()) { // an admin viewing as them hasn't read it
+            application.setCandidateReadAt(Instant.now());
+        }
         return messageRepository.findByApplicationIdAndChannelOrderByCreatedAtAsc(applicationId, MessageChannel.CANDIDATE)
                 .stream().map(CandidateMessageResponse::from).toList();
     }

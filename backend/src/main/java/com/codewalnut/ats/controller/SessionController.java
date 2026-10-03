@@ -1,7 +1,9 @@
 package com.codewalnut.ats.controller;
 
 import com.codewalnut.ats.dto.SessionResponse;
+import com.codewalnut.ats.dto.ViewAsDtos;
 import com.codewalnut.ats.security.SessionType;
+import com.codewalnut.ats.security.ViewAs;
 import java.util.Arrays;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -18,6 +20,16 @@ public class SessionController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
             return new SessionResponse(null);
+        }
+        var viewAs = ViewAs.current();
+        if (viewAs.isPresent()) {
+            ViewAs.State s = viewAs.get();
+            SessionType seen = switch (s.kind()) {
+                case CANDIDATE -> SessionType.CANDIDATE;
+                case CLIENT -> SessionType.CLIENT;
+                case ROLE -> SessionType.STAFF;
+            };
+            return new SessionResponse(seen, new ViewAsDtos.Info(s.kind(), s.label(), s.expiresAt()));
         }
         SessionType type = Arrays.stream(SessionType.values())
                 .filter(t -> auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals(t.authority())))

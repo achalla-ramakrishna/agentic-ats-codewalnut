@@ -18,6 +18,9 @@ import { NoAccessPage } from './pages/NoAccessPage'
 import { PublicJobPage, RETURN_TO_KEY } from './pages/PublicJobPage'
 import { TakeTestPage } from './pages/TakeTestPage'
 import { TestsPage } from './pages/TestsPage'
+import { ViewAsPage } from './pages/ViewAsPage'
+import { ViewAsBanner } from './components/ViewAsBanner'
+import './components/AppShell.css'
 import { UsersPage } from './pages/UsersPage'
 import { WhatsNewPage } from './pages/WhatsNewPage'
 
@@ -29,6 +32,7 @@ const SCREENS: Record<string, ReactElement> = {
   clients: <ClientsPage />,
   interviews: <InterviewsPage />,
   tests: <TestsPage />,
+  'view-as': <ViewAsPage />,
   messages: <MessagesPage />,
   approvals: <ComingSoonPage title="Approvals" chunk="chunks 1 and 7" spec="requisitions.md" />,
   reports: <ComingSoonPage title="Reports" chunk="v1" spec="reports.md" />,
@@ -66,6 +70,15 @@ function LoginForTest() {
 }
 
 export function App() {
+  return (
+    <>
+      <ViewAsBanner />
+      <AppRoutes />
+    </>
+  )
+}
+
+function AppRoutes() {
   const { state, refresh } = useAuth()
   useReturnAfterSignIn(state.status === 'candidate' || state.status === 'signed-in')
 

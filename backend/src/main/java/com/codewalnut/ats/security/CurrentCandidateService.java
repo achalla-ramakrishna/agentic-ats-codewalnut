@@ -18,6 +18,16 @@ public class CurrentCandidateService {
     private final CandidateAccountRepository accountRepository;
 
     public CandidateAccount require() {
+        var viewAs = ViewAs.current();
+        if (viewAs.isPresent()) {
+            if (viewAs.get().kind() != ViewAs.Kind.CANDIDATE) {
+                throw new AccessDeniedException("Candidates only");
+            }
+            // An admin viewing as this candidate (ADR-0013); they may never have signed in themselves.
+            String email = viewAs.get().email();
+            return accountRepository.findByEmail(email)
+                    .orElseGet(() -> CandidateAccount.builder().email(email).name(viewAs.get().label()).build());
+        }
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
             throw new UnauthenticatedException("Not signed in");

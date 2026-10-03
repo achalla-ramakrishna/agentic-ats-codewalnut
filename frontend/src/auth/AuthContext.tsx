@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { getCandidateMe, getMe, getSession, logout as apiLogout } from '../api/auth'
 import { getClientMe, type ClientMe } from '../api/clients'
-import type { CandidateMe, Me } from '../api/types'
+import { stopViewAs } from '../api/viewAs'
+import type { CandidateMe, Me, ViewAsInfo } from '../api/types'
 
 type AuthState =
   | { status: 'loading' }
@@ -13,6 +14,8 @@ type AuthState =
 
 interface AuthContextValue {
   state: AuthState
+  /** Set while an admin views the app as someone else. */
+  viewAs: ViewAsInfo | null
   refresh: () => Promise<void>
   signOut: () => Promise<void>
 }
@@ -21,10 +24,12 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: 'loading' })
+  const [viewAs, setViewAs] = useState<ViewAsInfo | null>(null)
 
   const refresh = useCallback(async () => {
     try {
       const session = await getSession()
+      setViewAs(session.viewAs ?? null)
       if (session.type === 'STAFF') {
         setState({ status: 'signed-in', me: await getMe() })
       } else if (session.type === 'CANDIDATE') {
@@ -40,18 +45,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = useCallback(async () => {
+    if (viewAs) {
+      // "Sign out" while viewing as someone just goes back to the admin's own view.
+      await stopViewAs()
+      window.location.assign('/admin/view-as')
+      return
+    }
     try {
       await apiLogout()
     } finally {
       setState({ status: 'signed-out' })
     }
-  }, [])
+  }, [viewAs])
 
   useEffect(() => {
     void refresh()
   }, [refresh])
 
-  return <AuthContext.Provider value={{ state, refresh, signOut }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ state, viewAs, refresh, signOut }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth(): AuthContextValue {

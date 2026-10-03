@@ -16,6 +16,21 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-03-view-as',
+    date: '2026-10-03',
+    title: 'View as a candidate, client or role',
+    summary:
+      'Admins can now see exactly what a candidate, a client’s hiring manager or a recruiter sees — before inviting them. It is read-only: nothing is saved or sent while you look.',
+    steps: [
+      'Menu → View as.',
+      'Pick a CodeWalnut role, a client contact, or search for a candidate, and click View as.',
+      'Look around. The yellow banner shows who you are viewing as.',
+      'Click Back to admin when you’re done (it also ends by itself after 30 minutes).',
+    ],
+    link: { to: '/admin/view-as', label: 'Open View as' },
+    capability: 'MANAGE_USERS',
+  },
+  {
     id: '2026-10-03-codewalnut-resume',
     date: '2026-10-03',
     title: 'Make the CodeWalnut résumé in a minute',

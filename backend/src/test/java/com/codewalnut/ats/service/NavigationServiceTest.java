@@ -36,7 +36,7 @@ class NavigationServiceTest {
     @Test
     void adminSeesEverythingInOrder() {
         assertThat(keysFor(Role.ADMIN)).containsExactly("dashboard", "jobs", "candidates", "messages", "clients",
-                "interviews", "tests", "approvals", "reports", "users", "audit-log");
+                "interviews", "tests", "approvals", "reports", "users", "view-as", "audit-log");
     }
 
     @Test

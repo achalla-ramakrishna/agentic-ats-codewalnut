@@ -26,6 +26,7 @@ public class NavigationService {
             new Entry("approvals", "Approvals", "/approvals", Capability.VIEW_APPROVALS),
             new Entry("reports", "Reports", "/reports", Capability.VIEW_REPORTS),
             new Entry("users", "Users", "/admin/users", Capability.MANAGE_USERS),
+            new Entry("view-as", "View as", "/admin/view-as", Capability.MANAGE_USERS),
             new Entry("audit-log", "Audit log", "/admin/audit-log", Capability.VIEW_AUDIT_LOG));
 
     public List<NavItem> navigationFor(Set<Capability> capabilities) {
