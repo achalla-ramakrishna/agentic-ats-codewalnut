@@ -47,14 +47,14 @@ distractors.
   systems, networks, databases, Git, Linux, distributed systems, security,
   engineering practice) and System design (building blocks, storage, caching,
   APIs, scaling, messaging, reliability, observability, consistency, case
-  studies, capacity and security), 12 topics × 12 questions each.
+  studies, capacity and security), 11 topics × 12 questions each.
 - **More role banks**: Node.js (runtime, event loop, Express, NestJS, MongoDB,
   security, scaling), Testing & QA automation (test design, Selenium,
   Playwright, API tests, CI, performance), DevOps & cloud (Linux, CI/CD,
   Docker, Kubernetes, Terraform, networking, observability, DevSecOps,
   reliability) and Data analytics (spreadsheets, statistics, SQL for analysis,
   charts, cleaning, Power BI and Tableau, pandas, metrics, modelling, A/B
-  tests, forecasting), 11–12 topics × 12 questions each.
+  tests, forecasting), 11 topics × 12 questions each.
 - **Role tests**: a role (Java backend, Python backend, React frontend,
   Angular frontend, Node.js backend, four full-stack mixes including MERN, SQL
   developer, QA automation, DevOps / cloud, data analyst, graduate trainee) at
