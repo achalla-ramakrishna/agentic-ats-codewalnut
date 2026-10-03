@@ -15,4 +15,9 @@ public interface AssessmentInviteRepository extends JpaRepository<AssessmentInvi
     List<AssessmentInvite> findByApplicationCandidateIdOrderBySentAtDesc(UUID candidateId);
 
     long countByAssessmentId(UUID assessmentId);
+
+    List<AssessmentInvite> findByAssessmentId(UUID assessmentId);
+
+    /** Invites someone has started or submitted: the test has been taken. */
+    long countByAssessmentIdAndStatusIn(UUID assessmentId, Collection<AssessmentInvite.Status> statuses);
 }

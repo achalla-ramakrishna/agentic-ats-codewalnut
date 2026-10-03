@@ -5,6 +5,7 @@ import {
   addQuestion,
   archiveAssessment,
   createAssessment,
+  deleteAssessment,
   deleteQuestion,
   draftQuestions,
   duplicateAssessment,
@@ -61,7 +62,17 @@ function QuestionCard({ q, editable, onEdit, onDelete }: { q: QuestionView; edit
   )
 }
 
-function Editor({ id, onChanged, onOpen }: { id: string; onChanged: () => void; onOpen: (id: string) => void }) {
+function Editor({
+  id,
+  onChanged,
+  onOpen,
+  onDeleted,
+}: {
+  id: string
+  onChanged: () => void
+  onOpen: (id: string) => void
+  onDeleted: (message: string) => void
+}) {
   const [detail, setDetail] = useState<AssessmentDetail | null>(null)
   const [editing, setEditing] = useState<string | 'new' | null>(null)
   const [picking, setPicking] = useState(false)
@@ -150,6 +161,27 @@ function Editor({ id, onChanged, onOpen }: { id: string; onChanged: () => void; 
                 Archive
               </Button>
             )}
+            {s.taken === 0 && (
+              <Button
+                variant="ghost"
+                onClick={async () => {
+                  const open = s.invites
+                  const warning =
+                    open > 0
+                      ? `Delete “${s.title}”? ${open} candidate${open === 1 ? ' was' : 's were'} sent this test but ${open === 1 ? "hasn't" : "haven't"} started; ${open === 1 ? 'that link' : 'those links'} will stop working. This can't be undone.`
+                      : `Delete “${s.title}”? This can't be undone.`
+                  if (!window.confirm(warning)) return
+                  try {
+                    const r = await deleteAssessment(id)
+                    onDeleted(`Deleted “${r.title}”.`)
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : 'Could not delete the test')
+                  }
+                }}
+              >
+                Delete
+              </Button>
+            )}
           </span>
         </div>
         <p className="muted" style={{ margin: 0 }}>
@@ -185,6 +217,7 @@ function Editor({ id, onChanged, onOpen }: { id: string; onChanged: () => void; 
         {!draftMode && (
           <p className="muted" style={{ margin: 0, fontSize: 13 }}>
             Questions are locked so every candidate gets the same test. Use Duplicate to make a changed version.
+            {s.taken > 0 && ` ${s.taken} candidate${s.taken === 1 ? ' has' : 's have'} taken it, so it can be archived but not deleted.`}
           </p>
         )}
         {message && <div className="alert alert-info">{message}</div>}
@@ -351,6 +384,7 @@ export function TestsPage() {
   const [creating, setCreating] = useState(false)
   const [building, setBuilding] = useState(false)
   const [tab, setTab] = useState<'tests' | 'bank'>('tests')
+  const [notice, setNotice] = useState<string | null>(null)
   const [showArchived, setShowArchived] = useState(false)
 
   const load = useCallback(() => {
@@ -381,6 +415,7 @@ export function TestsPage() {
           Question bank
         </button>
       </div>
+      {notice && <div className="alert alert-info">{notice}</div>}
       {tab === 'bank' && <QuestionBankPanel />}
       {tab === 'tests' && building && (
         <BuildFromBank
@@ -447,7 +482,19 @@ export function TestsPage() {
         )}
       </Card>
       )}
-      {tab === 'tests' && selected && <Editor key={selected} id={selected} onChanged={load} onOpen={setSelected} />}
+      {tab === 'tests' && selected && (
+        <Editor
+          key={selected}
+          id={selected}
+          onChanged={load}
+          onOpen={setSelected}
+          onDeleted={(message) => {
+            setSelected(null)
+            setNotice(message)
+            load()
+          }}
+        />
+      )}
     </div>
   )
 }

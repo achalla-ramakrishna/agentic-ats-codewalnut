@@ -226,4 +226,45 @@ class AssessmentFlowTest {
                 .andExpect(jsonPath("$.summary.status").value("DRAFT"))
                 .andExpect(jsonPath("$.questions.length()").value(1));
     }
+
+    @Test
+    void aTestCanBeDeletedOnlyUntilSomeoneTakesIt() throws Exception {
+        // A draft nobody was sent: deleted.
+        String draft = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/assessments",
+                "{\"title\":\"Throwaway " + tag + "\",\"category\":\"APTITUDE\",\"durationMinutes\":10,\"passPercent\":50}")), "$.summary.id");
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/assessments/" + draft)
+                        .with(RECRUITER).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.openInvites").value(0));
+        mockMvc.perform(get("/api/v1/assessments/" + draft).with(RECRUITER)).andExpect(status().isNotFound());
+
+        // Sent but not started: deleted, and the candidate's link stops working.
+        String test = readyJavaTest();
+        String email = "del." + tag + "@gmail.com";
+        String[] ids = candidateInOpening(email);
+        String invite = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/applications/" + ids[1] + "/tests",
+                "{\"assessmentId\":\"" + test + "\",\"dueDays\":3,\"sendEmail\":false,\"sendWhatsApp\":false}")), "$.invite.id");
+        mockMvc.perform(get("/api/v1/assessments").with(RECRUITER))
+                .andExpect(jsonPath("$[?(@.id == '" + test + "')].taken").value(Matchers.hasItem(0)));
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/assessments/" + test)
+                        .with(user("hiring.manager@codewalnut.test")).with(csrf()))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/assessments/" + test)
+                        .with(RECRUITER).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.openInvites").value(1));
+        candidate(candidateSession(email), "POST", "/api/v1/candidate/tests/" + invite + "/start", "").andExpect(status().isNotFound());
+
+        // Once someone has started it, it can't be deleted.
+        String taken = readyJavaTest();
+        String email2 = "taken." + tag + "@gmail.com";
+        String[] ids2 = candidateInOpening(email2);
+        String invite2 = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/applications/" + ids2[1] + "/tests",
+                "{\"assessmentId\":\"" + taken + "\",\"dueDays\":3,\"sendEmail\":false,\"sendWhatsApp\":false}")), "$.invite.id");
+        candidate(candidateSession(email2), "POST", "/api/v1/candidate/tests/" + invite2 + "/start", "").andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/assessments/" + taken)
+                        .with(RECRUITER).with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value(Matchers.containsString("Archive it instead")));
+    }
 }

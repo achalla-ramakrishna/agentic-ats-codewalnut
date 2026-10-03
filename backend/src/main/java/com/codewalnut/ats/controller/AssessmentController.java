@@ -104,6 +104,11 @@ public class AssessmentController {
         return assessmentService.archive(currentUserService.require(), id);
     }
 
+    @DeleteMapping("/api/v1/assessments/{id}")
+    public com.codewalnut.ats.dto.AssessmentDtos.DeleteResult delete(@PathVariable UUID id) {
+        return assessmentService.delete(currentUserService.require(), id);
+    }
+
     @PostMapping("/api/v1/assessments/{id}/duplicate")
     @ResponseStatus(HttpStatus.CREATED)
     public AssessmentDetail duplicate(@PathVariable UUID id) {

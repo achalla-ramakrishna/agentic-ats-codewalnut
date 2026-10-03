@@ -203,6 +203,33 @@ public class AssessmentService {
         return detail(a);
     }
 
+    private static final java.util.Set<com.codewalnut.ats.domain.AssessmentInvite.Status> TAKEN = java.util.EnumSet.of(
+            com.codewalnut.ats.domain.AssessmentInvite.Status.STARTED, com.codewalnut.ats.domain.AssessmentInvite.Status.SUBMITTED);
+
+    /**
+     * Deletes a test nobody has started or submitted. Invites that were sent but not started are
+     * removed too (those links stop working); once anyone has taken it, archive it instead so the
+     * results stay.
+     */
+    @Transactional
+    public com.codewalnut.ats.dto.AssessmentDtos.DeleteResult delete(AppUser actor, UUID id) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        Assessment a = assessment(id);
+        long taken = inviteRepository.countByAssessmentIdAndStatusIn(id, TAKEN);
+        if (taken > 0) {
+            throw new IllegalArgumentException(taken + " candidate" + (taken == 1 ? " has" : "s have")
+                    + " already taken this test, so it can't be deleted. Archive it instead to hide it.");
+        }
+        List<com.codewalnut.ats.domain.AssessmentInvite> invites = inviteRepository.findByAssessmentId(id);
+        int open = (int) invites.stream().filter(i -> i.getStatus() == com.codewalnut.ats.domain.AssessmentInvite.Status.SENT).count();
+        inviteRepository.deleteAll(invites);
+        questionRepository.deleteByAssessmentId(id);
+        assessmentRepository.delete(a);
+        auditService.record(actor, AuditAction.ASSESSMENT_DELETED, "Assessment", id,
+                Map.of("title", a.getTitle(), "removedInvites", invites.size()));
+        return new com.codewalnut.ats.dto.AssessmentDtos.DeleteResult(a.getTitle(), open);
+    }
+
     /** A new draft with the same details and questions, to make a changed version. */
     @Transactional
     public AssessmentDetail duplicate(AppUser actor, UUID id) {
@@ -340,7 +367,8 @@ public class AssessmentService {
     private AssessmentSummary summary(Assessment a, long[] counts) {
         return new AssessmentSummary(a.getId(), a.getTitle(), a.getCategory(), a.getDescription(), a.getDurationMinutes(),
                 a.getPassPercent(), a.getStatus(), (int) counts[0], (int) counts[1],
-                inviteRepository.countByAssessmentId(a.getId()), a.getUpdatedAt());
+                inviteRepository.countByAssessmentId(a.getId()), a.getUpdatedAt(),
+                inviteRepository.countByAssessmentIdAndStatusIn(a.getId(), TAKEN));
     }
 
     /** Validates and tidies a question; throws IllegalArgumentException with a field message. */

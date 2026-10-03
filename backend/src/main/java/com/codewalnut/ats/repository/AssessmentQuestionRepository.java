@@ -13,6 +13,8 @@ public interface AssessmentQuestionRepository extends JpaRepository<AssessmentQu
 
     long countByAssessmentId(UUID assessmentId);
 
+    void deleteByAssessmentId(UUID assessmentId);
+
     @Query("select q.assessmentId, count(q), sum(q.points) from AssessmentQuestion q where q.assessmentId in :ids group by q.assessmentId")
     List<Object[]> countsFor(Collection<UUID> ids);
 }

@@ -24,7 +24,10 @@ public final class AssessmentDtos {
     public record AssessmentSummary(
             UUID id, String title, Assessment.Category category, String description, int durationMinutes,
             int passPercent, Assessment.Status status, int questionCount, int totalPoints, long invites,
-            Instant updatedAt) {}
+            Instant updatedAt, long taken) {}
+
+    /** openInvites: candidates who were sent the test but haven't started; their links stop working. */
+    public record DeleteResult(String title, int openInvites) {}
 
     /** figure: SVG or image data URI shown with the question; optionFigures: pictures for the options, or null. */
     public record QuestionView(

@@ -34,6 +34,8 @@ export interface AssessmentSummary {
   totalPoints: number
   invites: number
   updatedAt: string
+  /** Candidates who started or submitted it; a test can be deleted only while this is 0. */
+  taken: number
 }
 
 export interface QuestionView {
@@ -182,6 +184,7 @@ export const draftQuestions = (id: string, input: { topic?: string; level?: stri
 export const publishAssessment = (id: string) => api<AssessmentDetail>(`/assessments/${id}/publish`, { method: 'POST' })
 export const unpublishAssessment = (id: string) => api<AssessmentDetail>(`/assessments/${id}/unpublish`, { method: 'POST' })
 export const archiveAssessment = (id: string) => api<AssessmentDetail>(`/assessments/${id}/archive`, { method: 'POST' })
+export const deleteAssessment = (id: string) => api<{ title: string; openInvites: number }>(`/assessments/${id}`, { method: 'DELETE' })
 export const duplicateAssessment = (id: string) => api<AssessmentDetail>(`/assessments/${id}/duplicate`, { method: 'POST' })
 
 // sending and results

@@ -16,6 +16,7 @@ const summary = {
   questionCount: 0,
   totalPoints: 0,
   invites: 0,
+  taken: 0,
   updatedAt: '2026-10-03T00:00:00Z',
 } as const
 
@@ -74,5 +75,33 @@ describe('TestsPage', () => {
     expect(await screen.findByText('Ready to send')).toBeInTheDocument()
     const create = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/assessments') && init?.method === 'POST')!
     expect(JSON.parse(create[1]!.body as string)).toMatchObject({ title: 'Java basics', category: 'JAVA', durationMinutes: 30, passPercent: 60 })
+  })
+
+  it('deletes a test nobody has taken, warning about open links', async () => {
+    const sent = { ...empty, summary: { ...summary, status: 'READY', invites: 1, taken: 0 } }
+    const fetchMock = fakeFetch([
+      { path: '/assessments/t1', method: 'DELETE', body: { title: 'Java basics', openInvites: 1 } },
+      { path: '/assessments/t1', body: sent },
+      { path: '/assessments', body: [{ ...summary, status: 'READY', invites: 1 }] },
+    ])
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<TestsPage />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Java basics' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete' }))
+    expect(confirm.mock.calls[0][0]).toMatch(/1 candidate was sent this test but hasn't started/)
+    expect(await screen.findByText('Deleted “Java basics”.')).toBeInTheDocument()
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(true)
+  })
+
+  it('hides Delete once someone has taken the test', async () => {
+    fakeFetch([
+      { path: '/assessments/t1', body: { ...empty, summary: { ...summary, status: 'READY', invites: 2, taken: 1 } } },
+      { path: '/assessments', body: [{ ...summary, status: 'READY', invites: 2, taken: 1 }] },
+    ])
+    render(<TestsPage />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Java basics' }))
+    expect(await screen.findByText(/1 candidate has taken it/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
   })
 })

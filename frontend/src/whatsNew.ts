@@ -16,6 +16,15 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-03-delete-test',
+    date: '2026-10-03',
+    title: 'Delete tests nobody has taken',
+    summary: 'Made a test by mistake? You can now delete it, as long as no candidate has started it. Once someone has taken it, archive it instead so their result stays.',
+    steps: ['Tests → click the test → Delete.', 'If it was sent but not started, you’ll be warned that those links will stop working.'],
+    link: { to: '/tests', label: 'Open Tests' },
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-03-question-bank',
     date: '2026-10-03',
     title: 'Aptitude question bank and test builder',
