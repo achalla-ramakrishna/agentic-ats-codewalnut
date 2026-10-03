@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-03-aptitude-topics',
+    date: '2026-10-03',
+    title: '1,300 aptitude questions and build-by-topic',
+    summary: 'The aptitude bank now has 26 topics with 50 questions each (17 easy, 17 medium, 16 hard), and a topic guide that explains each one. Building a test no longer means picking questions: tick the topics, choose how hard and in what order, and create.',
+    steps: [
+      'Tests → Question bank → open “Topic guide” to see what each topic covers.',
+      'Tests → Build from bank → By topics: tick topics, set questions per topic, difficulty mix and order → Create test.',
+    ],
+    link: { to: '/tests', label: 'Open Tests' },
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-03-delete-test',
     date: '2026-10-03',
     title: 'Delete tests nobody has taken',

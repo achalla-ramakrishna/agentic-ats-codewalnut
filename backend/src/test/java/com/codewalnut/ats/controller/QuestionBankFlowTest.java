@@ -114,9 +114,36 @@ class QuestionBankFlowTest {
     void shortagesAreExplained() throws Exception {
         send(RECRUITER, "POST", "/api/v1/question-bank/build", """
                 {"title":"Too many","area":"APTITUDE","durationMinutes":30,"passPercent":50,"order":"SHUFFLED",
-                 "sections":[{"section":"VERBAL","easy":0,"medium":0,"hard":50}]}""")
+                 "topics":[{"section":"VERBAL","topic":"Synonyms","easy":0,"medium":0,"hard":20}]}""")
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value(Matchers.containsString("Verbal ability · hard")));
+                .andExpect(jsonPath("$.error").value(Matchers.containsString("Synonyms · hard: 16 available, 20 asked")));
+    }
+
+    @Test
+    void theTopicGuideHasFiftyQuestionsPerTopic() throws Exception {
+        mockMvc.perform(get("/api/v1/question-bank/overview").with(RECRUITER))
+                .andExpect(jsonPath("$.guide.length()").value(Matchers.greaterThanOrEqualTo(26)))
+                .andExpect(jsonPath("$.guide[0].name").value("Percentages"))
+                .andExpect(jsonPath("$.guide[0].covers").value(Matchers.not(Matchers.emptyString())))
+                .andExpect(jsonPath("$.guide[0].easy").value(17))
+                .andExpect(jsonPath("$.guide[0].medium").value(17))
+                .andExpect(jsonPath("$.guide[0].hard").value(16));
+    }
+
+    @Test
+    void buildByTopicsHardestFirst() throws Exception {
+        send(RECRUITER, "POST", "/api/v1/question-bank/build", """
+                {"title":"Topics %s","area":"APTITUDE","durationMinutes":15,"passPercent":50,"order":"HARD_FIRST",
+                 "topics":[{"section":"QUANT","topic":"Percentages","easy":1,"medium":1,"hard":1},
+                           {"section":"LOGICAL","topic":"Clocks","easy":2,"medium":0,"hard":0},
+                           {"section":"LOGICAL","topic":"Syllogisms","easy":0,"medium":0,"hard":2}]}""".formatted(tag))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.summary.questionCount").value(7))
+                .andExpect(jsonPath("$.questions[0].difficulty").value("HARD"))
+                .andExpect(jsonPath("$.questions[2].difficulty").value("HARD"))
+                .andExpect(jsonPath("$.questions[3].difficulty").value("MEDIUM"))
+                .andExpect(jsonPath("$.questions[6].difficulty").value("EASY"))
+                .andExpect(jsonPath("$.questions[*].topic", Matchers.everyItem(Matchers.in(List.of("Percentages", "Clocks", "Syllogisms")))));
     }
 
     @Test

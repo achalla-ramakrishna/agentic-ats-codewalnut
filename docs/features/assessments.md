@@ -58,6 +58,8 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | ASMT-22 | **Add from the question bank** into any draft test. | Done |
 | ASMT-23 | Candidates see section headings, pictures and picture options; results show the score per section. | Done |
 | ASMT-26 | **Delete** a test only while nobody has started or submitted it; invites sent but not started are removed (their links stop working, with a warning first). Once taken, archive instead so results stay. Audited. | Done |
+| ASMT-27 | **Built-in aptitude bank v2**: 26 topics × 50 questions (17 easy, 17 medium, 16 hard), answers from generators and solvers; a **topic guide** says what each topic covers with an example; the old 173-question bank is archived on start-up. | Done |
+| ASMT-28 | **Build by topics**: tick topics, questions per topic, a difficulty mix and an order (easy → hard, hard → easy, topic by topic, shuffled), then create; per-level shortages explained. | Done |
 | ASMT-24 | Banks for Java, Python, React, Angular, SQL and coding, per role. | Next |
 | ASMT-25 | Per-section timers and optional negative marking. | v1 |
 | ASMT-17 | Automatic reminders (needs a sender that works without a staff session, e.g. WhatsApp Business API or a shared mailbox). | v1 |
@@ -96,6 +98,7 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
+| 2026-10-03 | Aptitude bank v2 (26 topics × 50) with topic guide; build a test by topics, difficulty mix and order (ASMT-27, ASMT-28) |
 | 2026-10-03 | Delete a test nobody has taken (ASMT-26) |
 | 2026-10-03 | Question bank with app-drawn pictures, built-in aptitude bank, paper builder with presets, section scores (ASMT-18…ASMT-23, ADR-0014) |
 | 2026-10-03 | Built-in tests: library, AI drafting, send, timed taking, auto-score, results, reminders (ASMT-08…ASMT-15, ADR-0011) |

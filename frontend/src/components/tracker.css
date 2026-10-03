@@ -321,3 +321,72 @@
   letter-spacing: 0.04em;
   color: var(--color-primary, #4f5bd5);
 }
+
+/* Build by topics */
+.topic-pick {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--space-2) var(--space-3);
+  margin: 0;
+}
+.topic-pick legend {
+  font-weight: 600;
+  padding: 0 var(--space-1);
+}
+.topic-pick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-2);
+}
+.topic-pick-item {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  font-size: 14px;
+  cursor: pointer;
+}
+.topic-pick-item input,
+.topic-pick-all input {
+  margin-top: 3px;
+}
+
+/* Topic guide */
+.topic-guide {
+  margin-top: var(--space-3);
+}
+.topic-guide summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.topic-guide-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--space-2);
+  font-size: 13px;
+}
+.topic-guide-table th,
+.topic-guide-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+@media (max-width: 720px) {
+  .topic-guide-table th:nth-child(3),
+  .topic-guide-table td:nth-child(3) {
+    display: none;
+  }
+}
+.linklike {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+  text-align: left;
+}
+.linklike:hover {
+  text-decoration: underline;
+}

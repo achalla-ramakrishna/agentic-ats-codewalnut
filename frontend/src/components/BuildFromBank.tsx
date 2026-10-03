@@ -1,10 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import {
   DIFFICULTY_LABEL,
+  MIXES,
   SECTION_LABEL,
   SECTIONS,
   buildFromBank,
   getBankOverview,
+  planTopics,
   type BankOverview,
   type Difficulty,
   type Order,
@@ -14,7 +16,15 @@ import { Button, Card } from './ui'
 
 const ORDER_LABEL: Record<Order, string> = {
   EASY_FIRST: 'Easy → hard (sections mixed)',
+  HARD_FIRST: 'Hard → easy (sections mixed)',
   BY_SECTION: 'Section by section, easy → hard in each',
+  SHUFFLED: 'Shuffled',
+}
+
+const TOPIC_ORDER_LABEL: Record<Order, string> = {
+  EASY_FIRST: 'Easy → hard (topics mixed)',
+  HARD_FIRST: 'Hard → easy (topics mixed)',
+  BY_SECTION: 'Topic by topic, easy → hard in each',
   SHUFFLED: 'Shuffled',
 }
 
@@ -24,8 +34,188 @@ const LEVELS: { key: keyof Omit<SectionPlan, 'section'>; difficulty: Difficulty 
   { key: 'hard', difficulty: 'HARD' },
 ]
 
-/** Build a test paper from the bank: a preset or your own mix of sections and difficulty (ADR-0014). */
-export function BuildFromBank({ onBuilt, onCancel }: { onBuilt: (assessmentId: string) => void; onCancel: () => void }) {
+interface BuilderProps {
+  onBuilt: (assessmentId: string) => void
+  onCancel: () => void
+}
+
+/** Build a test paper from the bank: by topics and a difficulty mix, or by a pattern / section counts (ADR-0014). */
+export function BuildFromBank(props: BuilderProps) {
+  const [mode, setMode] = useState<'topics' | 'pattern'>('topics')
+  return (
+    <Card>
+      <div className="stack">
+        <h2 style={{ margin: 0 }}>Build an aptitude test from the bank</h2>
+        <div className="tabs" role="tablist" aria-label="How to build">
+          <button type="button" role="tab" aria-selected={mode === 'topics'} onClick={() => setMode('topics')}>
+            By topics
+          </button>
+          <button type="button" role="tab" aria-selected={mode === 'pattern'} onClick={() => setMode('pattern')}>
+            By pattern or section
+          </button>
+        </div>
+        {mode === 'topics' ? <ByTopics {...props} /> : <ByPattern {...props} />}
+      </div>
+    </Card>
+  )
+}
+
+/** Tick the topics, say how many questions each, pick a difficulty mix and an order, and build. */
+function ByTopics({ onBuilt, onCancel }: BuilderProps) {
+  const [overview, setOverview] = useState<BankOverview | null>(null)
+  const [chosen, setChosen] = useState<string[]>([])
+  const [perTopic, setPerTopic] = useState(2)
+  const [mix, setMix] = useState(MIXES[0].id)
+  const [order, setOrder] = useState<Order>('EASY_FIRST')
+  const [title, setTitle] = useState('Aptitude test for freshers')
+  const [duration, setDuration] = useState<number | null>(null)
+  const [pass, setPass] = useState(50)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    getBankOverview()
+      .then((o) => setOverview(o))
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load the bank'))
+  }, [])
+
+  const guide = (overview?.guide ?? []).filter((t) => t.easy + t.medium + t.hard > 0)
+  const picked = guide.filter((t) => chosen.includes(t.id))
+  const split = MIXES.find((m) => m.id === mix)?.split ?? MIXES[0].split
+  const plans = picked.length ? planTopics(picked, perTopic, split) : []
+  const total = picked.length * perTopic
+  const levels = plans.reduce((n, p) => [n[0] + p.easy, n[1] + p.medium, n[2] + p.hard], [0, 0, 0])
+  const minutes = duration ?? Math.max(5, Math.min(180, Math.ceil(total * 1.2)))
+  const short = plans.flatMap((p) => {
+    const t = picked.find((x) => x.name === p.topic)
+    if (!t) return []
+    const gaps = (['easy', 'medium', 'hard'] as const).filter((k) => p[k] > t[k])
+    return gaps.length ? [`${p.topic} (${gaps.join(', ')})`] : []
+  })
+
+  const toggle = (id: string) => setChosen((all) => (all.includes(id) ? all.filter((x) => x !== id) : [...all, id]))
+  const setSection = (section: string, on: boolean) => {
+    const ids = guide.filter((t) => t.section === section).map((t) => t.id)
+    setChosen((all) => (on ? [...new Set([...all, ...ids])] : all.filter((x) => !ids.includes(x))))
+  }
+
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError(null)
+    try {
+      const built = await buildFromBank({ title, area: 'APTITUDE', durationMinutes: minutes, passPercent: pass, topics: plans, order })
+      onBuilt(built.summary.id)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not build the test')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form className="stack" onSubmit={submit} aria-label="Build a test by topics">
+      <p className="muted" style={{ margin: 0, fontSize: 14 }}>
+        Tick the topics, choose how many questions from each and how hard. Questions are picked for you (least used first) into
+        a draft test you can check before sending.
+      </p>
+      {error && (
+        <div role="alert" className="alert alert-error">
+          {error}
+        </div>
+      )}
+      {SECTIONS.map((section) => {
+        const inSection = guide.filter((t) => t.section === section)
+        if (!inSection.length) return null
+        const all = inSection.every((t) => chosen.includes(t.id))
+        return (
+          <fieldset key={section} className="topic-pick">
+            <legend>
+              <label className="topic-pick-all">
+                <input type="checkbox" checked={all} onChange={(e) => setSection(section, e.target.checked)} />{' '}
+                {SECTION_LABEL[section]}
+              </label>
+            </legend>
+            <div className="topic-pick-grid">
+              {inSection.map((t) => (
+                <label key={t.id} className="topic-pick-item" title={t.covers || undefined}>
+                  <input type="checkbox" checked={chosen.includes(t.id)} onChange={() => toggle(t.id)} />
+                  <span>
+                    {t.name}
+                    <span className="muted" style={{ fontSize: 11, display: 'block' }}>
+                      {t.easy + t.medium + t.hard} questions
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )
+      })}
+      <div className="row" style={{ alignItems: 'flex-end' }}>
+        <label className="field" style={{ maxWidth: 160 }}>
+          Questions per topic
+          <input className="input" type="number" min={1} max={10} value={perTopic}
+            onChange={(e) => setPerTopic(Math.max(1, Math.min(10, Number(e.target.value) || 1)))} />
+        </label>
+        <label className="field" style={{ flex: '1 1 260px' }}>
+          Difficulty
+          <select className="select" value={mix} onChange={(e) => setMix(e.target.value)}>
+            {MIXES.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field" style={{ flex: '1 1 220px' }}>
+          Order of questions
+          <select className="select" value={order} onChange={(e) => setOrder(e.target.value as Order)}>
+            {(Object.keys(TOPIC_ORDER_LABEL) as Order[]).map((o) => (
+              <option key={o} value={o}>
+                {TOPIC_ORDER_LABEL[o]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div className="row" style={{ alignItems: 'flex-end' }}>
+        <label className="field" style={{ flex: '1 1 260px' }}>
+          Title
+          <input className="input" required value={title} onChange={(e) => setTitle(e.target.value)} />
+        </label>
+        <label className="field" style={{ maxWidth: 120 }}>
+          Time (min)
+          <input className="input" type="number" min={5} max={180} value={minutes} onChange={(e) => setDuration(Number(e.target.value))} />
+        </label>
+        <label className="field" style={{ maxWidth: 120 }}>
+          Pass mark (%)
+          <input className="input" type="number" min={0} max={100} value={pass} onChange={(e) => setPass(Number(e.target.value))} />
+        </label>
+      </div>
+      <p className="muted" style={{ margin: 0, fontSize: 13 }} aria-live="polite">
+        {total === 0
+          ? 'Tick at least one topic.'
+          : `${total} questions from ${picked.length} topic${picked.length === 1 ? '' : 's'}: ${levels[0]} easy, ${levels[1]} medium, ${levels[2]} hard.`}
+        {total > 100 && ' A test can have up to 100 questions.'}
+      </p>
+      {short.length > 0 && (
+        <div className="alert alert-info">Not enough questions at some levels for: {short.join('; ')}. Ask for fewer or pick another mix.</div>
+      )}
+      <div className="row">
+        <Button type="submit" disabled={busy || total === 0 || total > 100 || short.length > 0 || !title.trim()}>
+          {busy ? 'Creating…' : `Create test (${total} questions)`}
+        </Button>
+        <Button variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+/** A preset pattern (TCS NQT, Wipro …) or your own easy / medium / hard counts per section. */
+function ByPattern({ onBuilt, onCancel }: BuilderProps) {
   const [overview, setOverview] = useState<BankOverview | null>(null)
   const [title, setTitle] = useState('Aptitude test for freshers')
   const [duration, setDuration] = useState(25)
@@ -87,9 +277,8 @@ export function BuildFromBank({ onBuilt, onCancel }: { onBuilt: (assessmentId: s
   }
 
   return (
-    <Card>
+    <>
       <form className="stack" onSubmit={submit} aria-label="Build a test from the bank">
-        <h2 style={{ margin: 0 }}>Build an aptitude test from the bank</h2>
         <p className="muted" style={{ margin: 0, fontSize: 14 }}>
           Pick a pattern or set your own mix. Questions are chosen at random from the bank (least used first), copied into a
           new draft test you can check before sending.
@@ -183,6 +372,6 @@ export function BuildFromBank({ onBuilt, onCancel }: { onBuilt: (assessmentId: s
           </Button>
         </div>
       </form>
-    </Card>
+    </>
   )
 }

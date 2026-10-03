@@ -18,6 +18,11 @@ public interface BankQuestionRepository extends JpaRepository<BankQuestion, java
     List<BankQuestion> findByAreaAndSectionAndDifficultyAndStatus(Assessment.Category area, BankQuestion.Section section,
             BankQuestion.Difficulty difficulty, BankQuestion.Status status);
 
+    List<BankQuestion> findByAreaAndSectionAndTopicAndDifficultyAndStatus(Assessment.Category area, BankQuestion.Section section,
+            String topic, BankQuestion.Difficulty difficulty, BankQuestion.Status status);
+
+    List<BankQuestion> findBySourceAndStatus(BankQuestion.Source source, BankQuestion.Status status);
+
     @Query("select q.area, q.section, q.difficulty, count(q) from BankQuestion q where q.status = com.codewalnut.ats.domain.BankQuestion.Status.ACTIVE group by q.area, q.section, q.difficulty")
     List<Object[]> countActive();
 }

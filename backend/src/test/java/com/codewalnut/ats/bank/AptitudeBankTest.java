@@ -43,16 +43,25 @@ class AptitudeBankTest {
     }
 
     @Test
-    void coversTheCampusTestSectionsWithEnoughQuestions() {
-        Map<BankQuestion.Section, Long> bySection = bank.stream().collect(Collectors.groupingBy(Seed::section, Collectors.counting()));
-        assertThat(bySection.get(BankQuestion.Section.QUANT)).isGreaterThanOrEqualTo(60);
-        assertThat(bySection.get(BankQuestion.Section.LOGICAL)).isGreaterThanOrEqualTo(50);
-        assertThat(bySection.get(BankQuestion.Section.VERBAL)).isGreaterThanOrEqualTo(25);
-        long pictures = bank.stream().filter(q -> q.figure() != null || q.optionFigures() != null).count();
-        assertThat(pictures).isGreaterThanOrEqualTo(60);
-        for (BankQuestion.Difficulty d : BankQuestion.Difficulty.values()) {
-            assertThat(bank.stream().filter(q -> q.difficulty() == d).count()).isGreaterThanOrEqualTo(40);
+    void everyTopicHasFiftyDifferentQuestionsAcrossTheLevels() {
+        assertThat(AptitudeBank.TOPICS).hasSize(26);
+        assertThat(bank).hasSize(26 * AptitudeBank.PER_TOPIC);
+        for (AptitudeBank.Topic topic : AptitudeBank.TOPICS) {
+            List<Seed> mine = bank.stream().filter(q -> q.topic().equals(topic.name())).toList();
+            assertThat(mine).as(topic.name()).hasSize(50).allMatch(q -> q.section() == topic.section());
+            assertThat(mine.stream().map(Seed::prompt).distinct().count() + mine.stream().filter(q -> q.figure() != null || q.optionFigures() != null)
+                    .map(q -> q.prompt() + q.figure() + q.optionFigures()).distinct().count()).as(topic.name()).isGreaterThanOrEqualTo(50);
+            Map<BankQuestion.Difficulty, Long> levels = mine.stream().collect(Collectors.groupingBy(Seed::difficulty, Collectors.counting()));
+            assertThat(levels).containsEntry(BankQuestion.Difficulty.EASY, 17L).containsEntry(BankQuestion.Difficulty.MEDIUM, 17L)
+                    .containsEntry(BankQuestion.Difficulty.HARD, 16L);
+            assertThat(topic.covers()).isNotBlank();
+            assertThat(topic.example()).isNotBlank();
         }
+        Map<BankQuestion.Section, Long> bySection = bank.stream().collect(Collectors.groupingBy(Seed::section, Collectors.counting()));
+        assertThat(bySection).containsEntry(BankQuestion.Section.QUANT, 500L).containsEntry(BankQuestion.Section.LOGICAL, 550L)
+                .containsEntry(BankQuestion.Section.VERBAL, 250L);
+        long pictures = bank.stream().filter(q -> q.figure() != null || q.optionFigures() != null).count();
+        assertThat(pictures).isGreaterThanOrEqualTo(350);
     }
 
     @Test
@@ -62,8 +71,13 @@ class AptitudeBankTest {
 
     @Test
     void knownAnswersAreRight() {
-        Seed clock = bank.stream().filter(q -> q.key().startsWith(AptitudeBank.VERSION + ":clock:")).findFirst().orElseThrow();
+        Seed clock = bank.stream().filter(q -> q.key().equals(AptitudeBank.VERSION + ":clock:20")).findFirst().orElseThrow();
         assertThat(clock.options().get(clock.correct().get(0))).endsWith("°");
+        assertThat(Logic.angle(3, 30)).isEqualTo(75);
+        assertThat(Logic.angle(9, 0)).isEqualTo(90);
+        assertThat(Logic.opposite("CODE")).isEqualTo("XLWV");
+        assertThat(Logic.positionSum("CAT")).isEqualTo(24);
+        assertThat(Logic.direction(3, -4)).isEqualTo("south-east");
         assertThat(AptitudeBank.shift("CODE", 3)).isEqualTo("FRGH");
         assertThat(AptitudeBank.shift("ZOO", 1)).isEqualTo("APP");
         assertThat(AptitudeBank.fraction(6, 36)).isEqualTo("1/6");

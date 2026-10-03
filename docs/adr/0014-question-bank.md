@@ -33,19 +33,33 @@ Later the same for Java, Python, React, Angular, SQL and coding, by role.
   the app draws them. People can also upload PNG/JPEG pictures. Every
   picture is checked (no scripts, handlers or external links; PNG/JPEG by
   content, ≤ 1 MB) and shown through `<img>`.
-- **Built-in starter bank** (173 questions): generated templates (two easy,
-  two medium, two hard each) for percentages, profit and loss, time and work,
-  trains, interest, ratio, averages, series, probability, four kinds of data
-  interpretation, coding-decoding, directions, clocks, Venn diagrams and four
-  non-verbal types, plus hand-written verbal (synonyms, antonyms, sentence
-  completion, error spotting, reading comprehension) and reasoning (blood
-  relations, syllogisms, arrangements). Loaded once at start-up by stable
-  key; never overwrites rows.
+- **Built-in bank, v2** (1,300 questions): 26 topics × 50 (17 easy, 17
+  medium, 16 hard). Numerical: percentages, profit and loss, time and work,
+  speed/trains, interest, ratio, averages, number series, probability, data
+  interpretation (bar, line, pie, table). Logical: coding-decoding,
+  directions, clocks, Venn diagrams, blood relations, syllogisms,
+  arrangements, and four non-verbal types (figure series, mirror/water
+  images, pattern matrix, odd one out). Verbal: synonyms, antonyms, sentence
+  completion, error spotting, reading comprehension. Numbers and pictures
+  are generated from seeded values; reasoning answers come from small
+  solvers (blood relations read off a generated family tree, syllogisms
+  checked against every Venn model, seating and height puzzles used only
+  when the clues allow exactly one order); verbal items are curated lists.
+  Generation is deterministic and each topic's 50 questions are unique by
+  prompt and picture. Each topic carries a description and an example,
+  shown as the **topic guide**. Loaded at start-up by stable key (never
+  overwrites a row); built-in rows whose keys the current bank no longer
+  makes (the first 173-question bank) are archived. Tests keep their copies.
+- **Build by topics**: tick topics, questions per topic, a difficulty mix
+  (balanced 40/40/20, mostly easy, challenging, or one level only) and an
+  order (easy → hard, hard → easy, topic by topic, shuffled). The mix is
+  applied across the paper and dealt out so every topic gets a spread of
+  levels. Section counts and presets remain as the other way to build.
 - **Section-wise scores** in results (e.g. Numerical ability 14 / 20).
 
 ## Consequences
 
 - A TCS-style 65-question paper takes one click; every picture question's
   answer is correct by construction.
-- Verbal hard questions are fewer (6); add more by hand or with AI drafts.
+- Verbal items are a fixed list (17–19 per level per topic); papers built often will repeat them sooner than generated topics.
 - Per-section timers and negative marking are not modelled yet.

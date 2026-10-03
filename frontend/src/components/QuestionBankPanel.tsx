@@ -172,6 +172,38 @@ export function QuestionBankPanel({ onPick, pickLabel }: { onPick?: (ids: string
               logical reasoning with picture puzzles, and verbal ability. Java, Python, React, SQL and coding banks come next.
             </p>
           </div>
+          {overview.guide.length > 0 && (
+            <details className="topic-guide">
+              <summary>Topic guide — what each of the {overview.guide.length} topics covers</summary>
+              <table className="topic-guide-table" aria-label="Topic guide">
+                <thead>
+                  <tr>
+                    <th>Topic</th>
+                    <th>What it covers</th>
+                    <th>Example</th>
+                    <th>Easy / Medium / Hard</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {overview.guide.map((t) => (
+                    <tr key={t.id}>
+                      <td>
+                        <button type="button" className="linklike" onClick={() => { setSection(t.section); setTopic(t.name); setPage(0) }}>
+                          {t.name}
+                        </button>
+                        <div className="muted" style={{ fontSize: 11 }}>{t.sectionLabel}</div>
+                      </td>
+                      <td>{t.covers || '—'}</td>
+                      <td className="muted">{t.example || '—'}</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        {t.easy} / {t.medium} / {t.hard}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </details>
+          )}
         </Card>
       )}
       <Card className="stack">

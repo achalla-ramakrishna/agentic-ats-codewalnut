@@ -23,8 +23,9 @@ import com.codewalnut.ats.dto.BankDtos.BankQuestionRequest;
 import com.codewalnut.ats.dto.BankDtos.BankQuestionView;
 import com.codewalnut.ats.dto.BankDtos.BuildRequest;
 import com.codewalnut.ats.dto.BankDtos.Count;
-import com.codewalnut.ats.dto.BankDtos.SectionPlan;
 import com.codewalnut.ats.dto.BankDtos.TopicCount;
+import com.codewalnut.ats.dto.BankDtos.TopicGuide;
+import com.codewalnut.ats.dto.BankDtos.TopicPlan;
 import com.codewalnut.ats.repository.AssessmentQuestionRepository;
 import com.codewalnut.ats.repository.AssessmentRepository;
 import com.codewalnut.ats.repository.BankQuestionRepository;
@@ -73,17 +74,23 @@ public class QuestionBankService {
 
     // ---- the built-in bank ----
 
-    /** Adds any built-in questions not yet in the database. Never touches existing rows. */
+    /**
+     * Adds any built-in questions not yet in the database and archives built-in questions the
+     * current bank no longer generates (e.g. the first, smaller bank). Never edits a question's
+     * content; tests keep their own copies, so archiving changes nothing already sent.
+     */
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void loadBuiltIn() {
+        List<Seed> seeds = AptitudeBank.all();
+        Set<String> current = seeds.stream().map(Seed::key).collect(Collectors.toSet());
         Set<String> have = bankRepository.findBuiltinKeys();
-        int added = 0;
-        for (Seed seed : AptitudeBank.all()) {
+        List<BankQuestion> fresh = new ArrayList<>();
+        for (Seed seed : seeds) {
             if (have.contains(seed.key())) {
                 continue;
             }
-            bankRepository.save(BankQuestion.builder()
+            fresh.add(BankQuestion.builder()
                     .area(Assessment.Category.APTITUDE).section(seed.section()).topic(seed.topic()).difficulty(seed.difficulty())
                     .kind(seed.kind()).prompt(seed.prompt()).figure(seed.figure())
                     .optionsJson(assessmentService.write(seed.options()))
@@ -92,10 +99,17 @@ public class QuestionBankService {
                     .points(seed.points()).explanation(seed.explanation())
                     .source(BankQuestion.Source.BUILT_IN).builtinKey(seed.key()).status(BankQuestion.Status.ACTIVE)
                     .createdBy("system").build());
-            added++;
         }
-        if (added > 0) {
-            log.info("Added {} built-in questions to the bank", added);
+        bankRepository.saveAll(fresh);
+        int archived = 0;
+        for (BankQuestion old : bankRepository.findBySourceAndStatus(BankQuestion.Source.BUILT_IN, BankQuestion.Status.ACTIVE)) {
+            if (old.getBuiltinKey() != null && !current.contains(old.getBuiltinKey())) {
+                old.setStatus(BankQuestion.Status.ARCHIVED);
+                archived++;
+            }
+        }
+        if (!fresh.isEmpty() || archived > 0) {
+            log.info("Built-in bank: added {} questions, archived {} retired ones", fresh.size(), archived);
         }
     }
 
@@ -123,7 +137,30 @@ public class QuestionBankService {
         List<TopicCount> topicCounts = topics.entrySet().stream()
                 .map(e -> new TopicCount(sectionOf.get(e.getKey()), e.getKey().substring(e.getKey().indexOf('/') + 1), e.getValue()[0], e.getValue()[1]))
                 .toList();
-        return new BankOverview(counts, topicCounts, Presets.APTITUDE);
+        return new BankOverview(counts, topicCounts, Presets.APTITUDE, guide());
+    }
+
+    /** The built-in topics in their catalogue order, then any topics added by hand. */
+    private List<TopicGuide> guide() {
+        Map<String, long[]> levels = new LinkedHashMap<>();
+        Map<String, BankQuestion.Section> sectionOf = new LinkedHashMap<>();
+        for (BankQuestion q : bankRepository.findByAreaAndStatusOrderBySectionAscTopicAscDifficultyAsc(Assessment.Category.APTITUDE,
+                BankQuestion.Status.ACTIVE)) {
+            String k = q.getSection() + "/" + q.getTopic();
+            sectionOf.put(k, q.getSection());
+            levels.computeIfAbsent(k, x -> new long[3])[q.getDifficulty().ordinal()]++;
+        }
+        List<TopicGuide> out = new ArrayList<>();
+        for (AptitudeBank.Topic t : AptitudeBank.TOPICS) {
+            long[] c = levels.remove(t.section() + "/" + t.name());
+            c = c == null ? new long[3] : c;
+            out.add(new TopicGuide(t.id(), t.section(), t.section().getLabel(), t.name(), t.covers(), t.example(), c[0], c[1], c[2]));
+        }
+        levels.forEach((k, c) -> {
+            String name = k.substring(k.indexOf('/') + 1);
+            out.add(new TopicGuide("custom:" + name, sectionOf.get(k), sectionOf.get(k).getLabel(), name, "", "", c[0], c[1], c[2]));
+        });
+        return out;
     }
 
     @Transactional(readOnly = true)
@@ -258,11 +295,18 @@ public class QuestionBankService {
 
     // ---- building papers ----
 
-    /** Builds a draft test from the bank: so many easy/medium/hard per section, in the chosen order. */
+    /**
+     * Builds a draft test from the bank: so many easy/medium/hard per section, or per topic when the
+     * request names topics, in the chosen order.
+     */
     @Transactional
     public AssessmentDetail build(AppUser actor, BuildRequest request) {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);
-        int total = request.sections().stream().mapToInt(p -> p.easy() + p.medium() + p.hard()).sum();
+        boolean byTopic = request.topics() != null && !request.topics().isEmpty();
+        List<TopicPlan> plans = byTopic ? request.topics()
+                : request.sections() == null ? List.of()
+                : request.sections().stream().map(p -> new TopicPlan(p.section(), null, p.easy(), p.medium(), p.hard())).toList();
+        int total = plans.stream().mapToInt(p -> p.easy() + p.medium() + p.hard()).sum();
         if (total == 0) {
             throw new IllegalArgumentException("sections: ask for at least one question");
         }
@@ -270,41 +314,50 @@ public class QuestionBankService {
             throw new IllegalArgumentException("sections: a test can have up to " + AssessmentService.MAX_QUESTIONS + " questions");
         }
         List<String> shortages = new ArrayList<>();
-        List<List<BankQuestion>> bySection = new ArrayList<>();
-        for (SectionPlan plan : request.sections()) {
+        List<List<BankQuestion>> groups = new ArrayList<>();
+        Set<UUID> taken = new java.util.HashSet<>();
+        for (TopicPlan plan : plans) {
             List<BankQuestion> chosen = new ArrayList<>();
             int[] wanted = {plan.easy(), plan.medium(), plan.hard()};
             BankQuestion.Difficulty[] levels = BankQuestion.Difficulty.values();
+            String label = plan.topic() == null ? plan.section().getLabel() : plan.topic();
             for (int d = 0; d < 3; d++) {
                 if (wanted[d] == 0) {
                     continue;
                 }
-                List<BankQuestion> pool = new ArrayList<>(bankRepository.findByAreaAndSectionAndDifficultyAndStatus(request.area(),
-                        plan.section(), levels[d], BankQuestion.Status.ACTIVE));
-                pool.removeIf(b -> chosen.contains(b));
+                List<BankQuestion> pool = new ArrayList<>(plan.topic() == null
+                        ? bankRepository.findByAreaAndSectionAndDifficultyAndStatus(request.area(), plan.section(), levels[d], BankQuestion.Status.ACTIVE)
+                        : bankRepository.findByAreaAndSectionAndTopicAndDifficultyAndStatus(request.area(), plan.section(), plan.topic().strip(),
+                                levels[d], BankQuestion.Status.ACTIVE));
+                pool.removeIf(b -> taken.contains(b.getId()));
                 if (pool.size() < wanted[d]) {
-                    shortages.add(plan.section().getLabel() + " · " + levels[d].name().toLowerCase(Locale.ROOT) + ": " + pool.size()
-                            + " available, " + wanted[d] + " asked");
+                    shortages.add(label + " · " + levels[d].name().toLowerCase(Locale.ROOT) + ": " + pool.size() + " available, " + wanted[d] + " asked");
                     continue;
                 }
-                chosen.addAll(pickSpread(pool, wanted[d]));
+                List<BankQuestion> picked = pickSpread(pool, wanted[d]);
+                picked.forEach(b -> taken.add(b.getId()));
+                chosen.addAll(picked);
             }
-            bySection.add(chosen);
+            groups.add(chosen);
         }
         if (!shortages.isEmpty()) {
             throw new IllegalArgumentException("Not enough questions in the bank — " + String.join("; ", shortages)
                     + ". Add questions or ask for fewer.");
         }
-        List<BankQuestion> paper = order(bySection, request.order());
+        List<BankQuestion> paper = order(groups, request.order());
+        String description = byTopic
+                ? "Built from the question bank by topic: " + plans.stream().map(p -> p.topic().strip() + " " + (p.easy() + p.medium() + p.hard()))
+                        .collect(Collectors.joining(", ")) + "."
+                : "Built from the question bank: " + plans.stream().map(p -> p.section().getLabel() + " " + (p.easy() + p.medium() + p.hard()))
+                        .collect(Collectors.joining(", ")) + ".";
         Assessment a = assessmentRepository.save(Assessment.builder()
                 .title(request.title().strip()).category(request.area())
-                .description("Built from the question bank: " + request.sections().stream()
-                        .map(p -> p.section().getLabel() + " " + (p.easy() + p.medium() + p.hard())).collect(Collectors.joining(", ")) + ".")
+                .description(description.length() > 2000 ? description.substring(0, 1997) + "…" : description)
                 .durationMinutes(request.durationMinutes()).passPercent(request.passPercent())
                 .status(Assessment.Status.DRAFT).createdBy(actor.getEmail()).build());
         copyInto(a, paper, 0);
         auditService.record(actor, AuditAction.ASSESSMENT_CREATED, "Assessment", a.getId(),
-                Map.of("fromBank", paper.size(), "order", request.order()));
+                Map.of("fromBank", paper.size(), "order", request.order(), "byTopic", byTopic));
         return assessmentService.detail(a);
     }
 
@@ -333,11 +386,18 @@ public class QuestionBankService {
     private static List<BankQuestion> pickSpread(List<BankQuestion> pool, int n) {
         Collections.shuffle(pool, RANDOM);
         pool.sort(Comparator.comparingInt(BankQuestion::getTimesUsed));
-        return pool.subList(0, n);
+        return new ArrayList<>(pool.subList(0, n));
     }
 
     private static List<BankQuestion> order(List<List<BankQuestion>> bySection, com.codewalnut.ats.dto.BankDtos.Order order) {
         Comparator<BankQuestion> byLevel = Comparator.comparing(BankQuestion::getDifficulty);
+        if (order == com.codewalnut.ats.dto.BankDtos.Order.HARD_FIRST) {
+            List<BankQuestion> out = new ArrayList<>();
+            bySection.forEach(out::addAll);
+            Collections.shuffle(out, RANDOM);
+            out.sort(byLevel.reversed());
+            return out;
+        }
         List<BankQuestion> out = new ArrayList<>();
         switch (order) {
             case BY_SECTION -> bySection.forEach(list -> list.stream().sorted(byLevel).forEach(out::add));
@@ -352,6 +412,7 @@ public class QuestionBankService {
                 bySection.forEach(out::addAll);
                 Collections.shuffle(out, RANDOM);
             }
+            default -> throw new IllegalStateException("order " + order);
         }
         return out;
     }
