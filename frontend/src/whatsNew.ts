@@ -16,6 +16,19 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-03-profile-from-resume',
+    date: '2026-10-03',
+    title: 'Profiles filled from the résumé',
+    summary:
+      'When the AI reads a résumé it now fills the empty profile fields: college, degree, graduation year, LinkedIn and address (and email or phone if missing). It never overwrites what you typed.',
+    steps: [
+      'New uploads fill the profile automatically.',
+      'For résumés read before today, open the opening and click Analyze résumés in AI suggestions.',
+      'Check the Profile tab; edit anything that looks wrong.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-03-tests',
     date: '2026-10-03',
     title: 'Send aptitude, Java and Python tests',

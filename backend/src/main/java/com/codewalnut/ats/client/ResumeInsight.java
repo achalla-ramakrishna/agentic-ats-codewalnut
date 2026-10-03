@@ -26,6 +26,14 @@ public record ResumeInsight(
         Integer graduationYear,
         @JsonPropertyDescription("Highest education, e.g. \"B.E. Computer Science, RV College (2026)\", or empty")
         String education,
+        @JsonPropertyDescription("College or university of the highest degree, e.g. \"RV College of Engineering, Bengaluru\", or empty")
+        String college,
+        @JsonPropertyDescription("The highest degree and branch, e.g. \"B.E. Computer Science\", or empty")
+        String degree,
+        @JsonPropertyDescription("LinkedIn profile link exactly as written on the résumé, or empty")
+        String linkedinUrl,
+        @JsonPropertyDescription("Postal address exactly as written on the résumé, or empty if only a city is given")
+        String address,
         @JsonPropertyDescription("Technical skills shown on the résumé, most relevant to the opening first, at most 20")
         List<String> skills,
         @JsonPropertyDescription("Work and internship history, most recent first, at most 6")

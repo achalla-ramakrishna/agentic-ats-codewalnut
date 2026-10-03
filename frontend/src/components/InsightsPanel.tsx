@@ -17,7 +17,7 @@ export function FitBadge({ insight }: { insight?: InsightSummary }) {
   return (
     <span
       className={`fit ${tone}`}
-      title={`Meets ${insight.met} of ${insight.total} requirements${insight.partial ? ` (${insight.partial} partly)` : ''}${insight.stale ? ' · the opening changed since; re-analyze to refresh' : ''}`}
+      title={`Meets ${insight.met} of ${insight.total} requirements${insight.partial ? ` (${insight.partial} partly)` : ''}${insight.stale ? ' · out of date; re-analyze to refresh' : ''}`}
     >
       {insight.fitPercent}%{insight.stale ? '*' : ''}
     </span>

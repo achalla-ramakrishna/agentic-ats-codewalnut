@@ -210,7 +210,8 @@ public class ResumeIntelligenceService {
                 continue;
             }
             if (insight != null && insight.getStatus() == CandidateInsight.Status.DONE
-                    && resume.get().getId().equals(insight.getDocumentId()) && hash.equals(insight.getJobHash())) {
+                    && resume.get().getId().equals(insight.getDocumentId()) && hash.equals(insight.getJobHash())
+                    && !outdated(insight)) {
                 upToDate++;
                 continue;
             }
@@ -422,9 +423,14 @@ public class ResumeIntelligenceService {
                         ? profile.graduationYear() : null);
     }
 
+    /** The opening changed since, or the reading predates the profile fields (college, degree …). */
     private static boolean isStale(CandidateInsight insight, String hash) {
-        return insight.getStatus() == CandidateInsight.Status.DONE && insight.getJobHash() != null
-                && !insight.getJobHash().equals(hash);
+        return insight.getStatus() == CandidateInsight.Status.DONE
+                && (insight.getJobHash() != null && !insight.getJobHash().equals(hash) || outdated(insight));
+    }
+
+    static boolean outdated(CandidateInsight insight) {
+        return insight.getData() != null && !insight.getData().contains("\"college\"");
     }
 
     private static Integer fit(InsightSummary summary) {

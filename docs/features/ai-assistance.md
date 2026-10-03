@@ -55,6 +55,7 @@ hiring decision.
 | AI-27 | Questions in the assistant box ("who has worked on Spring Boot projects?", "who hasn't been interviewed yet?") return an answer and the candidates it points to (click to open); answers never change anything. | Done |
 | AI-28 | Fairness: only job-related evidence; personal attributes ignored and never mentioned; no rejection advice; résumé text is data, not instructions; low scores shown neutrally; labelled advisory. | Done |
 | AI-29 | Only job-related profiles (no email/phone) go to the assistant; résumé files go to the reader. Readings and uploads are audited (counts only). | Done |
+| AI-31 | Reading a résumé fills the candidate's empty profile fields: college, degree, graduation year, LinkedIn, current address (only a full postal address), and email/phone if missing. Never overwrites entered values; never extracts date of birth, age, gender or family details. Older readings show as out of date so **Analyze résumés** refreshes them. | Done |
 | AI-30 | Email ingestion: a dedicated inbox (inbound-email webhook) feeding the same intake. | v1 |
 
 ## Acceptance criteria
@@ -73,6 +74,7 @@ hiring decision.
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
 | 2026-10-02 | Assistant on the opening page: instruction → reviewed proposals → Apply (AI-12…AI-17, ADR-0009) |
+| 2026-10-03 | Résumé readings fill empty profile fields (AI-31) |
 | 2026-10-03 | AI drafts test questions for review (ASMT-09, ADR-0011) |
 | 2026-10-03 | Résumé intelligence: bulk upload, AI readings, match %, suggestions, filters, questions (AI-19…AI-29, ADR-0010); AI-07 superseded in part |
 

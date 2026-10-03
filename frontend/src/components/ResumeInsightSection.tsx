@@ -56,7 +56,7 @@ export function ResumeInsightSection({ applicationId, canEdit }: { applicationId
       {detail.status === 'NO_RESUME' && <p className="muted" style={{ margin: 0 }}>Upload the original résumé to get insights.</p>}
       {pending && <p className="muted" style={{ margin: 0 }}>Reading the résumé…</p>}
       {detail.status === 'FAILED' && <p className="alert alert-error" style={{ margin: 0 }}>{detail.error}</p>}
-      {detail.stale && <p className="muted" style={{ margin: 0 }}>The opening changed since this reading; re-analyze to refresh.</p>}
+      {detail.stale && <p className="muted" style={{ margin: 0 }}>This reading is out of date (the opening changed, or it was made before profile filling); re-analyze to refresh.</p>}
       {p && (
         <>
           {p.headline && <p style={{ margin: 0 }}>{p.headline}</p>}

@@ -46,3 +46,4 @@ Tests: `ProfileAndDocumentsFlowTest` (backend); `MyProfileCard.test.tsx`
 | Date | Change |
 | --- | --- |
 | 2026-10-01 | Created and shipped (BGV-01…BGV-08), driven by Blend's BGV request; ADR-0007 |
+| 2026-10-03 | Résumé readings fill empty profile fields (college, degree, graduation year, LinkedIn, address; AI-31) |

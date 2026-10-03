@@ -3,6 +3,7 @@ package com.codewalnut.ats.service;
 import com.codewalnut.ats.client.ResumeAnalyzer;
 import com.codewalnut.ats.client.ResumeInsight;
 import com.codewalnut.ats.domain.Application;
+import com.codewalnut.ats.domain.AuditAction;
 import com.codewalnut.ats.domain.ApplicationSource;
 import com.codewalnut.ats.domain.Candidate;
 import com.codewalnut.ats.domain.CandidateDocument;
@@ -57,6 +58,7 @@ class ResumeProcessor {
     private final DocumentService documentService;
     private final TrackerService trackerService;
     private final ObjectMapper objectMapper;
+    private final AuditService auditService;
 
     record Work(ResumeAnalyzer.Job job, ResumeAnalyzer.ResumeFile file, UUID documentId, String jobHash) {}
 
@@ -255,6 +257,68 @@ class ResumeProcessor {
         row.setJobHash(jobHash);
         row.setAnalyzedAt(Instant.now());
         insightRepository.save(row);
+        applicationRepository.findById(applicationId).ifPresent(a -> fillProfile(a.getCandidate(), insight));
+    }
+
+    /**
+     * Fills empty profile fields from the résumé. Never overwrites what a person (or the candidate)
+     * entered, and never takes date of birth or other personal details.
+     */
+    void fillProfile(Candidate candidate, ResumeInsight insight) {
+        List<String> filled = new java.util.ArrayList<>();
+        String college = clean(insight.college());
+        if (candidate.getCollege() == null && college != null) {
+            candidate.setCollege(truncate(college, 200));
+            filled.add("college");
+        }
+        String degree = clean(insight.degree());
+        if (candidate.getDegree() == null && degree != null) {
+            candidate.setDegree(truncate(degree, 200));
+            filled.add("degree");
+        }
+        Integer year = insight.graduationYear();
+        if (candidate.getGraduationYear() == null && year != null && year > 1950 && year < 2100) {
+            candidate.setGraduationYear(year);
+            filled.add("graduationYear");
+        }
+        String linkedin = linkedin(insight.linkedinUrl());
+        if (candidate.getLinkedinUrl() == null && linkedin != null) {
+            candidate.setLinkedinUrl(linkedin);
+            filled.add("linkedinUrl");
+        }
+        String address = clean(insight.address());
+        if (candidate.getCurrentAddress() == null && address != null) {
+            candidate.setCurrentAddress(truncate(address.replaceAll("\\s+", " "), 1000));
+            filled.add("currentAddress");
+        }
+        String email = clean(insight.email()) == null ? null : insight.email().strip().toLowerCase(Locale.ROOT);
+        if (candidate.getEmail() == null && email != null && EMAIL.matcher(email).matches() && email.length() <= 254
+                && candidateRepository.findByEmail(email).isEmpty()) {
+            candidate.setEmail(email);
+            filled.add("email");
+        }
+        String phone = clean(insight.phone()) == null ? null : insight.phone().replaceAll("[^0-9+]", "");
+        if (candidate.getPhone() == null && phone != null && phone.replace("+", "").length() >= 10 && phone.length() <= 16) {
+            candidate.setPhone(phone);
+            filled.add("phone");
+        }
+        if (!filled.isEmpty()) {
+            auditService.recordAnonymous("system:resume-reading", AuditAction.CANDIDATE_PROFILE_UPDATED,
+                    java.util.Map.of("candidateId", candidate.getId(), "fields", filled));
+        }
+    }
+
+    /** A LinkedIn profile link as a full https:// URL, or null. */
+    static String linkedin(String raw) {
+        String s = clean(raw);
+        if (s == null || !s.toLowerCase(Locale.ROOT).contains("linkedin.com/")) {
+            return null;
+        }
+        s = s.replaceAll("\\s+", "");
+        if (!s.startsWith("http")) {
+            s = "https://" + s.replaceFirst("^/+", "");
+        }
+        return s.length() > 300 ? null : s;
     }
 
     /** MET counts 2, PARTIAL 1, NOT_EVIDENT 0; null when the opening lists no requirements. */

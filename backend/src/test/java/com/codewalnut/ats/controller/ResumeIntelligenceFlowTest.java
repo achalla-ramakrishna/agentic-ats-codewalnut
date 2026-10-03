@@ -73,7 +73,8 @@ class ResumeIntelligenceFlowTest {
     private MockMultipartFile asha() {
         return new MockMultipartFile("files", "Asha_Resume.pdf", "application/pdf",
                 ResumeTextTestSupport.pdf("Asha Tester", "asha." + tag + "@example.test",
-                        "B.E. Computer Science, 2026", "Skills: Java, Spring Boot, React"));
+                        "B.E. Computer Science, 2026", "RV College of Engineering, Bengaluru",
+                        "linkedin.com/in/asha-tester", "Skills: Java, Spring Boot, React"));
     }
 
     @Test
@@ -117,6 +118,15 @@ class ResumeIntelligenceFlowTest {
                 .andExpect(jsonPath("$.contactNext[0].candidateName").value("Asha Tester"))
                 .andExpect(jsonPath("$.contactNext[0].reason").value(Matchers.startsWith("Meets 3 of 3 requirements")))
                 .andExpect(jsonPath("$.closestToSelection").isEmpty());
+
+        // The empty profile fields are filled from the résumé.
+        String ashaCandidate = JsonPath.<List<String>>read(apps, "$[?(@.name == 'Asha Tester')].candidateId").get(0);
+        mockMvc.perform(get("/api/v1/candidates/" + ashaCandidate + "/profile").with(RECRUITER))
+                .andExpect(jsonPath("$.degree").value("B.E. Computer Science"))
+                .andExpect(jsonPath("$.college").value("RV College of Engineering"))
+                .andExpect(jsonPath("$.graduationYear").value(2026))
+                .andExpect(jsonPath("$.linkedinUrl").value("https://linkedin.com/in/asha-tester"))
+                .andExpect(jsonPath("$.dateOfBirth").doesNotExist());
 
         mockMvc.perform(get("/api/v1/applications/" + ashaApp + "/insight").with(user("hiring.manager@codewalnut.test")))
                 .andExpect(status().isOk())
@@ -166,11 +176,15 @@ class ResumeIntelligenceFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.queued").value(0))
                 .andExpect(jsonPath("$.noResume").value(1));
+        // What a person typed is never overwritten by the résumé.
+        mockMvc.perform(patch("/api/v1/candidates/" + candidateId).with(RECRUITER).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"degree\":\"MCA\"}"))
+                .andExpect(status().isOk());
 
         // A résumé added later is read straight away.
         mockMvc.perform(multipart("/api/v1/candidates/" + candidateId + "/documents")
                         .file(new MockMultipartFile("file", "divya.pdf", "application/pdf",
-                                ResumeTextTestSupport.pdf("Divya Tester", "React and TypeScript")))
+                                ResumeTextTestSupport.pdf("Divya Tester", "B.Tech Electronics", "React and TypeScript")))
                         .param("kind", "ORIGINAL_RESUME").with(RECRUITER).with(csrf()))
                 .andExpect(status().isCreated());
         mockMvc.perform(get("/api/v1/jobs/" + job + "/insights").with(RECRUITER))
@@ -180,6 +194,8 @@ class ResumeIntelligenceFlowTest {
 
         json("/api/v1/jobs/" + job + "/insights/analyze", "{}")
                 .andExpect(jsonPath("$.upToDate").value(1));
+        mockMvc.perform(get("/api/v1/candidates/" + candidateId + "/profile").with(RECRUITER))
+                .andExpect(jsonPath("$.degree").value("MCA"));
     }
 
     @Test

@@ -19,6 +19,9 @@ public class KeywordResumeAnalyzer implements ResumeAnalyzer {
     private static final Pattern EMAIL = Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}");
     private static final Pattern PHONE = Pattern.compile("\\+?\\d[\\d -]{8,16}\\d");
     private static final Pattern YEAR = Pattern.compile("\\b(20[0-4]\\d)\\b");
+    private static final Pattern LINKEDIN = Pattern.compile("(?:https?://)?(?:www\\.)?linkedin\\.com/in/[A-Za-z0-9_%-]+/?");
+    private static final Pattern DEGREE = Pattern.compile("\\b(B\\.? ?E\\.?|B\\.? ?Tech|M\\.? ?Tech|BCA|MCA|B\\.? ?Sc|M\\.? ?Sc|MBA)\\b[^,\\n]*");
+    private static final Pattern COLLEGE = Pattern.compile("[^,\\n]*\\b(College|University|Institute)\\b[^,\\n(]*");
     private static final Pattern NAME = Pattern.compile("^[A-Za-z][A-Za-z.' ]{1,60}$");
     private static final Set<String> STOP = Set.of("and", "the", "with", "for", "any", "you", "your", "are", "our",
             "have", "has", "who", "will", "can", "from", "that", "this", "should", "must", "able", "good", "strong",
@@ -93,8 +96,13 @@ public class KeywordResumeAnalyzer implements ResumeAnalyzer {
         String headline = requirements.isEmpty()
                 ? "Offline reading: " + skills.size() + " known skills found in the résumé text."
                 : "Offline reading: " + met + " of " + requirements.size() + " requirements found in the résumé text.";
+        Matcher linkedin = LINKEDIN.matcher(text);
+        Matcher degree = DEGREE.matcher(text);
+        Matcher college = COLLEGE.matcher(text);
         return new ResumeInsight(name, email.find() ? email.group() : "",
-                phone.find() ? phone.group().replaceAll("[ -]", "") : "", "", "", 0, graduation, "", skills,
+                phone.find() ? phone.group().replaceAll("[ -]", "") : "", "", "", 0, graduation, "",
+                college.find() ? college.group().strip() : "", degree.find() ? degree.group().strip() : "",
+                linkedin.find() ? linkedin.group() : "", "", skills,
                 List.of(), List.of(), headline, requirements,
                 skills.stream().limit(4).map(s -> "Mentions " + s).toList(),
                 requirements.stream().filter(r -> r.assessment().equals("NOT_EVIDENT")).limit(4)
