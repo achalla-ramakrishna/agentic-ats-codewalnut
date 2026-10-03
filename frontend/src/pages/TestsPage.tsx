@@ -25,6 +25,7 @@ import { QuestionForm } from '../components/QuestionForm'
 import { QuestionPreview } from '../components/QuestionPreview'
 import { BuildFromBank } from '../components/BuildFromBank'
 import { QuestionBankPanel } from '../components/QuestionBankPanel'
+import { SendToCandidates } from '../components/SendToCandidates'
 import { addFromBank } from '../api/questionBank'
 import { DIFFICULTY_LABEL, SECTION_LABEL, type Section } from '../api/questionBank'
 import '../components/tracker.css'
@@ -76,6 +77,7 @@ function Editor({
   const [detail, setDetail] = useState<AssessmentDetail | null>(null)
   const [editing, setEditing] = useState<string | 'new' | null>(null)
   const [picking, setPicking] = useState(false)
+  const [sending, setSending] = useState(false)
   const [topic, setTopic] = useState('')
   const [level, setLevel] = useState('Fresher')
   const [count, setCount] = useState(5)
@@ -130,6 +132,9 @@ function Editor({
             <Badge tone={s.status === 'READY' ? 'primary' : 'neutral'}>{STATUS_LABEL[s.status]}</Badge>
           </span>
           <span className="row" style={{ gap: 6 }}>
+            {s.status === 'READY' && (
+              <Button onClick={() => setSending(!sending)}>{sending ? 'Close sending' : 'Send to candidates'}</Button>
+            )}
             {draftMode && (
               <Button
                 disabled={detail.questions.length === 0}
@@ -225,6 +230,16 @@ function Editor({
           <div role="alert" className="alert alert-error">
             {error}
           </div>
+        )}
+        {s.status === 'READY' && sending && (
+          <SendToCandidates
+            test={s}
+            onClose={() => setSending(false)}
+            onSent={() => {
+              getAssessment(id).then(setDetail).catch(() => undefined)
+              onChanged()
+            }}
+          />
         )}
         {draftMode && (
           <div className="card stack" role="region" aria-label="Draft questions with AI" style={{ gap: 8 }}>

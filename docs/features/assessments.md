@@ -61,6 +61,7 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | ASMT-27 | **Built-in aptitude bank v2**: 26 topics × 50 questions (17 easy, 17 medium, 16 hard), answers from generators and solvers; a **topic guide** says what each topic covers with an example; the old 173-question bank is archived on start-up. | Done |
 | ASMT-28 | **Build by topics**: tick topics, questions per topic, a difficulty mix and an order (easy → hard, hard → easy, topic by topic, shuffled), then create; per-level shortages explained. | Done |
 | ASMT-24 | **Technical banks**: Java, Python, JavaScript, React, Angular and SQL, each with topics in three experience bands (Fundamentals for freshers, Applied for 1–3 years, Advanced for 3+ years), 792 hand-written questions with code snippets, presets per level, build by topics, AI drafts per area (ADR-0015). | Done |
+| ASMT-30 | **Send to candidates** from a ready test: pick an opening, tick candidates (those already sent it, without an email, rejected or withdrawn can't be picked), set days to finish and email (WhatsApp via the Business API), and send to all at once with a result per candidate. **Copy link** on a sent test in the candidate's panel. Candidates still sign in with Google using their email. | Done |
 | ASMT-29 | Practical coding tests (write and run code in a sandbox). | Next |
 | ASMT-25 | Per-section timers and optional negative marking. | v1 |
 | ASMT-17 | Automatic reminders (needs a sender that works without a staff session, e.g. WhatsApp Business API or a shared mailbox). | v1 |
@@ -99,6 +100,7 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
+| 2026-10-03 | Send a test to several candidates at once; Copy link (ASMT-30) |
 | 2026-10-03 | Technical banks for Java, Python, JavaScript, React, Angular and SQL by experience level (ASMT-24, ADR-0015) |
 | 2026-10-03 | Aptitude bank v2 (26 topics × 50) with topic guide; build a test by topics, difficulty mix and order (ASMT-27, ASMT-28) |
 | 2026-10-03 | Delete a test nobody has taken (ASMT-26) |

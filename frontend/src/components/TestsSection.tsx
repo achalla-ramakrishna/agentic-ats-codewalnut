@@ -7,6 +7,7 @@ import {
   listAssessments,
   remindTest,
   sendTest,
+  testLink,
   testStatusLabel,
   type AnswerReview,
   type SectionScore,
@@ -106,6 +107,20 @@ export function TestsSection({
     listApplicationTests(applicationId).then(setInvites).catch(() => setInvites([]))
   }, [applicationId])
   useEffect(load, [load])
+
+  const [copied, setCopied] = useState<string | null>(null)
+
+  /** The candidate's own test link; they still sign in with Google using their email to open it. */
+  async function copyLink(i: InviteView) {
+    const link = testLink(i.id)
+    try {
+      await navigator.clipboard.writeText(link)
+      setCopied(i.id)
+      window.setTimeout(() => setCopied((c) => (c === i.id ? null : c)), 2000)
+    } catch {
+      window.prompt('Copy this link (the candidate signs in with Google using their email):', link)
+    }
+  }
 
   function openSend() {
     setSending(true)
@@ -273,6 +288,11 @@ export function TestsSection({
                   {canSend && (i.status === 'SENT' || i.status === 'EXPIRED') && (
                     <Button size="sm" variant={i.needsNudge ? 'primary' : 'ghost'} onClick={() => void onRemind(i)}>
                       {i.status === 'EXPIRED' ? 'Remind (+2 days)' : 'Remind'}
+                    </Button>
+                  )}
+                  {(i.status === 'SENT' || i.status === 'STARTED') && (
+                    <Button size="sm" variant="ghost" onClick={() => void copyLink(i)}>
+                      {copied === i.id ? 'Copied' : 'Copy link'}
                     </Button>
                   )}
                   {canSend && (i.status === 'SENT' || i.status === 'STARTED' || i.status === 'EXPIRED') && (

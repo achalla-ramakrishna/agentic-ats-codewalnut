@@ -16,6 +16,19 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-03-send-to-candidates',
+    date: '2026-10-03',
+    title: 'Send a test to many candidates at once',
+    summary: 'Open a ready test and send it to several candidates of an opening in one go. Each gets their own link and signs in with Google to take it. You can also copy a candidate’s link to share it yourself.',
+    steps: [
+      'Tests → open a test marked ready → Send to candidates.',
+      'Pick the opening, tick the candidates (or “Select all who can get it”), set the days to finish → Send.',
+      'To share a link yourself: open the candidate → Tests → Copy link.',
+    ],
+    link: { to: '/tests', label: 'Open Tests' },
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-03-tech-banks',
     date: '2026-10-03',
     title: 'Java, Python, JavaScript, React, Angular and SQL tests',

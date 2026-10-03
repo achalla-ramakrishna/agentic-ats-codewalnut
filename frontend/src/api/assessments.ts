@@ -193,6 +193,8 @@ export const duplicateAssessment = (id: string) => api<AssessmentDetail>(`/asses
 export const sendTest = (applicationId: string, input: { assessmentId: string; dueDays: number; sendEmail: boolean; sendWhatsApp: boolean; note?: string }) =>
   api<SendResult>(`/applications/${applicationId}/tests`, json('POST', input))
 export const listApplicationTests = (applicationId: string) => api<InviteView[]>(`/applications/${applicationId}/tests`)
+/** A candidate's link to their test (same as in the message they got); they sign in with Google to open it. */
+export const testLink = (inviteId: string) => `${window.location.origin}/tests/${inviteId}`
 export const listJobTests = (jobId: string) => api<InviteView[]>(`/jobs/${jobId}/tests`)
 export const getTestResult = (inviteId: string) =>
   api<{ invite: InviteView; answers: AnswerReview[]; sections: SectionScore[] }>(`/tests/${inviteId}`)
