@@ -62,7 +62,9 @@ Tests (ADR-0011): `AssessmentService` manages the library and asks
 `SampleAssessmentDrafter`). `AssessmentInviteService` sends a test through
 `MessageService.post` (chat + optional email/WhatsApp), serves questions to
 the candidate without answers, enforces the timer and scores on submit or
-when an overdue invite is next read.
+when an overdue invite is next read. A scored invite stays a "new result"
+(`reviewed_at` null) until a test manager opens its answers or marks it seen;
+scoring also writes a note to the candidate's team chat.
 
 Question bank (ADR-0014): `bank/AptitudeBank` generates the built-in
 aptitude questions with `bank/Svg` pictures; `QuestionBankService` loads them

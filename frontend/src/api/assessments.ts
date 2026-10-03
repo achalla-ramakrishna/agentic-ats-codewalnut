@@ -98,6 +98,16 @@ export interface InviteView {
   reminderCount: number
   lastRemindedAt: string | null
   needsNudge: boolean
+  /** Submitted and nobody who manages tests has opened the answers or marked it seen yet. */
+  newResult: boolean
+}
+
+/** A submitted test nobody has looked at yet, with where to find the candidate. */
+export interface NewResult {
+  invite: InviteView
+  candidateName: string
+  jobId: string
+  jobTitle: string
 }
 
 export interface SendResult {
@@ -195,6 +205,8 @@ export const sendTest = (applicationId: string, input: { assessmentId: string; d
 export const listApplicationTests = (applicationId: string) => api<InviteView[]>(`/applications/${applicationId}/tests`)
 /** A candidate's link to their test (same as in the message they got); they sign in with Google to open it. */
 export const testLink = (inviteId: string) => `${window.location.origin}/tests/${inviteId}`
+export const listNewResults = () => api<NewResult[]>('/tests/new-results')
+export const markResultsSeen = (inviteIds: string[]) => api<{ marked: number }>('/tests/seen', json('POST', { inviteIds }))
 export const listJobTests = (jobId: string) => api<InviteView[]>(`/jobs/${jobId}/tests`)
 export const getTestResult = (inviteId: string) =>
   api<{ invite: InviteView; answers: AnswerReview[]; sections: SectionScore[] }>(`/tests/${inviteId}`)

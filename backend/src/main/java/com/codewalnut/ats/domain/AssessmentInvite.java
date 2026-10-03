@@ -83,6 +83,13 @@ public class AssessmentInvite {
     @Column(name = "last_reminded_at")
     private Instant lastRemindedAt;
 
+    /** When someone who manages tests first looked at the result; null while it is a new result. */
+    @Column(name = "reviewed_at")
+    private Instant reviewedAt;
+
+    @Column(name = "reviewed_by", length = 254)
+    private String reviewedBy;
+
     @PrePersist
     void onCreate() {
         sentAt = Instant.now();

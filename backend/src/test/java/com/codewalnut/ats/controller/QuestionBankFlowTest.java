@@ -101,6 +101,14 @@ class QuestionBankFlowTest {
                         .contentType(MediaType.APPLICATION_JSON).content(answers.toString()))
                 .andExpect(jsonPath("$.status").value("SUBMITTED"));
 
+        // The result is new for staff, with a note in the team chat, until someone opens the answers.
+        mockMvc.perform(get("/api/v1/tests/new-results").with(RECRUITER))
+                .andExpect(jsonPath("$[?(@.invite.id == '" + invite + "')].candidateName", Matchers.hasItem("Apt Tester")))
+                .andExpect(jsonPath("$[?(@.invite.id == '" + invite + "')].invite.newResult", Matchers.hasItem(true)));
+        mockMvc.perform(get("/api/v1/applications/" + app + "/messages?channel=TEAM").with(RECRUITER))
+                .andExpect(jsonPath("$[*].body", Matchers.hasItem(Matchers.allOf(Matchers.containsString("Test result: Apt Tester scored"),
+                        Matchers.containsString("pass mark 60%")))));
+        mockMvc.perform(get("/api/v1/tests/new-results").with(HM)).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/v1/tests/" + invite).with(RECRUITER))
                 .andExpect(jsonPath("$.sections[0].label").value("Numerical ability"))
                 .andExpect(jsonPath("$.sections[0].score").value(8 + 16 + 12))
@@ -108,6 +116,10 @@ class QuestionBankFlowTest {
                 .andExpect(jsonPath("$.sections[1].label").value("Verbal ability"))
                 .andExpect(jsonPath("$.sections[1].score").value(0))
                 .andExpect(jsonPath("$.sections[2].questions").value(20));
+        mockMvc.perform(get("/api/v1/tests/new-results").with(RECRUITER))
+                .andExpect(jsonPath("$[?(@.invite.id == '" + invite + "')]").isEmpty());
+        send(RECRUITER, "POST", "/api/v1/tests/seen", "{\"inviteIds\":[\"" + invite + "\"]}")
+                .andExpect(jsonPath("$.marked").value(0));
     }
 
     @Test

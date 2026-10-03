@@ -2,10 +2,10 @@ import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { DrawerTab } from './CandidateDrawer'
 
-const TABS: DrawerTab[] = ['profile', 'candidate', 'client', 'team']
+const TABS: DrawerTab[] = ['profile', 'tests', 'candidate', 'client', 'team']
 
 /**
- * Reopens a candidate's drawer from ?candidate=<applicationId>[&tab=candidate|client|team], e.g. after
+ * Reopens a candidate's drawer from ?candidate=<applicationId>[&tab=tests|candidate|client|team], e.g. after
  * connecting Google or from the Messages inbox, then drops the parameters.
  */
 export function useOpenFromQuery<T extends { id: string }>(rows: T[] | null, open: (row: T, tab: DrawerTab) => void) {

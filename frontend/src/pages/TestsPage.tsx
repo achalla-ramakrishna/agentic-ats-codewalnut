@@ -24,6 +24,7 @@ import { Badge, Button, Card, PageHeader } from '../components/ui'
 import { QuestionForm } from '../components/QuestionForm'
 import { QuestionPreview } from '../components/QuestionPreview'
 import { BuildFromBank } from '../components/BuildFromBank'
+import { NewResults } from '../components/NewResults'
 import { QuestionBankPanel } from '../components/QuestionBankPanel'
 import { SendToCandidates } from '../components/SendToCandidates'
 import { addFromBank } from '../api/questionBank'
@@ -432,6 +433,7 @@ export function TestsPage() {
         </button>
       </div>
       {notice && <div className="alert alert-info">{notice}</div>}
+      {tab === 'tests' && <NewResults />}
       {tab === 'bank' && <QuestionBankPanel />}
       {tab === 'tests' && building && (
         <BuildFromBank

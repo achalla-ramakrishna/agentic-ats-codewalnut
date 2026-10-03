@@ -92,7 +92,10 @@ public final class AssessmentDtos {
             UUID id, UUID applicationId, UUID assessmentId, String title, Assessment.Category category,
             AssessmentInvite.Status status, String sentBy, Instant sentAt, Instant dueAt, Instant startedAt,
             Instant submittedAt, Integer score, Integer maxScore, Integer percent, Boolean passed, int passPercent,
-            int reminderCount, Instant lastRemindedAt, boolean needsNudge) {}
+            int reminderCount, Instant lastRemindedAt, boolean needsNudge, boolean newResult) {}
+
+    /** A submitted test nobody has looked at yet, with where to find the candidate. */
+    public record NewResult(InviteView invite, String candidateName, UUID jobId, String jobTitle) {}
 
     public record SendResult(InviteView invite, MessageResponse message) {}
 

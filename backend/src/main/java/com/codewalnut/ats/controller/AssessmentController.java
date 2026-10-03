@@ -8,6 +8,7 @@ import com.codewalnut.ats.dto.AssessmentDtos.DraftResult;
 import com.codewalnut.ats.dto.AssessmentDtos.InviteDetail;
 import com.codewalnut.ats.dto.AssessmentDtos.InviteView;
 import com.codewalnut.ats.dto.AssessmentDtos.MyTest;
+import com.codewalnut.ats.dto.AssessmentDtos.NewResult;
 import com.codewalnut.ats.dto.AssessmentDtos.QuestionRequest;
 import com.codewalnut.ats.dto.AssessmentDtos.RemindRequest;
 import com.codewalnut.ats.dto.AssessmentDtos.SaveAnswersRequest;
@@ -20,7 +21,10 @@ import com.codewalnut.ats.security.CurrentUserService;
 import com.codewalnut.ats.service.AssessmentInviteService;
 import com.codewalnut.ats.service.AssessmentService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -131,6 +135,19 @@ public class AssessmentController {
     @GetMapping("/api/v1/jobs/{id}/tests")
     public List<InviteView> forJob(@PathVariable UUID id) {
         return inviteService.forJob(currentUserService.require(), id);
+    }
+
+    /** Submitted results nobody has looked at yet. */
+    @GetMapping("/api/v1/tests/new-results")
+    public List<NewResult> newResults() {
+        return inviteService.newResults(currentUserService.require());
+    }
+
+    public record SeenRequest(@NotEmpty @Size(max = 200) List<UUID> inviteIds) {}
+
+    @PostMapping("/api/v1/tests/seen")
+    public Map<String, Integer> seen(@Valid @RequestBody SeenRequest request) {
+        return Map.of("marked", inviteService.markSeen(currentUserService.require(), request.inviteIds()));
     }
 
     @GetMapping("/api/v1/tests/{id}")

@@ -10,12 +10,15 @@ import com.codewalnut.ats.domain.AssessmentQuestion;
 import com.codewalnut.ats.domain.AuditAction;
 import com.codewalnut.ats.domain.Candidate;
 import com.codewalnut.ats.domain.CandidateAccount;
+import com.codewalnut.ats.domain.Message;
+import com.codewalnut.ats.domain.MessageAuthorType;
 import com.codewalnut.ats.domain.MessageChannel;
 import com.codewalnut.ats.dto.AssessmentDtos.AnswerReview;
 import com.codewalnut.ats.dto.AssessmentDtos.CandidateQuestion;
 import com.codewalnut.ats.dto.AssessmentDtos.InviteDetail;
 import com.codewalnut.ats.dto.AssessmentDtos.InviteView;
 import com.codewalnut.ats.dto.AssessmentDtos.MyTest;
+import com.codewalnut.ats.dto.AssessmentDtos.NewResult;
 import com.codewalnut.ats.dto.AssessmentDtos.RemindRequest;
 import com.codewalnut.ats.dto.AssessmentDtos.SendResult;
 import com.codewalnut.ats.dto.AssessmentDtos.SendTestRequest;
@@ -28,6 +31,7 @@ import com.codewalnut.ats.repository.AssessmentInviteRepository;
 import com.codewalnut.ats.repository.AssessmentQuestionRepository;
 import com.codewalnut.ats.repository.AssessmentRepository;
 import com.codewalnut.ats.repository.CandidateRepository;
+import com.codewalnut.ats.repository.MessageRepository;
 import com.codewalnut.ats.security.AccessPolicy;
 import com.codewalnut.ats.security.Capability;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -76,6 +80,7 @@ public class AssessmentInviteService {
     private final CandidateRepository candidateRepository;
     private final AssessmentService assessmentService;
     private final MessageService messageService;
+    private final MessageRepository messageRepository;
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
@@ -199,6 +204,9 @@ public class AssessmentInviteService {
         accessPolicy.require(actor, Capability.VIEW_CANDIDATES);
         AssessmentInvite invite = invite(inviteId);
         finalise(invite);
+        if (invite.getStatus() == AssessmentInvite.Status.SUBMITTED && accessPolicy.has(actor, Capability.MANAGE_JOBS)) {
+            seen(invite, actor);
+        }
         Map<UUID, List<String>> answers = answers(invite);
         List<AnswerReview> review = invite.getStatus() == AssessmentInvite.Status.SUBMITTED
                 ? questionRepository.findByAssessmentIdOrderByPositionAsc(invite.getAssessment().getId()).stream()
@@ -210,6 +218,42 @@ public class AssessmentInviteService {
                         .toList()
                 : List.of();
         return new InviteDetail(view(invite), review, sectionScores(review));
+    }
+
+    /**
+     * Results nobody has looked at yet (the Tests badge and "New results"). Tests whose time ran
+     * out are scored first, so a candidate who never pressed Submit still shows up.
+     */
+    @Transactional
+    public List<NewResult> newResults(AppUser actor) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        inviteRepository.findByStatus(AssessmentInvite.Status.STARTED).forEach(this::finalise);
+        return inviteRepository.findByStatusAndReviewedAtIsNullOrderBySubmittedAtDesc(AssessmentInvite.Status.SUBMITTED).stream()
+                .limit(200)
+                .map(i -> new NewResult(view(i), i.getApplication().getCandidate().getName(), i.getApplication().getJob().getId(),
+                        i.getApplication().getJob().getTitle()))
+                .toList();
+    }
+
+    /** Marks results as seen; ids that aren't new results are ignored. */
+    @Transactional
+    public int markSeen(AppUser actor, Collection<UUID> inviteIds) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        int n = 0;
+        for (AssessmentInvite invite : inviteRepository.findAllById(inviteIds)) {
+            if (invite.getStatus() == AssessmentInvite.Status.SUBMITTED && invite.getReviewedAt() == null) {
+                seen(invite, actor);
+                n++;
+            }
+        }
+        return n;
+    }
+
+    private void seen(AssessmentInvite invite, AppUser actor) {
+        if (invite.getReviewedAt() == null) {
+            invite.setReviewedAt(Instant.now());
+            invite.setReviewedBy(actor.getEmail());
+        }
     }
 
     /** Submitted tests for these applications, newest first (for suggestions). */
@@ -372,7 +416,32 @@ public class AssessmentInviteService {
                 invite.getApplication().getCandidate().getEmail());
         auditService.recordAnonymous(invite.getApplication().getCandidate().getEmail(), AuditAction.ASSESSMENT_SUBMITTED,
                 Map.of("inviteId", invite.getId(), "percent", invite.getPercent()));
+        resultNote(invite, submittedAt);
     }
+
+    /** A note in the candidate's team chat, so the result is on record where the team talks about them. */
+    private void resultNote(AssessmentInvite invite, Instant submittedAt) {
+        Assessment a = invite.getAssessment();
+        boolean passed = invite.getPercent() >= a.getPassPercent();
+        boolean timedOut = invite.getDeadlineAt() != null && !submittedAt.isBefore(invite.getDeadlineAt());
+        String body = "Test result: " + invite.getApplication().getCandidate().getName() + " scored " + invite.getPercent() + "% ("
+                + invite.getScore() + "/" + invite.getMaxScore() + ") on " + a.getTitle() + " — "
+                + (passed ? "passed" : "below the pass mark") + " (pass mark " + a.getPassPercent() + "%)."
+                + (timedOut ? " Time ran out, so the answers saved by then were scored." : "")
+                + " Sent by " + invite.getSentBy() + ". See the answers under Tests.";
+        messageRepository.save(Message.builder()
+                .application(invite.getApplication())
+                .channel(MessageChannel.TEAM)
+                .authorType(MessageAuthorType.STAFF)
+                .authorEmail(SYSTEM_AUTHOR)
+                .authorName("CodeWalnut ATS")
+                .body(body)
+                .emailed(false)
+                .build());
+    }
+
+    /** Author of notes the app writes itself. */
+    static final String SYSTEM_AUTHOR = "system@codewalnut-ats";
 
     private AssessmentInvite.Status effective(AssessmentInvite invite) {
         Instant now = Instant.now();
@@ -432,7 +501,8 @@ public class AssessmentInviteService {
                 i.getAssessment().getCategory(), status, i.getSentBy(), i.getSentAt(), i.getDueAt(), i.getStartedAt(),
                 i.getSubmittedAt(), i.getScore(), i.getMaxScore(), i.getPercent(),
                 i.getPercent() == null ? null : i.getPercent() >= i.getAssessment().getPassPercent(),
-                i.getAssessment().getPassPercent(), i.getReminderCount(), i.getLastRemindedAt(), nudge || status == AssessmentInvite.Status.EXPIRED);
+                i.getAssessment().getPassPercent(), i.getReminderCount(), i.getLastRemindedAt(), nudge || status == AssessmentInvite.Status.EXPIRED,
+                status == AssessmentInvite.Status.SUBMITTED && i.getReviewedAt() == null);
     }
 
     private MyTest mine(AssessmentInvite i) {

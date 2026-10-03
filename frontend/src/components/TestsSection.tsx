@@ -17,6 +17,7 @@ import {
 } from '../api/assessments'
 import { getWhatsAppStatus } from '../api/messages'
 import { Figure } from './Figure'
+import { newResultsChanged } from './useNewResults'
 import { Link } from 'react-router-dom'
 import { Badge, Button } from './ui'
 
@@ -205,6 +206,11 @@ export function TestsSection({
     }
     const r = await getTestResult(invite.id)
     setReview((all) => ({ ...all, [invite.id]: { answers: r.answers, sections: r.sections } }))
+    if (invite.newResult) {
+      // Opening the answers marks the result as seen on the server.
+      setInvites((all) => all?.map((i) => (i.id === invite.id ? { ...i, newResult: false } : i)) ?? all)
+      newResultsChanged()
+    }
   }
 
   if (!invites) return null
@@ -286,6 +292,7 @@ export function TestsSection({
               <div className="row" style={{ gap: 8, justifyContent: 'space-between' }}>
                 <span>
                   <strong>{i.title}</strong>{' '}
+                  {i.newResult && <Badge tone="primary">New result</Badge>}{' '}
                   {i.status === 'SUBMITTED' ? (
                     <Badge tone={i.passed ? 'primary' : 'neutral'}>{testStatusLabel(i)}</Badge>
                   ) : (

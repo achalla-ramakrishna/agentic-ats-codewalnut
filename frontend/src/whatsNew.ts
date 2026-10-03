@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-03-new-test-results',
+    date: '2026-10-03',
+    title: 'Know when a candidate finishes a test',
+    summary: 'A number next to Tests in the menu shows results nobody has looked at yet. The Tests page lists them with score and pass or fail, and the candidate’s team chat gets a note with the result.',
+    steps: [
+      'Tests → New test results → Open to see the candidate’s answers, or Mark seen.',
+      'A result stops being new once someone opens its answers.',
+    ],
+    link: { to: '/tests', label: 'Open Tests' },
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-03-drawer-send-test',
     date: '2026-10-03',
     title: 'Send a test right from the candidate',

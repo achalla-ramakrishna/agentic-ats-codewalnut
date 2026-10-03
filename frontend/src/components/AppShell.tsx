@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { useAuth, useMe } from '../auth/AuthContext'
 import { ROLE_LABELS } from '../api/types'
 import { Badge, Button } from './ui'
+import { useNewResults } from './useNewResults'
 import { useWhatsNew } from './useWhatsNew'
 import './AppShell.css'
 
@@ -11,6 +12,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const me = useMe()
   const { signOut } = useAuth()
   const { unseen } = useWhatsNew()
+  const { results: newResults } = useNewResults(me.capabilities.includes('MANAGE_JOBS') && me.navigation.some((n) => n.key === 'tests'))
 
   return (
     <div className="shell">
@@ -21,8 +23,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
         <nav className="nav" aria-label="Main">
           {me.navigation.map((item) => (
-            <NavLink key={item.key} to={item.path} end={item.path === '/'}>
+            <NavLink key={item.key} to={item.path} end={item.path === '/'} className={item.key === 'tests' ? 'nav-with-count' : undefined}>
               {item.label}
+              {item.key === 'tests' && newResults.length > 0 && (
+                <span className="nav-count" aria-label={`${newResults.length} new test result${newResults.length === 1 ? '' : 's'}`}>
+                  {newResults.length}
+                </span>
+              )}
             </NavLink>
           ))}
           <NavLink to="/whats-new" className="nav-whats-new">

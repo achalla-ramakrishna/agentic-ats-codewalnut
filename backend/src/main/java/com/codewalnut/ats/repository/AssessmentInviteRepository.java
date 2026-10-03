@@ -18,6 +18,11 @@ public interface AssessmentInviteRepository extends JpaRepository<AssessmentInvi
 
     List<AssessmentInvite> findByAssessmentId(UUID assessmentId);
 
+    List<AssessmentInvite> findByStatus(AssessmentInvite.Status status);
+
+    /** Submitted results nobody has looked at yet, newest first. */
+    List<AssessmentInvite> findByStatusAndReviewedAtIsNullOrderBySubmittedAtDesc(AssessmentInvite.Status status);
+
     /** Invites someone has started or submitted: the test has been taken. */
     long countByAssessmentIdAndStatusIn(UUID assessmentId, Collection<AssessmentInvite.Status> statuses);
 }
