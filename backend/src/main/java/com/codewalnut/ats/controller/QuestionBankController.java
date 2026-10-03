@@ -14,6 +14,7 @@ import com.codewalnut.ats.dto.BankDtos.BuildRequest;
 import com.codewalnut.ats.security.CurrentUserService;
 import com.codewalnut.ats.service.QuestionBankService;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -33,6 +34,11 @@ public class QuestionBankController {
 
     private final QuestionBankService service;
     private final CurrentUserService currentUserService;
+
+    @GetMapping("/api/v1/question-bank/roles")
+    public List<com.codewalnut.ats.dto.BankDtos.RoleView> roles() {
+        return service.roles(currentUserService.require());
+    }
 
     @GetMapping("/api/v1/question-bank/overview")
     public BankOverview overview(@RequestParam(required = false) Assessment.Category area) {

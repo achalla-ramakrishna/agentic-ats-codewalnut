@@ -4,14 +4,18 @@ import {
   BANK_AREAS,
   DIFFICULTY_LABEL,
   MIXES,
+  SECTION_LABEL,
   sectionName,
   sectionsFor,
   buildFromBank,
   getBankOverview,
+  listRoles,
   planTopics,
   type BankOverview,
   type Difficulty,
   type Order,
+  type RoleLevel,
+  type RoleView,
   type SectionPlan,
 } from '../api/questionBank'
 import { Button, Card } from './ui'
@@ -30,7 +34,7 @@ const TOPIC_ORDER_LABEL: Record<Order, string> = {
   SHUFFLED: 'Shuffled',
 }
 
-const LEVELS: { key: keyof Omit<SectionPlan, 'section'>; difficulty: Difficulty }[] = [
+const LEVELS: { key: 'easy' | 'medium' | 'hard'; difficulty: Difficulty }[] = [
   { key: 'easy', difficulty: 'EASY' },
   { key: 'medium', difficulty: 'MEDIUM' },
   { key: 'hard', difficulty: 'HARD' },
@@ -49,20 +53,16 @@ const defaultTitle = (area: Category) => (area === 'APTITUDE' ? 'Aptitude test f
 
 /** Build a test paper from the bank: by topics and a difficulty mix, or by a pattern / section counts (ADR-0014). */
 export function BuildFromBank(props: BuilderProps) {
-  const [mode, setMode] = useState<'topics' | 'pattern'>('topics')
+  const [mode, setMode] = useState<'role' | 'topics' | 'pattern'>('role')
   const [area, setArea] = useState<Category>('APTITUDE')
   return (
     <Card>
       <div className="stack">
         <h2 style={{ margin: 0 }}>Build a test from the question bank</h2>
-        <div className="row" style={{ gap: 6, flexWrap: 'wrap' }} role="group" aria-label="Test area">
-          {BANK_AREAS.map((a) => (
-            <button key={a} type="button" className={`chip${a === area ? ' chip-on' : ''}`} aria-pressed={a === area} onClick={() => setArea(a)}>
-              {CATEGORY_LABEL[a]}
-            </button>
-          ))}
-        </div>
         <div className="tabs" role="tablist" aria-label="How to build">
+          <button type="button" role="tab" aria-selected={mode === 'role'} onClick={() => setMode('role')}>
+            By role
+          </button>
           <button type="button" role="tab" aria-selected={mode === 'topics'} onClick={() => setMode('topics')}>
             By topics
           </button>
@@ -70,9 +70,174 @@ export function BuildFromBank(props: BuilderProps) {
             By pattern or section
           </button>
         </div>
-        {mode === 'topics' ? <ByTopics key={area} area={area} {...props} /> : <ByPattern key={area} area={area} {...props} />}
+        {mode !== 'role' && (
+          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }} role="group" aria-label="Test area">
+            {BANK_AREAS.map((a) => (
+              <button key={a} type="button" className={`chip${a === area ? ' chip-on' : ''}`} aria-pressed={a === area} onClick={() => setArea(a)}>
+                {CATEGORY_LABEL[a]}
+              </button>
+            ))}
+          </div>
+        )}
+        {mode === 'role' && <ByRole {...props} />}
+        {mode === 'topics' && <ByTopics key={area} area={area} {...props} />}
+        {mode === 'pattern' && <ByPattern key={area} area={area} {...props} />}
       </div>
     </Card>
+  )
+}
+
+/** Pick a role and a level; the right mix of areas and bands is filled in (ADR-0015). */
+function ByRole({ onBuilt, onCancel }: BuilderProps) {
+  const [roles, setRoles] = useState<RoleView[] | null>(null)
+  const [roleId, setRoleId] = useState('')
+  const [level, setLevel] = useState<RoleLevel['level']>('JUNIOR')
+  const [title, setTitle] = useState('')
+  const [duration, setDuration] = useState(35)
+  const [pass, setPass] = useState(60)
+  const [order, setOrder] = useState<Order>('BY_SECTION')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    listRoles()
+      .then((r) => {
+        setRoles(r)
+        if (r.length) choose(r[0], 'JUNIOR')
+      })
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load roles'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const role = roles?.find((r) => r.id === roleId)
+  const current = role?.levels.find((l) => l.level === level) ?? role?.levels[0]
+
+  function choose(r: RoleView, wanted: RoleLevel['level']) {
+    const l = r.levels.find((x) => x.level === wanted) ?? r.levels[0]
+    setRoleId(r.id)
+    setLevel(l.level)
+    setTitle(l.preset.name)
+    setDuration(l.preset.durationMinutes)
+    setPass(l.preset.passPercent)
+  }
+
+  const total = current ? current.preset.sections.reduce((n, p) => n + p.easy + p.medium + p.hard, 0) : 0
+
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    if (!role || !current) return
+    setBusy(true)
+    setError(null)
+    try {
+      const built = await buildFromBank({
+        title,
+        area: role.primary,
+        durationMinutes: duration,
+        passPercent: pass,
+        sections: current.preset.sections,
+        order,
+      })
+      onBuilt(built.summary.id)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not build the test')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form className="stack" onSubmit={submit} aria-label="Build a test for a role">
+      <p className="muted" style={{ margin: 0, fontSize: 14 }}>
+        Pick the role and the candidate's level. The test mixes the right areas — the main stack, what it works with, CS
+        fundamentals, system design for seniors and aptitude for freshers.
+      </p>
+      {error && (
+        <div role="alert" className="alert alert-error">
+          {error}
+        </div>
+      )}
+      <div className="row" style={{ gap: 6, flexWrap: 'wrap' }} role="group" aria-label="Role">
+        {roles?.map((r) => (
+          <button key={r.id} type="button" className={`chip${r.id === roleId ? ' chip-on' : ''}`} aria-pressed={r.id === roleId}
+            onClick={() => choose(r, level)}>
+            {r.name}
+          </button>
+        ))}
+      </div>
+      {role && (
+        <>
+          <p className="muted" style={{ margin: 0, fontSize: 13 }}>{role.summary}</p>
+          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }} role="group" aria-label="Level">
+            {role.levels.map((l) => (
+              <button key={l.level} type="button" className={`chip${l.level === current?.level ? ' chip-on' : ''}`}
+                aria-pressed={l.level === current?.level} onClick={() => choose(role, l.level)}>
+                {l.label} <span style={{ opacity: 0.75, fontSize: 12 }}>· {l.years}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {current && (
+        <table className="bank-grid" aria-label="What the test covers">
+          <thead>
+            <tr>
+              <th style={{ textAlign: 'left' }}>Area</th>
+              {LEVELS.map((l) => (
+                <th key={l.key} className={`diff-${l.difficulty}`}>
+                  {DIFFICULTY_LABEL[l.difficulty]}
+                </th>
+              ))}
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {current.preset.sections.map((p) => (
+              <tr key={`${p.area}-${p.section}`}>
+                <td style={{ textAlign: 'left' }}>
+                  {p.area ? CATEGORY_LABEL[p.area] : ''} · {SECTION_LABEL[p.section]}
+                </td>
+                <td>{p.easy}</td>
+                <td>{p.medium}</td>
+                <td>{p.hard}</td>
+                <td>{p.easy + p.medium + p.hard}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <div className="row" style={{ alignItems: 'flex-end' }}>
+        <label className="field" style={{ flex: '1 1 260px' }}>
+          Title
+          <input className="input" required value={title} onChange={(e) => setTitle(e.target.value)} />
+        </label>
+        <label className="field" style={{ maxWidth: 120 }}>
+          Time (min)
+          <input className="input" type="number" min={5} max={180} value={duration} onChange={(e) => setDuration(Number(e.target.value))} />
+        </label>
+        <label className="field" style={{ maxWidth: 120 }}>
+          Pass mark (%)
+          <input className="input" type="number" min={0} max={100} value={pass} onChange={(e) => setPass(Number(e.target.value))} />
+        </label>
+        <label className="field" style={{ flex: '1 1 220px' }}>
+          Order of questions
+          <select className="select" value={order} onChange={(e) => setOrder(e.target.value as Order)}>
+            {(Object.keys(ORDER_LABEL) as Order[]).map((o) => (
+              <option key={o} value={o}>
+                {o === 'BY_SECTION' ? 'Area by area, easy → hard in each' : ORDER_LABEL[o].replace('sections', 'areas')}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div className="row">
+        <Button type="submit" disabled={busy || !current || !title.trim()}>
+          {busy ? 'Creating…' : `Create test (${total} questions)`}
+        </Button>
+        <Button variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </form>
   )
 }
 

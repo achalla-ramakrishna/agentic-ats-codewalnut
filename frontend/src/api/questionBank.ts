@@ -29,8 +29,19 @@ export const sectionsFor = (area: Category): Section[] => (area === 'APTITUDE' ?
 /** A section's label, with the band's audience for technical areas, e.g. "Fundamentals (Freshers)". */
 export const sectionName = (s: Section) => (SECTION_LEVEL[s] ? `${SECTION_LABEL[s]} (${SECTION_LEVEL[s]})` : SECTION_LABEL[s])
 
+/**
+ * A test question's section as people read it: "QUANT" → "Numerical ability", and for role tests
+ * that mix areas "JAVA:PRACTICAL" → "Java · Applied".
+ */
+export function sectionTitle(section: string | null | undefined, categoryLabel?: (c: Category) => string): string {
+  if (!section) return ''
+  const [area, band] = section.includes(':') ? section.split(':') : [null, section]
+  const label = SECTION_LABEL[band as Section] ?? band
+  return area ? `${categoryLabel ? categoryLabel(area as Category) : area} · ${label}` : label
+}
+
 /** Areas with a question bank, in menu order. */
-export const BANK_AREAS: Category[] = ['APTITUDE', 'JAVA', 'PYTHON', 'JAVASCRIPT', 'REACT', 'ANGULAR', 'SQL']
+export const BANK_AREAS: Category[] = ['APTITUDE', 'JAVA', 'PYTHON', 'JAVASCRIPT', 'REACT', 'ANGULAR', 'SQL', 'CS_FUNDAMENTALS', 'SYSTEM_DESIGN']
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = { EASY: 'Easy', MEDIUM: 'Medium', HARD: 'Hard' }
 
 export interface BankQuestion {
@@ -56,6 +67,8 @@ export interface BankQuestion {
 }
 
 export interface SectionPlan {
+  /** Which bank, when a test mixes areas (role tests); omitted means the test's area. */
+  area?: Category | null
   section: Section
   easy: number
   medium: number
@@ -146,6 +159,24 @@ export interface BankFilter {
   size?: number
 }
 
+export interface RoleLevel {
+  level: 'FRESHER' | 'JUNIOR' | 'MID' | 'SENIOR' | 'LEAD'
+  label: string
+  years: string
+  preset: Preset
+}
+
+/** A role (e.g. Java backend developer) with its ready-made paper at each level. */
+export interface RoleView {
+  id: string
+  name: string
+  summary: string
+  primary: Category
+  areas: string[]
+  levels: RoleLevel[]
+}
+
+export const listRoles = () => api<RoleView[]>('/question-bank/roles')
 export const getBankOverview = (area: Category = 'APTITUDE') => api<BankOverview>(`/question-bank/overview?area=${area}`)
 export function listBank(filter: BankFilter) {
   const params = new URLSearchParams()

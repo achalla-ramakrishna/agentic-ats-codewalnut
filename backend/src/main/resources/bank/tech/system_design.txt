@@ -1,0 +1,938 @@
+# CodeWalnut built-in system design bank (ADR-0015). Format: see TechBank.java.
+# Bands: FUNDAMENTALS = core concepts every developer should know, PRACTICAL = 1–3+ years building
+# services, ADVANCED = senior and lead engineers. Distractors are kept as long and as plausible as the answer.
+
+@topic sd-building-blocks | FUNDAMENTALS | Building blocks | Clients and servers, load balancers, stateless services, DNS, CDNs, reverse proxies and API gateways.
+Q E What does a load balancer do?
++ Spreads incoming requests across several servers
+- Stores copies of the database on several servers
+- Compresses responses before they leave the server
+- Translates domain names into IP addresses
+= It also stops sending traffic to servers that fail health checks.
+
+Q E What does it mean for a web service to be stateless?
++ Each request carries what it needs; no session is kept in server memory
+- The service never stores anything in a database
+- The service has no configuration and no environment variables
+- The service returns the same response to every request
+= Stateless servers can be added or removed freely behind a load balancer.
+
+Q E What is horizontal scaling?
++ Adding more machines to share the load
+- Adding more CPU and memory to one machine
+- Splitting one service into two codebases
+- Moving the database to a faster disk
+= Vertical scaling is making one machine bigger.
+
+Q E What is a reverse proxy, such as Nginx in front of an app?
++ A server that forwards client requests to backend servers
+- A program on the user's computer that hides their IP address
+- A database that copies itself into a second cloud region
+- A tool that rewrites application code so it runs faster
+= It can also terminate TLS, cache and compress responses.
+
+Q M Where should user session data live so any server can handle a request?
++ In a shared store such as Redis, or in a signed token
+- In the memory of whichever server handled the login
+- In a file on the first server's local disk
+- In the load balancer's configuration file
+= Server-local sessions force "sticky" routing and break when a server dies.
+
+Q M What do health checks on a load balancer achieve?
++ Traffic stops going to servers that are down or unhealthy
+- Servers restart themselves every few minutes to stay fresh
+- Requests are sent to the server with the newest code first
+- Each server reports how many users it has to the client
+= Combine liveness (is it running?) and readiness (can it take traffic?).
+
+Q M What does an API gateway add in front of microservices?
++ One entry point for routing, auth and rate limits
+- A shared database that every service reads from directly
+- A message queue that keeps every request for one day
+- A build server that redeploys each service on every change
+= Clients call the gateway instead of each service.
+
+Q M Why put static files (images, JS, CSS) on a CDN?
++ They're served from near users, cutting latency and server load
+- They're compiled into faster formats that only a CDN understands
+- They become private, so only signed-in users are able to see them
+- They no longer need to be versioned or cache-busted on release
+= Use content hashes in file names so updates bypass old caches.
+
+Q H Round-robin load balancing sends some users to slow, overloaded servers. What is a better strategy?
++ Least-connections or latency-aware balancing
+- Sending every request to the first server in the list
+- Random choice with no health checks at all
+- Pinning every user to one server permanently
+= These strategies account for how busy each server actually is.
+
+Q H What is the main risk of a single load balancer?
++ It's a single point of failure; run a redundant pair
+- It can only forward plain HTTP traffic, never HTTPS traffic
+- It slows every request down by at least one full second
+- It stops working once there are more than ten servers behind it
+= Cloud load balancers are redundant by design.
+
+Q H Why do services run behind private networks with only the gateway exposed?
++ It shrinks the attack surface: internal services aren't reachable
+- Private networks make every request faster than a public network would
+- Internal services cannot use HTTPS when they sit on a public network
+- It removes the need for any authentication between internal services
+= Still authenticate service-to-service calls (zero trust).
+
+Q H What problem does connection draining solve during deployments?
++ In-flight requests finish before a server is removed
+- New code is downloaded to each server before it starts up
+- Database connections are closed before tables are migrated
+- Logs are copied off a server before the server is deleted
+= The load balancer stops sending new requests and waits for current ones.
+
+@topic sd-storage | FUNDAMENTALS | Choosing storage | SQL vs NoSQL, key-value, document, columnar and search stores, object storage, and modelling data for access patterns.
+Q E Where should uploaded files such as résumés and images be stored?
++ In object storage like Amazon S3, with the database holding their keys
+- In a database column as large binary blobs for every file
+- On the web server's local disk next to the code
+- In the browser's local storage for each user
+= Object storage is cheap, durable and scales independently of servers.
+
+Q E Which kind of database fits orders, payments and inventory with strict consistency?
++ A relational (SQL) database with transactions
+- A key-value cache that keeps data only in memory
+- A search engine built for full-text queries
+- A log file that the application appends to
+= Transactions keep related changes consistent.
+
+Q E What is a key-value store best at?
++ Very fast reads and writes of values looked up by a known key
+- Complex joins across many related tables
+- Full-text search with ranking and highlighting
+- Long-running analytical reports over years of data
+= Redis and DynamoDB are examples.
+
+Q E Which store is built for full-text search with relevance ranking?
++ A search engine such as Elasticsearch or OpenSearch
+- A relational database's primary key index
+- An object store such as Amazon S3
+- A message queue such as RabbitMQ
+= Keep the source of truth in your database and index into the search engine.
+
+Q M What does "model data for your access patterns" mean in NoSQL design?
++ Shape documents around the queries you will run
+- Store every field in its own table so nothing is ever duplicated
+- Reuse the schema from your SQL database to keep things simple
+- Add an index for every possible query before the product launches
+= In document stores, data read together is stored together.
+
+Q M Why are columnar stores (e.g. BigQuery, Redshift) used for analytics?
++ They read only the columns a query needs, ideal for big aggregations
+- They are faster than row stores for updating a single row at a time
+- They keep the whole dataset in memory at all times for every query
+- They are the only kind of store that supports SQL queries at all
+= Use them for reporting, not for transactional workloads.
+
+Q M A product listing needs fast filtering by many attributes and text search. What is a common design?
++ Keep products in SQL and sync them to a search index for querying
+- Store products only in a search index as the source of truth
+- Run LIKE '%term%' queries on the products table
+- Cache every possible filter combination in Redis
+= The search index is rebuilt or updated from the database.
+
+Q M What is a time-series database designed for?
++ Data points over time, such as metrics and sensor readings
+- User profiles that rarely change once they have been created
+- Images, videos and other large binary files from users
+- Transactions that must span several related tables at once
+= It compresses by time and supports range and downsampling queries.
+
+Q H Why can a single relational database eventually limit growth, and what are common next steps?
++ Writes and storage hit one machine's limits; add read replicas, caching, then partitioning
+- Relational databases stop working beyond a million rows; move to NoSQL immediately
+- Indexes stop working at scale; remove them and scan tables instead
+- Transactions become too slow; turn them off for all writes
+= Most products go far with one well-indexed database plus replicas and caches.
+
+Q H What is the trade-off of denormalising data for read speed?
++ Faster reads, but duplicated data must be kept in sync on every write
+- Faster writes, but reads must join many more tables
+- Smaller storage, but every query must scan the full table
+- Stronger consistency, but more frequent database crashes
+= Often done with events or background jobs that update the copies.
+
+Q H How do you store large binary files securely so users can download only their own?
++ Private storage plus short-lived signed URLs after an access check
+- A public bucket with long random file names nobody could guess
+- Files on the web server with directory listing turned off
+- Files Base64-encoded and stored inside each user's JWT token
+= Signed URLs expire, and the app decides who gets one.
+
+Q H What is change data capture (CDC)?
++ Streaming a database's committed changes to other systems
+- Capturing screenshots of each row's data before every change
+- Copying the whole database into a backup file every night
+- Recording which user viewed each row of each table, and when
+= Tools like Debezium keep search indexes and caches in sync.
+
+@topic sd-caching | FUNDAMENTALS | Caching | Cache-aside, write-through, TTLs and invalidation, cache keys, CDN and browser caches, and stampedes.
+Q E Why add a cache in front of a database?
++ To serve repeated reads faster and spare the database
+- To make every write become permanent more quickly
+- To remove the need for regular database backups
+- To encrypt data before it ever reaches the database
+= Caches suit data that is read far more often than it changes.
+
+Q E What is a cache hit?
++ The requested data was found in the cache
+- The cache ran out of memory and crashed
+- The data was written to the cache successfully
+- The cache was cleared by an administrator
+= A miss means the data must be loaded from the source.
+
+Q E What does a TTL (time to live) on a cache entry do?
++ Expires the entry after a set time so it is refreshed
+- Keeps the entry in the cache forever, whatever happens
+- Limits how many different users may read the entry
+- Encrypts the entry until the set amount of time is up
+= Choose TTLs based on how stale the data may safely be.
+
+Q E Which is a common in-memory cache used with web apps?
++ Redis
+- PostgreSQL
+- Kafka
+- Elasticsearch
+= Memcached is another popular option.
+
+Q M How does the cache-aside pattern work?
++ Read the cache; on a miss load from the database, store it, and return it
+- Write to the cache only; the database is updated once a week
+- The database pushes every change to all caches instantly
+- The cache loads the entire database at start-up
+= On writes, update the database and evict or update the cached entry.
+
+Q M Why is cache invalidation called one of the hard problems?
++ Updates must reach every cached copy, or users see stale data
+- Caches cannot remove entries once they are written
+- Invalidating a cache always deletes the database too
+- Caches must be rebuilt from scratch on every request
+= TTLs, explicit eviction on write and versioned keys help.
+
+Q M What is a cache stampede (thundering herd)?
++ A popular entry expires and many requests hit the database at once
+- Too many different keys make the cache run out of memory
+- Two caches overwrite each other's entries repeatedly
+- A cache server restarts and loses all of its data
+= Use request coalescing, locks or staggered (jittered) expiry.
+
+Q M What should a cache key for a user's dashboard include?
++ Everything the result depends on, such as user id and filters
+- Only the page name, so all users share one entry
+- A random number so each request gets a fresh entry
+- The current time to the second
+= Missing a dependency in the key leaks one user's data to another.
+
+Q H A cached product price was updated in the database but users still see the old price. What is the likely cause?
++ The write updated the database but never evicted the cached entry
+- The database rolled the update back because the cache was holding it
+- The CDN encrypted the new price, so the change stayed hidden from users
+- The browser converted the price into a different currency on display
+= Evict on write, or keep TTLs short for data that changes.
+
+Q H When is write-through caching useful?
++ When reads right after a write must see fresh cached data
+- When writes are rare and nobody ever reads the data back
+- When the cache needs to be bigger than the database itself
+- When the data must never be written to the database at all
+= Each write goes to both cache and database before returning.
+
+Q H Why should you avoid caching responses that contain personal data at a shared CDN?
++ One user's private data could be served to another user
+- CDNs cannot store responses that contain text
+- Personal data makes the CDN slower for everyone
+- CDNs delete personal data after one second anyway
+= Mark such responses Cache-Control: private or no-store.
+
+Q H What does an eviction policy such as LRU decide?
++ Which entries to remove when the cache is full
+- Which users may read from the cache
+- How often the cache is backed up to disk
+- Which database the cache reads from
+= LRU removes the least recently used entries first.
+
+@topic sd-api | FUNDAMENTALS | API design | REST resources and methods, status codes, pagination, versioning, idempotency keys, errors and rate limiting.
+Q E Which is a well-designed REST endpoint for one candidate?
++ GET /candidates/42
+- GET /getCandidate?id=42
+- POST /candidates/fetch/42
+- GET /candidate-get-by-id/42
+= Resources are nouns; HTTP methods are the verbs.
+
+Q E Which method creates a new resource?
++ POST
+- GET
+- DELETE
+- HEAD
+= PUT replaces a resource at a known URL; PATCH changes part of it.
+
+Q E Which status code fits "resource not found"?
++ 404 Not Found
+- 400 Bad Request
+- 500 Internal Server Error
+- 201 Created
+= 400 is for invalid input; 500 is a server fault.
+
+Q E Why paginate list endpoints?
++ Thousands of rows at once is slow for server and client
+- HTTP cannot carry more than 100 items in one response
+- Browsers refuse to display more than 20 results at a time
+- Databases can only ever return one page of rows per query
+= Return a page of results plus a way to get the next page.
+
+Q M Why is cursor-based pagination better than offset for large, changing lists?
++ It stays fast and doesn't skip or repeat items when rows are added
+- It lets users jump straight to any page number they like
+- It needs no index on the sort column at all
+- It returns the total count of items for free
+= Offset pagination reads and discards skipped rows and shifts when data changes.
+
+Q M How should an API report a validation error?
++ 400 with a structured body naming the fields and reasons
+- 200 with an error message hidden inside the data
+- 500 so the client knows something went wrong
+- 302 redirecting back to the form
+= Clients can then show the right message next to each field.
+
+Q M What is a common way to version a public API?
++ A version in the path or header, e.g. /v1/, kept for a while
+- Changing field names freely and telling every client by email
+- Moving to a brand new domain name for every small change
+- Never changing the API at all once it has been released
+= Additive changes (new optional fields) usually need no new version.
+
+Q M What does HTTP 429 Too Many Requests tell a client?
++ It hit a rate limit and should slow down
+- The server has too many users and has shut down
+- The request body is too large for the server to process
+- The client's token has expired and needs to be refreshed
+= Rate limits protect services from overload and abuse.
+
+Q H How do idempotency keys make POST /payments safe to retry?
++ The server stores the result per key and replays it for repeats
+- The key encrypts the payment so that it can only be read once
+- The key makes the server ignore every request after the first one
+- The key tells the client how long it must wait before retrying
+= Without it, a retry after a timeout could charge the customer twice.
+
+Q H When would you choose gRPC over REST for service-to-service calls?
++ For fast, strongly typed internal calls, especially with streaming
+- For public APIs that browsers call directly
+- When you want plain-text payloads that are easy to read
+- When services are written in the same language only
+= Browsers need a proxy for gRPC; REST/JSON is simpler for public APIs.
+
+Q H Why avoid exposing auto-increment database ids in public URLs?
++ They reveal volumes and invite guessing other ids
+- They are too long to fit in URLs on mobile devices
+- They change every time the database server restarts
+- Browsers are unable to display numbers inside URLs
+= Use UUIDs or opaque ids, and always check access on the server.
+
+Q H What should a long-running operation such as "generate report" return immediately?
++ 202 Accepted with a job id or a status URL to poll
+- 200 OK, after waiting until the report has finished
+- 500, so that the client retries the request later on
+- 204 No Content, with no way to find the result later
+= Avoid holding HTTP connections open for minutes.
+
+@topic sd-scaling | PRACTICAL | Scaling data | Read replicas, replication lag, sharding keys, hot partitions, rebalancing and consistent hashing.
+Q E What do read replicas help with?
++ Handling more read traffic by spreading reads across copies
+- Handling more writes by letting every replica accept them
+- Making the database's data smaller on disk
+- Removing the need for backups
+= Writes still go to the primary.
+
+Q E What is a shard key?
++ The field that decides which shard holds each row
+- The password used to encrypt each individual shard
+- The id of the server that stores the shard's backups
+- The name of the table that has been split into shards
+= Choose it so data and traffic spread evenly.
+
+Q E What is replication lag?
++ The delay before a write on the primary appears on replicas
+- The time it takes to restore a backup
+- The delay between a user clicking and the page loading
+- The time it takes to add a new replica
+= Reads from replicas may briefly return old data.
+
+Q E Why might a user not see their own update right after saving?
++ The read went to a replica that hasn't caught up yet
+- The browser deleted the update before showing it
+- The primary database rejected the update silently
+- The load balancer cached the old page forever
+= Read-your-own-writes: route that user's reads to the primary for a short time.
+
+Q M What is a hot partition?
++ One shard gets far more traffic than the others
+- A shard whose server is physically overheating in the rack
+- A partition that holds only the very newest rows of data
+- A shard that is in the middle of being backed up right now
+= Choose keys that spread load, or split hot keys further.
+
+Q M Why is "created date" usually a poor shard key for an orders table?
++ All new writes land on the same shard, creating a hotspot
+- Dates cannot be compared across different shards
+- Date columns cannot be indexed in sharded databases
+- Orders must always be stored in a single shard
+= Prefer keys such as customer id, or a hash of them.
+
+Q M What does consistent hashing reduce when servers are added or removed?
++ The amount of data that must move to new places
+- The number of servers needed to store the data
+- The size of each key stored in the cache
+- The time needed to compute each hash
+= Only keys near the change move, not almost all of them.
+
+Q M What makes cross-shard queries expensive?
++ They hit many shards and merge results in the application
+- Each shard stores its data in a completely different format
+- Shards can only be queried once per minute by each client
+- Cross-shard queries always lock every table on every shard
+= Design so common queries hit a single shard.
+
+Q H How do you scale a write-heavy counter, such as likes on a viral post?
++ Split it into sub-counters and sum them, or batch updates
+- Lock the row for every single like so the count stays exact
+- Keep the counter in each user's browser and sync it once a day
+- Move to a bigger database server and add more indexes to it
+= Sharded counters spread contention across rows or keys.
+
+Q H What is a safe way to move a live table to a new database?
++ Dual-write or CDC, backfill, verify, switch reads, then stop old writes
+- Stop the whole site, copy the data and hope nothing changed
+- Point the app at the new database and copy data afterwards
+- Delete the old table first so there is no confusion
+= Each step can be checked and rolled back.
+
+Q H Which consistency model fits a bank balance, and which a social feed?
++ Strong consistency for the balance; eventual consistency is fine for a feed
+- Eventual consistency for the balance; strong consistency for the feed
+- Eventual consistency for both, since networks are unreliable
+- Strong consistency for both, regardless of the cost
+= Pay for strict guarantees only where wrong answers are costly.
+
+Q H Why is rebalancing shards hard on a live system?
++ Data must move while traffic continues, with no loss or duplicates
+- Shards can never be added once the system has gone live
+- Rebalancing forces every user to log in to the app again
+- The shard key has to be changed on every table in the database
+= Plan the key and the move process early.
+
+@topic sd-messaging | PRACTICAL | Messaging and async work | Queues, pub/sub, background jobs, retries and dead-letter queues, ordering, outbox pattern and event-driven design.
+Q E Why use a message queue between two services?
++ The sender doesn't wait, and work survives traffic spikes
+- It makes both services share one database between them
+- It removes the need for any error handling in either service
+- It encrypts every request sent between the two services
+= The queue buffers work until consumers can process it.
+
+Q E What is a background job?
++ Work done outside the user's request, such as sending emails
+- A job that runs only when the server is idle at night
+- A web page that loads in a hidden browser tab
+- A scheduled database backup and nothing else
+= Users get a fast response while slow work continues.
+
+Q E What is publish/subscribe?
++ A publisher sends events that every interested subscriber receives
+- A client subscribes to a website's newsletter by email
+- A server publishes its code to a package registry
+- A database publishes backups to subscribers
+= Kafka, SNS and Redis pub/sub are examples.
+
+Q E Which tasks suit a queue rather than doing them in the request?
++ Sending emails, resizing images, building reports
+- Validating the request's input fields for errors
+- Checking whether the user is currently logged in
+- Reading the page the user has just asked for
+= Anything slow that the user doesn't need to wait for.
+
+Q M What is a dead-letter queue?
++ Where messages go after failing too many times, for inspection
+- A queue that deletes messages as soon as they arrive
+- A queue for messages sent to users who have left
+- A backup of every message ever sent
+= It stops poison messages from blocking the main queue forever.
+
+Q M Why must queue consumers usually be idempotent?
++ Most queues deliver at least once, so duplicates happen
+- Consumers always run on the same thread as the producer
+- Messages are always delivered in a random order
+- Queues delete each message before anyone can read it
+= Use a message id to skip work already done.
+
+Q M How does Kafka keep events for the same customer in order?
++ Events with the same key go to the same partition, which is ordered
+- Kafka sorts every message by timestamp before delivery
+- Kafka allows only one consumer for the whole topic
+- Kafka delivers messages only after the previous one is acknowledged everywhere
+= Ordering is guaranteed within a partition, not across partitions.
+
+Q M Why add jitter to retries of failed jobs?
++ So jobs that failed together don't all retry at once
+- So that each retry runs on a different server than before
+- So that the job's input data is randomised on each attempt
+- So that each failed job is retried exactly once and no more
+= Exponential backoff plus jitter avoids retry storms.
+
+Q H What problem does the transactional outbox pattern solve?
++ Saving data and publishing its event atomically, without 2PC
+- Sending emails faster by batching them up in an outbox table first
+- Keeping outgoing HTTP requests in the browser until it is online
+- Keeping a copy of every message sent in the user's own mailbox
+= Write the event to an outbox table in the same transaction; a relay publishes it.
+
+Q H How do you handle a slow consumer that falls far behind?
++ Add consumers (up to the partition count) or apply backpressure
+- Delete the oldest messages so that the queue looks shorter
+- Make the producer send messages twice as fast to keep up
+- Restart the queue server every hour to clear the backlog
+= Monitor consumer lag and alert on it.
+
+Q H What is event sourcing?
++ Storing every change as an event and replaying them to get state
+- Logging every HTTP request to a file so it can be debugged later
+- Sending an email to the owner for every change made to a record
+- Taking a full snapshot of the whole database once every minute
+= It gives a full history but makes querying and schema changes harder.
+
+Q H A saga coordinates an order across payment and inventory services. What happens if payment fails after stock was reserved?
++ A compensating action releases the reserved stock
+- The whole system rolls back with a global transaction
+- The order stays half done until someone notices
+- The inventory service retries the payment itself
+= Each step has an undo step instead of one distributed transaction.
+
+@topic sd-reliability | PRACTICAL | Reliability and resilience | Timeouts, retries, circuit breakers, rate limiting, graceful degradation, redundancy and disaster recovery.
+Q E Why should every call to another service have a timeout?
++ A slow dependency can tie up threads until you stall
+- Timeouts make every call return faster than it normally would
+- The network rejects any call that is sent without a timeout
+- Timeouts encrypt the request before it leaves the service
+= Pick timeouts based on what callers can tolerate.
+
+Q E What is a single point of failure?
++ A component whose failure brings everything down
+- A bug that has only appeared once in production
+- A server that has failed exactly once in its life
+- A test that fails the very first time it is run
+= Remove them with redundancy.
+
+Q E What does a backup protect against?
++ Data loss from mistakes, corruption or disaster
+- Slow queries during the busiest periods of the day
+- Users entering invalid data into the app's forms
+- Network outages between the services of the system
+= Test restores regularly; an untested backup may not work.
+
+Q E What is graceful degradation?
++ Keeping core features working when one part fails
+- Slowly removing the features that users don't seem to use
+- Rolling back to an older version of the app every night
+- Showing an error page for every request during any outage
+= A failed "related jobs" widget shouldn't break the whole page.
+
+Q M What does a circuit breaker do?
++ Stops calling a failing dependency for a while
+- Restarts the server whenever CPU usage gets too high
+- Cuts the power to a server that has started overheating
+- Blocks any user who sends too many requests in a minute
+= It gives the dependency time to recover and protects your threads.
+
+Q M Why can naive retries make an outage worse?
++ They multiply load on a struggling service
+- They always succeed, hiding the original problem
+- They use a different protocol that is slower
+- They delete the original request's data
+= Limit retries, back off with jitter, and use retry budgets.
+
+Q M What do RPO and RTO mean in disaster recovery?
++ RPO is how much data you can lose; RTO is how long recovery may take
+- RPO is how long recovery takes; RTO is how much data you can lose
+- RPO is the backup file size; RTO is the restore speed
+- They are the costs of the primary and the recovery sites
+= Lower targets cost more: more frequent backups, standby systems.
+
+Q M What does rate limiting protect?
++ Services from being swamped by one client's requests
+- Users from seeing slow pages during the busiest hours
+- Databases from storing too many rows in a single table
+- Servers from running out of free disk space for logs
+= Common algorithms: token bucket and sliding window.
+
+Q H What is the bulkhead pattern?
++ Separate resources per dependency so one failure can't sink all
+- Building thick walls around the data centre for physical safety
+- Splitting a monolith into exactly two services and no more
+- Duplicating every incoming request onto two servers at once
+= A slow payment service then can't use up threads needed by search.
+
+Q H Why run in more than one availability zone?
++ One zone's outage won't take the whole service down
+- Each extra zone adds more CPU to every single server
+- Using HTTPS in the cloud requires at least two zones
+- Data stored in a single zone can never be backed up
+= Multi-region adds protection against regional outages at higher cost.
+
+Q H What is chaos engineering?
++ Injecting failures on purpose to check the system copes
+- Letting developers deploy to production without any reviews
+- Running load tests on production only at the busiest hour
+- Randomly reorganising the teams to improve their resilience
+= Start small, in a controlled way, with clear rollback.
+
+Q H Why should a service shed load rather than queue everything during overload?
++ Endless queues raise latency until every request times out
+- Shedding load deletes the rejected requests from the database
+- Queues are not allowed in production systems by most clouds
+- Shedding load makes the servers use less electricity overall
+= Reject some requests quickly so others still succeed.
+
+@topic sd-observability | PRACTICAL | Observability and operations | Logs, metrics and traces, dashboards and alerts, SLIs/SLOs, deployments and rollbacks.
+Q E What are the three pillars of observability?
++ Logs, metrics and traces
+- CPU, memory and disk
+- Unit, integration and end-to-end tests
+- Development, staging and production
+= Together they show what happened and why.
+
+Q E What is a metric?
++ A number tracked over time, such as error rate
+- A detailed text record of a single request
+- A diagram that shows how the services connect
+- A test that checks whether a feature works
+= Metrics are cheap to store and ideal for dashboards and alerts.
+
+Q E Why write structured (JSON) logs?
++ They can be searched and filtered by fields in log tools
+- They make the application run noticeably faster
+- They are required by the HTTP specification
+- They hide sensitive data automatically
+= e.g. find every log with requestId=abc.
+
+Q E What should never be written to logs?
++ Passwords, tokens and sensitive personal data
+- Request ids and the time each request arrived
+- Error messages together with their stack traces
+- The name of the service that handled the request
+= Logs are widely readable and kept for a long time.
+
+Q M What does distributed tracing show?
++ The path and timing of one request across many services
+- The total CPU used by all services in a day
+- The list of all deployments in the past month
+- Which developer wrote each line of code
+= A trace id passed between services ties the spans together.
+
+Q M What is an SLO?
++ A reliability target, e.g. 99.9% of requests succeed monthly
+- A legal contract with penalties paid out to customers
+- The number of servers a service is allowed to run on
+- A log level that sits between warning and error
+= An SLA is the contract; an SLI is what you measure.
+
+Q M What makes a good alert?
++ It shows user impact and needs someone to act now
+- It fires for every single warning written to the logs
+- It is emailed to the whole company at the same time
+- It is sent only once a week as part of a summary
+= Too many noisy alerts lead to alerts being ignored.
+
+Q M What is a canary release?
++ Sending a little traffic to the new version first and watching it
+- Deploying the new version only to developers' own laptops first
+- Releasing every new feature to every user at the same moment
+- Testing the new version only with automated scripts before release
+= Roll back quickly if errors or latency rise.
+
+Q H Why alert on symptoms (error rate, latency) rather than causes (CPU)?
++ Symptoms show what users feel; high CPU may be harmless
+- Causes such as CPU cannot be measured by monitoring tools
+- Symptom metrics are cheaper to store than cause metrics
+- CPU metrics are simply not available from cloud providers
+= Use cause metrics on dashboards to diagnose.
+
+Q H What is an error budget?
++ The failures an SLO allows, used to balance releases and reliability
+- The money set aside each year to pay customers for outages
+- The number of bugs each team is allowed to create per sprint
+- The maximum size the error log may grow to before rotation
+= If the budget is spent, slow down releases and fix reliability.
+
+Q H Why should latency be tracked as percentiles (p95, p99) rather than averages?
++ Averages hide the slow tail many users actually feel
+- Percentiles are easier to calculate than averages
+- Averages are not supported by most monitoring tools
+- Percentiles remove all of the slow requests from the data
+= A 100 ms average can hide a p99 of several seconds.
+
+Q H What should a good post-incident review focus on?
++ What happened, why, and fixes — without blaming people
+- Which person made the mistake and how to discipline them
+- How to hide the incident from customers and management
+- How to rewrite the whole system so it can never fail again
+= Blameless reviews surface real causes.
+
+@topic sd-consistency | ADVANCED | Consistency and distributed data | CAP and PACELC, strong vs eventual consistency, conflicts, distributed transactions, sagas and clocks.
+Q E What does the CAP theorem say?
++ During a partition, a system must pick consistency or availability
+- Every system needs a cache, an API and a primary key to work
+- Systems can be cheap, fast or reliable, but never all three
+- Every database has to choose between being SQL or NoSQL
+= Without a partition, you can have both.
+
+Q E What is eventual consistency?
++ Replicas may differ briefly but converge over time
+- Data becomes consistent only after the server restarts
+- Every read always returns the very latest write
+- Writes are only applied at the end of each day
+= Fine for likes, feeds and counters; risky for balances.
+
+Q E What is strong consistency?
++ Every read sees the latest successful write
+- Data is stored on very reliable hardware
+- Data is checked for errors every hour
+- Every write is copied to a backup at once
+= It usually costs latency or availability.
+
+Q E Why is two-phase commit rarely used across microservices?
++ It couples services tightly and blocks when a coordinator fails
+- It works only for read-only transactions
+- It requires every service to use the same programming language
+- It cannot be used with HTTP at all
+= Sagas with compensating steps are the common alternative.
+
+Q M What does PACELC add to CAP?
++ Even without a partition, systems trade latency against consistency
+- Partitions only happen in public clouds, not data centres
+- Availability matters only when the network is slow
+- Consistency can be added later without any cost
+= e.g. waiting for replicas to confirm adds latency.
+
+Q M Two users edit the same document offline. What resolves the conflict automatically?
++ CRDTs or a merge rule such as last-writer-wins
+- Locking the document on both devices forever
+- Rejecting both users' changes and keeping the original
+- Picking the user whose name comes first alphabetically
+= Last-writer-wins can lose edits; CRDTs merge them.
+
+Q M What is read-your-writes consistency?
++ A user always sees their own updates, even if others see them later
+- Every user sees every update at exactly the same moment
+- Users can read only data they wrote themselves
+- Writes are rejected until all users have read them
+= Often done by routing that user's reads to the primary briefly.
+
+Q M Why do distributed systems use logical clocks or version vectors?
++ To order events without trusting physical clocks
+- To show each user the local time in their own zone
+- To schedule background jobs at exact times of day
+- To measure how long each request takes to finish
+= Physical clocks drift; causality needs another mechanism.
+
+Q H Which needs consensus (e.g. Raft or Paxos): leader election or a page-view counter?
++ Leader election; a page-view counter can be eventually consistent
+- The page-view counter; leader election can be eventually consistent
+- Both always need consensus to be correct
+- Neither; consensus is only used in blockchains
+= Use consensus only where disagreement would be harmful.
+
+Q H Why are fencing tokens used with distributed locks?
++ A paused old lock holder can't overwrite a new holder's data
+- They make distributed locks expire faster than they normally would
+- They encrypt the data that the lock is protecting from other nodes
+- They let two different holders keep the same lock at the same time
+= The storage rejects writes carrying an older token.
+
+Q H An inventory service must never oversell during flash sales. Which approach fits?
++ Atomic conditional decrements on a strongly consistent store, with reservations
+- An eventually consistent cache that syncs with the database later
+- Letting each server keep its own stock count in memory
+- Checking stock in the browser before the order is placed
+= The stock check and decrement must happen as one atomic step.
+
+Q H What is the main challenge of multi-region active-active writes?
++ Concurrent writes in different regions conflict
+- Each region needs its own domain name and certificate
+- Users have to choose which region they log in to
+- Backups cannot be taken from more than one region
+= Many systems keep one write region per record (home region) to avoid conflicts.
+
+@topic sd-case-studies | ADVANCED | Designing real systems | URL shortener, chat, news feed, notifications, file storage and job portals: requirements, bottlenecks and key choices.
+Q E What is the first step in a system design interview or real design?
++ Clarifying requirements, users, scale and constraints
+- Choosing the database technology straight away
+- Drawing the deployment pipeline in detail
+- Writing the code for the most important class
+= Design follows from what the system must do and how much.
+
+Q E For a URL shortener, which operation happens far more often?
++ Redirecting short links (reads)
+- Creating new short links (writes)
+- Deleting old short links
+- Changing the destination of links
+= Read-heavy systems benefit from caching.
+
+Q E In a chat app, how does the server push new messages to online users?
++ Over persistent connections such as WebSockets
+- By emailing each message to the receiver
+- By waiting for the user to refresh the page
+- By sending a new web page for each message
+= Long polling or server-sent events are alternatives.
+
+Q E Why do notification systems usually use a queue?
++ Sending is slow and failed sends must be retried
+- Notifications must always be sent in alphabetical order
+- Putting notifications in a queue makes them free to send
+- Each user may receive only one notification per day
+= Workers send from the queue and retry with backoff.
+
+Q M How might a URL shortener generate short codes without collisions?
++ Encode a unique id (e.g. from a sequence) in base62
+- Use the first six letters of the long URL
+- Pick random letters and never check for duplicates
+- Ask the user to type a code and accept any value
+= Random codes need a uniqueness check; id-based codes avoid it.
+
+Q M For a news feed, what is "fan-out on write"?
++ Pushing each new post into followers' feeds when it is created
+- Building each feed from scratch every time it is opened
+- Sending every post to every user on the platform
+- Writing each post to several databases for safety
+= Fast reads, but very expensive for accounts with millions of followers.
+
+Q M A job portal must show search results within 200 ms over millions of jobs. What is key?
++ A search index with filters, plus caching of popular queries
+- A single SQL query using LIKE '%keyword%'
+- Loading all jobs into the browser and filtering there
+- Precomputing every possible search at night
+= Keep the database as the source of truth and index into search.
+
+Q M How should a file-upload feature handle large files?
++ Upload straight to object storage with pre-signed URLs
+- Stream every file through the web server's memory first
+- Store each file in the database as a large text column
+- Email the files to a shared inbox that acts as storage
+= Pre-signed URLs keep app servers out of the data path.
+
+Q H How do feeds handle celebrities with millions of followers?
++ Fan out most posts on write; merge celebrity posts at read time
+- Block celebrities from posting more than once in a single day
+- Copy each celebrity post into every follower's feed instantly
+- Show celebrity posts only to users who search for them by name
+= This avoids millions of writes per celebrity post.
+
+Q H How would you estimate storage for 10 million users each uploading a 200 KB résumé?
++ About 2 TB, plus overhead and backups
+- About 2 GB, since the files are compressed
+- About 200 GB, at one tenth of a file per user
+- About 20 TB, keeping ten copies of every file
+= Back-of-envelope estimates guide storage and cost choices.
+
+Q H In a chat system, how do you show messages in the right order across devices?
++ Assign per-conversation sequence numbers on the server
+- Trust each phone's clock to timestamp messages
+- Sort messages alphabetically before showing them
+- Show messages in the order the network delivered them
+= Device clocks drift; the server orders each conversation.
+
+Q H A ride-hailing app must find nearby drivers fast. What helps?
++ A geospatial index (e.g. geohash) of driver locations
+- A full table scan comparing every driver's distance
+- Sorting drivers by name and checking the first ten
+- Asking each driver's phone whether it is nearby
+= Updated frequently in memory, often in a store like Redis.
+
+@topic sd-capacity-security | ADVANCED | Performance, capacity and security at scale | Back-of-envelope estimates, load testing, bottlenecks, multi-tenancy, auth between services and cost.
+Q E What does load testing tell you?
++ How the system behaves, and where it breaks, at peak traffic
+- Whether every line of code is covered by a unit test
+- How quickly developers can deploy a change to production
+- Which features users like the most in the product
+= Tools include k6, JMeter and Gatling.
+
+Q E What is a bottleneck?
++ The part that limits the whole system's throughput
+- A bug that only ever shows up at the weekend
+- A feature that users rarely open or use at all
+- A server that has never failed since launch
+= Speeding up anything else won't help until it is fixed.
+
+Q E Why estimate requests per second before designing?
++ To size servers, databases and caches for the real load
+- Because cloud providers require an estimate to sign up
+- To decide which programming language to use
+- To know how many developers to hire
+= e.g. 1 million requests a day ≈ 12 per second on average, more at peak.
+
+Q E What is multi-tenancy?
++ One system serving many customers, data kept separate
+- One customer using many different systems at once
+- Running several identical copies of the same database
+- Letting several developers share a single laptop
+= Every query must be scoped to the right tenant.
+
+Q M Roughly how many requests per second is 10 million requests per day on average?
++ About 115
+- About 1,150
+- About 11
+- About 10,000
+= 10,000,000 / 86,400 seconds ≈ 116; plan for peaks several times higher.
+
+Q M How should one service authenticate calls to another?
++ With service identities such as mTLS, not network trust
+- By trusting any request that comes from inside the data centre
+- By sharing the admin user's password between all the services
+- By putting the calling service's name in a URL parameter
+= Zero trust: verify every call, even internal ones.
+
+Q M What is the risk of row-level multi-tenancy (tenant_id on every table)?
++ One missed tenant filter can leak another customer's data
+- Queries become impossible to index properly on any table
+- Each tenant needs its own dedicated database server
+- Tenants are limited to a single user account each
+= Enforce the filter centrally (e.g. row-level security or a repository layer).
+
+Q M Why profile before optimising?
++ The real bottleneck is often not where you'd guess
+- Profiling makes the code run faster on its own
+- Optimising without profiling is not allowed in production
+- Profiling removes the need for load tests
+= Measure, change one thing, measure again.
+
+Q H A database CPU is at 90% during peaks. Which first step usually gives the biggest win?
++ Fix the most expensive queries from the slow-query log
+- Buy the biggest database server available straight away
+- Move every table to a different database technology
+- Remove all indexes to cut down on maintenance work
+= Query fixes are cheap; bigger hardware is a later option.
+
+Q H What is Little's Law used for in capacity planning?
++ Requests in flight = arrival rate × average time in system
+- Every system needs twice as many servers as it has users
+- Latency doubles every time that the traffic doubles
+- A cache should hold one tenth of the database's data
+= e.g. 200 requests/s × 0.5 s = about 100 requests in flight.
+
+Q H How do you keep cloud costs under control as traffic grows?
++ Right-size, autoscale, cache and track cost per feature
+- Run every service on the largest machines to be safe
+- Turn off monitoring to save on the cost of metrics
+- Keep everything forever in the fastest storage tier
+= Cost is a design constraint like latency or availability.
+
+Q H Why use per-tenant rate limits and quotas in a SaaS product?
++ So one heavy customer can't slow everyone else down
+- Because cloud providers charge per tenant name registered
+- So that tenants are pushed into upgrading every month
+- To stop tenants from creating more than one user account
+= The "noisy neighbour" problem is common in shared systems.

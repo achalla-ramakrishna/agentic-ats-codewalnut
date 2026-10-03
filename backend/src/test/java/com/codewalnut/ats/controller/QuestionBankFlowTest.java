@@ -1,5 +1,6 @@
 package com.codewalnut.ats.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -11,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -166,6 +168,20 @@ class QuestionBankFlowTest {
                 {"area":"PYTHON","section":"QUANT","topic":"Basics","difficulty":"EASY",
                  "question":{"kind":"SINGLE_CHOICE","prompt":"2 + 2?","options":["4","5"],"correct":[0],"points":1}}""")
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void roleTestsMixAreasAndScoreEachAreaSeparately() throws Exception {
+        String roles = body(mockMvc.perform(get("/api/v1/question-bank/roles").with(RECRUITER)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == 'java-backend')].levels[*].level", Matchers.hasItems("FRESHER", "JUNIOR", "MID", "SENIOR", "LEAD"))));
+        List<Map<String, Object>> sections = JsonPath.read(roles, "$[?(@.id == 'java-backend')].levels[?(@.level == 'MID')].preset.sections[*]");
+        String plan = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(sections);
+        String detail = body(send(RECRUITER, "POST", "/api/v1/question-bank/build", """
+                {"title":"Java mid %s","area":"JAVA","durationMinutes":40,"passPercent":60,"order":"BY_SECTION","sections":%s}"""
+                .formatted(tag, plan)).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.questions[0].section").value("JAVA:PRACTICAL"))
+                .andExpect(jsonPath("$.questions[*].section", Matchers.hasItems("SQL:ADVANCED", "SYSTEM_DESIGN:FUNDAMENTALS"))));
+        assertThat(JsonPath.<Integer>read(detail, "$.summary.questionCount")).isBetween(15, 40);
     }
 
     @Test

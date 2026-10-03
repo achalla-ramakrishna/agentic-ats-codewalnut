@@ -1,0 +1,938 @@
+# CodeWalnut built-in CS fundamentals bank (ADR-0015). Format: see TechBank.java.
+# Bands: FUNDAMENTALS = freshers, PRACTICAL = 1–3 years, ADVANCED = 3+ years.
+# Shared by every developer role. Distractors are kept as long and as plausible as the answer.
+
+@topic cs-data-structures | FUNDAMENTALS | Data structures | Arrays, linked lists, stacks, queues, hash tables, trees, heaps and graphs, and when to use each.
+Q E Which data structure works Last-In, First-Out (LIFO)?
++ Stack
+- Queue
+- Linked list
+- Hash table
+= A stack adds and removes at the top; a queue is First-In, First-Out.
+
+Q E What is the time to read the element at a given index of an array?
++ O(1)
+- O(n)
+- O(log n)
+- O(n log n)
+= Arrays store elements next to each other, so the address is computed directly.
+
+Q E Which structure maps keys to values with fast average lookups?
++ Hash table
+- Stack
+- Queue
+- Linked list
+= Hashing jumps straight to a bucket; average lookup is O(1).
+
+Q E Which structure is best for "first come, first served" processing?
++ Queue
+- Stack
+- Binary tree
+- Heap
+= A queue removes elements in the order they were added.
+
+Q M What is the main advantage of a linked list over an array?
++ Inserting in the middle without shifting elements
+- Reading any element by index in constant time
+- Using less memory per element than an array does
+- Keeping all of its elements sorted automatically
+= Linked lists change pointers instead of moving elements, but lose O(1) indexing.
+
+Q M In a binary search tree, where are values smaller than a node stored?
++ In its left subtree
+- In its right subtree
+- In its parent node
+- In a separate overflow list
+= Left subtree values are smaller and right subtree values are larger, which allows binary search.
+
+Q M Which structure gives the smallest (or largest) item fastest, e.g. for a priority queue?
++ Heap
+- Stack
+- Linked list
+- Hash set
+= A heap keeps the minimum (or maximum) at the root: O(1) to read, O(log n) to remove.
+
+Q M Which structure models a road map with cities and roads between them?
++ Graph
+- Stack
+- Queue
+- Array
+= Cities are vertices and roads are edges; graphs model any network of connections.
+
+Q H What is the worst-case lookup time in an unbalanced binary search tree?
++ O(n), when it degenerates into a list
+- O(log n), the same as when it is balanced
+- O(1), because the root is checked first
+- O(n log n), because each level is sorted
+= Inserting sorted values creates a chain; balanced trees (AVL, red-black) keep it O(log n).
+
+Q H What causes collisions in a hash table, and how are they handled?
++ Different keys land in one bucket; handled by chaining or probing
+- Two threads write at once; handled by locking the whole table
+- The table becomes full; handled by deleting the oldest keys
+- Keys arrive unsorted; handled by sorting each bucket on insert
+= Chaining keeps a list per bucket; open addressing probes for another free slot.
+
+Q H Which structure would you use for autocomplete over a large word list?
++ A trie (prefix tree)
+- A stack of all the words
+- A queue of all the words
+- A single linked list of words
+= A trie shares common prefixes, so finding every word starting with "pro" is fast.
+
+Q H Which structure gives O(1) average time for both "has this been seen?" and inserting?
++ A hash set
+- A sorted array
+- A binary heap
+- A linked list
+= Sorted arrays need O(n) inserts; heaps and lists need O(n) membership checks.
+
+@topic cs-algorithms | FUNDAMENTALS | Algorithms and complexity | Big-O notation, searching, sorting, recursion, and common algorithm patterns.
+Q E What is the time complexity of binary search on a sorted array?
++ O(log n)
+- O(n)
+- O(1)
+- O(n²)
+= Each step halves the remaining range.
+
+Q E What does Big-O notation describe?
++ How running time or memory grows as the input grows
+- The exact number of seconds a program takes to run
+- The number of lines of code in an algorithm
+- How much memory the operating system has free
+= O(n) means the work grows in proportion to the input size.
+
+Q E What must be true before you can use binary search?
++ The data must be sorted
+- The data must contain no duplicates
+- The data must fit in a single cache line
+- The data must be stored in a linked list
+= Binary search compares with the middle element to decide which half to keep.
+
+Q E What is recursion?
++ A function solving a problem by calling itself on smaller inputs
+- A function that runs on several threads at the same time
+- A loop that runs forever until the program is stopped
+- A function that is called only once at start-up
+= Every recursive function needs a base case to stop.
+
+Q M Which sorting algorithm has O(n log n) time in the worst case?
++ Merge sort
+- Quick sort
+- Bubble sort
+- Insertion sort
+= Quick sort averages O(n log n) but is O(n²) in the worst case; bubble and insertion sort are O(n²).
+
+Q M What is the time complexity of two nested loops that each run n times?
++ O(n²)
+- O(n)
+- O(2n)
+- O(n log n)
+= n iterations of n iterations: n × n.
+
+Q M What happens if a recursive function has no base case?
++ It calls itself until the stack overflows
+- It returns the last value it computed
+- The compiler adds a base case automatically
+- It stops after a fixed number of calls
+= Each call adds a stack frame until memory for the stack runs out.
+
+Q M Which technique stores results of subproblems to avoid recomputing them?
++ Dynamic programming (memoisation)
+- Divide and conquer without caching
+- Greedy selection of the best choice
+- Backtracking through every option
+= e.g. computing Fibonacci numbers in O(n) instead of exponential time.
+
+Q H Which algorithm finds the shortest paths from one node in a graph with non-negative weights?
++ Dijkstra's algorithm
+- Depth-first search
+- Bubble sort
+- Kruskal's algorithm
+= Kruskal's builds a minimum spanning tree; DFS does not track distances.
+
+Q H What is the space complexity of the naive recursive Fibonacci function fib(n)?
++ O(n), for the depth of the call stack
+- O(1), because no arrays are created
+- O(2ⁿ), the same as its running time
+- O(log n), because n halves each call
+= The deepest chain of calls is n frames long, even though the time is exponential.
+
+Q H Which problem is solved efficiently with the two-pointer technique?
++ Finding a pair in a sorted array that adds up to a target
+- Finding the shortest path between two cities on a map
+- Counting how many times each word appears in a book
+- Sorting an array of strings by their length
+= Move one pointer from each end towards the middle: O(n) instead of O(n²).
+
+Q H Why is a hash-map-based solution often preferred for "find duplicates" in interviews?
++ It finds them in O(n) time at the cost of O(n) extra memory
+- It needs no extra memory and also keeps the input sorted
+- It works only on sorted input, which is common in practice
+- It finds them in O(log n) time without reading every element
+= The alternative, sorting first, takes O(n log n) time.
+
+@topic cs-oop | FUNDAMENTALS | Object-oriented concepts | Encapsulation, inheritance, polymorphism, abstraction, interfaces, and composition — language-neutral.
+Q E What are the four pillars of object-oriented programming?
++ Encapsulation, abstraction, inheritance and polymorphism
+- Variables, loops, functions, classes and their packages
+- Compilation, linking, loading and running of objects
+- Constructors, destructors, getters and setters
+= These describe how OOP organises data and behaviour together.
+
+Q E What is encapsulation?
++ Keeping an object's data private behind its methods
+- Creating many objects from the same class at once
+- Copying an object's fields into a brand new object
+- Running an object's methods in parallel on many threads
+= It protects the object's state from being changed in invalid ways.
+
+Q E What is a class?
++ A blueprint for the data and behaviour of objects
+- A running copy of a program loaded into memory
+- A function that returns more than one value at once
+- A file that stores the application's configuration
+= Objects are instances created from a class.
+
+Q E What does inheritance let a class do?
++ Reuse and extend another class's fields and methods
+- Run on several computers at the same time without changes
+- Hide all of its methods from every other class in the app
+- Change its own type while the program is running
+= A Dog class can inherit from Animal and add a bark() method.
+
+Q M What is polymorphism?
++ The same call behaving differently depending on the object
+- One class having many constructors with different names
+- Storing objects of many types together in one database table
+- Converting any object into a string automatically when printed
+= e.g. shape.area() runs the circle or square version depending on the object.
+
+Q M What is the difference between an abstract class and an interface (in most languages)?
++ An abstract class can hold state and shared code; an interface defines a contract
+- An interface can hold state; an abstract class only declares method names
+- They are the same, but interfaces compile faster than abstract classes
+- An abstract class can be instantiated; an interface cannot
+= Many languages let a class implement several interfaces but extend one class.
+
+Q M What is method overloading?
++ Several methods with the same name but different parameters
+- A subclass replacing a method it inherited from its parent
+- A method that calls itself until a condition is met
+- A method that runs more slowly because of heavy work
+= Overriding is the subclass replacing an inherited method.
+
+Q M What does "composition" mean in OOP?
++ Building an object from other objects it holds
+- Combining two classes into one file
+- Inheriting from several classes at once
+- Converting one object type into another
+= A Car has an Engine, rather than Car extending Engine.
+
+Q H Why is deep inheritance often considered harmful?
++ Changes in a base class ripple through many subclasses unexpectedly
+- Deep hierarchies make programs use far more CPU time at run time
+- Most languages limit inheritance to two levels deep
+- Subclasses cannot add new methods once there are three levels
+= This is the "fragile base class" problem; composition limits it.
+
+Q H What does "program to an interface, not an implementation" mean?
++ Depend on abstract types so implementations can be swapped
+- Write the interface code before writing any tests
+- Put all code in interfaces instead of classes
+- Use only built-in interfaces from the standard library
+= Code that takes a PaymentGateway can use Stripe or Razorpay without changes.
+
+Q H What is the Liskov Substitution Principle?
++ A subclass must work anywhere its parent is expected
+- A class should have exactly one public method and no others
+- Every class must implement at least one interface to be valid
+- A subclass must override every method that its parent defines
+= Breaking it means code written for the parent misbehaves with the child.
+
+Q H What is a common sign that a class breaks the Single Responsibility Principle?
++ It changes for many unrelated reasons, e.g. UI and database logic
+- It has a constructor that takes more than one parameter
+- It is used by more than one other class in the codebase
+- It has both public and private methods declared in it
+= Split it so each class has one reason to change.
+
+@topic cs-os | FUNDAMENTALS | Operating systems | Processes and threads, memory, scheduling, deadlocks, file systems and virtual memory basics.
+Q E What is the difference between a process and a thread?
++ A process has its own memory; threads share their process's memory
+- A thread has its own memory; processes share one memory space
+- They are the same thing under two different names
+- A process runs only on one core; a thread runs on all cores
+= Threads are lighter to create but must coordinate access to shared data.
+
+Q E What does an operating system's scheduler do?
++ Decides which process or thread runs on the CPU next
+- Decides which files are saved to the disk first
+- Decides which websites the user may open
+- Decides how much electricity each program uses
+= It switches between tasks so many seem to run at once.
+
+Q E What is RAM used for?
++ Holding running programs and their data while the computer is on
+- Storing files permanently after the computer is switched off
+- Connecting the computer to the network
+- Drawing images on the screen faster
+= RAM is fast and temporary; disks keep data when power is off.
+
+Q E What is a deadlock?
++ Processes waiting forever for resources held by each other
+- A process that uses all of the CPU for a long time
+- A file that cannot be opened because it is corrupted
+- A program that exits without saving its work
+= Classic example: two processes each hold one lock and wait for the other's.
+
+Q M What is virtual memory?
++ Giving each process its own address space, backed by RAM and disk
+- Memory that exists only while a virtual machine is running
+- A faster type of RAM used only by the operating system
+- A cache that stores web pages for offline use
+= Pages not in RAM are loaded from disk when needed (paging).
+
+Q M What is a context switch?
++ Saving one task's state and loading another's on the CPU
+- Moving a file from one folder to another folder on the disk
+- Changing which user is logged in to the computer right now
+- Restarting the computer so that a pending update can apply
+= Context switches have a cost, which is why too many threads can slow a system.
+
+Q M What is thrashing?
++ The system spends more time paging than doing real work
+- The CPU runs too hot and slows itself down to cool off
+- Two programs keep writing to the same file at the same time
+- The disk is full, so new files can no longer be saved
+= It happens when running programs need more memory than is available.
+
+Q M Which four conditions must all hold for a deadlock?
++ Mutual exclusion, hold and wait, no preemption and circular wait
+- High CPU load, low memory, slow disk and many users
+- Shared files, open sockets, running threads and timers
+- Locks, queues, stacks and heaps all in use at once
+= Breaking any one of them (e.g. ordering locks) prevents deadlock.
+
+Q H What is a race condition?
++ The result depends on the timing of threads accessing shared data
+- Two programs competing to finish first in a benchmark
+- A thread that runs faster than all the others
+- A loop that never ends because its condition is wrong
+= Protect shared data with locks or atomic operations.
+
+Q H What is the difference between a mutex and a semaphore?
++ A mutex lets one holder in; a semaphore allows up to N at once
+- A semaphore lets one holder in; a mutex allows up to N at once
+- A mutex works across computers; a semaphore only within one
+- They are identical; the names come from different languages
+= A semaphore with N = 1 behaves much like a mutex.
+
+Q H Why does a program's memory usage keep growing if it never frees memory it allocated?
++ It has a memory leak: allocated memory is never returned
+- The operating system doubles memory for safety every hour
+- Virtual memory always grows until the program restarts
+- The CPU cache copies the data into RAM repeatedly
+= In garbage-collected languages, leaks come from references kept by mistake.
+
+Q H What does "copy-on-write" do when a process forks?
++ Parent and child share pages until one of them writes to a page
+- The whole memory of the parent is copied before the child starts
+- The child cannot write to memory until the parent exits
+- The pages are written to disk and read back by the child
+= It makes fork fast, because only changed pages are copied.
+
+@topic cs-networks | PRACTICAL | Computer networks | TCP/IP, HTTP and HTTPS, DNS, ports, status codes, REST basics and what happens when you open a URL.
+Q E What does DNS do?
++ Translates domain names like codewalnut.com into IP addresses
+- Encrypts traffic between the browser and the server
+- Stores web pages so they load faster next time
+- Assigns a MAC address to each network card
+= Browsers ask DNS resolvers for the IP before connecting.
+
+Q E Which protocol guarantees ordered, reliable delivery?
++ TCP
+- UDP
+- IP
+- ICMP
+= UDP is faster but does not guarantee delivery or order.
+
+Q E What is the default port for HTTPS?
++ 443
+- 80
+- 22
+- 8080
+= 80 is HTTP and 22 is SSH.
+
+Q E What does a 500 HTTP status code mean?
++ The server hit an error while handling the request
+- The requested page was not found on the server
+- The client is not allowed to access the resource
+- The request succeeded and returned data
+= 404 is not found; 403 is forbidden; 200 is success.
+
+Q M What happens first when you type a URL into a browser?
++ The browser resolves the domain name to an IP address with DNS
+- The browser downloads all the images on the page
+- The server sends the page to every connected browser
+- The browser runs the page's JavaScript before connecting
+= Then it opens a TCP connection, does the TLS handshake and sends the HTTP request.
+
+Q M What is the difference between HTTP and HTTPS?
++ HTTPS encrypts the traffic with TLS and verifies the server
+- HTTPS is faster because it compresses every request
+- HTTP works only on mobile networks, HTTPS everywhere
+- HTTPS sends requests over UDP instead of TCP
+= TLS prevents eavesdropping and tampering in transit.
+
+Q M What does a 401 Unauthorized response usually mean?
++ The request needs valid authentication, e.g. a missing or expired token
+- The user is signed in but not allowed to see this resource
+- The server is down for maintenance right now
+- The request was sent to the wrong port number
+= 403 Forbidden means authenticated but not permitted.
+
+Q M Which HTTP methods are idempotent by definition?
++ GET, PUT and DELETE
+- POST and PATCH only
+- POST, PUT and GET
+- Only GET
+= Repeating them has the same effect as doing them once; POST usually is not.
+
+Q H What is the TCP three-way handshake?
++ SYN, SYN-ACK, ACK: client and server agree to open a connection
+- GET, POST, PUT: the three requests every browser sends first
+- DNS, TLS, HTTP: the three steps to load any website
+- Request, response, close: how every HTTP call ends
+= Only after it completes can data be sent over the connection.
+
+Q H Why can opening a new TCP + TLS connection for every request be slow?
++ Each one needs several round trips before any data is sent
+- TLS certificates must be downloaded fresh for each request
+- Each connection has to wait for the previous one to close
+- Browsers limit every site to one connection per minute
+= Keep-alive connections and HTTP/2 reuse connections to avoid this.
+
+Q H What is a CDN used for?
++ Serving content from servers close to users to cut latency
+- Storing a website's database in several countries at once
+- Encrypting traffic between two of your own servers
+- Assigning domain names to new websites
+= Static files like images and scripts are cached at edge locations.
+
+Q H What does CORS protect against, and who enforces it?
++ Other sites' scripts reading your API's responses; enforced by browsers
+- Attackers flooding your API with requests; enforced by the server
+- Packets being changed in transit; enforced by the network
+- Passwords being guessed; enforced by the database
+= Tools like curl ignore CORS, so it is not a substitute for authentication.
+
+@topic cs-dbms | PRACTICAL | Database concepts | Relational model, keys, normalisation, ACID transactions, indexes, and SQL vs NoSQL.
+Q E What does a primary key do?
++ Uniquely identifies each row in a table
+- Encrypts each row stored in the table
+- Sorts the table by the most recent row
+- Links the table to a backup copy
+= Primary keys cannot be NULL or duplicated.
+
+Q E What does the A in ACID stand for?
++ Atomicity
+- Availability
+- Accuracy
+- Authentication
+= Atomicity, Consistency, Isolation, Durability.
+
+Q E What is a foreign key?
++ A column that refers to the primary key of another table
+- A key used to encrypt a database backup
+- A primary key that has been copied from another database
+- A password for a database user from another company
+= It keeps relationships between tables valid.
+
+Q E What is the purpose of an index on a column?
++ To find rows by that column quickly
+- To store a backup of the column's values
+- To stop duplicate tables being created
+- To encrypt the values in that column
+= Indexes speed up reads but add cost to writes.
+
+Q M What is normalisation?
++ Organising tables to remove duplicated data
+- Converting every text value in a table to lower case
+- Compressing the database so it uses less disk space
+- Copying the same data onto several database servers
+= Address details are stored once and referenced, not repeated in every order.
+
+Q M When does a document database (NoSQL) usually fit better than a relational one?
++ Flexible, nested data that is read and written as a whole
+- Data with many relationships and strict transactions
+- Financial ledgers that must never be inconsistent
+- Reports that join many tables together
+= Relational databases suit related data, joins and strong consistency.
+
+Q M What does isolation in ACID mean?
++ Concurrent transactions do not see each other's partial changes
+- Each table is stored on its own separate disk
+- Only one user can connect to the database at a time
+- Backups are kept in a different building
+= Isolation levels trade strictness for performance.
+
+Q M What is a JOIN used for?
++ Combining rows from tables using a related column
+- Copying one table's rows into another table
+- Splitting a large table into smaller tables
+- Locking two tables so no one can change them
+= e.g. orders joined to customers on customer_id.
+
+Q H What is the CAP theorem about?
++ During a network partition, a store can't be both consistent and available
+- Every database must have a cache, an API layer and a primary key
+- Databases must choose two of speed, size and price, never all three
+- Relational databases cannot be deployed on cloud platforms at all
+= Systems choose to stay available (eventually consistent) or consistent (refusing some requests).
+
+Q H Why can adding many indexes slow a write-heavy table?
++ Every insert or update must also update each index
+- Indexes lock the table for every SELECT query
+- Each index stores a full copy of the table on disk
+- Indexes disable transactions on the table
+= Index the columns you actually filter and join on.
+
+Q H What is eventual consistency?
++ Replicas may differ briefly but converge if no new writes arrive
+- Data is consistent only after the database restarts
+- Writes are applied in a random order on each replica
+- Every read always returns the latest write everywhere
+= Common in highly available distributed stores and caches.
+
+Q H What problem does database connection pooling solve?
++ Opening a new connection per request is slow, so connections are reused
+- Too many tables slow down queries, so tables are pooled together
+- Large results use too much memory, so rows are pooled on disk
+- Passwords are stored insecurely, so they are pooled and encrypted
+= Pools such as HikariCP keep a set of open connections ready.
+
+@topic cs-git | PRACTICAL | Git and version control | Commits, branches, merging and rebasing, pull requests, resolving conflicts and undoing changes.
+Q E What does git commit do?
++ Saves a snapshot of staged changes locally
+- Uploads your changes to the remote repository
+- Downloads the latest changes from the remote
+- Deletes files that are no longer tracked by Git
+= git push sends commits to the remote.
+
+Q E Which command creates a new branch and switches to it?
++ git switch -c feature/login
+- git branch --move feature/login
+- git merge feature/login
+- git push -b feature/login
+= git checkout -b feature/login does the same in older versions.
+
+Q E What does git pull do?
++ Fetches remote changes and merges them into your branch
+- Sends your local commits up to the remote repository
+- Creates a new, empty repository in the current folder
+- Throws away all of your uncommitted local changes
+= It is git fetch followed by a merge (or a rebase if configured).
+
+Q E What does git status show?
++ Which files are changed, staged or untracked
+- The history of every commit in the repository
+- The list of people with access to the repository
+- The speed of your connection to the remote
+= git log shows commit history.
+
+Q M What is a merge conflict?
++ Both branches changed the same lines, so you must choose
+- Two people pushed to the remote at exactly the same second
+- A branch was deleted while someone was still working on it
+- A commit message was too long for Git to store it
+= Edit the conflicted files, then git add and commit to finish.
+
+Q M What does git stash do?
++ Puts your uncommitted changes aside so you can switch tasks
+- Deletes your uncommitted changes permanently
+- Pushes your uncommitted changes to the remote
+- Creates a new branch from your uncommitted changes
+= git stash pop brings the changes back.
+
+Q M What is a pull request (merge request)?
++ A request to review and merge one branch's changes into another
+- A command that pulls changes from the remote into a branch
+- A request for access to a private repository
+- A report of every file changed in the last week
+= It is where code review and CI checks happen before merging.
+
+Q M Which command undoes a commit that is already pushed, without rewriting history?
++ git revert <commit>
+- git reset --hard <commit>
+- git commit --amend
+- git push --force
+= revert adds a new commit that reverses the changes, which is safe on shared branches.
+
+Q H What is the difference between git merge and git rebase?
++ Merge joins histories with a merge commit; rebase replays commits for a linear history
+- Merge rewrites the existing commit history; rebase always adds a merge commit instead
+- Rebase can only be used on the main branch; merge can be used on any branch at all
+- They are the same command, renamed between older and newer versions of Git
+= Avoid rebasing commits others have already pulled.
+
+Q H Why is git push --force on a shared branch dangerous?
++ It can overwrite commits others have pushed, losing their work
+- It deletes the remote repository and all of its branches
+- It pushes every branch at once, including unfinished ones
+- It skips the remote's checks, so the push always fails later
+= Prefer --force-with-lease, and avoid force-pushing shared branches.
+
+Q H How can you find which commit introduced a bug?
++ git bisect, which binary-searches the history
+- git blame on every file in the repository
+- git log --all --graph and read each commit
+- git diff between the first and last commits
+= Mark one good and one bad commit; bisect narrows it down in log₂(n) steps.
+
+Q H What does git cherry-pick do?
++ Applies the changes of a specific commit onto the current branch
+- Picks the best branch to merge into main automatically
+- Deletes a single commit from the history
+- Copies a whole branch to another repository
+= Useful to bring a hotfix from one branch to another.
+
+@topic cs-linux | PRACTICAL | Linux and the command line | Files and permissions, processes, pipes and redirection, searching logs, environment variables and SSH.
+Q E Which command lists the files in the current directory?
++ ls
+- cd
+- pwd
+- cat
+= cd changes directory; pwd prints it; cat prints a file.
+
+Q E Which command shows the full path of the current directory?
++ pwd
+- ls -l
+- whoami
+- echo $HOME
+= pwd stands for "print working directory".
+
+Q E Which command searches for text inside files?
++ grep
+- find
+- touch
+- chmod
+= e.g. grep "ERROR" app.log; find searches for files by name.
+
+Q E What does sudo do?
++ Runs a command with root rights
+- Shuts down the computer safely
+- Switches to the previous directory
+- Shows how much memory is in use
+= Use it only when a command really needs elevated rights.
+
+Q M What does the pipe | do in tail -n 100 app.log | grep ERROR?
++ Sends the output of the first command as input to the second
+- Runs both commands at the same time on separate files
+- Saves the output of the first command to a file
+- Runs the second command only if the first one fails
+= Pipes chain small tools into larger tasks.
+
+Q M What does chmod 755 script.sh set?
++ Owner can read, write and run; others can read and run
+- Everyone can read, write and run the file
+- Only the owner can read the file; nobody can run it
+- The file is hidden and can only be run by root
+= 7 = rwx, 5 = r-x for group and others.
+
+Q M How do you follow a log file as new lines are written?
++ tail -f app.log
+- cat -n app.log
+- head -f app.log
+- grep -r app.log
+= -f keeps the file open and prints lines as they arrive.
+
+Q M Which command shows running processes and their CPU and memory use, live?
++ top
+- ls
+- df
+- ping
+= df shows disk usage; ping tests network reachability.
+
+Q H What does > do compared with >> in echo "hi" > file.txt?
++ > overwrites the file; >> appends to it
+- > appends to the file; >> overwrites it
+- Both append, but >> also adds a new line
+- > writes to the screen; >> writes to a file
+= Use >> to add lines to a log without losing what was there.
+
+Q H How do you find which process is listening on port 8080?
++ ss -ltnp | grep 8080 (or lsof -i :8080)
+- ps -ef | grep 8080 (shows only process ids)
+- netstat -c 8080 (counts open connections)
+- ping localhost:8080 (tests the port)
+= Then stop it by PID if needed.
+
+Q H Why use SSH keys instead of passwords to log in to servers?
++ Keys are much harder to guess and can be restricted and revoked per user
+- Keys make the connection faster than any password ever could
+- Passwords cannot be used with SSH on modern servers
+- Keys let you log in without the server being switched on
+= Disable password login on servers once keys are set up.
+
+Q H What does a process's exit code of 0 mean in a shell script?
++ The command succeeded; non-zero means it failed
+- The command failed; any non-zero value means success
+- The command is still running in the background
+- The command printed nothing to the screen
+= Scripts and CI pipelines use exit codes to decide whether to continue.
+
+@topic cs-distributed | ADVANCED | Distributed systems basics | Latency, replication, partitioning, consensus, clocks, failures and idempotency.
+Q E Why are networks between services considered unreliable?
++ Messages can be delayed, lost, duplicated or arrive out of order
+- Every network message is encrypted and must be decrypted twice
+- Networks only work when every service is in the same building
+- Network cards stop working after a fixed number of messages
+= Design for failure: timeouts, retries and idempotent operations.
+
+Q E What is replication?
++ Keeping copies of the same data on several machines
+- Splitting data across machines so each holds a part
+- Compressing data before it is sent over the network
+- Deleting old data automatically after a period
+= It improves availability and read capacity.
+
+Q E What is partitioning (sharding)?
++ Splitting data across machines so each holds a part
+- Keeping identical copies of all data on every machine
+- Encrypting each part of the data with a different key
+- Moving old data to cheaper, slower storage
+= It lets a system store and write more than one machine could.
+
+Q E What is latency?
++ The time a request takes to get a response
+- The amount of data sent per second
+- The number of servers in a cluster
+- The size of each message in bytes
+= Throughput is how much work is done per second.
+
+Q M Why should retried operations be idempotent?
++ So repeating a request after a timeout does not apply it twice
+- So retries finish faster than the original request did
+- So the server can skip logging retried requests
+- So clients never need to handle errors at all
+= A timeout does not tell you whether the request was applied.
+
+Q M Why can't you rely on wall-clock timestamps to order events across servers?
++ Server clocks drift and can even jump backwards
+- Timestamps take too much space to store with every event
+- Every server must use the same time zone setting
+- Clocks are only accurate to the nearest minute
+= Use logical clocks, sequence numbers or a single ordering service.
+
+Q M What is a leader-follower (primary-replica) setup?
++ One node takes writes and copies them to followers that serve reads
+- Every node takes writes and they vote on each one
+- Followers take writes and the leader only serves reads
+- Two leaders take turns accepting writes each hour
+= If the leader fails, a follower is promoted.
+
+Q M What is "split brain"?
++ Two nodes both believe they are the leader after a network split
+- A service whose code is split across two repositories
+- A database whose tables are split across two disks
+- A team where two developers own the same feature
+= Quorums and fencing tokens prevent conflicting leaders.
+
+Q H What problem do consensus algorithms like Raft solve?
++ Getting nodes to agree on a value despite failures
+- Encrypting messages so that only the leader can read them
+- Compressing logs so that they fit on a single machine
+- Balancing CPU load evenly across all nodes in a cluster
+= They power systems such as etcd and Consul.
+
+Q H Why is "exactly-once delivery" so hard in messaging systems?
++ A lost message and a lost acknowledgement look the same, so senders retry
+- Message brokers delete every message automatically after one minute
+- Each message must be encrypted separately once for every receiver
+- Networks can deliver a message to only one consumer at any time
+= In practice: at-least-once delivery plus idempotent consumers.
+
+Q H What does a quorum (e.g. 2 of 3 replicas) guarantee for reads and writes?
++ Read and write sets overlap, so reads see the latest write
+- Every replica holds every write before any read is allowed
+- Reads are always answered by the fastest replica only
+- Writes succeed even when every single replica is down
+= With N replicas, W + R > N makes the sets overlap.
+
+Q H What is backpressure?
++ Slowing producers down when consumers can't keep up
+- Sending requests in reverse order to clear a queue
+- Retrying failed requests with increasing delays
+- Compressing messages when the network is busy
+= Without it, queues and memory grow until something crashes.
+
+@topic cs-security | ADVANCED | Security fundamentals | Authentication vs authorisation, hashing vs encryption, OWASP risks (injection, XSS, CSRF), secrets and least privilege.
+Q E What is the difference between authentication and authorisation?
++ Authentication checks who you are; authorisation checks what you may do
+- Authentication checks what you may do; authorisation checks who you are
+- They are the same thing, named differently by different teams
+- Authentication is for websites; authorisation is for mobile apps
+= Logging in is authentication; being allowed to delete a record is authorisation.
+
+Q E How should passwords be stored?
++ As salted hashes from a slow algorithm like bcrypt or argon2
+- Encrypted with a key that is stored next to the database
+- In plain text in a table that only admins can read
+- As MD5 hashes, which are fast to check at login
+= Slow, salted hashes make stolen hashes very hard to crack.
+
+Q E What is SQL injection?
++ User input changes the meaning of a database query
+- A database running out of space because of large inputs
+- Running SQL scripts automatically at start-up
+- Copying data from one database into another
+= Prevent it with parameterised queries.
+
+Q E What is two-factor authentication?
++ Signing in with something you know plus something you have
+- Signing in twice with the same password for safety
+- Using two different passwords for two accounts
+- Letting two people share one account safely
+= e.g. a password plus a one-time code from an authenticator app.
+
+Q M What is the difference between hashing and encryption?
++ Hashing is one-way; encryption can be reversed with the key
+- Encryption is one-way; hashing can be reversed with the key
+- Hashing needs a key; encryption never needs one
+- They are the same; hashing is just faster encryption
+= Use hashing for passwords and encryption for data you must read back.
+
+Q M What is the principle of least privilege?
++ Give each user or service only the access it needs
+- Give every developer admin access to speed things up
+- Use the fewest passwords possible across systems
+- Let services share one account to reduce complexity
+= Limits the damage if one account or service is compromised.
+
+Q M Where should API keys and database passwords live?
++ In a secrets manager or environment variables
+- In the source code, in a file called secrets.java
+- In the README, so the whole team can find them
+- In the front-end bundle, so the browser can use them
+= Rotate any secret that is ever committed by mistake.
+
+Q M What is cross-site scripting (XSS)?
++ An attacker's script runs in other users' browsers on your site
+- A script that copies data between two of your own sites
+- A server-side job that runs scripts on a schedule
+- A CSS bug that breaks a page's layout
+= Escape output and use a Content Security Policy.
+
+Q H Why should a JWT's signature always be verified on the server?
++ Without it, anyone can edit the token's claims, e.g. change their role
+- The signature contains the user's password in encrypted form
+- Unverified tokens expire immediately and cannot be used
+- The signature is needed to decode the token's contents
+= Also reject tokens with the "none" algorithm and check expiry.
+
+Q H What is an insecure direct object reference (IDOR)?
++ Accessing another user's record by changing an id, because ownership isn't checked
+- Linking directly to images instead of downloading them first
+- Using database ids that are numbers instead of strings
+- Calling an object's methods directly instead of through an interface
+= Check on the server that the caller may access that specific record.
+
+Q H What does HTTPS (TLS) NOT protect against?
++ Bugs in your own code, such as injection flaws
+- Someone reading your traffic on a public Wi-Fi network
+- Someone changing data while it travels to the server
+- Someone pretending to be your server with a fake site
+= TLS secures the channel, not the code at either end.
+
+Q H What is a supply-chain attack in software?
++ Tampering with a dependency or build tool to reach many users
+- Stealing physical servers while they are being shipped to you
+- Flooding a supplier's website with fake orders until it fails
+- Guessing the passwords of a supplier's admin accounts
+= Pin versions, review updates and use lockfiles and signed artifacts.
+
+@topic cs-engineering | ADVANCED | Software engineering practices | Testing levels, CI/CD, code review, clean code, documentation, estimation and technical debt.
+Q E What is a unit test?
++ A test of one small piece of code, such as a function, in isolation
+- A test that checks the whole system from the user's point of view
+- A test that measures how many users the system can handle
+- A test that a manager runs before each release
+= Unit tests are fast and pinpoint where a bug is.
+
+Q E What does continuous integration (CI) mean?
++ Merging changes often, with automatic builds and tests on each change
+- Writing code continuously without taking breaks
+- Deploying to production every time a developer saves a file
+- Integrating every third-party library available
+= CI catches broken builds and failing tests early.
+
+Q E What is the purpose of code review?
++ Catching bugs and sharing knowledge before code is merged
+- Measuring how many lines each developer writes
+- Choosing which developer gets a promotion
+- Replacing the need for automated tests
+= Small, focused pull requests get better reviews.
+
+Q E What is technical debt?
++ Extra future work caused by choosing a quick solution now
+- Money a company owes for its software licences
+- Bugs reported by users that have not been fixed
+- Servers that are paid for but not used
+= Like financial debt, it is fine in moderation if it is paid down.
+
+Q M What is the test pyramid?
++ Many unit tests, fewer integration tests and few end-to-end tests
+- Equal numbers of unit, integration and end-to-end tests
+- Many end-to-end tests, fewer unit tests and no integration tests
+- Tests written first by testers, then by developers, then by users
+= Lower levels are faster and cheaper; higher levels cover real journeys.
+
+Q M What is continuous deployment?
++ Every change that passes the pipeline goes to production automatically
+- Developers deploy manually at the end of each sprint
+- Production is redeployed every hour whether or not code changed
+- A deployment that never finishes because tests keep running
+= Continuous delivery keeps code always deployable but may need a manual release step.
+
+Q M What makes a good bug report?
++ Steps to reproduce, expected vs actual result, environment
+- A screenshot plus the single word "broken" in the title
+- The name of the developer who most likely caused the bug
+- A suggestion to rewrite the whole module from scratch
+= Reproducible reports get fixed faster.
+
+Q M What is a feature flag?
++ A switch that turns a feature on or off without redeploying
+- A comment in the code that marks unfinished features
+- A label on a pull request that lists new features
+- A banner on the website announcing new features
+= It allows gradual rollouts and quick rollbacks.
+
+Q H Why are flaky tests harmful?
++ Teams learn to ignore failures, so real failures get missed
+- They make the code itself run more slowly in production
+- They delete data from the test database each time
+- They cause the build server to crash every time
+= Fix or quarantine the root cause; never just re-run until green.
+
+Q H What is a blue-green deployment?
++ Running old and new side by side and switching traffic over
+- Deploying the new version only to users in one country first
+- Deploying only on weekdays and never at the weekend
+- Releasing the new version only when every test shows green
+= It allows instant rollback by switching back to the old environment.
+
+Q H Why do teams write architecture decision records (ADRs)?
++ To record why a decision was made and its trade-offs
+- To get management approval before any code is written
+- To list every file that changed in each release
+- To replace code comments with separate documents
+= Context fades quickly; ADRs keep the reasoning next to the code.
+
+Q H What is the main risk of a very large pull request?
++ Reviews become shallow and bugs slip through
+- Git cannot store pull requests above a certain size
+- Large pull requests always fail the CI pipeline
+- Reviewers are not allowed to comment on large changes
+= Split work into small, reviewable steps.

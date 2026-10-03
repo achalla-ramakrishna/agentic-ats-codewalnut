@@ -64,6 +64,8 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | ASMT-30 | **Send to candidates** from a ready test: pick an opening, tick candidates (those already sent it, without an email, rejected or withdrawn can't be picked), set days to finish and email (WhatsApp via the Business API), and send to all at once with a result per candidate. **Copy link** on a sent test in the candidate's panel. Candidates still sign in with Google using their email. | Done |
 | ASMT-31 | In an opening, the candidate panel has a **Send test** button at the top and a **Tests** tab (results, remind, copy link); with no ready test it links to the builder. | Done |
 | ASMT-32 | **New test results**: when a candidate submits (or time runs out), the result shows as new — a count on **Tests** in the menu, a **New test results** list on the Tests page (Open goes to the candidate's Tests tab; Mark seen / Mark all seen), a "New result" badge in the candidate panel, and a note with the score in the candidate's team chat. A result stops being new when someone who manages tests opens its answers or marks it seen. No email: the app sends email only from a signed-in person's Gmail. | Done |
+| ASMT-33 | **CS fundamentals** and **System design** banks (12 topics × 12 questions each), shared by every developer role. | Done |
+| ASMT-34 | **Role tests**: Build from bank → By role: pick a role and a level (fresher, junior, mid, senior, lead); the test mixes the right areas and bands, and results show a score per area and band. | Done |
 | ASMT-29 | Practical coding tests (write and run code in a sandbox). | Next |
 | ASMT-25 | Per-section timers and optional negative marking. | v1 |
 | ASMT-17 | Automatic reminders (needs a sender that works without a staff session, e.g. WhatsApp Business API or a shared mailbox). | v1 |
@@ -102,6 +104,7 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
+| 2026-10-03 | CS fundamentals and System design banks; role tests by level (ASMT-33, ASMT-34) |
 | 2026-10-03 | New test results: menu count, list, team-chat note (ASMT-32) |
 | 2026-10-03 | Send test button and Tests tab in the candidate panel (ASMT-31) |
 | 2026-10-03 | Send a test to several candidates at once; Copy link (ASMT-30) |

@@ -42,7 +42,7 @@ import java.util.Set;
 public final class TechBank {
 
     public static final List<Category> AREAS = List.of(Category.JAVA, Category.PYTHON, Category.JAVASCRIPT, Category.REACT,
-            Category.ANGULAR, Category.SQL);
+            Category.ANGULAR, Category.SQL, Category.CS_FUNDAMENTALS, Category.SYSTEM_DESIGN);
 
     /** A topic: its band, what it covers, and an example (its first question). */
     public record Topic(Category area, String id, Section section, String name, String covers, String example) {}

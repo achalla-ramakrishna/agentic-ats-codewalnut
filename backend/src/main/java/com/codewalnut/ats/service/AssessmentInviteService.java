@@ -308,8 +308,14 @@ public class AssessmentInviteService {
                 .toList();
     }
 
+    /** "QUANT" → "Numerical ability"; "JAVA:PRACTICAL" (role tests) → "Java · Applied". */
     static String sectionLabel(String section) {
+        int colon = section.indexOf(':');
         try {
+            if (colon > 0) {
+                return com.codewalnut.ats.bank.Presets.areaName(Assessment.Category.valueOf(section.substring(0, colon))) + " · "
+                        + com.codewalnut.ats.domain.BankQuestion.Section.valueOf(section.substring(colon + 1)).getLabel();
+            }
             return com.codewalnut.ats.domain.BankQuestion.Section.valueOf(section).getLabel();
         } catch (IllegalArgumentException e) {
             return section;

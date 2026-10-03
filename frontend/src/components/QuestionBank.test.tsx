@@ -65,6 +65,7 @@ describe('Question bank', () => {
     ])
     const onBuilt = vi.fn()
     render(<BuildFromBank onBuilt={onBuilt} onCancel={() => undefined} />)
+    await userEvent.click(screen.getByRole('tab', { name: 'By topics' }))
 
     await userEvent.click(await screen.findByRole('checkbox', { name: /Percentages/ }))
     await userEvent.click(screen.getByRole('checkbox', { name: /Clocks/ }))
@@ -105,6 +106,7 @@ describe('Question bank', () => {
     ])
     const onBuilt = vi.fn()
     render(<BuildFromBank onBuilt={onBuilt} onCancel={() => undefined} />)
+    await userEvent.click(screen.getByRole('tab', { name: 'By topics' }))
     await screen.findByRole('checkbox', { name: /Percentages/ })
     await userEvent.click(screen.getByRole('button', { name: 'Java' }))
 
@@ -117,6 +119,38 @@ describe('Question bank', () => {
     await vi.waitFor(() => expect(onBuilt).toHaveBeenCalledWith('t8'))
     const build = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/question-bank/build'))!
     expect(JSON.parse(build[1]!.body as string)).toMatchObject({ area: 'JAVA', topics: [{ section: 'ADVANCED', topic: 'Concurrency' }] })
+  })
+
+  it('builds a role test that mixes areas for the chosen level', async () => {
+    const preset = (level: string, sections: object[]) => ({ id: `java-backend-${level}`, name: `Java backend developer — ${level}`, description: 'x', durationMinutes: 40, passPercent: 60, sections })
+    const roles = [{
+      id: 'java-backend', name: 'Java backend developer', summary: 'Java and Spring Boot services with SQL databases.', primary: 'JAVA', areas: ['Java', 'SQL'],
+      levels: [
+        { level: 'JUNIOR', label: 'Junior', years: '1–3 years', preset: preset('Junior', [{ area: 'JAVA', section: 'PRACTICAL', easy: 3, medium: 4, hard: 1 }]) },
+        { level: 'MID', label: 'Mid-level', years: '3–5 years', preset: preset('Mid-level', [
+          { area: 'JAVA', section: 'ADVANCED', easy: 1, medium: 3, hard: 2 },
+          { area: 'SQL', section: 'PRACTICAL', easy: 0, medium: 2, hard: 1 },
+          { area: 'SYSTEM_DESIGN', section: 'FUNDAMENTALS', easy: 1, medium: 2, hard: 0 },
+        ]) },
+      ],
+    }]
+    const fetchMock = fakeFetch([
+      { path: '/question-bank/roles', body: roles },
+      { path: '/question-bank/build', method: 'POST', status: 201, body: { summary: { id: 't6' }, questions: [] } },
+    ])
+    const onBuilt = vi.fn()
+    render(<BuildFromBank onBuilt={onBuilt} onCancel={() => undefined} />)
+    await userEvent.click(await screen.findByRole('button', { name: /Mid-level/ }))
+    expect(screen.getByLabelText('Title')).toHaveValue('Java backend developer — Mid-level')
+    expect(screen.getByText('System design · Fundamentals')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Create test (12 questions)' }))
+    await vi.waitFor(() => expect(onBuilt).toHaveBeenCalledWith('t6'))
+    const build = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/question-bank/build'))!
+    expect(JSON.parse(build[1]!.body as string)).toMatchObject({
+      area: 'JAVA',
+      order: 'BY_SECTION',
+      sections: [{ area: 'JAVA', section: 'ADVANCED' }, { area: 'SQL', section: 'PRACTICAL' }, { area: 'SYSTEM_DESIGN', section: 'FUNDAMENTALS' }],
+    })
   })
 
   it('shows the topic guide', async () => {

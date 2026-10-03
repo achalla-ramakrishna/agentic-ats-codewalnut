@@ -28,7 +28,7 @@ import { NewResults } from '../components/NewResults'
 import { QuestionBankPanel } from '../components/QuestionBankPanel'
 import { SendToCandidates } from '../components/SendToCandidates'
 import { addFromBank } from '../api/questionBank'
-import { DIFFICULTY_LABEL, SECTION_LABEL, type Section } from '../api/questionBank'
+import { DIFFICULTY_LABEL, sectionTitle } from '../api/questionBank'
 import '../components/tracker.css'
 
 const CATEGORIES = Object.keys(CATEGORY_LABEL) as Category[]
@@ -42,7 +42,7 @@ function QuestionCard({ q, editable, onEdit, onDelete }: { q: QuestionView; edit
           <strong>{q.position}.</strong>
           <span className="muted" style={{ fontSize: 13 }}>
             {KIND_LABEL[q.kind]} · {q.points} point{q.points === 1 ? '' : 's'}
-            {q.section ? ` · ${SECTION_LABEL[q.section as Section] ?? q.section}` : ''}
+            {q.section ? ` · ${sectionTitle(q.section, (c) => CATEGORY_LABEL[c] ?? c)}` : ''}
             {q.topic ? ` · ${q.topic}` : ''}
           </span>
           {q.difficulty && <span className={`diff-${q.difficulty}`} style={{ fontSize: 13 }}>{DIFFICULTY_LABEL[q.difficulty]}</span>}

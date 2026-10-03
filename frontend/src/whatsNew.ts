@@ -16,6 +16,15 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-03-role-tests',
+    date: '2026-10-03',
+    title: 'Tests by role and seniority',
+    summary: 'Pick a role — Java backend, React frontend, full-stack and more — and the candidate’s level from fresher to lead. The test mixes the right areas: the main stack, what it works with, CS fundamentals, system design for seniors and aptitude for freshers. New banks: CS fundamentals and System design.',
+    steps: ['Tests → Build from bank → By role.', 'Pick the role and level, check the mix, then Create test.'],
+    link: { to: '/tests', label: 'Open Tests' },
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-03-new-test-results',
     date: '2026-10-03',
     title: 'Know when a candidate finishes a test',

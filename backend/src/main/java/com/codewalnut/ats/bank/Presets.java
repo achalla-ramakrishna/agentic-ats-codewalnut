@@ -32,14 +32,20 @@ public final class Presets {
                             new SectionPlan(Section.VERBAL, 4, 4, 2))));
 
     private static final java.util.Map<Category, String> NAMES = java.util.Map.of(Category.JAVA, "Java", Category.PYTHON, "Python",
-            Category.JAVASCRIPT, "JavaScript", Category.REACT, "React", Category.ANGULAR, "Angular", Category.SQL, "SQL");
+            Category.JAVASCRIPT, "JavaScript", Category.REACT, "React", Category.ANGULAR, "Angular", Category.SQL, "SQL",
+            Category.CS_FUNDAMENTALS, "CS fundamentals", Category.SYSTEM_DESIGN, "System design");
+
+    /** The display name of an area, e.g. "Java", "CS fundamentals". */
+    public static String areaName(Category area) {
+        return area == Category.APTITUDE ? "Aptitude" : NAMES.getOrDefault(area, area.name());
+    }
 
     /** Aptitude patterns, or for a technical area: freshers, 1–3 years and 3+ years papers. */
     public static List<Preset> forArea(Category area) {
         if (area == Category.APTITUDE) {
             return APTITUDE;
         }
-        String name = NAMES.getOrDefault(area, area.name());
+        String name = areaName(area);
         String id = area.name().toLowerCase();
         return List.of(
                 new Preset(id + "-fresher", name + " — freshers", "20 fundamentals questions in 30 minutes, mostly easy and medium.", 30, 60,

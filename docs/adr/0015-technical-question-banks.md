@@ -43,6 +43,21 @@ distractors.
 - **AI drafts** can add questions to any area and band; they wait for review
   as before, with the band's audience in the prompt.
 
+- **Shared areas**: CS fundamentals (data structures, algorithms, OOP, operating
+  systems, networks, databases, Git, Linux, distributed systems, security,
+  engineering practice) and System design (building blocks, storage, caching,
+  APIs, scaling, messaging, reliability, observability, consistency, case
+  studies, capacity and security), 12 topics × 12 questions each.
+- **Role tests**: a role (Java backend, Python backend, React frontend,
+  Angular frontend, three full-stack mixes, SQL developer, graduate trainee) at
+  a level (fresher 0–1, junior 1–3, mid 3–5, senior 5–8, lead 8+ years) is a
+  ready-made paper across areas: the main stack, what it works with, aptitude
+  and CS basics for freshers, system design from mid level up. A build plan
+  can name an area per section; a paper spanning areas stores sections as
+  `AREA:SECTION` (column widened in V15) and results are scored per area and
+  band, e.g. "Java · Applied". A test checks every role and level can be built
+  from the built-in bank.
+
 ## Consequences
 
 - Recruiters build a "Java — 1 to 3 years" paper in one click, or pick

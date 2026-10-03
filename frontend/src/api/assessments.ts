@@ -3,7 +3,17 @@ import type { Message } from './messages'
 
 /** Online tests (ADR-0011). Correct answers appear only in staff responses. */
 
-export type Category = 'APTITUDE' | 'JAVA' | 'PYTHON' | 'JAVASCRIPT' | 'REACT' | 'ANGULAR' | 'SQL' | 'OTHER'
+export type Category =
+  | 'APTITUDE'
+  | 'JAVA'
+  | 'PYTHON'
+  | 'JAVASCRIPT'
+  | 'REACT'
+  | 'ANGULAR'
+  | 'SQL'
+  | 'CS_FUNDAMENTALS'
+  | 'SYSTEM_DESIGN'
+  | 'OTHER'
 export type QuestionKind = 'SINGLE_CHOICE' | 'MULTI_CHOICE' | 'SHORT_ANSWER'
 export type InviteStatus = 'SENT' | 'STARTED' | 'SUBMITTED' | 'EXPIRED' | 'CANCELLED'
 
@@ -15,6 +25,8 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   REACT: 'React',
   ANGULAR: 'Angular',
   SQL: 'SQL',
+  CS_FUNDAMENTALS: 'CS fundamentals',
+  SYSTEM_DESIGN: 'System design',
   OTHER: 'Other',
 }
 

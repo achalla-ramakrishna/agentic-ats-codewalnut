@@ -61,9 +61,17 @@ public final class BankDtos {
 
     public record BankDraftResult(int added, List<String> notes, List<BankQuestionView> questions) {}
 
-    /** How many questions of each difficulty to take from a section. */
-    public record SectionPlan(@NotNull BankQuestion.Section section, @Min(0) @Max(60) int easy, @Min(0) @Max(60) int medium,
-            @Min(0) @Max(60) int hard) {}
+    /**
+     * How many questions of each difficulty to take from a section. area: which bank, when a test
+     * mixes areas (role tests); null means the request's area.
+     */
+    public record SectionPlan(Assessment.Category area, @NotNull BankQuestion.Section section, @Min(0) @Max(60) int easy,
+            @Min(0) @Max(60) int medium, @Min(0) @Max(60) int hard) {
+
+        public SectionPlan(BankQuestion.Section section, int easy, int medium, int hard) {
+            this(null, section, easy, medium, hard);
+        }
+    }
 
     /** How many questions of each difficulty to take from one topic. */
     public record TopicPlan(@NotNull BankQuestion.Section section, @NotBlank @Size(max = 60) String topic, @Min(0) @Max(30) int easy,
@@ -83,6 +91,12 @@ public final class BankDtos {
             @Size(max = 10) List<@Valid SectionPlan> sections,
             @Size(max = 40) List<@Valid TopicPlan> topics,
             @NotNull Order order) {}
+
+    /** A role and its ready-made paper at each level (ADR-0015). */
+    public record RoleView(String id, String name, String summary, Assessment.Category primary, List<String> areas,
+            List<RoleLevel> levels) {}
+
+    public record RoleLevel(String level, String label, String years, Preset preset) {}
 
     /** A ready-made blueprint, e.g. "TCS NQT style". */
     public record Preset(String id, String name, String description, int durationMinutes, int passPercent, List<SectionPlan> sections) {}

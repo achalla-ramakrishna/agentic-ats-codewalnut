@@ -12,7 +12,7 @@ import {
 } from '../api/assessments'
 import { Figure } from '../components/Figure'
 import { Button, Card } from '../components/ui'
-import { SECTION_LABEL, type Section } from '../api/questionBank'
+import { sectionTitle } from '../api/questionBank'
 import '../components/tracker.css'
 import './CandidateHomePage.css'
 
@@ -185,7 +185,7 @@ export function TakeTestPage() {
               const newSection = q.section && q.section !== taking.questions[index - 1]?.section
               return (
                 <div key={q.id} className="stack" style={{ gap: 8 }}>
-                {newSection && <h2 className="section-heading">{SECTION_LABEL[q.section as Section] ?? q.section}</h2>}
+                {newSection && <h2 className="section-heading">{sectionTitle(q.section, (c) => CATEGORY_LABEL[c] ?? c)}</h2>}
                 <Card className="stack" aria-label={`Question ${q.position}`} role="group">
                   <div className="row" style={{ justifyContent: 'space-between' }}>
                     <strong>Question {q.position}</strong>

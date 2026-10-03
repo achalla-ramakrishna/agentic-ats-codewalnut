@@ -1,0 +1,53 @@
+package com.codewalnut.ats.bank;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.codewalnut.ats.domain.BankQuestion.Section;
+import com.codewalnut.ats.dto.BankDtos.Preset;
+import com.codewalnut.ats.dto.BankDtos.SectionPlan;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.Test;
+
+/** Every role test at every level can be built from the built-in bank alone. */
+class RolesTest {
+
+    @Test
+    void everyRoleAndLevelFitsInTheBuiltInBank() {
+        List<Seed> all = new ArrayList<>(AptitudeBank.all());
+        all.addAll(TechBank.all());
+        Map<String, Long> available = all.stream()
+                .collect(Collectors.groupingBy(s -> s.area() + "/" + s.section() + "/" + s.difficulty(), Collectors.counting()));
+        for (Roles.Role role : Roles.ROLES) {
+            for (Roles.Level level : role.levels()) {
+                Preset p = Roles.preset(role, level);
+                int total = 0;
+                for (SectionPlan plan : p.sections()) {
+                    assertThat(Section.forArea(plan.area())).as(p.name()).contains(plan.section());
+                    int[] wanted = {plan.easy(), plan.medium(), plan.hard()};
+                    String[] levels = {"EASY", "MEDIUM", "HARD"};
+                    for (int d = 0; d < 3; d++) {
+                        long have = available.getOrDefault(plan.area() + "/" + plan.section() + "/" + levels[d], 0L);
+                        assertThat(have).as("%s: %s %s %s", p.name(), plan.area(), plan.section(), levels[d]).isGreaterThanOrEqualTo(wanted[d]);
+                        total += wanted[d];
+                    }
+                }
+                assertThat(total).as(p.name()).isBetween(15, 40);
+                assertThat(p.sections().stream().map(SectionPlan::area)).as(p.name()).contains(role.primary());
+            }
+        }
+    }
+
+    @Test
+    void levelsShiftFromFundamentalsToDesign() {
+        Roles.Role java = Roles.role("java-backend");
+        assertThat(Roles.preset(java, Roles.Level.FRESHER).sections()).anyMatch(s -> s.section() == Section.QUANT);
+        assertThat(Roles.preset(java, Roles.Level.FRESHER).sections()).noneMatch(s -> s.section() == Section.ADVANCED);
+        assertThat(Roles.preset(java, Roles.Level.LEAD).sections())
+                .anyMatch(s -> s.area() == com.codewalnut.ats.domain.Assessment.Category.SYSTEM_DESIGN)
+                .noneMatch(s -> s.section() == Section.FUNDAMENTALS);
+        assertThat(Roles.preset(java, Roles.Level.MID).description()).contains("Java", "SQL", "System design");
+    }
+}

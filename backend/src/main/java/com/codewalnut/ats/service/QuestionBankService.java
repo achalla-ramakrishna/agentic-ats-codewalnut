@@ -309,6 +309,18 @@ public class QuestionBankService {
         };
     }
 
+    /** Role tests: every role with its paper at each level. */
+    @Transactional(readOnly = true)
+    public List<com.codewalnut.ats.dto.BankDtos.RoleView> roles(AppUser actor) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        return com.codewalnut.ats.bank.Roles.ROLES.stream()
+                .map(r -> new com.codewalnut.ats.dto.BankDtos.RoleView(r.id(), r.name(), r.summary(), r.primary(),
+                        r.areas().stream().map(Presets::areaName).toList(),
+                        r.levels().stream().map(l -> new com.codewalnut.ats.dto.BankDtos.RoleLevel(l.name(), l.label, l.years,
+                                com.codewalnut.ats.bank.Roles.preset(r, l))).toList()))
+                .toList();
+    }
+
     // ---- building papers ----
 
     /**
@@ -319,9 +331,14 @@ public class QuestionBankService {
     public AssessmentDetail build(AppUser actor, BuildRequest request) {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);
         boolean byTopic = request.topics() != null && !request.topics().isEmpty();
-        List<TopicPlan> plans = byTopic ? request.topics()
+        List<Plan> plans = byTopic
+                ? request.topics().stream().map(p -> new Plan(request.area(), p.section(), p.topic(), p.easy(), p.medium(), p.hard())).toList()
                 : request.sections() == null ? List.of()
-                : request.sections().stream().map(p -> new TopicPlan(p.section(), null, p.easy(), p.medium(), p.hard())).toList();
+                : request.sections().stream().map(p -> new Plan(p.area() == null ? request.area() : p.area(), p.section(), null, p.easy(),
+                        p.medium(), p.hard())).toList();
+        plans.forEach(p -> checkSection(p.area(), p.section()));
+        // Role tests mix areas (e.g. Java + SQL); their sections are then labelled per area.
+        boolean mixed = plans.stream().map(Plan::area).distinct().count() > 1;
         int total = plans.stream().mapToInt(p -> p.easy() + p.medium() + p.hard()).sum();
         if (total == 0) {
             throw new IllegalArgumentException("sections: ask for at least one question");
@@ -332,18 +349,19 @@ public class QuestionBankService {
         List<String> shortages = new ArrayList<>();
         List<List<BankQuestion>> groups = new ArrayList<>();
         Set<UUID> taken = new java.util.HashSet<>();
-        for (TopicPlan plan : plans) {
+        for (Plan plan : plans) {
             List<BankQuestion> chosen = new ArrayList<>();
             int[] wanted = {plan.easy(), plan.medium(), plan.hard()};
             BankQuestion.Difficulty[] levels = BankQuestion.Difficulty.values();
-            String label = plan.topic() == null ? plan.section().getLabel() : plan.topic();
+            String label = plan.topic() != null ? plan.topic()
+                    : mixed ? Presets.areaName(plan.area()) + " · " + plan.section().getLabel() : plan.section().getLabel();
             for (int d = 0; d < 3; d++) {
                 if (wanted[d] == 0) {
                     continue;
                 }
                 List<BankQuestion> pool = new ArrayList<>(plan.topic() == null
-                        ? bankRepository.findByAreaAndSectionAndDifficultyAndStatus(request.area(), plan.section(), levels[d], BankQuestion.Status.ACTIVE)
-                        : bankRepository.findByAreaAndSectionAndTopicAndDifficultyAndStatus(request.area(), plan.section(), plan.topic().strip(),
+                        ? bankRepository.findByAreaAndSectionAndDifficultyAndStatus(plan.area(), plan.section(), levels[d], BankQuestion.Status.ACTIVE)
+                        : bankRepository.findByAreaAndSectionAndTopicAndDifficultyAndStatus(plan.area(), plan.section(), plan.topic().strip(),
                                 levels[d], BankQuestion.Status.ACTIVE));
                 pool.removeIf(b -> taken.contains(b.getId()));
                 if (pool.size() < wanted[d]) {
@@ -364,14 +382,15 @@ public class QuestionBankService {
         String description = byTopic
                 ? "Built from the question bank by topic: " + plans.stream().map(p -> p.topic().strip() + " " + (p.easy() + p.medium() + p.hard()))
                         .collect(Collectors.joining(", ")) + "."
-                : "Built from the question bank: " + plans.stream().map(p -> p.section().getLabel() + " " + (p.easy() + p.medium() + p.hard()))
+                : "Built from the question bank: " + plans.stream().map(p -> (mixed ? Presets.areaName(p.area()) + " · " : "")
+                        + p.section().getLabel() + " " + (p.easy() + p.medium() + p.hard()))
                         .collect(Collectors.joining(", ")) + ".";
         Assessment a = assessmentRepository.save(Assessment.builder()
                 .title(request.title().strip()).category(request.area())
                 .description(description.length() > 2000 ? description.substring(0, 1997) + "…" : description)
                 .durationMinutes(request.durationMinutes()).passPercent(request.passPercent())
                 .status(Assessment.Status.DRAFT).createdBy(actor.getEmail()).build());
-        copyInto(a, paper, 0);
+        copyInto(a, paper, 0, mixed);
         auditService.record(actor, AuditAction.ASSESSMENT_CREATED, "Assessment", a.getId(),
                 Map.of("fromBank", paper.size(), "order", request.order(), "byTopic", byTopic));
         return assessmentService.detail(a);
@@ -391,7 +410,7 @@ public class QuestionBankService {
         if (chosen.isEmpty()) {
             throw new IllegalArgumentException("questionIds: pick at least one approved question");
         }
-        copyInto(a, chosen, existing);
+        copyInto(a, chosen, existing, chosen.stream().anyMatch(b -> b.getArea() != a.getCategory()));
         assessmentService.touch(a);
         return assessmentService.detail(a);
     }
@@ -440,13 +459,18 @@ public class QuestionBankService {
         return out;
     }
 
-    private void copyInto(Assessment a, List<BankQuestion> questions, int startAt) {
+    /** One block of a paper: so many easy/medium/hard from an area's section (and topic, if set). */
+    private record Plan(Assessment.Category area, BankQuestion.Section section, String topic, int easy, int medium, int hard) {}
+
+    /** mixed: the paper spans areas, so sections are stored as AREA:SECTION and scored per area. */
+    private void copyInto(Assessment a, List<BankQuestion> questions, int startAt, boolean mixed) {
         int position = startAt;
         for (BankQuestion b : questions) {
             questionRepository.save(AssessmentQuestion.builder()
                     .assessmentId(a.getId()).position(++position).kind(b.getKind()).prompt(b.getPrompt()).code(b.getCode())
                     .optionsJson(b.getOptionsJson()).answerJson(b.getAnswerJson()).points(b.getPoints()).explanation(b.getExplanation())
-                    .figure(b.getFigure()).optionFiguresJson(b.getOptionFiguresJson()).section(b.getSection().name())
+                    .figure(b.getFigure()).optionFiguresJson(b.getOptionFiguresJson())
+                    .section(mixed ? b.getArea().name() + ":" + b.getSection().name() : b.getSection().name())
                     .topic(b.getTopic()).difficulty(b.getDifficulty().name()).bankQuestionId(b.getId())
                     .aiDrafted(false).build());
             b.setTimesUsed(b.getTimesUsed() + 1);
