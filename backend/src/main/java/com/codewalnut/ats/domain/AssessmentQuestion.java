@@ -62,6 +62,28 @@ public class AssessmentQuestion {
     @Column(columnDefinition = "TEXT")
     private String explanation;
 
+    /** A picture shown with the question: an SVG the app drew, or an uploaded PNG/JPEG data URI. */
+    @Column(columnDefinition = "MEDIUMTEXT")
+    private String figure;
+
+    /** Pictures for the options (same order as the options), when the options are figures. */
+    @Column(name = "option_figures_json", columnDefinition = "MEDIUMTEXT")
+    private String optionFiguresJson;
+
+    /** e.g. QUANT, LOGICAL, VERBAL; from the bank, for section-wise scores. */
+    @Column(length = 20)
+    private String section;
+
+    @Column(length = 60)
+    private String topic;
+
+    /** EASY, MEDIUM or HARD. */
+    @Column(length = 10)
+    private String difficulty;
+
+    @Column(name = "bank_question_id")
+    private java.util.UUID bankQuestionId;
+
     @Column(name = "ai_drafted", nullable = false)
     private boolean aiDrafted;
 

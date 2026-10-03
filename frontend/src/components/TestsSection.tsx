@@ -9,11 +9,13 @@ import {
   sendTest,
   testStatusLabel,
   type AnswerReview,
+  type SectionScore,
   type AssessmentSummary,
   type InviteView,
   type SendResult,
 } from '../api/assessments'
 import { getWhatsAppStatus } from '../api/messages'
+import { Figure } from './Figure'
 import { Badge, Button } from './ui'
 
 /** WhatsApp without the Business API opens a window the browser must allow: open it before the request. */
@@ -31,8 +33,24 @@ function finishWhatsApp(result: SendResult, win: Window | null) {
   }
 }
 
-function Review({ answers }: { answers: AnswerReview[] }) {
+function Review({ answers, sections }: { answers: AnswerReview[]; sections: SectionScore[] }) {
   return (
+    <>
+    {sections.length > 0 && (
+      <table className="bank-grid" aria-label="Score by section" style={{ fontSize: 13, marginTop: 6 }}>
+        <tbody>
+          {sections.map((s) => (
+            <tr key={s.section}>
+              <td style={{ textAlign: 'left' }}>{s.label}</td>
+              <td>
+                <strong>{s.score}</strong> / {s.max}
+              </td>
+              <td className="muted">{s.max ? Math.round((s.score * 100) / s.max) : 0}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
     <ol style={{ margin: '6px 0 0', paddingLeft: 20, fontSize: 13 }}>
       {answers.map((a) => {
         const given =
@@ -43,6 +61,7 @@ function Review({ answers }: { answers: AnswerReview[] }) {
         return (
           <li key={a.position} style={{ marginBottom: 4 }}>
             <span>{a.prompt}</span>
+            {a.figure && <Figure figure={a.figure} small />}
             {a.code && <pre className="test-code">{a.code}</pre>}
             <div>
               {a.earned > 0 ? '✓' : '✗'} Answered: <strong>{given}</strong>
@@ -53,6 +72,7 @@ function Review({ answers }: { answers: AnswerReview[] }) {
         )
       })}
     </ol>
+    </>
   )
 }
 
@@ -80,7 +100,7 @@ export function TestsSection({
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [waApi, setWaApi] = useState(false)
-  const [review, setReview] = useState<Record<string, AnswerReview[]>>({})
+  const [review, setReview] = useState<Record<string, { answers: AnswerReview[]; sections: SectionScore[] }>>({})
 
   const load = useCallback(() => {
     listApplicationTests(applicationId).then(setInvites).catch(() => setInvites([]))
@@ -157,7 +177,7 @@ export function TestsSection({
       return
     }
     const r = await getTestResult(invite.id)
-    setReview((all) => ({ ...all, [invite.id]: r.answers }))
+    setReview((all) => ({ ...all, [invite.id]: { answers: r.answers, sections: r.sections } }))
   }
 
   if (!invites) return null
@@ -268,7 +288,7 @@ export function TestsSection({
                 {i.status === 'SUBMITTED' && ` · ${i.score}/${i.maxScore} points, pass mark ${i.passPercent}%`}
                 {i.needsNudge && i.status === 'SENT' && ' · not started after 2 days — send a nudge?'}
               </span>
-              {review[i.id] && <Review answers={review[i.id]} />}
+              {review[i.id] && <Review answers={review[i.id].answers} sections={review[i.id].sections} />}
             </li>
           ))}
         </ul>

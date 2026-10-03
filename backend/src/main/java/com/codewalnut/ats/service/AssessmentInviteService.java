@@ -205,10 +205,11 @@ public class AssessmentInviteService {
                         .map(q -> new AnswerReview(q.getPosition(), q.getKind(), q.getPrompt(), q.getCode(),
                                 assessmentService.options(q), answers.getOrDefault(q.getId(), List.of()),
                                 assessmentService.correct(q), assessmentService.accepted(q), q.getPoints(),
-                                assessmentService.earned(q, answers.get(q.getId()))))
+                                assessmentService.earned(q, answers.get(q.getId())), q.getFigure(),
+                                assessmentService.optionFigures(q), q.getSection()))
                         .toList()
                 : List.of();
-        return new InviteDetail(view(invite), review);
+        return new InviteDetail(view(invite), review, sectionScores(review));
     }
 
     /** Submitted tests for these applications, newest first (for suggestions). */
@@ -243,6 +244,32 @@ public class AssessmentInviteService {
         }
         return lines.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
                 e -> "tests: " + String.join("; ", e.getValue())));
+    }
+
+    /** Score per section, in the order sections first appear; empty when no question has a section. */
+    static List<com.codewalnut.ats.dto.AssessmentDtos.SectionScore> sectionScores(List<AnswerReview> review) {
+        Map<String, int[]> totals = new LinkedHashMap<>();
+        for (AnswerReview a : review) {
+            if (a.section() == null) {
+                continue;
+            }
+            int[] t = totals.computeIfAbsent(a.section(), k -> new int[3]);
+            t[0] += a.earned();
+            t[1] += a.points();
+            t[2]++;
+        }
+        return totals.entrySet().stream()
+                .map(e -> new com.codewalnut.ats.dto.AssessmentDtos.SectionScore(e.getKey(), sectionLabel(e.getKey()),
+                        e.getValue()[0], e.getValue()[1], e.getValue()[2]))
+                .toList();
+    }
+
+    static String sectionLabel(String section) {
+        try {
+            return com.codewalnut.ats.domain.BankQuestion.Section.valueOf(section).getLabel();
+        } catch (IllegalArgumentException e) {
+            return section;
+        }
     }
 
     // ---- the candidate ----
@@ -390,7 +417,7 @@ public class AssessmentInviteService {
         List<CandidateQuestion> questions = questionRepository.findByAssessmentIdOrderByPositionAsc(invite.getAssessment().getId())
                 .stream()
                 .map(q -> new CandidateQuestion(q.getId(), q.getPosition(), q.getKind(), q.getPrompt(), q.getCode(),
-                        assessmentService.options(q), q.getPoints()))
+                        assessmentService.options(q), q.getPoints(), q.getFigure(), assessmentService.optionFigures(q), q.getSection()))
                 .toList();
         long secondsLeft = Math.max(0, Duration.between(Instant.now(), invite.getDeadlineAt()).getSeconds());
         return new TakeTest(mine(invite), questions, answers(invite), secondsLeft);

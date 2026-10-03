@@ -17,139 +17,19 @@ import {
   type AssessmentDetail,
   type AssessmentSummary,
   type Category,
-  type QuestionInput,
-  type QuestionKind,
   type QuestionView,
 } from '../api/assessments'
 import { Badge, Button, Card, PageHeader } from '../components/ui'
+import { QuestionForm } from '../components/QuestionForm'
+import { QuestionPreview } from '../components/QuestionPreview'
+import { BuildFromBank } from '../components/BuildFromBank'
+import { QuestionBankPanel } from '../components/QuestionBankPanel'
+import { addFromBank } from '../api/questionBank'
+import { DIFFICULTY_LABEL, SECTION_LABEL, type Section } from '../api/questionBank'
 import '../components/tracker.css'
 
 const CATEGORIES = Object.keys(CATEGORY_LABEL) as Category[]
 const STATUS_LABEL = { DRAFT: 'Draft', READY: 'Ready to send', ARCHIVED: 'Archived' }
-
-function QuestionForm({
-  initial,
-  onSave,
-  onCancel,
-}: {
-  initial?: QuestionView
-  onSave: (q: QuestionInput) => Promise<void>
-  onCancel: () => void
-}) {
-  const [kind, setKind] = useState<QuestionKind>(initial?.kind ?? 'SINGLE_CHOICE')
-  const [prompt, setPrompt] = useState(initial?.prompt ?? '')
-  const [code, setCode] = useState(initial?.code ?? '')
-  const [options, setOptions] = useState<string[]>(initial?.options.length ? initial.options : ['', '', '', ''])
-  const [correct, setCorrect] = useState<number[]>(initial?.correct ?? [])
-  const [accepted, setAccepted] = useState((initial?.acceptedAnswers ?? []).join('\n'))
-  const [points, setPoints] = useState(initial?.points ?? 1)
-  const [explanation, setExplanation] = useState(initial?.explanation ?? '')
-  const [error, setError] = useState<string | null>(null)
-
-  function toggle(i: number) {
-    if (kind === 'SINGLE_CHOICE') setCorrect([i])
-    else setCorrect((c) => (c.includes(i) ? c.filter((x) => x !== i) : [...c, i]))
-  }
-
-  async function submit(event: FormEvent) {
-    event.preventDefault()
-    setError(null)
-    const filled = options.map((o) => o.trim())
-    try {
-      await onSave({
-        kind,
-        prompt,
-        code: code.trim() || undefined,
-        options: kind === 'SHORT_ANSWER' ? [] : filled.filter((o) => o),
-        // keep indexes pointing at the same options after dropping blanks
-        correct: kind === 'SHORT_ANSWER' ? [] : correct.filter((i) => filled[i]).map((i) => filled.slice(0, i).filter((o) => o).length),
-        acceptedAnswers: kind === 'SHORT_ANSWER' ? accepted.split('\n').map((a) => a.trim()).filter(Boolean) : [],
-        points,
-        explanation: explanation.trim() || undefined,
-      })
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save the question')
-    }
-  }
-
-  return (
-    <form className="stack card" onSubmit={submit} aria-label={initial ? 'Edit question' : 'New question'} style={{ gap: 8 }}>
-      {error && (
-        <div role="alert" className="alert alert-error">
-          {error}
-        </div>
-      )}
-      <div className="row" style={{ alignItems: 'flex-end' }}>
-        <label className="field">
-          Type
-          <select className="select" value={kind} onChange={(e) => setKind(e.target.value as QuestionKind)}>
-            {(Object.keys(KIND_LABEL) as QuestionKind[]).map((k) => (
-              <option key={k} value={k}>
-                {KIND_LABEL[k]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field" style={{ maxWidth: 100 }}>
-          Points
-          <input className="input" type="number" min={1} max={10} value={points} onChange={(e) => setPoints(Number(e.target.value))} />
-        </label>
-      </div>
-      <label className="field">
-        Question
-        <textarea className="input" rows={2} required value={prompt} onChange={(e) => setPrompt(e.target.value)} />
-      </label>
-      <label className="field">
-        Code to read (optional)
-        <textarea className="input test-code-input" rows={4} value={code} onChange={(e) => setCode(e.target.value)} />
-      </label>
-      {kind === 'SHORT_ANSWER' ? (
-        <label className="field">
-          Accepted answers (one per line; case and extra spaces don’t matter)
-          <textarea className="input" rows={2} value={accepted} onChange={(e) => setAccepted(e.target.value)} />
-        </label>
-      ) : (
-        <fieldset className="stack" style={{ gap: 6, border: 0, padding: 0, margin: 0 }}>
-          <legend style={{ fontSize: 14 }}>Options — tick the right {kind === 'SINGLE_CHOICE' ? 'one' : 'ones'}</legend>
-          {options.map((o, i) => (
-            <div key={i} className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
-              <input
-                type={kind === 'SINGLE_CHOICE' ? 'radio' : 'checkbox'}
-                name="correct"
-                aria-label={`Option ${i + 1} is right`}
-                checked={correct.includes(i)}
-                onChange={() => toggle(i)}
-              />
-              <input
-                className="input"
-                aria-label={`Option ${i + 1}`}
-                value={o}
-                onChange={(e) => setOptions((all) => all.map((x, j) => (j === i ? e.target.value : x)))}
-              />
-            </div>
-          ))}
-          {options.length < 8 && (
-            <div>
-              <Button size="sm" variant="ghost" onClick={() => setOptions((all) => [...all, ''])}>
-                + Option
-              </Button>
-            </div>
-          )}
-        </fieldset>
-      )}
-      <label className="field">
-        Explanation for reviewers (optional)
-        <input className="input" value={explanation} onChange={(e) => setExplanation(e.target.value)} />
-      </label>
-      <div className="row">
-        <Button type="submit">Save question</Button>
-        <Button variant="ghost" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
-    </form>
-  )
-}
 
 function QuestionCard({ q, editable, onEdit, onDelete }: { q: QuestionView; editable: boolean; onEdit: () => void; onDelete: () => void }) {
   return (
@@ -159,7 +39,10 @@ function QuestionCard({ q, editable, onEdit, onDelete }: { q: QuestionView; edit
           <strong>{q.position}.</strong>
           <span className="muted" style={{ fontSize: 13 }}>
             {KIND_LABEL[q.kind]} · {q.points} point{q.points === 1 ? '' : 's'}
+            {q.section ? ` · ${SECTION_LABEL[q.section as Section] ?? q.section}` : ''}
+            {q.topic ? ` · ${q.topic}` : ''}
           </span>
+          {q.difficulty && <span className={`diff-${q.difficulty}`} style={{ fontSize: 13 }}>{DIFFICULTY_LABEL[q.difficulty]}</span>}
           {q.aiDrafted && <Badge tone="primary">AI draft — check it</Badge>}
         </span>
         {editable && (
@@ -173,26 +56,7 @@ function QuestionCard({ q, editable, onEdit, onDelete }: { q: QuestionView; edit
           </span>
         )}
       </div>
-      <div style={{ whiteSpace: 'pre-wrap' }}>{q.prompt}</div>
-      {q.code && <pre className="test-code">{q.code}</pre>}
-      {q.kind === 'SHORT_ANSWER' ? (
-        <div style={{ fontSize: 14 }}>
-          <span className="muted">Accepted:</span> {q.acceptedAnswers.join(' / ')}
-        </div>
-      ) : (
-        <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14 }}>
-          {q.options.map((o, i) => (
-            <li key={i} style={{ fontWeight: q.correct.includes(i) ? 600 : 400 }}>
-              {o} {q.correct.includes(i) && '✓'}
-            </li>
-          ))}
-        </ul>
-      )}
-      {q.explanation && (
-        <div className="muted" style={{ fontSize: 13 }}>
-          {q.explanation}
-        </div>
-      )}
+      <QuestionPreview question={q} showAnswer />
     </li>
   )
 }
@@ -200,6 +64,7 @@ function QuestionCard({ q, editable, onEdit, onDelete }: { q: QuestionView; edit
 function Editor({ id, onChanged, onOpen }: { id: string; onChanged: () => void; onOpen: (id: string) => void }) {
   const [detail, setDetail] = useState<AssessmentDetail | null>(null)
   const [editing, setEditing] = useState<string | 'new' | null>(null)
+  const [picking, setPicking] = useState(false)
   const [topic, setTopic] = useState('')
   const [level, setLevel] = useState('Fresher')
   const [count, setCount] = useState(5)
@@ -394,12 +259,23 @@ function Editor({ id, onChanged, onOpen }: { id: string; onChanged: () => void; 
               }}
             />
           ) : (
-            <div>
+            <div className="row" style={{ gap: 8 }}>
               <Button variant="secondary" onClick={() => setEditing('new')}>
                 + Add a question
               </Button>
+              <Button variant="secondary" onClick={() => setPicking(!picking)}>
+                {picking ? 'Close the bank' : '+ Add from the question bank'}
+              </Button>
             </div>
           ))}
+        {draftMode && picking && (
+          <QuestionBankPanel
+            pickLabel="Add"
+            onPick={async (ids) => {
+              await run(() => addFromBank(id, ids), `Added ${ids.length} question${ids.length === 1 ? '' : 's'} from the bank.`)
+            }}
+          />
+        )}
       </div>
     </Card>
   )
@@ -473,6 +349,8 @@ export function TestsPage() {
   const [tests, setTests] = useState<AssessmentSummary[] | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [building, setBuilding] = useState(false)
+  const [tab, setTab] = useState<'tests' | 'bank'>('tests')
   const [showArchived, setShowArchived] = useState(false)
 
   const load = useCallback(() => {
@@ -485,10 +363,36 @@ export function TestsPage() {
     <div className="stack">
       <PageHeader
         title="Tests"
-        description="Aptitude, Java, Python and other tests to send to candidates. Scored automatically; you decide."
-        actions={<Button onClick={() => setCreating(true)}>New test</Button>}
+        description="Aptitude, Java, Python and other tests to send to candidates. Build them from the question bank or write your own. Scored automatically; you decide."
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => { setTab('tests'); setBuilding(true); setCreating(false) }}>
+              Build from bank
+            </Button>
+            <Button onClick={() => { setTab('tests'); setCreating(true); setBuilding(false) }}>New test</Button>
+          </>
+        }
       />
-      {creating && (
+      <div className="tabs" role="tablist" aria-label="Tests sections">
+        <button type="button" role="tab" aria-selected={tab === 'tests'} onClick={() => setTab('tests')}>
+          Tests
+        </button>
+        <button type="button" role="tab" aria-selected={tab === 'bank'} onClick={() => setTab('bank')}>
+          Question bank
+        </button>
+      </div>
+      {tab === 'bank' && <QuestionBankPanel />}
+      {tab === 'tests' && building && (
+        <BuildFromBank
+          onCancel={() => setBuilding(false)}
+          onBuilt={(id) => {
+            setBuilding(false)
+            load()
+            setSelected(id)
+          }}
+        />
+      )}
+      {tab === 'tests' && creating && (
         <CreateForm
           onCancel={() => setCreating(false)}
           onCreated={(id) => {
@@ -498,6 +402,7 @@ export function TestsPage() {
           }}
         />
       )}
+      {tab === 'tests' && (
       <Card>
         {!tests && <p className="muted">Loading…</p>}
         {tests && visible.length === 0 && <p className="muted" style={{ margin: 0 }}>No tests yet. Click New test to make one.</p>}
@@ -541,7 +446,8 @@ export function TestsPage() {
           </label>
         )}
       </Card>
-      {selected && <Editor key={selected} id={selected} onChanged={load} onOpen={setSelected} />}
+      )}
+      {tab === 'tests' && selected && <Editor key={selected} id={selected} onChanged={load} onOpen={setSelected} />}
     </div>
   )
 }

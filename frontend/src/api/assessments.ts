@@ -48,6 +48,13 @@ export interface QuestionView {
   points: number
   explanation: string | null
   aiDrafted: boolean
+  /** SVG drawn by the app, or an uploaded PNG/JPEG data URI. */
+  figure: string | null
+  /** One picture per option when the options are figures. */
+  optionFigures: string[] | null
+  section: string | null
+  topic: string | null
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD' | null
 }
 
 export interface AssessmentDetail {
@@ -64,6 +71,7 @@ export interface QuestionInput {
   acceptedAnswers?: string[]
   points: number
   explanation?: string
+  figure?: string | null
 }
 
 export interface InviteView {
@@ -104,6 +112,17 @@ export interface AnswerReview {
   acceptedAnswers: string[]
   points: number
   earned: number
+  figure: string | null
+  optionFigures: string[] | null
+  section: string | null
+}
+
+export interface SectionScore {
+  section: string
+  label: string
+  score: number
+  max: number
+  questions: number
 }
 
 export interface MyTest {
@@ -129,6 +148,9 @@ export interface CandidateQuestion {
   code: string | null
   options: string[]
   points: number
+  figure: string | null
+  optionFigures: string[] | null
+  section: string | null
 }
 
 export interface TakeTest {
@@ -167,7 +189,8 @@ export const sendTest = (applicationId: string, input: { assessmentId: string; d
   api<SendResult>(`/applications/${applicationId}/tests`, json('POST', input))
 export const listApplicationTests = (applicationId: string) => api<InviteView[]>(`/applications/${applicationId}/tests`)
 export const listJobTests = (jobId: string) => api<InviteView[]>(`/jobs/${jobId}/tests`)
-export const getTestResult = (inviteId: string) => api<{ invite: InviteView; answers: AnswerReview[] }>(`/tests/${inviteId}`)
+export const getTestResult = (inviteId: string) =>
+  api<{ invite: InviteView; answers: AnswerReview[]; sections: SectionScore[] }>(`/tests/${inviteId}`)
 export const remindTest = (inviteId: string, input: { sendEmail: boolean; sendWhatsApp: boolean }) =>
   api<SendResult>(`/tests/${inviteId}/remind`, json('POST', input))
 export const cancelTest = (inviteId: string) => api<InviteView>(`/tests/${inviteId}/cancel`, { method: 'POST' })

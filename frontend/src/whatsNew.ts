@@ -16,6 +16,22 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-03-question-bank',
+    date: '2026-10-03',
+    title: 'Aptitude question bank and test builder',
+    summary:
+      'A bank of 173 aptitude questions for freshers, with charts, clocks, Venn diagrams and picture puzzles — like TCS, Infosys, Wipro and Cognizant tests. Build a paper in one click with the difficulty mix you want, and see scores per section.',
+    steps: [
+      'Menu → Tests → Question bank to browse: filter by section, topic and difficulty; tick “Show answers” to check them.',
+      'Click Build from bank, pick a pattern (Quick screening, TCS NQT style …) or set easy/medium/hard per section, choose the order, then Build.',
+      'Check the draft, Mark ready, and send it from a candidate’s Profile → Tests as before.',
+      'Results show the score per section (Numerical, Logical, Verbal).',
+      'Add your own questions (with a picture) or ✨ draft more with AI — AI drafts wait for your approval.',
+    ],
+    link: { to: '/tests', label: 'Open Tests' },
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-03-view-as',
     date: '2026-10-03',
     title: 'View as a candidate, client or role',

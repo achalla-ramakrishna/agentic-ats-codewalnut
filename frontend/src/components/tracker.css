@@ -262,3 +262,62 @@
   border-left: 3px solid var(--color-primary-soft, #c7d2fe);
   padding-left: 8px;
 }
+
+/* Question pictures (ADR-0014) */
+.figure {
+  display: block;
+  width: auto;
+  max-width: min(100%, 560px);
+  height: auto;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 6px;
+  background: #fff;
+}
+.figure-small {
+  max-width: 120px;
+  max-height: 120px;
+}
+.option-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+.option-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.option-figure.selected,
+.option-figure.right {
+  border-color: var(--color-primary, #4f5bd5);
+}
+.bank-grid {
+  border-collapse: collapse;
+}
+.bank-grid td,
+.bank-grid th {
+  padding: 4px 10px;
+  text-align: center;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+}
+.diff-EASY {
+  color: #166534;
+}
+.diff-MEDIUM {
+  color: #854d0e;
+}
+.diff-HARD {
+  color: #991b1b;
+}
+.section-heading {
+  margin: 8px 0 0;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-primary, #4f5bd5);
+}

@@ -26,9 +26,11 @@ public final class AssessmentDtos {
             int passPercent, Assessment.Status status, int questionCount, int totalPoints, long invites,
             Instant updatedAt) {}
 
+    /** figure: SVG or image data URI shown with the question; optionFigures: pictures for the options, or null. */
     public record QuestionView(
             UUID id, int position, AssessmentQuestion.Kind kind, String prompt, String code, List<String> options,
-            List<Integer> correct, List<String> acceptedAnswers, int points, String explanation, boolean aiDrafted) {}
+            List<Integer> correct, List<String> acceptedAnswers, int points, String explanation, boolean aiDrafted,
+            String figure, List<String> optionFigures, String section, String topic, String difficulty) {}
 
     public record AssessmentDetail(AssessmentSummary summary, List<QuestionView> questions) {}
 
@@ -58,7 +60,14 @@ public final class AssessmentDtos {
             @Size(max = 8) List<Integer> correct,
             @Size(max = 10) List<@Size(max = 500) String> acceptedAnswers,
             @Min(1) @Max(10) int points,
-            @Size(max = 2000) String explanation) {}
+            @Size(max = 2000) String explanation,
+            @Size(max = 1_500_000) String figure) {
+
+        public QuestionRequest(AssessmentQuestion.Kind kind, String prompt, String code, List<String> options, List<Integer> correct,
+                List<String> acceptedAnswers, int points, String explanation) {
+            this(kind, prompt, code, options, correct, acceptedAnswers, points, explanation, null);
+        }
+    }
 
     public record DraftRequest(@Size(max = 500) String topic, @Size(max = 50) String level, @Min(1) @Max(15) int count) {}
 
@@ -86,9 +95,13 @@ public final class AssessmentDtos {
 
     public record AnswerReview(
             int position, AssessmentQuestion.Kind kind, String prompt, String code, List<String> options,
-            List<String> given, List<Integer> correct, List<String> acceptedAnswers, int points, int earned) {}
+            List<String> given, List<Integer> correct, List<String> acceptedAnswers, int points, int earned,
+            String figure, List<String> optionFigures, String section) {}
 
-    public record InviteDetail(InviteView invite, List<AnswerReview> answers) {}
+    /** Score per section, e.g. Numerical ability 14 / 20. */
+    public record SectionScore(String section, String label, int score, int max, int questions) {}
+
+    public record InviteDetail(InviteView invite, List<AnswerReview> answers, List<SectionScore> sections) {}
 
     // ---- the candidate ----
 
@@ -99,7 +112,7 @@ public final class AssessmentDtos {
 
     public record CandidateQuestion(
             UUID id, int position, AssessmentQuestion.Kind kind, String prompt, String code, List<String> options,
-            int points) {}
+            int points, String figure, List<String> optionFigures, String section) {}
 
     /** answers: what the candidate has saved so far, by question id. */
     public record TakeTest(MyTest test, List<CandidateQuestion> questions, Map<UUID, List<String>> answers,

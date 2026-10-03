@@ -128,7 +128,10 @@ Frontend (from `frontend/`):
   is computed by the app from per-requirement evidence, prompts ignore
   personal attributes, and nothing moves a candidate. Test scores
   (ADR-0011) are a signal too: no auto-advance or auto-reject, and
-  AI-drafted questions are labelled until a person checks them.
+  AI-drafted questions are labelled until a person checks them, and AI
+  drafts for the question bank (ADR-0014) stay in REVIEW until approved.
+  Question pictures are drawn by the app from the same numbers as the
+  answer; never ask the model for an SVG.
   CodeWalnut résumés (ADR-0012) are AI drafts a person edits; the app (not
   the model) strips phone numbers and links. All model calls go
   through a `client/` adapter using the official Anthropic SDK.

@@ -26,7 +26,11 @@ public class ClaudeAssessmentDrafter implements AssessmentDrafter {
             and exact (a number, a word, or the exact printed output). Avoid trick questions about obscure \
             trivia, avoid questions that need a calculator beyond simple arithmetic, and avoid anything \
             about personal life, culture, religion or region. Use Indian-English contexts (₹, km) where \
-            natural. Don't repeat the questions listed in <avoid>.""";
+            natural. Don't repeat the questions listed in <avoid>.
+
+            For data-interpretation questions, give the data in chart (BAR, LINE, PIE or TABLE) instead of \
+            describing it in words; the app draws it. Use whole numbers, make pie values add up to 100, and \
+            compute the answer from exactly those numbers.""";
 
     private final AnthropicClient client;
     private final String model;

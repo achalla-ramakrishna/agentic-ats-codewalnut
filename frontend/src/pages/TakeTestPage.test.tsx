@@ -23,8 +23,8 @@ const test = {
 const taking = {
   test: { ...test, status: 'STARTED' },
   questions: [
-    { id: 'q1', position: 1, kind: 'SINGLE_CHOICE', prompt: 'Which type is immutable?', code: null, options: ['list', 'tuple'], points: 1 },
-    { id: 'q2', position: 2, kind: 'SHORT_ANSWER', prompt: 'What does this print?', code: 'print(len({1, 2, 2}))', options: [], points: 2 },
+    { id: 'q1', position: 1, kind: 'SINGLE_CHOICE', prompt: 'Which type is immutable?', code: null, options: ['list', 'tuple'], points: 1, figure: null, optionFigures: null, section: null },
+    { id: 'q2', position: 2, kind: 'SHORT_ANSWER', prompt: 'What does this print?', code: 'print(len({1, 2, 2}))', options: [], points: 2, figure: null, optionFigures: null, section: null },
   ],
   answers: {},
   secondsLeft: 1200,
@@ -61,5 +61,33 @@ describe('TakeTestPage', () => {
     expect(await screen.findByText('Thank you!')).toBeInTheDocument()
     const submit = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/submit'))!
     expect(JSON.parse(submit[1]!.body as string)).toEqual({ answers: { q1: ['1'], q2: ['2'] } })
+  })
+
+  it('shows section headings and picture options', async () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>'
+    const fetchMock = fakeFetch([
+      { path: '/candidate/tests/i1/start', method: 'POST', body: { ...taking, questions: [
+        { id: 'p1', position: 1, kind: 'SINGLE_CHOICE', prompt: 'Which figure comes next?', code: null, options: ['Figure A', 'Figure B', 'Figure C', 'Figure D'],
+          points: 3, figure: svg, optionFigures: [svg, svg, svg, svg], section: 'LOGICAL' },
+      ] } },
+      { path: '/candidate/tests/i1/submit', method: 'POST', body: { ...test, status: 'SUBMITTED' } },
+      { path: '/candidate/tests', body: [test] },
+    ])
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(
+      <MemoryRouter initialEntries={['/tests/i1']}>
+        <Routes>
+          <Route path="/tests/:id" element={<TakeTestPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Start the test' }))
+    expect(await screen.findByRole('heading', { name: 'Logical reasoning' })).toBeInTheDocument()
+    expect(screen.getAllByRole('img')).toHaveLength(5)
+    await userEvent.click(screen.getByLabelText('Figure C'))
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }))
+    await screen.findByText('Thank you!')
+    const submit = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/submit'))!
+    expect(JSON.parse(submit[1]!.body as string)).toEqual({ answers: { p1: ['2'] } })
   })
 })

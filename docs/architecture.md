@@ -64,6 +64,11 @@ Tests (ADR-0011): `AssessmentService` manages the library and asks
 the candidate without answers, enforces the timer and scores on submit or
 when an overdue invite is next read.
 
+Question bank (ADR-0014): `bank/AptitudeBank` generates the built-in
+aptitude questions with `bank/Svg` pictures; `QuestionBankService` loads them
+at start-up, serves the bank, drafts more through `AssessmentDrafter` (held
+for review) and builds papers by copying questions into a draft assessment.
+
 View as (ADR-0013): a session attribute makes the `Current*Service`
 resolvers return a candidate, client contact or role-limited copy of the
 admin; `ViewAsReadOnlyFilter` refuses API writes while it is set.

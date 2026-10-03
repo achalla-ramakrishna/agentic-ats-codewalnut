@@ -10,7 +10,9 @@ import {
   type MyTest,
   type TakeTest,
 } from '../api/assessments'
+import { Figure } from '../components/Figure'
 import { Button, Card } from '../components/ui'
+import { SECTION_LABEL, type Section } from '../api/questionBank'
 import '../components/tracker.css'
 import './CandidateHomePage.css'
 
@@ -178,10 +180,13 @@ export function TakeTestPage() {
                 · {answered} of {taking.questions.length} answered
               </span>
             </Card>
-            {taking.questions.map((q) => {
+            {taking.questions.map((q, index) => {
               const value = answers[q.id] ?? []
+              const newSection = q.section && q.section !== taking.questions[index - 1]?.section
               return (
-                <Card key={q.id} className="stack" aria-label={`Question ${q.position}`} role="group">
+                <div key={q.id} className="stack" style={{ gap: 8 }}>
+                {newSection && <h2 className="section-heading">{SECTION_LABEL[q.section as Section] ?? q.section}</h2>}
+                <Card className="stack" aria-label={`Question ${q.position}`} role="group">
                   <div className="row" style={{ justifyContent: 'space-between' }}>
                     <strong>Question {q.position}</strong>
                     <span className="muted" style={{ fontSize: 13 }}>
@@ -190,6 +195,7 @@ export function TakeTestPage() {
                     </span>
                   </div>
                   <div style={{ whiteSpace: 'pre-wrap' }}>{q.prompt}</div>
+                  {q.figure && <Figure figure={q.figure} />}
                   {q.code && <pre className="test-code">{q.code}</pre>}
                   {q.kind === 'SHORT_ANSWER' ? (
                     <input
@@ -199,6 +205,33 @@ export function TakeTestPage() {
                       maxLength={500}
                       onChange={(e) => answer(q.id, [e.target.value])}
                     />
+                  ) : q.optionFigures ? (
+                    <div className="option-figures" role="radiogroup" aria-label={`Options for question ${q.position}`}>
+                      {q.optionFigures.map((f, i) => (
+                        <label key={i} className={`option-figure${value.includes(String(i)) ? ' selected' : ''}`}>
+                          <Figure figure={f} small alt={q.options[i]} />
+                          <span className="row" style={{ gap: 6 }}>
+                            <input
+                              type={q.kind === 'SINGLE_CHOICE' ? 'radio' : 'checkbox'}
+                              name={q.id}
+                              aria-label={q.options[i]}
+                              checked={value.includes(String(i))}
+                              onChange={(e) =>
+                                answer(
+                                  q.id,
+                                  q.kind === 'SINGLE_CHOICE'
+                                    ? [String(i)]
+                                    : e.target.checked
+                                      ? [...value, String(i)]
+                                      : value.filter((v) => v !== String(i)),
+                                )
+                              }
+                            />
+                            {String.fromCharCode(65 + i)}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
                   ) : (
                     <div className="stack" style={{ gap: 6 }}>
                       {q.options.map((o, i) => (
@@ -224,6 +257,7 @@ export function TakeTestPage() {
                     </div>
                   )}
                 </Card>
+                </div>
               )
             })}
             <div className="row">

@@ -51,6 +51,14 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | ASMT-14 | Results: drawer (status, score, per-question answers for staff), opening Test column and **Passed a test** filter, AI suggestions (closest to selection orders by stage, then test, then match) and the AI assistant. | Done |
 | ASMT-15 | Tests not started after 2 days are highlighted with **Remind**; expired ones can be reminded with 2 more days; staff can **Withdraw** a test. | Done |
 | ASMT-16 | Code-writing questions run in a sandbox. | v1 |
+| ASMT-18 | **Question bank** (Tests → Question bank, `MANAGE_JOBS`): questions by area, section, topic and difficulty, with pictures; filter, search, show answers, add your own (with a PNG/JPEG picture), edit, archive (ADR-0014). | Done |
+| ASMT-19 | Built-in aptitude bank: 173 questions across Numerical ability (incl. data interpretation charts/tables), Logical reasoning (incl. clocks, Venn diagrams and non-verbal picture puzzles with picture options) and Verbal ability; 2 easy / 2 medium / 2 hard per generated topic. | Done |
+| ASMT-20 | **AI drafts for the bank** wait in "Waiting for review" and are never used until a person approves or edits them; chart data from the AI is drawn by the app. | Done |
+| ASMT-21 | **Build from bank**: presets (Quick screening, TCS NQT, Wipro NLTH, Cognizant GenC, Infosys) or a custom easy/medium/hard count per section; order easy → hard, by section, or shuffled; least-used questions first; shortages explained. Creates a draft test to check, then Mark ready and send as usual. | Done |
+| ASMT-22 | **Add from the question bank** into any draft test. | Done |
+| ASMT-23 | Candidates see section headings, pictures and picture options; results show the score per section. | Done |
+| ASMT-24 | Banks for Java, Python, React, Angular, SQL and coding, per role. | Next |
+| ASMT-25 | Per-section timers and optional negative marking. | v1 |
 | ASMT-17 | Automatic reminders (needs a sender that works without a staff session, e.g. WhatsApp Business API or a shared mailbox). | v1 |
 
 ## Business rules
@@ -87,7 +95,8 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
+| 2026-10-03 | Question bank with app-drawn pictures, built-in aptitude bank, paper builder with presets, section scores (ASMT-18…ASMT-23, ADR-0014) |
 | 2026-10-03 | Built-in tests: library, AI drafting, send, timed taking, auto-score, results, reminders (ASMT-08…ASMT-15, ADR-0011) |
 
-Tests: `AssessmentFlowTest`, `ClaudeAssessmentDrafterTest` (backend); `TestsPage.test.tsx`,
+Tests: `AssessmentFlowTest`, `QuestionBankFlowTest`, `AptitudeBankTest`, `ClaudeAssessmentDrafterTest` (backend); `TestsPage.test.tsx`, `QuestionBank.test.tsx`,
 `TakeTestPage.test.tsx`, `TestsSection.test.tsx` (frontend).

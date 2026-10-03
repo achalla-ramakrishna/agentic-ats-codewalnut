@@ -43,7 +43,7 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class AssessmentService {
 
-    static final int MAX_QUESTIONS = 60;
+    static final int MAX_QUESTIONS = 100;
 
     private final AssessmentRepository assessmentRepository;
     private final AssessmentQuestionRepository questionRepository;
@@ -217,7 +217,9 @@ public class AssessmentService {
             questionRepository.save(AssessmentQuestion.builder()
                     .assessmentId(copy.getId()).position(q.getPosition()).kind(q.getKind()).prompt(q.getPrompt())
                     .code(q.getCode()).optionsJson(q.getOptionsJson()).answerJson(q.getAnswerJson())
-                    .points(q.getPoints()).explanation(q.getExplanation()).aiDrafted(q.isAiDrafted()).build());
+                    .points(q.getPoints()).explanation(q.getExplanation()).aiDrafted(q.isAiDrafted())
+                    .figure(q.getFigure()).optionFiguresJson(q.getOptionFiguresJson()).section(q.getSection())
+                    .topic(q.getTopic()).difficulty(q.getDifficulty()).bankQuestionId(q.getBankQuestionId()).build());
         }
         auditService.record(actor, AuditAction.ASSESSMENT_CREATED, "Assessment", copy.getId(), Map.of("copiedFrom", id));
         return detail(copy);
@@ -273,6 +275,11 @@ public class AssessmentService {
         return readList(q.getOptionsJson(), new TypeReference<List<String>>() {});
     }
 
+    /** Pictures for the options, or null when the options are text. */
+    List<String> optionFigures(AssessmentQuestion q) {
+        return q.getOptionFiguresJson() == null ? null : readList(q.getOptionFiguresJson(), new TypeReference<List<String>>() {});
+    }
+
     List<Integer> correct(AssessmentQuestion q) {
         return q.getKind() == AssessmentQuestion.Kind.SHORT_ANSWER ? List.of()
                 : readList(q.getAnswerJson(), new TypeReference<List<Integer>>() {});
@@ -320,11 +327,12 @@ public class AssessmentService {
 
     // ---- private ----
 
-    private AssessmentDetail detail(Assessment a) {
+    AssessmentDetail detail(Assessment a) {
         List<AssessmentQuestion> qs = questionRepository.findByAssessmentIdOrderByPositionAsc(a.getId());
         List<QuestionView> views = qs.stream()
                 .map(q -> new QuestionView(q.getId(), q.getPosition(), q.getKind(), q.getPrompt(), q.getCode(),
-                        options(q), correct(q), accepted(q), q.getPoints(), q.getExplanation(), q.isAiDrafted()))
+                        options(q), correct(q), accepted(q), q.getPoints(), q.getExplanation(), q.isAiDrafted(),
+                        q.getFigure(), optionFigures(q), q.getSection(), q.getTopic(), q.getDifficulty()))
                 .toList();
         return new AssessmentDetail(summary(a, new long[] {qs.size(), qs.stream().mapToInt(AssessmentQuestion::getPoints).sum()}), views);
     }
@@ -336,7 +344,7 @@ public class AssessmentService {
     }
 
     /** Validates and tidies a question; throws IllegalArgumentException with a field message. */
-    private QuestionRequest normalise(QuestionRequest r) {
+    QuestionRequest normalise(QuestionRequest r) {
         String prompt = r.prompt() == null ? "" : r.prompt().strip();
         if (prompt.isEmpty()) {
             throw new IllegalArgumentException("prompt: write the question");
@@ -348,7 +356,8 @@ public class AssessmentService {
             if (accepted.isEmpty()) {
                 throw new IllegalArgumentException("acceptedAnswers: add at least one accepted answer");
             }
-            return new QuestionRequest(r.kind(), prompt, code, List.of(), List.of(), accepted, r.points(), blankToNull(r.explanation()));
+            return new QuestionRequest(r.kind(), prompt, code, List.of(), List.of(), accepted, r.points(), blankToNull(r.explanation()),
+                    com.codewalnut.ats.bank.Figures.check(r.figure()));
         }
         List<String> options = r.options() == null ? List.of() : r.options().stream()
                 .map(o -> o == null ? "" : o.strip()).toList();
@@ -365,10 +374,16 @@ public class AssessmentService {
         if (r.kind() == AssessmentQuestion.Kind.SINGLE_CHOICE && correct.size() != 1) {
             throw new IllegalArgumentException("correct: a single-choice question has exactly one right option");
         }
-        return new QuestionRequest(r.kind(), prompt, code, options, correct, List.of(), r.points(), blankToNull(r.explanation()));
+        return new QuestionRequest(r.kind(), prompt, code, options, correct, List.of(), r.points(), blankToNull(r.explanation()),
+                com.codewalnut.ats.bank.Figures.check(r.figure()));
     }
 
-    private void apply(AssessmentQuestion q, QuestionRequest r) {
+    void apply(AssessmentQuestion q, QuestionRequest r) {
+        List<String> oldOptions = q.getOptionsJson() == null ? List.of() : options(q);
+        if (q.getOptionFiguresJson() != null && (r.kind() == AssessmentQuestion.Kind.SHORT_ANSWER || r.options().size() != oldOptions.size())) {
+            q.setOptionFiguresJson(null); // option pictures only fit the same set of options
+        }
+        q.setFigure(r.figure());
         q.setKind(r.kind());
         q.setPrompt(r.prompt());
         q.setCode(r.code());
@@ -378,7 +393,7 @@ public class AssessmentService {
         q.setExplanation(r.explanation());
     }
 
-    private String write(Object value) {
+    String write(Object value) {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
@@ -386,7 +401,7 @@ public class AssessmentService {
         }
     }
 
-    private <T> List<T> readList(String json, TypeReference<List<T>> type) {
+    <T> List<T> readList(String json, TypeReference<List<T>> type) {
         if (json == null) {
             return List.of();
         }
@@ -397,11 +412,11 @@ public class AssessmentService {
         }
     }
 
-    private void touch(Assessment a) {
+    void touch(Assessment a) {
         a.setUpdatedAt(java.time.Instant.now());
     }
 
-    private Assessment editable(UUID id) {
+    Assessment editable(UUID id) {
         Assessment a = assessment(id);
         if (a.getStatus() != Assessment.Status.DRAFT) {
             throw new IllegalArgumentException("This test is ready to send, so its questions are locked. Duplicate it to make changes.");

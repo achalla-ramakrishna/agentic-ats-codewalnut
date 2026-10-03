@@ -35,6 +35,11 @@ const drafted: AssessmentDetail = {
       points: 1,
       explanation: null,
       aiDrafted: true,
+      figure: null,
+      optionFigures: null,
+      section: null,
+      topic: null,
+      difficulty: null,
     },
   ],
 }

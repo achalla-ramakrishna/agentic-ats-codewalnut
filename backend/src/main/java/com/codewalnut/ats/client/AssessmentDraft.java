@@ -24,5 +24,23 @@ public record AssessmentDraft(
             @JsonPropertyDescription("One or two sentences explaining the right answer, for the reviewer")
             String explanation,
             @JsonPropertyDescription("Points, 1 for easy, 2 for medium, 3 for hard")
-            Integer points) {}
+            Integer points,
+            @JsonPropertyDescription("For data-interpretation questions only: the chart or table the question is about (the app draws it). Otherwise null.")
+            Chart chart) {
+
+        public Question(String kind, String prompt, String code, List<String> options, List<Integer> correctOptions,
+                List<String> acceptedAnswers, String explanation, Integer points) {
+            this(kind, prompt, code, options, correctOptions, acceptedAnswers, explanation, points, null);
+        }
+    }
+
+    /** Data for a picture the app draws. Pie values are percentages adding up to 100. */
+    public record Chart(
+            @JsonPropertyDescription("BAR, LINE, PIE or TABLE") String type,
+            @JsonPropertyDescription("Chart title") String title,
+            @JsonPropertyDescription("Unit for the values, e.g. \"Units\", or empty") String unit,
+            @JsonPropertyDescription("BAR/LINE/PIE: category labels (3 to 7)") List<String> labels,
+            @JsonPropertyDescription("BAR/LINE/PIE: whole-number values, one per label") List<Integer> values,
+            @JsonPropertyDescription("TABLE: column headers") List<String> headers,
+            @JsonPropertyDescription("TABLE: rows of cells, same length as headers") List<List<String>> rows) {}
 }
