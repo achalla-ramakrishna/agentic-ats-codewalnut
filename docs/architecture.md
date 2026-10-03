@@ -72,7 +72,9 @@ at start-up, serves the bank, drafts more through `AssessmentDrafter` (held
 for review) and builds papers by copying questions into a draft assessment.
 Technical banks (ADR-0015): `bank/TechBank` parses the hand-written
 `resources/bank/tech/*.txt` files (Java, Python, JavaScript, React, Angular,
-SQL) into the same seeds, banded FUNDAMENTALS / PRACTICAL / ADVANCED, with
+SQL, CS fundamentals, System design, Node.js, QA automation, DevOps, Data
+analytics) into the same seeds; `bank/Roles` turns a role and level into a
+cross-area paper, banded FUNDAMENTALS / PRACTICAL / ADVANCED, with
 keys hashed from content so edited questions replace old ones on load.
 
 View as (ADR-0013): a session attribute makes the `Current*Service`

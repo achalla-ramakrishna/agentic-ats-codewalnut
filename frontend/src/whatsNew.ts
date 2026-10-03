@@ -16,6 +16,15 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-03-more-role-banks',
+    date: '2026-10-03',
+    title: 'Tests for Node.js, QA, DevOps and data analysts',
+    summary: 'Four new question banks — Node.js, Testing & QA automation, DevOps & cloud and Data analytics — and matching roles: Node.js backend, full-stack Node + React (MERN), QA automation engineer, DevOps / cloud engineer and data analyst, from fresher to lead.',
+    steps: ['Tests → Build from bank → By role, then pick one of the new roles and a level.', 'Or By topics, and choose one of the new areas.'],
+    link: { to: '/tests', label: 'Open Tests' },
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-03-role-tests',
     date: '2026-10-03',
     title: 'Tests by role and seniority',

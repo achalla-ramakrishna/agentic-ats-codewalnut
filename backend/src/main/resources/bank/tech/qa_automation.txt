@@ -1,0 +1,938 @@
+# CodeWalnut built-in Testing & QA bank (ADR-0015). Format: see TechBank.java.
+# Bands: FUNDAMENTALS = freshers / manual QA, PRACTICAL = 1–3 years automation, ADVANCED = 3+ years / QA leads.
+# Distractors are kept as long and as plausible as the answer.
+
+@topic qa-basics | FUNDAMENTALS | Testing basics | Why we test, levels and types of testing, verification vs validation, SDLC and STLC.
+Q E What is the main goal of software testing?
++ Finding defects and checking the software meets its needs
+- Proving that the software has no bugs at all
+- Making the software run faster for its users
+- Writing documentation for the development team
+= Testing reduces risk; it cannot prove the absence of bugs.
+
+Q E Which testing level checks one function or class on its own?
++ Unit testing
+- System testing
+- Acceptance testing
+- Regression testing
+= System testing checks the whole product; acceptance checks it meets business needs.
+
+Q E What is black-box testing?
++ Testing behaviour without looking at the code inside
+- Testing the code line by line with full access
+- Testing only in a dark-themed environment
+- Testing that the hardware is working
+= White-box testing uses knowledge of the code.
+
+Q E What does UAT stand for?
++ User acceptance testing
+- Unit and automation testing
+- Universal application testing
+- User analytics tracking
+= Real users or the client check the product meets their needs.
+
+Q M What is the difference between verification and validation?
++ Verification: built right per spec; validation: the right product for users
+- Verification is done by users; validation is done by developers
+- Verification happens after release; validation happens before coding
+- They are the same activity under two different names
+= "Are we building the product right?" vs "are we building the right product?"
+
+Q M What is regression testing?
++ Re-testing so changes don't break what already worked
+- Testing the oldest features first in every release
+- Testing how performance changes as data grows over time
+- Testing only the newest feature added in a release
+= Automated regression suites make frequent releases safe.
+
+Q M What is smoke testing?
++ A quick check that the main functions work before deeper testing
+- Testing how the app behaves when the server overheats
+- A full regression of every feature in the product
+- Testing done only by end users before launch
+= If the smoke test fails, the build goes back to development.
+
+Q M What is the difference between functional and non-functional testing?
++ Functional checks what it does; non-functional checks how well
+- Functional is manual; non-functional is always automated
+- Functional covers the UI; non-functional covers the database
+- Functional is done first; non-functional is never needed
+= Non-functional includes performance, security and usability.
+
+Q H Why is exhaustive testing impossible for most software?
++ The number of input and path combinations is far too large
+- Testers are not allowed to see every screen of the app
+- Tools can only run a fixed number of tests each day
+- Users never use more than a few of the features
+= So testers choose cases by risk and test design techniques.
+
+Q H What does "shift-left testing" mean?
++ Testing earlier in the cycle, e.g. reviewing requirements and testing in CI
+- Moving testers to a different team on the left side of the office
+- Testing only after the product has been released
+- Running tests from right to left in the test plan
+= Defects found early are cheaper to fix.
+
+Q H What is the difference between static and dynamic testing?
++ Static examines artefacts without running code; dynamic runs the software
+- Static runs the software once; dynamic runs it many times
+- Static tests the database; dynamic tests the user interface
+- Static is done by tools only; dynamic is done by people only
+= Reviews and static analysis are static testing.
+
+Q H What is exploratory testing?
++ Learning, designing and running tests at once, guided by findings
+- Running only the scripted test cases that were written in advance
+- Testing a product that has no written requirements at all
+- Testing that is performed only by automated scripts overnight
+= It finds issues scripted tests miss; time-box and note sessions.
+
+@topic qa-test-design | FUNDAMENTALS | Test design techniques | Writing test cases, equivalence partitioning, boundary value analysis, decision tables, state transitions.
+Q E What does a good test case include?
++ Steps, test data, and the expected result
+- Only the name of the feature to test
+- The developer's name and the release date
+- A screenshot of the finished screen only
+= Preconditions and an id help too.
+
+Q E A field accepts ages 18 to 60. Which values test the boundaries?
++ 17, 18, 60 and 61
+- 20, 30, 40 and 50
+- 0, 100, 1000 and -1
+- 18 and 60 only
+= Bugs cluster at the edges; test just inside and just outside.
+
+Q E What is equivalence partitioning?
++ Grouping inputs that behave alike and testing one of each
+- Testing every possible input value one at a time in order
+- Splitting the test team into groups of equal size
+- Running the same test on two machines and comparing
+= e.g. valid ages, ages too low, ages too high.
+
+Q E What is a negative test case?
++ A test with invalid input to check the system rejects it properly
+- A test that is expected to fail because of a known bug
+- A test that removes data from the database
+- A test written by someone outside the team
+= e.g. entering letters in a phone-number field.
+
+Q M A discount applies to members with orders over ₹1,000. Which technique covers the combinations best?
++ A decision table of member/non-member × above/below ₹1,000
+- Boundary values for the member flag only
+- Testing one random order and checking the total
+- Equivalence classes for the customer's name
+= Decision tables list each combination of conditions and its outcome.
+
+Q M When is state transition testing useful?
++ When behaviour depends on the current state, like an order's
+- When the app has no states and does not store any data
+- When testing only how fast each page of the app loads
+- When checking that every colour matches the design file
+= Test valid and invalid transitions, e.g. "cancelled" → "shipped".
+
+Q M What is traceability in testing?
++ Linking requirements to the tests that cover them
+- Tracking which tester ran each test and when
+- Recording every click a user makes in production
+- Following a bug from report to fix only
+= A traceability matrix shows requirements with no tests.
+
+Q M What are preconditions in a test case?
++ What must be true before it starts, e.g. a logged-in user
+- The result the test is expected to produce after it runs
+- The list of bugs that were found while running the test
+- The maximum time allowed for running the test case
+= Clear preconditions make tests repeatable.
+
+Q H A password must be 8–16 characters. How many boundary-value tests are typical?
++ Four: 7, 8, 16 and 17 characters
+- One: exactly 12 characters
+- Two: 8 and 16 characters only
+- Sixteen: one for every allowed length
+= Plus equivalence tests for other rules (letters, digits).
+
+Q H What is pairwise (all-pairs) testing used for?
++ Covering every pair of values with far fewer tests than all combinations
+- Pairing testers so that every test is checked by two different people
+- Running each test twice in a row to confirm that the result is stable
+- Testing two versions of the app side by side to compare their results
+= Most defects come from one or two parameters interacting.
+
+Q H Why are vague expected results such as "it should work" harmful?
++ No one can tell objectively whether the test passed
+- Tools cannot read expected results longer than five words
+- Developers refuse to fix bugs from such tests
+- Vague results make tests run more slowly
+= State exact outputs, messages and values.
+
+Q H What is error guessing?
++ Using experience to target likely mistakes, e.g. empty inputs
+- Guessing whether a build will pass before running any tests
+- Estimating how many bugs a release is likely to contain
+- Letting users guess how a new feature is supposed to behave
+= It complements systematic techniques.
+
+@topic qa-defects | FUNDAMENTALS | Defects and bug reports | Writing bug reports, severity vs priority, the bug life cycle, reproducing and retesting.
+Q E What should a good bug report include?
++ Steps to reproduce, expected vs actual result, environment
+- Only a short title such as "Login broken" and nothing else
+- The name of the developer who most likely caused the bug
+- A suggestion that the whole module should be rewritten
+= Screenshots or logs help further.
+
+Q E What is the difference between severity and priority?
++ Severity is the impact; priority is how soon it should be fixed
+- Severity is how soon to fix; priority is the impact
+- They are the same and set by the same person
+- Severity is set by users; priority is set by testers only
+= A typo in the logo: low severity, high priority.
+
+Q E What does "retesting" mean after a fix?
++ Running the failed test again to confirm the bug is fixed
+- Running every test in the product from scratch
+- Asking the developer to explain the fix
+- Closing the bug without checking
+= Regression testing checks the fix didn't break anything else.
+
+Q E When should a bug be marked "Cannot reproduce"?
++ When the given steps and environment don't make it happen
+- When the bug is too hard to fix within the current sprint
+- When the bug was reported by a client rather than a tester
+- When the bug is a duplicate of another bug already logged
+= Ask the reporter for more details or logs first.
+
+Q M A crash in a rarely used admin report: severity and priority?
++ High severity, possibly lower priority
+- Low severity and low priority
+- Low severity and high priority
+- It depends only on who found it
+= Impact is serious, but few users hit it.
+
+Q M What is a typical bug life cycle?
++ New → assigned → fixed → retested → closed
+- Reported → deleted → archived → forgotten
+- Open → released → reported by users → closed
+- Found → ignored → fixed directly in production
+= Teams adapt the states, but each bug is tracked to closure.
+
+Q M Why attach logs or a screen recording to a bug report?
++ They show exactly what happened and speed up the fix
+- They are required before a bug can be saved
+- They replace the need for steps to reproduce
+- They make the bug a higher priority
+= Remove any sensitive data first.
+
+Q M What is a defect leakage?
++ A bug that escaped testing and was found later
+- A bug report that was shared outside the company by mistake
+- A bug that disappears by itself after the server restarts
+- A test case that leaks its test data into the server logs
+= High leakage means the testing process needs improvement.
+
+Q H A bug appears only on Safari on iOS. What must the report include?
++ Device, OS and browser versions, plus exact steps
+- Only the steps, since environment never matters
+- Only a screenshot from a desktop browser
+- The tester's opinion of Safari
+= Environment-specific bugs can't be fixed without environment details.
+
+Q H What is root cause analysis for defects?
++ Finding why a defect happened, to prevent similar ones
+- Finding which tester missed the defect during testing
+- Listing every defect that was found in a release
+- Deciding the priority and severity of each defect
+= e.g. unclear requirements or a missing test type.
+
+Q H Why should one bug report describe only one problem?
++ So each issue can be tracked, fixed and verified on its own
+- Bug trackers only allow one sentence per report
+- Developers can only fix one bug per week
+- Several problems in one report are always duplicates
+= Combined reports get half-fixed and closed.
+
+Q H What does a rising reopen rate for fixed bugs suggest?
++ Fixes are incomplete or poorly tested before handover
+- Testers are reporting too few bugs in each release
+- The product has too few features left to test properly
+- The bug tracking tool is not working as it should
+= Look at unit tests and developer testing of fixes.
+
+@topic qa-agile | FUNDAMENTALS | Testing in agile teams | Testing in sprints, acceptance criteria, definition of done, smoke/sanity/regression, test environments.
+Q E When does testing happen in an agile team?
++ Throughout each sprint, alongside development
+- Only at the very end of the whole project
+- Only after the product has gone live to users
+- Only on the days when the client asks for it
+= Testers join refinement, test stories as they're built and automate.
+
+Q E What are acceptance criteria?
++ Conditions a user story must meet to be accepted
+- The list of testers who must approve a release
+- The minimum number of tests per sprint
+- The criteria for hiring new testers
+= They are the starting point for test cases.
+
+Q E What is sanity testing?
++ A narrow check that a specific fix or change works
+- A full test of every feature in the product
+- Testing the app's behaviour under heavy load
+- Testing by real users before launch
+= Smoke tests are broad and shallow; sanity tests are narrow.
+
+Q E What is a test environment?
++ A setup that mirrors production where testing happens
+- The office room where the testers sit
+- The production system used by real customers
+- A developer's laptop with no data
+= Keep it close to production to find real issues.
+
+Q M What does a "definition of done" usually include for testing?
++ Criteria met, tests passing, no open critical bugs
+- The code is written, whether or not it has been tested
+- The developer has said that the feature is now finished
+- The feature has been demonstrated to the client once
+= A shared definition stops untested work counting as done.
+
+Q M How does Behaviour-Driven Development (BDD) describe tests?
++ As Given / When / Then scenarios in plain language
+- As SQL queries that check values in the database
+- As diagrams that are drawn by the solution architect
+- As code comments written inside each function
+= Tools like Cucumber turn scenarios into automated tests.
+
+Q M Why should regression tests be automated in agile teams?
++ Frequent releases make manual regression too slow
+- Automated tests never need to be updated once written
+- Manual testers are not allowed to work in agile teams
+- Automation removes the need for any test design work
+= Automate stable, high-value checks; explore the rest manually.
+
+Q M What should a tester do when a story's acceptance criteria are unclear?
++ Ask the product owner to clarify before testing
+- Test it however they think best and pass it
+- Fail the story without discussing it
+- Skip testing the story this sprint
+= Clear criteria prevent arguments later.
+
+Q H How should testers handle a story that is "done" by developers late on the last sprint day?
++ Raise the risk early and agree the scope with the team
+- Pass it without testing so the sprint goal is still met
+- Fail it automatically because it arrived too late to test
+- Test it in production after the release has gone out
+= Visible risks let the team decide together.
+
+Q H What is a three amigos session?
++ Product, development and testing discussing a story first
+- Three testers reviewing each other's test cases before a sprint
+- Three managers approving a release together before it ships
+- Three developers pairing together on one feature at a time
+= Shared understanding prevents defects.
+
+Q H Why are test environments a common bottleneck?
++ They're shared, drift from production and go stale
+- They are always much faster than the production servers
+- Only one test can run in an environment on any day
+- Developers are not allowed to access them at all
+= Containers and on-demand environments help.
+
+Q H What is a test charter in exploratory testing?
++ A short mission for a session, e.g. "explore saved cards"
+- A legal document that gives permission to test a product
+- A complete list of scripted steps for every single test
+- A report of all the bugs found in the previous release
+= It focuses the session without scripting it.
+
+@topic qa-ui-automation | PRACTICAL | UI automation (Selenium, Playwright, Cypress) | Locators, waits, page objects, flaky tests, cross-browser runs and when not to automate.
+Q E Which is the most reliable locator in UI automation?
++ A stable test id or accessible role and name
+- An absolute XPath from the page root
+- The element's position on the screen
+- A long chain of CSS classes
+= Absolute XPaths break when the layout changes.
+
+Q E What is the Page Object Model?
++ A class per page holding its locators and actions
+- A database model that stores each page's content
+- A diagram showing every page in the application
+- A list of all of the URLs in the website
+= Tests call page methods instead of repeating locators.
+
+Q E Why avoid fixed sleeps like Thread.sleep(5000) in UI tests?
++ They slow tests and still fail when the app is slower
+- They are not allowed by Selenium or by Playwright at all
+- They make the browser close before the test has finished
+- They hide the browser window for the length of the test
+= Wait for a condition, such as an element being visible.
+
+Q E Which tool drives browsers for automated testing?
++ Playwright
+- Postman
+- JMeter
+- Jira
+= Selenium and Cypress are other common choices.
+
+Q M What is a flaky test?
++ A test that passes and fails without code changes
+- A test that always fails because of a bug
+- A test that checks the app's loading animation
+- A test that runs only on weekends
+= Common causes: timing, shared data and test order.
+
+Q M What does an explicit wait do in Selenium?
++ Waits until a condition is true, up to a timeout
+- Waits a fixed time before every command
+- Waits for the tester to press a key
+- Waits until the test machine is idle
+= e.g. wait until an element is clickable.
+
+Q M Which tests should not be automated?
++ One-off checks and fast-changing or exploratory work
+- Regression tests that run before every single release
+- Smoke tests that run against every new build
+- Login and checkout flows that every user goes through
+= Automate stable, repeated, high-value checks.
+
+Q M How does Playwright reduce flaky waits?
++ Its actions auto-wait for elements to be ready
+- It runs every test three times and keeps the best result
+- It disables JavaScript on the page during tests
+- It replaces the browser with a fake one
+= Locators retry until the element is actionable.
+
+Q H Why should UI tests not depend on each other's data or order?
++ One failure then cascades, and tests can't run in parallel
+- Test runners only support one test at a time
+- Browsers forget data between every single click
+- Shared data makes the reports harder to read
+= Each test should set up its own data.
+
+Q H What is the benefit of running UI tests in headless mode in CI?
++ Faster runs on servers without a display
+- Headless runs find more visual bugs
+- Headless mode skips the slow assertions
+- Headless tests never become flaky
+= Keep headed runs for debugging.
+
+Q H A test fails only in CI, not locally. What is a good first step?
++ Check the CI screenshots, traces and logs
+- Delete the test so the pipeline turns green again
+- Add a long sleep before every step in the test
+- Rerun it until it passes, then forget about it
+= Environment, timing and data differences are common causes.
+
+Q H Why prefer API calls for test setup (e.g. creating users) in UI tests?
++ They are faster and more reliable than clicking through setup screens
+- UI setup is not possible in modern browsers
+- API calls make the UI tests run in parallel automatically
+- They remove the need for any assertions
+= Test the UI flow under test, not the setup.
+
+@topic qa-api-testing | PRACTICAL | API testing | Postman and REST clients, status codes, assertions, schema validation, authentication, negative cases.
+Q E Which tool is commonly used to test REST APIs by hand?
++ Postman
+- Selenium
+- Photoshop
+- Excel
+= Its collections can also run in CI with Newman.
+
+Q E What should an API test check besides the status code?
++ The response body, headers and saved data
+- Only that some response came back at all
+- The colour scheme of the API documentation page
+- The size of the server's hard disk after the call
+= A 200 with wrong data is still a bug.
+
+Q E Which status code means the resource was created?
++ 201
+- 200
+- 204
+- 404
+= 204 means success with no content.
+
+Q E What is a negative API test?
++ Sending invalid input and checking the error returned
+- Testing an API that has been switched off for maintenance
+- Testing an API that has no documentation written for it
+- Deleting the API's database while the test is running
+= e.g. a missing required field should return 400.
+
+Q M What does JSON schema validation check in an API test?
++ The response has the expected fields and types
+- The response arrived back within one second
+- The JSON is formatted with two-space indents
+- The API runs on the latest server version
+= It catches missing or renamed fields.
+
+Q M How should an API test handle an authentication token?
++ Get it in setup and send it in the Authorization header
+- Hard-code a real user's token in every single test file
+- Skip authentication by calling the database directly instead
+- Ask the developer for a fresh token before each test run
+= Use test users and environment variables.
+
+Q M What should happen when the same POST request is sent twice?
++ It depends on the design; check duplicates are prevented if required
+- The second request must always return 404 Not Found to the client
+- Both requests must always create two separate records, every time
+- The server must ignore both requests because they are identical
+= Payment APIs often use idempotency keys.
+
+Q M Why test APIs before the UI is ready?
++ Bugs in business logic are found earlier and faster
+- UI tests can never find business logic bugs
+- APIs never change once they are written
+- It removes the need for any UI testing
+= API tests are also faster and more stable than UI tests.
+
+Q H What is contract testing?
++ Checking a provider still meets what its consumers expect
+- Reviewing the legal contract signed with the API vendor
+- Testing that every API has a written specification document
+- Load testing an API up to the limits written in its contract
+= Tools like Pact catch breaking changes between services.
+
+Q H Which security checks belong in API tests?
++ Access to others' data, missing auth and injection
+- Only that HTTPS is used for every single request
+- Only that the API documentation is accurate
+- Only the speed of each response under load
+= e.g. user A must not read user B's order by changing the id.
+
+Q H How do you test pagination in an API?
++ Page sizes, next/previous links, the last page, no repeats across pages
+- That the first page contains exactly ten items and nothing more
+- That the response time stays under one second for each page
+- That every item is returned in one single page of results
+= Also test invalid page parameters.
+
+Q H Why mock third-party services in API tests?
++ To keep tests fast and stable, free of outages and costs
+- Third-party APIs cannot be called from inside test code
+- Mocks find more bugs in the third party's own code
+- Real third-party services always return the wrong data
+= Run a few separate checks against the real service.
+
+@topic qa-frameworks | PRACTICAL | Test frameworks and data | TestNG, JUnit and pytest, assertions, data-driven tests, fixtures, reporting and test data management.
+Q E What is an assertion in a test?
++ A check comparing the actual result with the expected one
+- A comment that describes what the test is meant to do
+- A step that opens the browser at the start of a test
+- A note that is added to a bug report after testing
+= Without assertions, a test checks nothing.
+
+Q E What is data-driven testing?
++ Running the same test with several sets of input data
+- Testing only the database of an application
+- Writing tests after reading production data
+- Testing the app's charts and dashboards
+= e.g. @DataProvider in TestNG or parametrize in pytest.
+
+Q E Which annotation marks a test method in JUnit 5?
++ @Test
+- @Run
+- @Check
+- @Case
+= @BeforeEach and @AfterEach run around each test.
+
+Q E Why generate a test report after each run?
++ To see what passed, what failed and why
+- To make the tests run more quickly
+- To send the code to production
+- To create new test cases automatically
+= Allure and HTML reports are common.
+
+Q M What is a test fixture?
++ Setup and teardown that prepare what tests need
+- A broken test that is waiting to be fixed
+- A list of the bugs found during testing
+- The hardware that is used to run the tests
+= e.g. pytest fixtures or @BeforeEach methods.
+
+Q M Why should tests create their own test data rather than rely on existing records?
++ Existing data changes or disappears and breaks tests
+- Creating data always makes tests faster than reading it
+- Test frameworks are not able to read existing records
+- Existing data is always invalid for testing purposes
+= Clean up the data after the test, too.
+
+Q M What is a soft assertion?
++ One that records a failure but lets the test continue
+- One that never fails, whatever the result turns out to be
+- One that checks only the title of the current page
+- One that runs only after the whole test has finished
+= Useful for checking many fields on one page.
+
+Q M How do you run the same test suite against dev, staging and production-like environments?
++ Read URLs and credentials from per-environment config
+- Copy the whole suite and edit the URLs in each copy
+- Run the suite only against the production environment
+- Ask testers to change the code before each test run
+= Never hard-code environment details.
+
+Q H How can a large suite run faster?
++ Run independent tests in parallel; keep slow E2E tests few
+- Remove all of the assertions so the tests finish sooner
+- Run the tests only once a month to save time overall
+- Combine every test into one very long test case
+= Parallel runs need tests that don't share data.
+
+Q H What is the risk of using production data for testing?
++ It may expose personal data; mask or generate data instead
+- Production data is always too small to test with
+- Tests cannot connect to production databases
+- Production data makes tests run more slowly
+= Data protection laws apply to test environments too.
+
+Q H Why tag or group tests (e.g. smoke, regression, slow)?
++ So pipelines can run the right subset at each stage
+- So test names are shorter and easier to read
+- So that tests run in alphabetical order
+- So that failed tests are hidden from reports
+= e.g. smoke on every commit, full regression nightly.
+
+Q H What makes a test easy to maintain?
++ Clear names, one behaviour per test, and shared helpers
+- Long tests that check many unrelated features in one go
+- Hard-coded waits and test data written inside every test
+- Detailed comments in place of any real assertions
+= Maintenance cost is the main reason automation fails.
+
+@topic qa-sql | PRACTICAL | SQL for testers | Querying to verify data, joins, counts and duplicates, NULLs, preparing and cleaning test data.
+Q E Why do testers use SQL?
++ To check saved data and to prepare test data
+- To change the application's source code directly
+- To design the screens of the user interface
+- To deploy the application to the servers
+= UI checks alone can miss wrong data in the database.
+
+Q E Which query checks that a user with email test@x.com was saved?
++ SELECT * FROM users WHERE email = 'test@x.com';
+- SELECT * FROM users HAVING email = 'test@x.com';
+- SELECT users.email FROM 'test@x.com';
+- SELECT * WHERE email = 'test@x.com' FROM users;
+= Use WHERE to filter rows.
+
+Q E How do you count the rows in an orders table?
++ SELECT COUNT(*) FROM orders;
+- SELECT SUM(*) FROM orders;
+- SELECT TOTAL(orders);
+- COUNT orders;
+= COUNT(column) skips NULL values.
+
+Q E How do you find rows where phone has no value?
++ WHERE phone IS NULL
+- WHERE phone = NULL
+- WHERE phone == ''
+- WHERE phone EMPTY
+= = NULL never matches.
+
+Q M Which query finds duplicate emails in users?
++ SELECT email, COUNT(*) FROM users GROUP BY email HAVING COUNT(*) > 1;
+- SELECT email, COUNT(*) FROM users WHERE COUNT(*) > 1 GROUP BY email;
+- SELECT DISTINCT email, COUNT(*) FROM users ORDER BY COUNT(*) DESC;
+- SELECT email FROM users GROUP BY email HAVING email > 1;
+= HAVING filters groups after counting.
+
+Q M How do you check every order has a valid customer?
++ LEFT JOIN orders to customers; look for NULL customers
+- Compare the row counts of the two tables with each other
+- Sort the orders by customer id and read through them
+- Delete orders that look wrong, then count them again
+= Orphan rows point to missing foreign keys or bad data.
+
+Q M Why should test data scripts clean up after themselves?
++ Leftover data can break later tests
+- Databases slow down after a single extra row
+- Clean-up is required by the SQL standard itself
+- Test data can't be read once the test has ended
+= Use transactions, unique tags, or delete by test id.
+
+Q M What does a JOIN do?
++ Combines rows from tables using a related column
+- Copies one table's rows into another table
+- Splits a table into two smaller tables
+- Locks two tables so they can't change
+= e.g. orders joined to customers on customer_id.
+
+Q H A report shows ₹10,000 revenue but you expect ₹9,000. How might SQL help?
++ Recompute the total from raw tables and compare to find the gap
+- Assume the report is right because it comes from the system itself
+- Change the report's numbers so that they match what was expected
+- Ask the client which of the two numbers they would rather see
+= Look for duplicates from joins or missing filters.
+
+Q H Why can a JOIN inflate totals?
++ Rows repeat once per matching row in the joined table
+- JOINs always double every number in the result
+- JOINs convert numbers to text before summing
+- JOINs remove rows with NULL values
+= Aggregate at the right level before joining.
+
+Q H How do you check a migration didn't lose rows?
++ Compare counts and checksums before and after
+- Open the application and look at its first page
+- Trust the success message printed by the tool
+- Check that the table still exists afterwards
+= Spot-check sample records too.
+
+Q H Why avoid testing directly against the production database?
++ Mistakes can change real data and expose personal information
+- Production databases cannot run SELECT queries
+- Testers are never allowed to see any production data
+- Production databases are always slower than test ones
+= Use read-only access and masked copies when needed.
+
+@topic qa-performance | ADVANCED | Performance testing | Load, stress, spike and soak tests; tools (JMeter, k6, Gatling); metrics; bottleneck analysis.
+Q E What does load testing check?
++ How the system behaves under expected traffic
+- Whether every button has the right label
+- Whether the app installs correctly
+- Whether the code has comments
+= Stress testing goes beyond expected load to find the breaking point.
+
+Q E Which tool is used for performance testing?
++ JMeter
+- Selenium IDE
+- Postman mocks
+- Figma
+= k6, Gatling and Locust are others.
+
+Q E What is response time?
++ The time from sending a request to the response
+- The time it took to write the test script itself
+- The time a server takes to start up after a deploy
+- The time that passes between two releases
+= Track percentiles, not just averages.
+
+Q E What is throughput?
++ How many requests are handled per second
+- How long one request takes to finish
+- How many testers work on the project
+- How large each response is in bytes
+= Throughput and latency together describe performance.
+
+Q M What is a soak (endurance) test?
++ Steady load for hours, to find leaks and slow decline
+- A test that runs for a few seconds at the peak load
+- Testing the app on water-resistant mobile devices
+- A test that checks only the first page of the site
+= Memory leaks often appear only after hours.
+
+Q M Why look at the 95th or 99th percentile response time?
++ Averages hide the slow requests many users still feel
+- Percentiles are always lower numbers than averages
+- Tools are unable to calculate average response times
+- Only the fastest requests matter to most users
+= A good average can hide very slow outliers.
+
+Q M What is a spike test?
++ A sudden jump in users, to see how it copes and recovers
+- A slow and steady increase in users over a whole day
+- A test that is run on a single user's own computer
+- A test that measures how large the images on a page are
+= e.g. a sale announcement or a viral post.
+
+Q M What should be monitored on servers during a load test?
++ CPU, memory, the database, errors and latency
+- Only the number of virtual users that were created
+- Only the colour scheme of the web pages under test
+- Only the number of tests that have been written
+= Server metrics show where the bottleneck is.
+
+Q H Response times rise sharply at 500 users while CPU is low. Where would you look?
++ Database locks, pool limits or slow external calls
+- The CPU, because it must be what limits the system
+- The colours used in the load-testing tool's charts
+- The number of testers working on the team
+= Low CPU with high latency often means waiting on something.
+
+Q H Why should performance tests run in an environment like production?
++ Results from different setups don't predict production
+- Production-like environments make the tests easier to write
+- Load-testing tools only work against production servers
+- Smaller environments always perform better than production
+= Match hardware, data volume and configuration as closely as possible.
+
+Q H What is think time in a load test script?
++ Pauses between user actions to mimic real behaviour
+- Time the tester spends designing the test
+- Time the server takes to compile code
+- Time between two test runs
+= Without it, a few virtual users generate unrealistic load.
+
+Q H How do you set pass criteria for a performance test?
++ Agree targets first, e.g. p95 under 500 ms with under 1% errors
+- Decide which numbers look good only after seeing the results
+- Pass any test run in which the server did not crash at all
+- Use the fastest response time that was recorded as the target
+= Targets come from SLOs and business needs.
+
+@topic qa-strategy | ADVANCED | Test strategy and leadership | Risk-based testing, test pyramid, coverage, metrics, estimation, release decisions and mentoring.
+Q E What is a test strategy?
++ The overall approach: what to test, how, with what and by whom
+- A single test case for the most important feature in the app
+- A list of the bugs that were found in the last release
+- The schedule of meetings planned for the next sprint
+= A test plan applies the strategy to one project or release.
+
+Q E What is risk-based testing?
++ Testing hardest where failure is most likely or most costly
+- Testing only the features that are easiest to test well
+- Avoiding the features that might fail during testing
+- Letting users find the risky bugs after the release
+= e.g. payments get more testing than the "about us" page.
+
+Q E What does the test pyramid recommend?
++ Many unit tests, fewer integration, few end-to-end
+- Many end-to-end tests and almost no unit tests
+- Equal numbers of every kind of automated test
+- Only manual tests for every release of the product
+= Lower levels are faster and cheaper to run.
+
+Q E What is test coverage?
++ How much of the requirements or code tests exercise
+- How many testers are working on the team
+- How long the whole test suite takes to run
+- How many bugs were found in the last month
+= High coverage alone doesn't guarantee good tests.
+
+Q M Why is "number of test cases" a weak quality metric?
++ It says nothing about the value or quality of those tests
+- Test cases cannot be counted reliably by tools
+- More test cases always mean worse quality
+- It is illegal to report test case counts
+= Prefer escaped defects, risk coverage and cycle time.
+
+Q M Who should decide whether to release with known open bugs?
++ The product owner and team, with testing's clear view of the risks
+- The tester alone, who must block any release with bugs
+- The newest developer on the team
+- No one; releases must wait until every bug is fixed
+= Testing informs the decision with facts about risk.
+
+Q M How do you estimate testing effort for a feature?
++ Break it into activities, weigh risk and complexity, use past data
+- Always add exactly 10% on top of the development estimate
+- Guess one number and stick to it for every feature
+- Wait until testing has finished before giving an estimate
+= Revisit estimates as you learn more.
+
+Q M What does "quality is everyone's responsibility" mean in practice?
++ Developers test their code; testers help everyone prevent defects
+- Testers alone are responsible for every bug that is ever found
+- Nobody needs to test at all because everyone is careful anyway
+- Managers check every line of code personally before each release
+= Testers coach, review and automate alongside developers.
+
+Q H What does a test automation strategy need besides tools?
++ Clear goals, ownership, priorities and time for maintenance
+- The most expensive tool licence available on the market
+- A rule that every test case written so far must be automated
+- A separate team that never needs to talk to the developers
+= Unmaintained automation becomes a burden.
+
+Q H How should a QA lead respond to a sharp rise in production defects?
++ Find where they come from and fix the gaps in process or coverage
+- Ask the testers to work longer hours on every release from now on
+- Stop all releases until the product has no bugs left at all
+- Blame the developers for the defects in the next retrospective
+= Data on escaped defects shows where to invest.
+
+Q H What is mutation testing used for?
++ Checking test quality by changing code and seeing if tests notice
+- Testing that the database is able to change its schema safely
+- Randomly changing the test data before each test run
+- Testing the app on many different devices and browsers
+= Surviving mutants reveal weak assertions.
+
+Q H How can testers help shift quality left in a team?
++ Review requirements early and define acceptance tests first
+- Wait for complete builds before getting involved in any work
+- Test only in production after each release has gone out
+- Write tests only after users have reported the bugs
+= Preventing defects is cheaper than finding them.
+
+@topic qa-ci-security | ADVANCED | CI/CD, security and specialised testing | Tests in pipelines, quality gates, parallel runs, containers, security, accessibility and mobile testing basics.
+Q E What is a quality gate in a CI pipeline?
++ A check that must pass before code moves to the next stage
+- A door that only testers can open in the office
+- A meeting where managers approve every release
+- A list of features planned for the next release
+= e.g. all tests pass and coverage doesn't drop.
+
+Q E Why run automated tests on every pull request?
++ To catch problems before changes are merged
+- To slow down developers so they write less code
+- Because pull requests cannot be merged otherwise
+- To generate documentation for each change
+= Fast feedback keeps the main branch healthy.
+
+Q E What is accessibility testing?
++ Checking people with disabilities can use the product
+- Checking the website can be reached from any country
+- Checking that the server is always switched on
+- Checking that the app loads on slow networks
+= e.g. keyboard use, screen readers, colour contrast.
+
+Q E What is a basic security test for a login page?
++ Trying SQL injection and many wrong passwords
+- Checking that the login button is the right blue
+- Checking that the page loads in under one second
+- Checking that the logo sits in the top-left corner
+= Also check error messages don't reveal which part was wrong.
+
+Q M Why use containers (e.g. Docker) for test environments?
++ Each run gets the same clean setup, quickly and repeatably
+- Containers make tests pass even when the code is wrong
+- Containers remove the need for test data
+- Tests run only inside containers in modern CI
+= Testcontainers can start real databases for tests.
+
+Q M How should flaky tests be handled in CI?
++ Track them, quarantine if needed, and fix the cause
+- Rerun them automatically until they pass, forever
+- Delete them as soon as they have failed once
+- Ignore their results in every report from now on
+= Hidden flakiness erodes trust in the whole suite.
+
+Q M What is special about testing mobile apps?
++ Many devices, OS versions, networks and interruptions
+- Mobile apps never need any regression testing at all
+- Mobile apps can only ever be tested by hand
+- Mobile apps behave exactly the same on every phone
+= Use device clouds and real devices for key flows.
+
+Q M Which tool can scan a web page for common accessibility issues?
++ axe-core
+- JMeter
+- Postman
+- Gatling
+= Automated checks find some issues; manual checks find the rest.
+
+Q H What does a pipeline with "fail fast" ordering look like?
++ Quick unit tests and linters first, slow E2E tests last
+- Slow end-to-end tests first, then the unit tests after
+- All of the tests at once, with results at the very end
+- Manual tests first, then the automated tests afterwards
+= Developers get feedback in minutes.
+
+Q H What is DAST compared with SAST?
++ DAST probes a running app; SAST analyses source code
+- DAST analyses source code; SAST probes a running app
+- Both of them test only the database layer of an app
+- They are two names for the very same security scanner
+= Use both, plus dependency scanning.
+
+Q H How do you test that an app handles a slow or failing dependency?
++ Simulate delays and errors, e.g. with fault injection, and check behaviour
+- Wait for the dependency to fail on its own in production and watch
+- Remove the dependency from the code completely before testing
+- Test only on the days when the dependency happens to be down
+= Check timeouts, retries and user-facing messages.
+
+Q H Why measure test suite duration over time?
++ Slow suites delay feedback, so people skip tests
+- Longer suites always find more bugs than short ones
+- Duration is the best measure of test quality there is
+- CI tools only charge for test suites that are fast
+= Keep the main pipeline within a few minutes.

@@ -1,0 +1,950 @@
+# CodeWalnut built-in Data analytics bank (ADR-0015). Format: see TechBank.java.
+# Bands: FUNDAMENTALS = freshers, PRACTICAL = 1–3 years, ADVANCED = 3+ years / senior analysts.
+# Deep SQL lives in the SQL bank; this bank asks SQL the way an analyst uses it.
+# Distractors are kept as long and as plausible as the answer.
+
+@topic da-spreadsheets | FUNDAMENTALS | Excel and spreadsheets | Formulas, cell references, SUMIFS and COUNTIFS, XLOOKUP and VLOOKUP, IF, pivot tables, sorting, filtering and charts.
+Q E In Excel, what does $A$1 mean in a formula?
++ An absolute reference that doesn't move when copied
+- A cell that holds a currency value in dollars
+- A reference to cell A1 on every sheet at once
+- A cell that is locked against any edits
+= A$1 fixes only the row; $A1 fixes only the column.
+
+Q E Which formula adds up B2:B10 only where A2:A10 is "North"?
++ =SUMIF(A2:A10,"North",B2:B10)
+- =SUM(A2:A10,"North",B2:B10)
+- =COUNTIF(B2:B10,"North")
+- =IF(A2:A10="North",SUM)
+= SUMIFS takes several conditions: =SUMIFS(B2:B10,A2:A10,"North").
+
+Q E What is a pivot table used for?
++ Summarising rows by groups, e.g. sales by region
+- Rotating a chart by ninety degrees on the sheet
+- Protecting a sheet with a password before sharing
+- Joining two workbooks into a single new file
+= Rows, columns, values and filters can be dragged in to regroup the data.
+
+Q E Which function counts the cells in a range that are not empty?
++ COUNTA
+- COUNT
+- SUM
+- LEN
+= COUNT counts only numbers; COUNTBLANK counts empty cells.
+
+Q M What does this formula return if B2 holds 72?
+| =IF(B2>=75,"Pass",IF(B2>=50,"Retry","Fail"))
++ Retry
+- Pass
+- Fail
+- An error
+= 72 is not ≥ 75 but is ≥ 50.
+
+Q M Why is XLOOKUP often preferred over VLOOKUP?
++ It can look left and isn't broken by new columns
+- It is the only lookup that works with text values
+- It runs on Google Sheets but VLOOKUP does not
+- It sorts the lookup range before it searches
+= VLOOKUP uses a column number, which breaks when columns are inserted, and only looks right.
+
+Q M A VLOOKUP returns the wrong row for an ID that isn't in the table. What is the likely cause?
++ The last argument is TRUE or missing, so it matches approximately
+- VLOOKUP only works when the table has fewer than 100 rows
+- The lookup column must be the last column of the table
+- VLOOKUP cannot be used when IDs are stored as numbers
+= Pass FALSE (or 0) for an exact match, or use XLOOKUP.
+
+Q M What does =COUNTIFS(A:A,"North",C:C,">1000") count?
++ Rows where A is North and C is over 1000
+- Rows where A is North or C is over 1000
+- The sum of C for rows where A is North
+- The number of distinct values in A and C
+= Every condition in COUNTIFS must be met.
+
+Q H A sales sheet has dates in column A. How do you total sales for March 2026 only?
++ SUMIFS with ">=1/3/2026" and "<1/4/2026" on the dates
+- SUMIF with "March" as the condition on the date column
+- SUM the column, then divide the total by twelve
+- COUNTIF the dates and multiply by the average sale
+= Two date bounds on the same column give a range; avoid matching text month names.
+
+Q H What does =A2&B2 return when A2 is 10 and B2 is 20?
++ 1020
+- 30
+- 200
+- An error
+= & joins values as text; + adds them. Watch for numbers stored as text in joined keys.
+
+Q H What is the main risk of a dashboard built on hand-copied data in a spreadsheet?
++ It goes stale and copy errors slip in unnoticed
+- Spreadsheets can't draw charts from copied data
+- Copied data always loses its number formatting
+- Only one person can ever open the workbook
+= Connect to the source (Power Query, a database link) and refresh instead.
+
+Q H What does Power Query (Get & Transform) add to Excel?
++ Repeatable import and clean-up steps you can refresh
+- A way to write SQL directly into a single cell
+- A chat assistant that writes formulas for you
+- A faster engine for recalculating every formula
+= Each step is recorded, so next month's file goes through the same clean-up with one refresh.
+
+@topic da-statistics | FUNDAMENTALS | Descriptive statistics | Mean, median, mode, spread, standard deviation, percentiles, outliers, distributions and correlation vs causation.
+Q E What is the median of 3, 9, 4, 1, 8?
++ 4
+- 5
+- 8
+- 9
+= Sorted: 1, 3, 4, 8, 9. The middle value is 4. The mean is 5.
+
+Q E What is the mode of 2, 3, 3, 5, 7, 3, 5?
++ 3
+- 5
+- 4
+- 7
+= The mode is the most frequent value.
+
+Q E Salaries are 30k, 32k, 35k and 400k. Which summary best shows a typical salary?
++ The median
+- The mean
+- The maximum
+- The range
+= One very high value pulls the mean up; the median ignores it.
+
+Q E What does standard deviation measure?
++ How spread out values are around the mean
+- How many values in the data are missing
+- The difference between the largest two values
+- How often the most common value appears
+= A small standard deviation means values sit close to the mean.
+
+Q M What does the 90th percentile of page load time tell you?
++ 90% of loads were this fast or faster
+- 90% of loads were slower than this
+- The average of the slowest tenth of loads
+- The load time 90% of users expected
+= Percentiles (p90, p95, p99) show the tail that averages hide.
+
+Q M Ice-cream sales and drownings rise together. What is the best conclusion?
++ They're correlated, likely both driven by hot weather
+- Eating ice cream causes people to drown more often
+- Drownings cause people to buy more ice cream
+- The data must be wrong, since they're unrelated
+= Correlation is not causation; look for a third factor (a confounder).
+
+Q M A correlation coefficient is −0.9. What does it mean?
++ A strong relationship: one rises as the other falls
+- A weak relationship that is close to no link at all
+- A strong relationship where both rise together
+- An error, since correlation can't be negative
+= r runs from −1 to 1; the sign is the direction and the size is the strength.
+
+Q M Using the IQR rule, which value counts as an outlier if Q1 = 20 and Q3 = 40?
++ 75
+- 65
+- 50
+- 10
+= IQR = 20, so the fences are 20 − 30 = −10 and 40 + 30 = 70. Only 75 is outside.
+
+Q H Average order value rose, but total revenue fell. How can both be true?
++ Fewer orders were placed, each worth more
+- It can't happen; the two always move together
+- Revenue is always counted before discounts
+- Average order value ignores the largest orders
+= Revenue = orders × average order value; check order count too.
+
+Q H A distribution of incomes is right-skewed. How do mean and median usually compare?
++ The mean is higher than the median
+- The median is higher than the mean
+- The mean and median are always equal
+- The median is always zero for skewed data
+= The long right tail of high incomes pulls the mean up.
+
+Q H Each region's conversion rose this month, yet overall conversion fell. What explains it?
++ Traffic shifted to regions with lower rates
+- A calculation error, since this is impossible
+- Conversion rates can't be compared across months
+- Overall conversion only counts the largest region
+= This is Simpson's paradox: the mix of groups changed.
+
+Q H Why report a confidence interval and not only a single average?
++ It shows how uncertain the estimate is
+- It makes the average look more precise
+- It removes outliers from the reported data
+- It turns a sample into the full population
+= A wide interval from a small sample warns readers not to over-read the number.
+
+@topic da-sql-analysis | FUNDAMENTALS | SQL for analysis | SELECT and filters, GROUP BY with aggregates, HAVING, joins for reporting, dates, CASE for buckets and avoiding double counting.
+Q E Which query gives total revenue per country?
++ SELECT country, SUM(amount) FROM orders GROUP BY country;
+- SELECT country, amount FROM orders ORDER BY country;
+- SELECT SUM(country) FROM orders GROUP BY amount;
+- SELECT country, COUNT(country) FROM orders;
+= Every non-aggregated column in SELECT goes in GROUP BY.
+
+Q E How do you keep only countries with more than 100 orders?
++ GROUP BY country HAVING COUNT(*) > 100
+- WHERE COUNT(*) > 100 GROUP BY country
+- GROUP BY country WHERE COUNT(*) > 100
+- ORDER BY COUNT(*) > 100 LIMIT country
+= WHERE filters rows before grouping; HAVING filters groups after.
+
+Q E What does COUNT(DISTINCT customer_id) return?
++ The number of different customers
+- The number of rows in the table
+- The customer with the most orders
+- The rows where customer_id is NULL
+= COUNT(*) counts rows, so repeat customers are counted again.
+
+Q E Which join keeps every customer, even those with no orders?
++ customers LEFT JOIN orders
+- customers INNER JOIN orders
+- orders LEFT JOIN customers
+- customers CROSS JOIN orders
+= Customers with no orders get NULLs in the order columns.
+
+Q M What does this return?
+| SELECT CASE WHEN amount >= 1000 THEN 'large' ELSE 'small' END AS size,
+|        COUNT(*)
+| FROM orders GROUP BY size;
++ The number of large and of small orders
+- Every order with a size label next to it
+- The total amount of large and small orders
+- An error, since CASE can't be grouped on
+= MySQL and PostgreSQL allow grouping by the alias; others need the full CASE in GROUP BY.
+
+Q M Revenue doubled after joining orders to order_items. Why?
++ Each order repeats once per item, so its total is summed again
+- LEFT JOIN always doubles the values in numeric columns
+- SUM counts NULL values as equal to the largest amount
+- The join changes the currency of the amount column
+= Sum at the right grain: aggregate items first, or sum item-level amounts.
+
+Q M How do you group orders by month in MySQL?
++ GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+- GROUP BY MONTH(created_at) only
+- GROUP BY created_at / 30
+- ORDER BY created_at MONTHLY
+= MONTH() alone merges March 2025 with March 2026. PostgreSQL uses date_trunc('month', created_at).
+
+Q M What does AVG(discount) do with rows where discount is NULL?
++ It skips them
+- It counts them as 0
+- It returns NULL overall
+- It raises an error
+= To treat missing as zero, use AVG(COALESCE(discount, 0)).
+
+Q H Which query finds each customer's first order date?
++ SELECT customer_id, MIN(created_at) FROM orders GROUP BY customer_id;
+- SELECT customer_id, created_at FROM orders ORDER BY created_at LIMIT 1;
+- SELECT MIN(customer_id), created_at FROM orders GROUP BY created_at;
+- SELECT customer_id, FIRST(created_at) FROM orders ORDER BY customer_id;
+= LIMIT 1 returns only one order overall, not one per customer.
+
+Q H How do you get each month's revenue next to the previous month's?
++ LAG(revenue) OVER (ORDER BY month)
+- LEAD(revenue) GROUP BY month
+- SUM(revenue) OVER (PARTITION BY month)
+- PREVIOUS(revenue) ORDER BY month
+= Run it over a monthly totals CTE; month-on-month change is revenue − LAG(revenue).
+
+Q H A report counts users who did not buy using WHERE user_id NOT IN (SELECT user_id FROM orders). It returns 0. Why?
++ The subquery has a NULL user_id, so NOT IN is never true
+- NOT IN only works when both tables have the same row count
+- NOT IN compares text, so numeric IDs never match at all
+- NOT IN always returns zero rows when used in a subquery
+= Use NOT EXISTS or a LEFT JOIN … WHERE o.user_id IS NULL.
+
+Q H What does this compute?
+| SELECT SUM(CASE WHEN status = 'refunded' THEN 1 ELSE 0 END) * 1.0 / COUNT(*)
+| FROM orders;
++ The share of orders that were refunded
+- The total value of the refunded orders
+- The number of orders that were refunded
+- The average amount of a refunded order
+= Multiplying by 1.0 avoids integer division, which would round to 0.
+
+@topic da-visualisation | FUNDAMENTALS | Charts and visual design | Choosing chart types, axes and scales, colour, labelling, misleading charts and keeping charts readable.
+Q E Which chart best shows monthly revenue over two years?
++ Line chart
+- Pie chart
+- Scatter plot
+- Table of totals
+= Lines show trends over time.
+
+Q E Which chart best compares sales across 6 product categories?
++ Bar chart
+- Line chart
+- Scatter plot
+- Area chart
+= Sort the bars so the ranking is easy to read.
+
+Q E Which chart shows whether ad spend and sales move together?
++ Scatter plot
+- Pie chart
+- Gauge chart
+- Bar chart
+= Each point is one period or campaign; add a trend line to show the link.
+
+Q E What does a histogram show?
++ How values are spread across ranges
+- How a total splits into categories
+- How two metrics change over time
+- How items rank from top to bottom
+= Bin width changes the picture, so choose it with care.
+
+Q M Why is a pie chart with 12 slices a poor choice?
++ Small slices are hard to compare by angle
+- Pie charts can show at most five values
+- Pie charts can't show percentages at all
+- Pie charts only work with negative values
+= Use a sorted bar chart; keep pies to two or three parts if at all.
+
+Q M A bar chart's y-axis starts at 95 instead of 0. What's the problem?
++ Small differences look much bigger
+- Bars can't be drawn without zero
+- The chart can only show percentages
+- Bar charts must always be horizontal
+= Bars encode length, so they need a zero baseline. Line charts can zoom in.
+
+Q M What is the best use of colour in a business chart?
++ Highlight the key series; keep the rest grey
+- Give every bar its own bright colour
+- Use red and green to separate all series
+- Pick colours at random for each chart
+= About 1 in 12 men has colour-vision deficiency, so red–green alone is risky.
+
+Q M Which chart best shows how a budget splits across 4 teams, month by month?
++ Stacked bar chart
+- Single pie chart
+- Scatter plot
+- Histogram
+= Stacked bars show both the total and the parts per month.
+
+Q H Why can a chart with two y-axes mislead?
++ Scales can be picked to suggest any link
+- Two axes make the chart load more slowly
+- Two-axis charts cannot show any time data
+- Readers can only see one axis at a time
+= Consider two charts one above the other, or index both series to 100.
+
+Q H A map coloured by total sales per state mostly shows population. What fixes it?
++ Colour by per-capita sales
+- Use brighter colours per state
+- Add more states to the map
+- Show sales on a pie chart
+= Normalise by population (or customers) to compare fairly.
+
+Q H What does a box plot show that a bar of averages hides?
++ Median, spread and outliers per group
+- The exact value of every data point
+- How the groups changed over time
+- The share of each group in a total
+= Two groups with the same mean can have very different spreads.
+
+Q H A KPI tile shows "Revenue: 4.2M". What context makes it useful?
++ A comparison, e.g. vs target or last month
+- A larger font and a bolder background colour
+- More decimal places, such as 4,213,567.18
+- A 3-D effect to draw attention to the value
+= A number alone can't tell the reader whether it is good or bad.
+
+@topic da-cleaning | PRACTICAL | Data cleaning and preparation | Missing values, duplicates, data types, inconsistent text, dates and time zones, outliers and validating results.
+Q E A customer column has "Mumbai", "mumbai " and "MUMBAI". What should you do?
++ Trim spaces and standardise the case
+- Delete every row that uses capitals
+- Keep them as three separate cities
+- Replace them all with a random city
+= TRIM and UPPER (or LOWER) fix most of this; a mapping table fixes spelling variants.
+
+Q E What is a duplicate record?
++ The same entity entered more than once
+- A row whose values are all missing
+- A row that changed after it was saved
+- A column that has the same name twice
+= Decide what makes a row unique (e.g. order_id) before removing duplicates.
+
+Q E Amounts are stored as text, e.g. "1,200". What breaks?
++ Sums and sorting treat them as text
+- They can't be shown in any table
+- The file can no longer be opened
+- Charts will show them in red only
+= Convert them to numbers, removing thousand separators first.
+
+Q E What should you do first with missing values?
++ Find out why they're missing
+- Replace every one with zero
+- Delete all rows that have any
+- Fill them with the column mean
+= The reason (not collected, not applicable, a bug) decides the right fix.
+
+Q M Dates arrive as 03/04/2026 from two sources. What's the risk?
++ One may mean 3 April and the other 4 March
+- Dates with slashes can never be converted
+- 2026 dates aren't supported by most tools
+- The values will be read as times of day
+= Parse with an explicit format per source and store ISO dates (2026-04-03).
+
+Q M Why might filling missing incomes with the mean distort an analysis?
++ It shrinks the spread and hides patterns
+- The mean can't be calculated with gaps
+- It always makes the totals negative
+- It changes every column's data type
+= It also hides why data was missing, which may itself be a signal.
+
+Q M Orders placed in India just after midnight show up under the previous day. Why?
++ The report groups days in UTC, not IST
+- Indian payment gateways post orders a day late
+- Databases always store dates one day behind
+- Dashboards round every time down to the hour
+= Midnight IST is 6:30 p.m. UTC the day before. Convert to the business time zone before grouping by day.
+
+Q M After a merge, the row count rose from 10,000 to 12,500. What should you check?
++ Duplicate keys in the joined table
+- Whether the file was saved as CSV
+- The colour of the header row
+- How many columns were renamed
+= Validate row counts and unique keys after every join.
+
+Q H An extreme value of 9,999,999 appears in order amounts. What is a sensible approach?
++ Check the source; fix if it's an error
+- Always delete the highest value found
+- Always keep it, since data is never wrong
+- Replace it with the median of the column
+= Values like 9,999,999 are often placeholders; real extremes should stay but may need separate analysis.
+
+Q H Why keep raw data untouched and clean it in a separate step?
++ The clean-up can be rerun, checked or changed
+- Raw data is faster for dashboards to read
+- Cleaned data can't be saved in the same place
+- Tools refuse to read files after they change
+= Staging layers (raw → clean → reporting) make every number traceable.
+
+Q H Two systems give different customer counts for the same month. What is the best first step?
++ Compare the definitions and filters each uses
+- Average the two numbers and report that
+- Report the larger number to be safe
+- Pick the system the manager prefers
+= Differences usually come from definitions (active vs registered), time zones or test accounts.
+
+Q H What does a data validation check such as "order total equals the sum of items" catch?
++ Pipeline bugs before reports go out
+- Every possible type of data error
+- Slow queries in the reporting tool
+- Users who forgot their passwords
+= Automated checks on counts, sums, nulls and ranges catch most silent failures.
+
+@topic da-bi-tools | PRACTICAL | Power BI and Tableau | Data models, relationships, measures vs calculated columns, DAX basics, filters and slicers, refresh, row-level security and dashboard design.
+Q E What is a slicer in Power BI?
++ An on-page filter users can click
+- A tool that splits a table in two
+- A chart that shows data as slices
+- A setting that limits file size
+= Slicers filter the visuals on the page, or across pages if synced.
+
+Q E What does a dashboard refresh do?
++ Reloads data from its sources
+- Redraws charts in new colours
+- Deletes the old dashboard pages
+- Resets every filter to blank
+= Schedule refreshes so numbers stay current.
+
+Q E In Tableau, what is a dimension?
++ A field you group by, e.g. region
+- A number you add up, e.g. sales
+- The size of the chart in pixels
+- A filter that hides every value
+= Measures are numeric fields that get aggregated.
+
+Q E Why do BI tools connect to a database instead of a spreadsheet export?
++ Data stays current and the same for all
+- Spreadsheets can't hold numeric data
+- Databases make charts more colourful
+- Exports are blocked by every BI tool
+= Exports go stale and fork into different versions.
+
+Q M In Power BI, what is the difference between a measure and a calculated column?
++ A measure works out at query time with filters; a column is stored per row
+- A measure is stored per row; a column is worked out whenever filters change
+- Measures work only with text; calculated columns work only with numbers
+- They are the same feature with two different names in the interface
+= Use measures for totals and ratios that must respond to slicers.
+
+Q M What does this DAX measure return?
+| Total Sales = SUM(Sales[Amount])
++ Total amount for the current filters
+- Total amount ignoring every filter
+- The amount for the first row only
+- The count of rows in the Sales table
+= Measures respect slicers, page filters and the visual's grouping.
+
+Q M Why is a star schema recommended for Power BI models?
++ Facts link to dimensions, so filters work well
+- It stores every value in a single wide table
+- It is the only layout that supports charts
+- It removes the need for relationships at all
+= One fact table (e.g. Sales) surrounded by dimensions (Date, Product, Customer).
+
+Q M What does CALCULATE do in DAX?
++ Evaluates an expression under changed filters
+- Converts text values into numbers in a column
+- Refreshes the data model from the sources
+- Creates a new table from an Excel workbook
+= E.g. CALCULATE([Total Sales], Region[Name] = "North").
+
+Q H How do you make each regional manager see only their region's data?
++ Row-level security with role filters
+- A separate dashboard file per manager
+- Hide the other regions' pages manually
+- Ask managers to filter it themselves
+= RLS applies in the model, so it holds across every visual and export.
+
+Q H A ratio measure shows the wrong total row: it adds up the row ratios. What's the fix?
++ Divide the sum of parts at each level
+- Turn off the total row in every visual
+- Average the ratios in the total row
+- Use a calculated column for the ratio
+= DIVIDE(SUM(x), SUM(y)) gives the right ratio at any level.
+
+Q H Why mark a date table in Power BI?
++ So time intelligence like YTD works
+- So dates are shown in bold in charts
+- So the table refreshes more quickly
+- So users can't filter on any dates
+= Functions such as TOTALYTD and SAMEPERIODLASTYEAR need a complete date table.
+
+Q H A dashboard is slow. Which change usually helps most?
++ Fewer visuals; pre-aggregate large data
+- Brighter colours and larger chart fonts
+- More pages with the same visuals copied
+- Turning off the refresh schedule entirely
+= Use the Performance analyzer to find slow visuals and heavy DAX.
+
+@topic da-python | PRACTICAL | Python and pandas | DataFrames, reading files, selecting and filtering, groupby, merges, missing values, apply vs vectorised code and notebooks.
+Q E Which line reads a CSV file into a pandas DataFrame?
++ df = pd.read_csv("sales.csv")
+- df = pd.open("sales.csv")
+- df = pd.load_csv("sales.csv")
+- df = pd.DataFrame.csv("sales.csv")
+= read_excel, read_json and read_sql work the same way.
+
+Q E What does df.head() show?
++ The first five rows
+- The column names only
+- The last five rows
+- The data types only
+= df.tail() shows the last rows; df.info() shows types and nulls.
+
+Q E How do you select rows where amount is over 1000?
++ df[df["amount"] > 1000]
+- df.where("amount" > 1000)
+- df.filter(amount > 1000)
+- df["amount" > 1000]
+= Combine conditions with & and |, each in brackets.
+
+Q E What does df.isna().sum() give?
++ Missing values per column
+- Total rows in the frame
+- The sum of every column
+- Duplicate rows per column
+= Use fillna or dropna once you know why they're missing.
+
+Q M What does this return?
+| df.groupby("region")["amount"].sum()
++ Total amount for each region
+- Number of rows in each region
+- The amount column sorted by region
+- The region with the largest amount
+= Use .agg(["sum", "mean"]) for several summaries.
+
+Q M Which merge keeps every row from orders, matched to customers where possible?
++ orders.merge(customers, on="cid", how="left")
+- orders.merge(customers, on="cid", how="inner")
+- orders.merge(customers, on="cid", how="right")
+- orders.concat(customers, on="cid", how="left")
+= Pass validate="many_to_one" to catch unexpected duplicate keys.
+
+Q M Why is df["total"] = df["qty"] * df["price"] preferred over a loop?
++ It's vectorised, so much faster on large data
+- Loops can't read DataFrame values at all
+- The loop version gives different answers
+- Vectorised code uses no memory at all
+= Row-by-row loops and apply run in Python; column maths runs in fast compiled code.
+
+Q M How do you turn the text column "date" into real dates?
++ pd.to_datetime(df["date"])
+- df["date"].astype("calendar")
+- pd.read_date(df["date"])
+- df["date"].to_time()
+= Pass format= when the layout is known; it's faster and avoids day/month mix-ups.
+
+Q H What does this produce?
+| df.pivot_table(index="region", columns="month", values="amount", aggfunc="sum")
++ A table of regions by months with totals
+- A list of every region and month pair
+- A chart of the amount by region and month
+- The months sorted by their total amount
+= It is pandas' version of an Excel pivot table.
+
+Q H A notebook gives different results each time someone reruns it. What is a likely cause?
++ Cells were run out of order; state lingers
+- Pandas returns random results by design
+- CSV files change each time they're read
+- Python rounds numbers differently each run
+= Restart and run all before sharing; set random seeds where sampling is used.
+
+Q H Why does this warn "SettingWithCopyWarning"?
+| big = df[df["amount"] > 1000]
+| big["flag"] = True
++ big may be a view of df, so the change is unclear
+- Boolean columns cannot be added to DataFrames
+- df has to be sorted before it can be filtered
+- Column names must not be plain English words
+= Use df.loc[mask, "flag"] = True, or big = df[mask].copy().
+
+Q H What does df.resample("W", on="date")["amount"].sum() do?
++ Sums amount per week
+- Samples random weeks
+- Sorts rows by week
+- Counts rows per week
+= Resample needs a datetime column; "M" (or "ME") gives months.
+
+@topic da-metrics | PRACTICAL | Business metrics and KPIs | Defining KPIs, conversion, retention and churn, revenue metrics, unit economics, funnels and metric pitfalls.
+Q E 200 of 5,000 visitors bought something. What is the conversion rate?
++ 4%
+- 2%
+- 25%
+- 40%
+= 200 / 5,000 = 0.04.
+
+Q E What is churn?
++ The share of customers who leave in a period
+- The number of new customers in a month
+- The cost to acquire a single customer
+- The time a user spends in the product
+= Monthly churn of 5% means losing about half the base in a year.
+
+Q E What is a KPI?
++ A key measure tied to a business goal
+- A chart type used on dashboards
+- A database index for reports
+- A script that cleans raw data
+= Good KPIs are few, clearly defined and owned by someone.
+
+Q E What does DAU/MAU measure?
++ How often monthly users come back daily
+- How many users joined in the month
+- The revenue per user per day
+- The share of users who paid
+= Higher DAU/MAU means a stickier product.
+
+Q M What is customer acquisition cost (CAC)?
++ Sales and marketing spend ÷ new customers
+- Revenue ÷ the number of active customers
+- Total costs ÷ total revenue in the year
+- Ad clicks ÷ the number of ad impressions
+= Compare it with lifetime value (LTV); LTV/CAC above 3 is a common rule of thumb.
+
+Q M A funnel has 10,000 visits, 2,000 sign-ups and 500 purchases. Which step loses most people?
++ Visit to sign-up
+- Sign-up to purchase
+- Both lose equally
+- Can't be known
+= 80% drop at visit → sign-up versus 75% at sign-up → purchase.
+
+Q M Why is "total registered users" a weak KPI?
++ It only rises and says nothing of use
+- It is too hard to count in a database
+- It changes too quickly to be reported
+- It can't be shown on any dashboard
+= Vanity metrics only grow; active users or retention reflect real value.
+
+Q M Monthly recurring revenue is 10L with 2% monthly churn and no new sales. Roughly what is MRR after 3 months?
++ About 9.4L
+- About 9.8L
+- About 8.0L
+- About 9.0L
+= 10 × 0.98³ ≈ 9.41.
+
+Q H What does a retention cohort table show?
++ How each signup group stays active over time
+- How many users signed up on each day
+- Revenue by product for every month
+- The cost of each marketing channel
+= Compare rows to see whether newer cohorts retain better.
+
+Q H What is net revenue retention (NRR) above 100% telling you?
++ Existing customers' upsells outweigh churn
+- New customers outnumber leaving customers
+- Revenue rose more than costs this year
+- Every customer renewed their contract
+= NRR ignores new customers; it compares the same customers' revenue over time.
+
+Q H Support cut average handling time, but satisfaction fell. What does this show?
++ One metric was optimised at another's cost
+- Handling time and satisfaction are unrelated
+- The satisfaction survey must be broken
+- Faster support always lowers satisfaction
+= Pair a target metric with a guardrail metric (Goodhart's law).
+
+Q H Why define a metric precisely, e.g. "active = did X in the last 28 days"?
++ So everyone computes the same number
+- So the dashboard loads more quickly
+- So the metric always goes up over time
+- So nobody can question the number again
+= A metrics dictionary prevents teams from reporting different numbers for the same name.
+
+@topic da-modelling | ADVANCED | Data modelling and warehousing | Facts and dimensions, star schemas, grain, slowly changing dimensions, ETL vs ELT, warehouses and dbt.
+Q E In a star schema, what is a fact table?
++ A table of events or measures, e.g. sales
+- A table that describes products or people
+- A table that stores user passwords
+- A table that holds only one row
+= Dimension tables (product, customer, date) describe the facts.
+
+Q E What is a data warehouse?
++ A store built for analysis, from many sources
+- A server that runs the live checkout app
+- A folder where backups of code are kept
+- A spreadsheet shared with every team
+= Snowflake, BigQuery, Redshift and Synapse are common warehouses.
+
+Q E What does ETL stand for?
++ Extract, transform, load
+- Export, test, launch
+- Edit, track, list
+- Encrypt, transfer, log
+= In ELT, raw data is loaded first and transformed inside the warehouse.
+
+Q E What is a dimension table?
++ Descriptive details, e.g. product name
+- Numeric events, e.g. each payment
+- A log of failed pipeline runs
+- A list of database user accounts
+= Facts hold keys to dimensions plus measures.
+
+Q M What is the grain of a fact table?
++ What one row represents
+- How many columns it has
+- How often it is refreshed
+- The size of the file on disk
+= E.g. "one row per order line". Mixing grains causes double counting.
+
+Q M Why use a separate date dimension table?
++ Easy grouping by week, quarter or holiday
+- Dates can't be stored in fact tables
+- It makes the warehouse use less space
+- Warehouses refuse raw date columns
+= It holds attributes such as fiscal quarter, weekday and public holiday.
+
+Q M What does dbt do?
++ Runs tested, versioned SQL transforms in the warehouse
+- Moves files between cloud buckets on a schedule
+- Draws dashboards straight from database tables
+- Replaces the warehouse with a local database
+= Models are SELECT statements; dbt handles dependencies, tests and docs.
+
+Q M Why are analytics tables often denormalised?
++ Fewer joins make reporting simpler and faster
+- Normalised tables can't be queried with SQL
+- It removes the need for any data quality
+- Denormalised tables never need refreshing
+= Warehouses trade storage for read speed and simpler queries.
+
+Q H A customer moves from Pune to Delhi. How does a type 2 slowly changing dimension handle it?
++ Adds a new row with dates; keeps the old
+- Overwrites the city, losing the old value
+- Deletes the customer and re-creates them
+- Stores both cities in a single text field
+= Past sales stay linked to Pune; new sales link to Delhi.
+
+Q H Why use a surrogate key in a dimension instead of the source system's ID?
++ It survives source changes and type 2 history
+- Source IDs can never be used in any join
+- Surrogate keys make the table encrypted
+- It lets the warehouse skip all indexes
+= Several rows for one customer (type 2) need distinct keys.
+
+Q H What is the main benefit of ELT over ETL with a modern cloud warehouse?
++ Raw data is kept, and transforms can be rerun
+- ELT never needs any SQL to be written
+- ELT avoids storing any data in the cloud
+- ELT runs without any compute costs at all
+= Cheap storage and elastic compute make transforming in place practical.
+
+Q H An incremental model loads only new rows by created_at. What can go wrong?
++ Late or updated rows are missed
+- Old rows load twice every night
+- The table can never be rebuilt
+- Incremental models can't use SQL
+= Use updated_at with a look-back window, or rebuild periodically.
+
+@topic da-experiments | ADVANCED | A/B testing and inference | Hypotheses, control and treatment, p-values, significance and power, sample size, guardrails and common testing mistakes.
+Q E What is an A/B test?
++ Comparing two random groups shown different versions
+- Asking two users which design they like better
+- Testing a page in two browsers to find bugs
+- Launching to everyone, then comparing months
+= Random assignment makes other differences average out.
+
+Q E What is the control group?
++ Users who see the current version
+- Users who see the new version
+- Users who left the experiment
+- Users who report problems
+= The treatment group sees the change.
+
+Q E Why must users be split at random?
++ So the groups are alike except for the change
+- So each user can see both versions in turn
+- So the test finishes in less than one day
+- So the result is always significant
+= Picking users by hand introduces bias.
+
+Q E What is the null hypothesis in an A/B test?
++ The change makes no difference
+- The change always improves results
+- The control version has a bug
+- The sample size is too large
+= The test asks whether data is surprising if there's no real effect.
+
+Q M What does a p-value of 0.03 mean?
++ Data this extreme has a 3% chance if there's no effect
+- There is a 97% chance that the new version is better
+- 3% of users preferred the new version to the old one
+- The effect size is 3% higher in the treatment group
+= It is not the probability that the hypothesis is true.
+
+Q M Why decide the sample size before starting a test?
++ So you can detect the effect you care about
+- So the test can be stopped at any time
+- So more users see the winning version
+- So the p-value is always below 0.05
+= Power analysis uses the baseline rate, minimum effect and significance level.
+
+Q M A test is checked daily and stopped the first day p < 0.05. What's wrong?
++ Peeking inflates false positives
+- Daily checks slow down the website
+- Tests must run for exactly one year
+- p < 0.05 is never significant
+= Fix the duration in advance, or use sequential testing methods.
+
+Q M A test was significant but lifted conversion by 0.01%. What should you consider?
++ Whether the lift is worth the cost
+- Whether the test should run forever
+- Whether the result should be hidden
+- Whether to change the p-value cut-off
+= Statistical significance is not practical significance.
+
+Q H Twenty metrics are tested at α = 0.05 with no real effects. About how many will look significant?
++ About 1
+- About 5
+- None
+- All 20
+= 20 × 0.05 = 1. Correct for multiple comparisons or pick one primary metric.
+
+Q H The treatment raised clicks but lowered purchases. What role do guardrail metrics play?
++ They catch harm the main metric misses
+- They make the test finish more quickly
+- They choose which users join the test
+- They replace the need for a control group
+= Define guardrails (revenue, errors, latency) before the test starts.
+
+Q H The split was meant to be 50/50 but came out 52/48 on 100,000 users. What should you do?
++ Investigate a sample ratio mismatch first
+- Ignore it; small gaps never matter here
+- Delete users until both groups are equal
+- Report the result, since it's close enough
+= A 4,000-user gap is far beyond chance at this size; a bug in assignment or logging can bias results.
+
+Q H A new feature shows a big lift in week one that fades by week four. What is a likely reason?
++ A novelty effect wore off
+- The control group got smaller
+- The p-value was set too low
+- Users were split by region
+= Run tests long enough, and look at the effect over time.
+
+@topic da-advanced-analysis | ADVANCED | Advanced analysis and forecasting | Cohort and funnel analysis, segmentation, time series and seasonality, forecasting, regression basics and attribution.
+Q E What is customer segmentation?
++ Grouping customers by shared traits or behaviour
+- Splitting a database table into smaller files
+- Sending every customer the same message
+- Removing customers who have stopped buying
+= Segments such as RFM (recency, frequency, monetary) guide targeting.
+
+Q E What is seasonality in a time series?
++ A pattern that repeats on a calendar cycle
+- A sudden one-off spike from a single event
+- A slow, steady rise over several years
+- Random noise with no pattern at all
+= E.g. retail peaks every Diwali or December.
+
+Q E What does a moving average do to a noisy daily series?
++ Smooths it to show the trend
+- Removes all the seasonality
+- Predicts next year's values
+- Doubles the size of the data
+= A 7-day moving average removes the weekday pattern.
+
+Q E What does linear regression estimate?
++ How an outcome changes as inputs change
+- Which category each row belongs to
+- How many clusters the data contains
+- The median of the outcome only
+= The coefficient is the change in outcome per unit change of the input.
+
+Q M Why compare this December with last December, not with November?
++ It removes the seasonal effect
+- November data is never reliable
+- Months can only be compared yearly
+- December always has more data rows
+= Year-over-year comparisons cancel out the yearly cycle.
+
+Q M What is last-click attribution?
++ Credit goes to the final touch before the sale
+- Credit is shared equally among all touches
+- Credit goes to the first ad a user saw
+- Credit goes to the most expensive channel
+= It undervalues channels that start the journey, such as display or social.
+
+Q M A regression has R² = 0.85. What does it mean?
++ The model explains 85% of the outcome's variance
+- The model is correct for 85% of the rows
+- 85% of the inputs are statistically significant
+- There is an 85% chance that the model is right
+= A high R² doesn't show causation or guarantee good forecasts.
+
+Q M Which RFM segment usually deserves a win-back campaign?
++ Big past spenders who haven't bought lately
+- New customers who bought for the first time
+- Frequent recent buyers who spend the most
+- Visitors who have never bought anything
+= High monetary and frequency but low recency signals at-risk value.
+
+Q H Why should a forecast be shown as a range, not a single line?
++ The future is uncertain; a range shows it
+- Single lines cannot be drawn by BI tools
+- Ranges make the forecast always correct
+- A single line hides the historical data
+= Prediction intervals help plan for the high and low cases.
+
+Q H A model predicting churn uses "cancellation date" as an input. What is the problem?
++ Data leakage: it's unknown at predict time
+- Dates can't be used as model inputs at all
+- The model will run too slowly in production
+- Churn models must only use numeric inputs
+= Leakage gives great test scores and useless real predictions.
+
+Q H Sales rose after a TV campaign, but a competitor closed the same month. How do you estimate the campaign's effect?
++ Compare with a similar region without the campaign
+- Credit the whole increase to the TV campaign
+- Credit the whole increase to the competitor
+- Average the sales before and after the month
+= A control region (difference-in-differences) separates the two causes.
+
+Q H Your churn model is 95% accurate, but only 5% of users churn. Why is accuracy misleading?
++ Predicting "no churn" for all also scores 95%
+- Accuracy above 90% always means overfitting
+- Accuracy can't be computed for churn models
+- The model must be tested on training data
+= Use precision, recall or AUC for imbalanced outcomes.

@@ -31,9 +31,13 @@ public final class Presets {
                     List.of(new SectionPlan(Section.QUANT, 6, 6, 3), new SectionPlan(Section.LOGICAL, 6, 6, 3),
                             new SectionPlan(Section.VERBAL, 4, 4, 2))));
 
-    private static final java.util.Map<Category, String> NAMES = java.util.Map.of(Category.JAVA, "Java", Category.PYTHON, "Python",
-            Category.JAVASCRIPT, "JavaScript", Category.REACT, "React", Category.ANGULAR, "Angular", Category.SQL, "SQL",
-            Category.CS_FUNDAMENTALS, "CS fundamentals", Category.SYSTEM_DESIGN, "System design");
+    private static final java.util.Map<Category, String> NAMES = java.util.Map.ofEntries(
+            java.util.Map.entry(Category.JAVA, "Java"), java.util.Map.entry(Category.PYTHON, "Python"),
+            java.util.Map.entry(Category.JAVASCRIPT, "JavaScript"), java.util.Map.entry(Category.REACT, "React"),
+            java.util.Map.entry(Category.ANGULAR, "Angular"), java.util.Map.entry(Category.SQL, "SQL"),
+            java.util.Map.entry(Category.CS_FUNDAMENTALS, "CS fundamentals"), java.util.Map.entry(Category.SYSTEM_DESIGN, "System design"),
+            java.util.Map.entry(Category.NODEJS, "Node.js"), java.util.Map.entry(Category.QA_AUTOMATION, "Testing & QA automation"),
+            java.util.Map.entry(Category.DEVOPS, "DevOps & cloud"), java.util.Map.entry(Category.DATA_ANALYTICS, "Data analytics"));
 
     /** The display name of an area, e.g. "Java", "CS fundamentals". */
     public static String areaName(Category area) {

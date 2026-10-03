@@ -1,0 +1,957 @@
+# CodeWalnut built-in Node.js bank (ADR-0015). Format: see TechBank.java.
+# Bands: FUNDAMENTALS = freshers, PRACTICAL = 1–3 years, ADVANCED = 3+ years.
+# Covers Node.js, Express, NestJS and MongoDB. Distractors are kept as long and as plausible as the answer.
+
+@topic node-basics | FUNDAMENTALS | Node.js basics | The runtime, modules (CommonJS and ES modules), npm and package.json, globals and environment variables.
+Q E What is Node.js?
++ A JavaScript runtime that runs outside the browser
+- A front-end framework for building single-page web apps
+- A document database that stores data as JSON files
+- A browser extension for debugging JavaScript in pages
+= It is built on Chrome's V8 engine and adds APIs for files, networking and more.
+
+Q E Which file lists a Node project's dependencies and scripts?
++ package.json
+- node.config.js
+- index.html
+- .npmignore
+= package-lock.json records the exact installed versions.
+
+Q E Which command installs the dependencies listed in package.json?
++ npm install
+- npm start
+- node install
+- npm build
+= npm ci installs exactly what the lockfile says, which suits CI.
+
+Q E How do you read the environment variable PORT in Node?
++ process.env.PORT
+- window.env.PORT
+- require("env").PORT
+- os.variables.PORT
+= Environment variables are strings; convert with Number() when needed.
+
+Q M What is the difference between dependencies and devDependencies?
++ devDependencies are only needed to build and test, not at run time
+- devDependencies are installed globally on the developer's machine
+- dependencies are only used during development and testing
+- There is no difference; the names are just for documentation
+= npm install --omit=dev skips devDependencies in production.
+
+Q M What does this print?
+| // a.js
+| module.exports = { count: 1 };
+| // b.js
+| const a = require("./a");
+| a.count++;
+| console.log(require("./a").count);
++ 2
+- 1
+- undefined
+- NaN
+= Modules are cached after the first require, so both calls return the same object.
+
+Q M How do you use ES module syntax (import/export) in Node?
++ Set "type": "module" in package.json or use the .mjs extension
+- Install the import package and call it at the top of each file
+- Add the --es6 flag every time you run node
+- ES modules are not supported in Node at all
+= Without it, .js files are treated as CommonJS.
+
+Q M What does the caret in "express": "^4.18.2" allow?
++ Any later 4.x version, but not 5.0.0
+- Only exactly version 4.18.2
+- Any version, including 5 and above
+- Only patch versions such as 4.18.3
+= A tilde (~4.18.2) allows only patch updates.
+
+Q H Why commit package-lock.json?
++ So every install gets the exact same dependency tree
+- So npm can publish the project to the registry
+- So Node runs the project faster on start-up
+- So dependencies are updated automatically on install
+= Reproducible builds avoid "works on my machine" bugs.
+
+Q H What does __dirname give you, and is it available in ES modules?
++ The current file's folder; in ES modules use import.meta.url instead
+- The project's root folder; it works the same in every module type
+- The current working directory; it is the same as process.cwd()
+- The user's home folder; it is only set on Linux
+= In ESM: path.dirname(fileURLToPath(import.meta.url)).
+
+Q H What is the purpose of npx?
++ Running a package's command without installing it globally
+- Publishing a package to the npm registry
+- Upgrading every dependency to its latest version
+- Checking a project for security vulnerabilities
+= e.g. npx create-react-app my-app.
+
+Q H Why can process.exit() in the middle of a request handler be harmful?
++ It kills the process, dropping in-flight requests and writes
+- It only exits the current function, just like return does
+- It restarts the process automatically after one second
+- It sends a 500 error to the client and then keeps running
+= Prefer letting the event loop drain, or a graceful shutdown.
+
+@topic node-async | FUNDAMENTALS | Asynchronous Node | The event loop, callbacks, promises and async/await, non-blocking file I/O, timers and streams basics.
+Q E Why is Node good at handling many network connections at once?
++ It uses non-blocking I/O, so one thread serves many waiting requests
+- It starts a new operating-system thread for every request
+- It keeps every request in memory until the server restarts
+- It processes requests one at a time, in strict order
+= While one request waits on the database, others are handled.
+
+Q E Which fs function reads a file without blocking the event loop?
++ fs.promises.readFile
+- fs.readFileSync
+- fs.openSync
+- fs.existsSync
+= The *Sync versions block until the file is read.
+
+Q E What does await do inside an async function?
++ Pauses that function until the promise settles
+- Pauses the whole Node process until it settles
+- Starts a new thread to run the promise
+- Cancels the promise if it takes too long
+= Other work continues on the event loop meanwhile.
+
+Q E What is a callback in Node?
++ A function passed in to be called when an operation finishes
+- A function that calls itself until a condition is met
+- A function that runs before the program starts
+- A function exported from the main module
+= Older Node APIs use error-first callbacks: (err, result).
+
+Q M What does this print?
+| console.log("A");
+| setTimeout(() => console.log("B"), 0);
+| Promise.resolve().then(() => console.log("C"));
+| console.log("D");
++ A D C B
+- A B C D
+- A C D B
+- A D B C
+= Synchronous code first, then promise callbacks (microtasks), then timers.
+
+Q M Why should you avoid fs.readFileSync inside a request handler?
++ It blocks the event loop, so every other request waits
+- It reads files in reverse order on some systems
+- It cannot read files larger than one megabyte
+- It always returns a promise that must be awaited
+= Sync calls are fine at start-up, not per request.
+
+Q M What are Node streams useful for?
++ Handling large data in pieces instead of all in memory
+- Running JavaScript on several CPU cores at the same time
+- Storing data permanently in a local database file
+- Sending emails in the background after a request ends
+= e.g. piping a large file to an HTTP response.
+
+Q M How do you handle an error from an awaited promise?
++ Wrap the await in try/catch
+- Add .error() after the await expression
+- Errors from await are ignored automatically
+- Use process.on("await") at the top of the file
+= Unhandled rejections can crash the process.
+
+Q H What does this print?
+| async function run() {
+|   const results = [];
+|   for (const ms of [30, 10, 20]) {
+|     await new Promise(r => setTimeout(r, ms));
+|     results.push(ms);
+|   }
+|   console.log(results.join(","));
+| }
+| run();
++ 30,10,20
+- 10,20,30
+- 30,20,10
+- 20,10,30
+= Each await finishes before the next loop starts, so the order is kept.
+
+Q H How do you run three independent async calls at the same time and wait for all?
++ await Promise.all([a(), b(), c()])
+- await a(); await b(); await c();
+- a().then(b).then(c)
+- for (const f of [a, b, c]) await f();
+= The awaits one after another make them sequential.
+
+Q H What is "callback hell", and how is it usually avoided?
++ Deeply nested callbacks; avoided with promises and async/await
+- Callbacks that are called twice; avoided with try/catch
+- Callbacks that never run; avoided with setTimeout
+- Callbacks in global scope; avoided with modules
+= Flat async/await code is easier to read and handle errors in.
+
+Q H What does stream backpressure prevent?
++ A fast producer flooding memory when the consumer is slower
+- Two streams reading the same file at the same time
+- A stream closing before any data has been written
+- Data being sent out of order over the network
+= pipe() and pipeline() handle it by pausing the producer.
+
+@topic node-express | FUNDAMENTALS | Express basics | Routing, middleware, request and response objects, static files, error-handling middleware.
+Q E What is Express?
++ A minimal web framework for Node.js
+- A database driver for MongoDB
+- A testing library for Node.js code
+- A package manager for JavaScript
+= It handles routing, middleware and responses.
+
+Q E How do you define a GET route for /health in Express?
++ app.get("/health", (req, res) => res.send("ok"))
+- app.route("GET /health", (req, res) => res.send("ok"))
+- express.get("/health").send("ok")
+- app.on("/health", "GET", (req, res) => "ok")
+= app.post, app.put and app.delete work the same way.
+
+Q E What is middleware in Express?
++ A function run during a request, with req, res and next
+- A database table that stores a log of every request
+- A separate server that sits between the client and app
+- A template that is used to render the HTML pages
+= Middleware can change the request, end it, or call next().
+
+Q E How do you read the id in GET /users/:id?
++ req.params.id
+- req.query.id
+- req.body.id
+- req.headers.id
+= req.query holds ?key=value parameters; req.body holds the parsed body.
+
+Q M What happens if middleware neither sends a response nor calls next()?
++ The request hangs until the client times out
+- Express sends a 404 automatically after a second
+- Express skips to the next route automatically
+- The server crashes with an unhandled error
+= Always end the response or call next().
+
+Q M Why is express.json() needed for POST requests with JSON bodies?
++ It parses the JSON body into req.body
+- It encrypts the JSON body before it is sent
+- It converts the response object to JSON
+- It validates the body against a schema
+= Without it, req.body is undefined.
+
+Q M How is error-handling middleware recognised in Express?
++ It takes four arguments: (err, req, res, next)
+- It is named errorHandler exactly
+- It is registered with app.error()
+- It is the first middleware added to the app
+= Register it after the routes so errors reach it.
+
+Q M In which order does Express run middleware and routes?
++ In the order they were registered
+- In alphabetical order of their paths
+- Longest matching paths first, then shorter ones
+- All routes first, then all middleware after
+= Put body parsers and auth before the routes that need them.
+
+Q H Why might errors thrown inside an async route handler go unhandled in Express 4?
++ Express 4 ignores rejected promises; pass errors to next()
+- Async functions cannot be used as route handlers in Express at all
+- Express catches them but turns every one into a 200 response
+- Async handlers always run after the response has been sent
+= Express 5 forwards rejected promises to the error handler.
+
+Q H What does app.use("/api", router) do?
++ Mounts the router so its routes are served under /api
+- Copies every route in the router to the root path
+- Redirects every request for /api to the router's file
+- Registers the router only for GET requests
+= Routers keep large apps organised by feature.
+
+Q H Why should you not send a response twice in one handler?
++ It throws "Cannot set headers after they are sent"
+- The client receives both responses joined together
+- Express silently ignores the first response
+- The second response is queued for the next request
+= Return after sending, especially inside if branches.
+
+Q H What does helmet() middleware add?
++ Security headers, such as Content-Security-Policy
+- Rate limiting for every route in the application
+- Automatic validation of every request body
+- Gzip compression of every response body
+= It is a quick baseline for common header protections.
+
+@topic node-mongodb | FUNDAMENTALS | MongoDB basics | Documents and collections, CRUD, query operators, indexes, Mongoose schemas and models.
+Q E How does MongoDB store data?
++ As JSON-like documents in collections
+- As rows and columns in tables
+- As key-value pairs in memory only
+- As plain text files on the server
+= Documents in a collection can have different fields.
+
+Q E Which method finds all documents matching a filter?
++ db.users.find({ city: "Pune" })
+- db.users.select({ city: "Pune" })
+- db.users.get({ city: "Pune" })
+- db.users.where({ city: "Pune" })
+= findOne returns only the first match.
+
+Q E What is the _id field in a MongoDB document?
++ A unique identifier added to every document
+- A field that records who created the document
+- A field used only for sorting by date
+- A password field for the document's owner
+= By default it is an ObjectId, which also encodes a timestamp.
+
+Q E What is Mongoose?
++ A library that adds schemas and models for MongoDB
+- A database server that replaces MongoDB for Node apps
+- The query language that MongoDB uses internally
+- A command-line tool for backing up MongoDB databases
+= ODM: object-document mapper.
+
+Q M Which query finds users aged 18 or over?
++ db.users.find({ age: { $gte: 18 } })
+- db.users.find({ age: ">= 18" })
+- db.users.find({ age: { gte: 18 } })
+- db.users.find("age >= 18")
+= Query operators start with $, e.g. $gt, $in, $ne.
+
+Q M What does $set do in an update?
++ Changes only the listed fields, keeping the rest
+- Replaces the whole document with only the fields given
+- Adds a brand new document whenever none match the filter
+- Deletes the listed fields from every matching document
+= Without an operator, some update methods replace the whole document.
+
+Q M Why add an index on a field you query often?
++ So matches are found without scanning every document
+- So the field can no longer be changed after insert
+- So the field's value is encrypted on disk
+- So the field becomes required in every document
+= Check query plans with explain().
+
+Q M When should related data be embedded rather than referenced in MongoDB?
++ When it is read together and bounded in size, like an order's line items
+- When it grows without limit, like every comment ever on a post
+- When many documents share it and update it often
+- When it needs to be queried on its own far more often
+= Unbounded or widely shared data is usually referenced.
+
+Q H What does populate() do in Mongoose?
++ Swaps referenced ids for the related documents
+- Fills any empty fields with their default values on read
+- Inserts sample data into a newly created collection
+- Copies the matching documents into a second collection
+= Overusing it can cause N+1-style query patterns.
+
+Q H Why can a MongoDB document approaching 16 MB be a problem?
++ 16 MB is the maximum document size, so unbounded arrays will eventually fail
+- Documents over 16 MB are moved automatically to slower storage
+- Indexes stop working on documents larger than 1 MB
+- Queries return only the first 16 MB of every document
+= Store growing lists in their own collection.
+
+Q H What is the aggregation pipeline used for?
++ Transforming and summarising data in stages like $group
+- Copying whole collections between two MongoDB servers
+- Scheduling queries to run at a set time every day
+- Creating indexes on every field of a collection at once
+= Put $match early to reduce the documents later stages process.
+
+Q H Does MongoDB support multi-document transactions?
++ Yes, on replica sets and sharded clusters
+- No, every write in MongoDB can affect only one document at a time
+- Yes, but only when all the documents are in the same collection
+- Only when the database runs as a single standalone server
+= Design so most changes fit in one document; use transactions when needed.
+
+@topic node-rest | PRACTICAL | Building REST APIs | Resource design in Express, validation, status codes, JWT authentication, pagination and API docs.
+Q E Which status code should a successful POST that creates a resource return?
++ 201 Created
+- 200 OK
+- 204 No Content
+- 302 Found
+= Include a Location header or the new resource in the body.
+
+Q E Where should a JWT usually be sent from the client to the API?
++ In the Authorization header as "Bearer <token>"
+- In the URL as a query parameter
+- In the request body of every GET request
+- In a custom HTML meta tag
+= Tokens in URLs leak into logs and browser history.
+
+Q E Why validate request bodies on the server?
++ Clients can send anything; invalid data must be rejected safely
+- Browsers block invalid data, so this is only for show
+- Validation makes the server respond more quickly
+- Databases always reject invalid data on their own
+= Libraries such as Zod or Joi describe the expected shape.
+
+Q E Which status means the client must log in first?
++ 401 Unauthorized
+- 403 Forbidden
+- 404 Not Found
+- 409 Conflict
+= 403 means logged in but not allowed.
+
+Q M What is a good shape for an API error response?
++ A clear status code and a body like { error, details }
+- Always 200 OK, with an "ok": false field in the body
+- The framework's default HTML error page for every error
+- An empty body, so that no details are ever exposed
+= Consistent errors let clients show useful messages.
+
+Q M How should passwords be checked at login?
++ bcrypt.compare(input, storedHash)
+- Decrypt the stored password and compare the two strings
+- Store passwords in plain text and compare them directly
+- Hash the input with MD5 and compare the two hashes
+= Hashes cannot be decrypted; compare by hashing.
+
+Q M What should a JWT never contain in its payload?
++ Secrets such as passwords, since anyone can decode it
+- The user's id, since that changes every login
+- An expiry time, since JWTs never expire
+- The issuer, since that slows verification
+= JWTs are signed, not encrypted, by default.
+
+Q M How do you protect several routes with authentication in Express?
++ An auth middleware that verifies the token before those routes
+- Checking the token in the browser before calling the API
+- Adding a password field to every request body
+- Hiding the routes by giving them long random paths
+= Attach the user to req and call next() when valid.
+
+Q H Why use short-lived access tokens with refresh tokens?
++ A stolen access token expires soon; refresh tokens can be revoked
+- Short tokens are smaller, which makes requests much faster
+- Refresh tokens remove the need to verify signatures
+- Long-lived tokens are not allowed by the JWT standard
+= Store refresh tokens securely, e.g. in an HttpOnly cookie.
+
+Q H What is a problem with returning Mongoose documents straight from an API?
++ Internal fields such as password hashes may leak to clients
+- Mongoose documents cannot be converted to JSON at all
+- They make the response slower than an HTML page
+- Clients cannot parse documents that contain an _id
+= Map to a DTO, or hide fields with select or toJSON transforms.
+
+Q H How do you document a REST API so clients can generate code from it?
++ An OpenAPI (Swagger) specification
+- A README with sample curl commands only
+- Comments above each route handler
+- A spreadsheet listing every endpoint
+= Tools render docs and generate clients from the spec.
+
+Q H Why must a PATCH endpoint check which fields a user may change?
++ Otherwise users can set protected fields, e.g. role: "admin"
+- PATCH requests cannot carry more than one field
+- PATCH is only allowed for administrator accounts
+- The database rejects PATCH updates without a schema
+= This is the mass-assignment problem; allow-list the fields.
+
+@topic node-data | PRACTICAL | Data access in Node | SQL with Node (pg, Prisma, Sequelize), parameterised queries, transactions, connection pools and N+1 queries.
+Q E Why use parameterised queries with SQL in Node?
++ They prevent SQL injection
+- They make queries return more rows
+- They remove the need for indexes
+- They let queries run without a connection
+= e.g. pool.query("SELECT * FROM users WHERE id = $1", [id]).
+
+Q E What is an ORM such as Prisma or Sequelize?
++ A library that maps database tables to objects in code
+- A database that runs inside the Node process
+- A server that caches every query result
+- A tool that backs up the database daily
+= It saves boilerplate but you should still understand the SQL it runs.
+
+Q E What is a database connection pool?
++ A set of open connections reused across requests
+- A backup copy of the database kept in memory
+- A list of users allowed to connect
+- A queue of failed queries to retry
+= Opening a new connection per request is slow.
+
+Q E Where should a database URL with its password be stored?
++ In an environment variable or secrets manager
+- In the source code, committed to Git
+- In a public config file served to browsers
+- In the README so others can connect
+= Never commit credentials.
+
+Q M What is the N+1 query problem?
++ One query loads a list, then one more query runs for each item
+- A query returns one more row than was asked for
+- Each request opens N+1 connections to the database
+- A table has one more column than needed
+= Use joins, includes or batching to load related data together.
+
+Q M Why wrap "debit one account, credit another" in a transaction?
++ So both changes succeed or neither does
+- So both updates run faster together
+- So the database logs the transfer
+- So other users can see it immediately
+= Commit only when both statements have succeeded.
+
+Q M What is a schema migration?
++ A versioned script that changes the schema
+- A copy of all the data moved to a new server
+- A backup that is taken before each deployment
+- A query that converts all rows into JSON
+= Tools such as Prisma Migrate or Knex track which ran.
+
+Q M Why should you not create a new connection pool inside each request handler?
++ Each pool opens new connections and exhausts the database's limit
+- Pools can only be created when the server starts on port 80
+- A pool created inside a handler can only run SELECT queries
+- Node allows only a single pool object in each process
+= Create the pool once at start-up and reuse it.
+
+Q H How do you avoid N+1 queries with Prisma when loading users and their orders?
++ Use include (or select) to load the relation in the same query
+- Call findMany for users and then findMany for each user's orders
+- Add an index on the orders table and keep the loop
+- Fetch all orders in the browser and match them there
+= Prisma batches the related query instead of one per user.
+
+Q H What does an optimistic lock (version column) protect against?
++ Two users overwriting each other from stale data
+- Two queries running at the same time on one table
+- A database crash in the middle of a transaction
+- Reading data that another user is allowed to see
+= The update succeeds only if the version is unchanged.
+
+Q H What happens if you forget to release a client checked out from a pg pool?
++ The pool runs out of connections and later requests hang
+- The connection is released automatically after each query
+- The database closes the whole pool for safety
+- The next query uses a brand new temporary connection
+= Release in a finally block, or use pool.query for single queries.
+
+Q H When is a raw SQL query better than the ORM?
++ For complex reports or tuned queries the ORM can't express well
+- Always, because ORMs are not suitable for production use
+- Never, because raw SQL cannot use parameters safely
+- Only when the database is not a relational one
+= Keep raw queries parameterised and tested.
+
+@topic node-testing | PRACTICAL | Testing and configuration | Jest or Vitest, Supertest for HTTP, mocking, test databases, configuration per environment and logging.
+Q E Which library is commonly used to test Express endpoints over HTTP?
++ Supertest
+- Mongoose
+- Nodemon
+- Webpack
+= request(app).get("/health").expect(200).
+
+Q E What does a mock do in a unit test?
++ Replaces a real dependency with a fake you control
+- Runs the test against the production database
+- Repeats the test until it passes
+- Hides the test results from the console
+= e.g. mocking an email service so no email is sent.
+
+Q E Why keep a separate database for tests?
++ So tests don't change development or production data
+- Because test databases run much faster than real ones
+- Because tests cannot connect to a normal database
+- So that tests never need any data at all
+= Reset it between test runs.
+
+Q E What does nodemon do during development?
++ Restarts the app automatically when files change
+- Monitors the app's memory in production
+- Formats code each time a file is saved
+- Runs the test suite on every commit
+= Node 18+ also has node --watch.
+
+Q M Why export the Express app separately from the code that calls app.listen()?
++ Tests can import the app without opening a real port
+- Express cannot listen on a port inside a module
+- Exporting the app makes it start faster
+- app.listen() only works in the main file
+= Supertest can then call the app directly.
+
+Q M Which logger is better for production than console.log?
++ A structured logger such as pino or winston
+- alert() calls written to the browser
+- Writing to a text file with fs.appendFileSync
+- Printing logs only when an error happens
+= Structured logs are searchable and can carry request ids.
+
+Q M How do you keep configuration different between development and production?
++ Read it from environment variables, validated at start-up
+- Edit the source code before each deployment
+- Keep separate copies of the codebase per environment
+- Ask the user for settings when the app starts
+= A missing variable should stop the app with a clear message.
+
+Q M What is a test fixture?
++ Known data or setup that tests rely on
+- A bug that only appears in the test suite
+- A test that is skipped on purpose
+- A tool that measures code coverage
+= Fixtures make tests repeatable.
+
+Q H Why can tests pass alone but fail when run together?
++ State such as database rows leaks from one test to another
+- Test runners allow only one test file to run in each session
+- Jest always runs tests alphabetically, which breaks their order
+- Each test needs a fresh Node installation before it runs
+= Isolate tests: reset data and restore mocks after each one.
+
+Q H How should external HTTP APIs be handled in integration tests?
++ Mock them at the network level, e.g. with nock or MSW
+- Call the real external API every time the tests run
+- Remove the code that calls them while testing
+- Skip every test that touches an external API
+= Tests stay fast, stable and free.
+
+Q H What does code coverage not tell you?
++ Whether the assertions check the right behaviour
+- Which lines of code ran while the tests were running
+- Which branches of the code were never executed
+- Which files in the project have no tests at all
+= High coverage with weak assertions can still miss bugs.
+
+Q H Why should secrets never be printed in logs, even at debug level?
++ Logs are copied widely and kept long, so secrets would leak
+- Debug logs are sent to every user of the app
+- Printing secrets slows the logger noticeably
+- Loggers cannot print strings longer than 32 characters
+= Redact tokens, passwords and personal data.
+
+@topic node-nest-ts | PRACTICAL | NestJS and TypeScript in Node | NestJS modules, controllers, providers and dependency injection, decorators, DTO validation, TypeScript configuration.
+Q E What is NestJS?
++ A structured TypeScript framework with modules and DI
+- A database library that replaces MongoDB in Node apps
+- A front-end framework similar to React for building UIs
+- A test runner that replaces Jest for Node projects
+= It is inspired by Angular's architecture.
+
+Q E In NestJS, what does a controller do?
++ Handles requests and returns responses
+- Stores data in the database directly
+- Compiles TypeScript into JavaScript
+- Schedules background jobs at night
+= Business logic usually lives in providers (services).
+
+Q E Why use TypeScript in a Node backend?
++ Type checking catches mistakes before the code runs
+- TypeScript code runs faster than JavaScript
+- Node can only run TypeScript files
+- TypeScript removes the need for tests
+= Types are removed when compiling to JavaScript.
+
+Q E Which decorator marks a NestJS method as handling GET requests?
++ @Get()
+- @Route("GET")
+- @Fetch()
+- @Read()
+= @Post(), @Put() and @Delete() work the same way.
+
+Q M How does NestJS give a controller a service it needs?
++ Through constructor injection by the DI container
+- By requiring the service file inside each method
+- By storing the service in a global variable
+- By passing the service in each request body
+= Register providers in a module so they can be injected.
+
+Q M How do you validate request bodies in NestJS?
++ DTOs with class-validator and a ValidationPipe
+- Manual if statements in every controller method
+- Database constraints only, checked after insert
+- TypeScript types, which are checked at run time
+= TypeScript types disappear at run time; validation must happen at run time.
+
+Q M What is a NestJS module?
++ A class that groups related controllers and providers
+- A single file that contains only one function
+- An npm package published to the registry
+- A database table created by the framework
+= The root AppModule imports feature modules.
+
+Q M What does "strict": true in tsconfig.json turn on?
++ Stricter checks, such as strict null checks
+- Faster compilation by skipping type checks
+- Automatic formatting of every source file
+- Running the compiled code in strict mode only
+= It catches many null and type bugs early.
+
+Q H What are NestJS guards used for?
++ Deciding whether a request may go on, e.g. by role
+- Formatting responses before they are sent back
+- Retrying failed database queries automatically
+- Compressing large request bodies before parsing
+= Interceptors transform responses; pipes transform inputs.
+
+Q H Why can't TypeScript types alone validate data from an API request?
++ Types are erased when compiled, so real input isn't checked
+- TypeScript types are only supported in front-end code
+- Express always types request data correctly on its own
+- Types are checked at run time, but only in production builds
+= Use a run-time validator such as class-validator or Zod.
+
+Q H What is a circular dependency in NestJS and a common fix?
++ Two providers need each other; split the logic or use forwardRef
+- Two modules share the same name; rename one of the modules
+- A controller calls itself recursively; add a guard to stop it
+- A provider is imported twice; remove the second import line
+= Circular dependencies often signal a design that should be split.
+
+Q H What does an interceptor let you do in NestJS?
++ Run code around a handler, e.g. logging
+- Choose which database each request uses
+- Replace the HTTP server with another one
+- Compile templates for server-side rendering
+= Interceptors wrap the handler's observable stream.
+
+@topic node-performance | ADVANCED | Performance and scaling Node | Blocking the event loop, worker threads, cluster mode, memory leaks, profiling and caching.
+Q E What happens to a Node server while one request runs a long CPU loop?
++ All other requests wait until the loop finishes
+- Node moves the loop to another core automatically
+- The loop is paused so other requests can run
+- Only that one user's later requests are delayed
+= JavaScript runs on one main thread.
+
+Q E What are worker threads for?
++ Running CPU-heavy JavaScript off the main thread
+- Handling more network requests than the event loop can
+- Making database queries run in parallel
+- Restarting the server when it crashes
+= Use them for work such as image processing or parsing.
+
+Q E What does cluster mode (or PM2) do for a Node app?
++ Runs several processes to use all CPU cores
+- Runs the app on several remote servers
+- Compresses responses to save bandwidth
+- Caches database queries in memory
+= Each process has its own event loop.
+
+Q E Why cache data in Redis for a busy API?
++ To serve repeated reads fast and spare the database
+- To make every write permanent more quickly
+- To encrypt data before it reaches clients
+- To replace the database entirely
+= Set expiry times so cached data refreshes.
+
+Q M What is a common cause of memory leaks in Node?
++ Caches, listeners or timers that are never cleaned up
+- Using const instead of let for variables
+- Writing too many comments in the code
+- Calling functions that return promises
+= Heap snapshots show which objects keep growing.
+
+Q M How can you find which functions use the most CPU in Node?
++ Profile it (e.g. --cpu-prof) and read the flame graph
+- Add console.time around every single function by hand
+- Count the lines of code in each file of the project
+- Watch the CPU percentage in the operating system's task manager
+= Flame graphs show where time is spent.
+
+Q M What is a good way to measure event loop delay in production?
++ Track event-loop lag as a metric
+- Log the time at the start of each request only
+- Restart the server every hour to reset delays
+- Count how many requests arrive per minute only
+= High lag means something is blocking the loop.
+
+Q M Why use streaming to send a large CSV export?
++ Rows are sent as they are produced, keeping memory low
+- Streaming makes the file smaller on disk
+- Browsers cannot download files that are not streamed
+- Streaming encrypts the file automatically
+= Building the whole file in memory can crash the process.
+
+Q H Two Node processes behind a load balancer each keep an in-memory cache. What problem appears?
++ Each process holds different data, so results can be stale
+- The processes merge their caches and double their memory use
+- The load balancer refuses to send traffic to a cached process
+- Only the first process that starts is allowed to keep a cache
+= Use a shared cache such as Redis for data that must agree.
+
+Q H Why can JSON.parse on a very large request body hurt every user?
++ It is synchronous and blocks the event loop until it finishes
+- It runs on a worker thread that starves the database
+- It stores the parsed object permanently in memory
+- It sends the body to every connected client
+= Limit body sizes and stream-parse very large inputs.
+
+Q H How do you scale WebSocket or session state across several Node instances?
++ Keep shared state in Redis and use its pub/sub
+- Pin every user to the first instance that started
+- Copy all state into every instance at start-up
+- Keep all state in each browser's local storage
+= The Socket.IO Redis adapter is a common choice.
+
+Q H What does a heap snapshot comparison help you find?
++ Objects that keep growing between snapshots
+- Which HTTP routes are the slowest to respond
+- Which npm packages have known vulnerabilities
+- Which lines of code are never executed at all
+= Take snapshots before and after repeating an action.
+
+@topic node-security | ADVANCED | Node security | Injection, prototype pollution, input limits, rate limiting, dependency risks, secrets and safe error handling.
+Q E Why limit the size of request bodies?
++ To stop huge payloads exhausting memory
+- To make responses smaller for clients
+- To keep request logs short and readable
+- Because JSON can't be larger than 1 KB
+= e.g. express.json({ limit: "100kb" }).
+
+Q E What does npm audit report?
++ Known vulnerabilities in installed dependencies
+- Unused files in the project folder
+- Slow functions in the application code
+- Missing tests for each module
+= Review and update affected packages.
+
+Q E Why should error responses not include stack traces in production?
++ They reveal internal details that help attackers
+- Stack traces make responses far too slow
+- Browsers cannot display stack traces correctly
+- Stack traces are only allowed in log files by law
+= Log details on the server; send a generic message to clients.
+
+Q E What does rate limiting a login endpoint help prevent?
++ Password guessing by brute force
+- Users forgetting their passwords
+- Passwords being stored in plain text
+- Sessions expiring too quickly
+= Combine with lockouts and alerts.
+
+Q M What is NoSQL injection in a MongoDB app?
++ User input such as { "$ne": null } changes the meaning of a query
+- A database running out of memory because of large documents
+- Inserting documents faster than indexes can update
+- Running MongoDB without a password on the network
+= Validate types: a password field must be a string.
+
+Q M What is prototype pollution in JavaScript?
++ Input adds properties to Object.prototype
+- Too many objects are created and memory runs out
+- Objects are copied instead of passed by reference
+- Classes inherit from too many parent classes
+= Avoid merging untrusted objects deeply without checks.
+
+Q M Why use the child_process API carefully with user input?
++ Unescaped input can run arbitrary shell commands
+- It makes every child process run with root rights
+- It sends the input to an external server
+- It only works with files in the project folder
+= Prefer execFile with argument arrays over exec with strings.
+
+Q M How should CORS be configured for an API used by your web app?
++ Allow only your app's origins, not every origin with credentials
+- Allow every origin, since CORS only affects old browsers
+- Turn CORS off so browsers can call any endpoint
+- Allow origins listed in each request's own header
+= CORS is enforced by browsers; it is not authentication.
+
+Q H What is a typosquatting risk with npm packages?
++ Installing a malicious package with a name like a popular one
+- A package being renamed after you install it
+- A package with spelling mistakes in its documentation
+- Two packages with the same name in one project
+= Check names and publishers; lockfiles prevent silent changes.
+
+Q H Why must path inputs be checked before reading files with fs?
++ "../" sequences can read files outside the intended folder
+- fs cannot read files whose names contain spaces
+- Reading files is only allowed from the root folder
+- Paths with capital letters crash the process
+= Resolve the path and check it stays inside the allowed directory.
+
+Q H What is a ReDoS (regular expression denial of service)?
++ Crafted input makes a bad regex run for ages, blocking the loop
+- A regex that matches far too many lines in a log file
+- A regex that is too long for Node to compile at start-up
+- A regex that leaks a little more memory each time it runs
+= Avoid nested quantifiers like (a+)+ on untrusted input.
+
+Q H Where should a Node service keep its signing secret for JWTs?
++ In a secrets manager or environment variable
+- Hard-coded in the source, so all instances share it
+- In the JWT itself, so the server can read it later
+- In a public config file, so clients can verify tokens
+= Anyone with the secret can forge tokens.
+
+@topic node-architecture | ADVANCED | Node architecture and real time | Layered services, message queues, graceful shutdown, WebSockets and Socket.IO, server-sent events, 12-factor apps.
+Q E What does graceful shutdown mean for a Node server?
++ Stop new requests, finish current ones, close connections, exit
+- Exit as fast as possible as soon as any stop signal arrives
+- Restart the server every night at a quiet time instead
+- Shut down only after every user has logged out of the app
+= Handle SIGTERM, which containers send before stopping.
+
+Q E What are WebSockets used for?
++ Real-time messages both ways between browser and server
+- Uploading very large files from the browser to the server
+- Storing data in the browser between one visit and the next
+- Encrypting data before it is saved in the database
+= Chat, live dashboards and notifications use them.
+
+Q E Why split a large Express app into routes, services and data-access layers?
++ Each layer has one job, which makes code easier to test and change
+- Express refuses to run apps that are in a single file
+- Layers make every request faster by default
+- Layers remove the need for any database
+= Routes stay thin; services hold the business logic.
+
+Q E What is a background job queue (e.g. BullMQ) for?
++ Running slow tasks like emails outside the request
+- Sorting incoming HTTP requests by priority
+- Storing user sessions between requests
+- Replacing the database for writes
+= Workers process jobs and retry failures.
+
+Q M What are server-sent events (SSE) good for?
++ One-way streams from server to browser
+- Two-way chat where clients send many messages
+- Uploading files from the browser in chunks
+- Running background jobs on the server side
+= SSE uses plain HTTP and reconnects automatically.
+
+Q M What does the 12-factor app approach recommend for configuration?
++ Store config in the environment, separate from the code
+- Store config in the database and load it on each request
+- Hard-code config for each environment in separate branches
+- Ask an administrator to type config at start-up
+= The same build then runs in every environment.
+
+Q M Why might Socket.IO messages reach only some users after scaling to two servers?
++ Each server only knows its own connections without a shared adapter
+- Socket.IO supports at most one hundred users per server
+- Browsers connect to both servers and ignore one of them
+- Messages are encrypted differently on each server
+= Use the Redis adapter so servers broadcast to each other.
+
+Q M What is the benefit of making job handlers idempotent?
++ A job that runs twice after a retry causes no harm
+- Jobs finish faster when they are idempotent
+- Idempotent jobs never fail in the first place
+- Queues only accept jobs that are idempotent
+= Most queues deliver at least once.
+
+Q H Why handle SIGTERM in a containerised Node app?
++ The orchestrator sends it before killing the container
+- SIGTERM means the code has a bug that must be fixed first
+- Containers send SIGTERM every minute as a health check
+- Without handling it, Node ignores every incoming request
+= Kubernetes waits a grace period, then sends SIGKILL.
+
+Q H When should a Node monolith be split into services?
++ When parts must deploy and scale independently, with clear boundaries
+- As soon as the codebase grows to more than a thousand lines of code
+- Whenever a new developer joins the team and needs their own service
+- Before writing any code at all, so the app is ready for future growth
+= Splitting too early adds network and operational complexity.
+
+Q H What is the outbox pattern for in a Node service that saves data and publishes an event?
++ Saving the event in the same transaction, then publishing it
+- Sending events by email whenever the message queue is down
+- Keeping events in memory until the server is next restarted
+- Publishing the event first and saving the data afterwards
+= It avoids "saved but never published" and the reverse.
+
+Q H How do you keep a long-running WebSocket server healthy?
++ Heartbeats, per-client limits and graceful restarts
+- Never restarting, so that connections stay open forever
+- Allowing unlimited messages so that clients never wait
+- Closing every connection after one minute by default
+= Dead connections otherwise pile up and waste memory.

@@ -65,6 +65,16 @@ public final class Roles {
                     Category.PYTHON, List.of(Category.REACT, Category.SQL), ALL),
             new Role("sql-developer", "Database / SQL developer", "Queries, data modelling, tuning and transactions.", Category.SQL,
                     List.of(), ALL),
+            new Role("node-backend", "Node.js backend developer", "Node.js services (Express or NestJS) with SQL or MongoDB.",
+                    Category.NODEJS, List.of(Category.JAVASCRIPT, Category.SQL), ALL),
+            new Role("fullstack-node-react", "Full-stack developer (Node + React / MERN)", "Node.js back end, React front end.",
+                    Category.NODEJS, List.of(Category.REACT), ALL),
+            new Role("qa-automation", "QA automation engineer", "Test design, Selenium or Playwright, API tests and CI.",
+                    Category.QA_AUTOMATION, List.of(Category.SQL), ALL),
+            new Role("devops-engineer", "DevOps / cloud engineer", "CI/CD, containers, Kubernetes, cloud and reliability.",
+                    Category.DEVOPS, List.of(), ALL),
+            new Role("data-analyst", "Data analyst", "SQL, spreadsheets, BI dashboards, statistics and metrics.",
+                    Category.DATA_ANALYTICS, List.of(Category.SQL), ALL),
             new Role("graduate-trainee", "Graduate / fresher trainee", "Any stack: aptitude and computer-science basics.",
                     Category.CS_FUNDAMENTALS, List.of(), List.of(Level.FRESHER)));
 

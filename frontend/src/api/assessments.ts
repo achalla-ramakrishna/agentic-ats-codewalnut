@@ -13,6 +13,10 @@ export type Category =
   | 'SQL'
   | 'CS_FUNDAMENTALS'
   | 'SYSTEM_DESIGN'
+  | 'NODEJS'
+  | 'QA_AUTOMATION'
+  | 'DEVOPS'
+  | 'DATA_ANALYTICS'
   | 'OTHER'
 export type QuestionKind = 'SINGLE_CHOICE' | 'MULTI_CHOICE' | 'SHORT_ANSWER'
 export type InviteStatus = 'SENT' | 'STARTED' | 'SUBMITTED' | 'EXPIRED' | 'CANCELLED'
@@ -27,6 +31,10 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   SQL: 'SQL',
   CS_FUNDAMENTALS: 'CS fundamentals',
   SYSTEM_DESIGN: 'System design',
+  NODEJS: 'Node.js',
+  QA_AUTOMATION: 'Testing & QA automation',
+  DEVOPS: 'DevOps & cloud',
+  DATA_ANALYTICS: 'Data analytics',
   OTHER: 'Other',
 }
 

@@ -1,0 +1,938 @@
+# CodeWalnut built-in DevOps & Cloud bank (ADR-0015). Format: see TechBank.java.
+# Bands: FUNDAMENTALS = freshers, PRACTICAL = 1–3 years, ADVANCED = 3+ years / SRE and platform leads.
+# Distractors are kept as long and as plausible as the answer.
+
+@topic devops-linux-ops | FUNDAMENTALS | Linux for operations | Processes and services, systemd, logs, disk and memory, permissions, SSH and basic troubleshooting.
+Q E Which command shows disk space used and free on each mounted file system?
++ df -h
+- du -s
+- ls -la
+- free -m
+= du shows the size of folders; free shows memory.
+
+Q E Which command shows how much memory is free?
++ free -m
+- df -h
+- top -d
+- ps -ef
+= top also shows memory, live, per process.
+
+Q E How do you check whether the nginx service is running on a systemd server?
++ systemctl status nginx
+- service list nginx --all
+- ps nginx --running
+- nginx --is-running
+= systemctl start, stop, restart and enable manage services.
+
+Q E Where do most Linux system logs live?
++ Under /var/log, or in journalctl
+- Under /etc/logs in plain text
+- In the user's home folder only
+- Inside each program's binary file
+= journalctl -u nginx shows one service's logs.
+
+Q M A server is slow. Which command shows the busiest processes, live?
++ top (or htop)
+- ls -lt
+- cat /etc/hosts
+- history
+= Sort by CPU or memory to find the culprit.
+
+Q M What does chmod 600 on a private key file do?
++ Only the owner can read and write it
+- Everyone can read it, only the owner can write
+- Nobody, including the owner, can open it
+- The file can be run as a program by anyone
+= SSH refuses keys that others can read.
+
+Q M How do you follow an application log as new lines arrive?
++ tail -f /var/log/app.log
+- head -n 50 /var/log/app.log
+- cat -n /var/log/app.log
+- grep -c ERROR /var/log/app.log
+= Combine with grep to filter lines.
+
+Q M What does "enable" do in systemctl enable nginx?
++ Starts the service automatically at boot
+- Starts the service right now, only once
+- Installs nginx from the package manager
+- Gives nginx permission to use port 80
+= Use start to run it now and enable for boot.
+
+Q H The disk is full. How do you find which folders use the most space?
++ du -sh /* | sort -h (then drill into the largest)
+- df -h, which lists every large file on the disk
+- ls -la /, which shows the size of each folder's contents
+- free -m, which shows how full each disk is
+= Old logs and Docker images are frequent causes.
+
+Q H A process ignores kill <pid>. What is the next step, and its risk?
++ kill -9 <pid>; it can't clean up, so data may be lost
+- kill -1 <pid>; it deletes the program from disk
+- rm <pid>; it removes the process file safely
+- reboot; it is the only way to stop a process
+= SIGTERM asks politely; SIGKILL stops immediately.
+
+Q H Why use SSH keys and disable password logins on servers?
++ Keys resist guessing and can be revoked per person
+- Keys make SSH sessions faster than any password
+- Password logins stop working after a few weeks
+- Keys let you log in when the server is switched off
+= Combine with no root login over SSH.
+
+Q H What does "load average" in top tell you?
++ How many processes are running or waiting, averaged over 1, 5 and 15 minutes
+- The percentage of disk space used on the busiest disk right now
+- The number of users who are currently logged in to the server
+- How much network traffic arrived in the last 1, 5 and 15 minutes
+= Compare it with the number of CPU cores.
+
+@topic devops-ci | FUNDAMENTALS | CI/CD basics | Continuous integration and delivery, pipelines, stages, artefacts, runners, GitHub Actions and Jenkins basics.
+Q E What does continuous integration (CI) do?
++ Builds and tests every change automatically
+- Deploys every change straight to customers
+- Merges every branch into main without review
+- Writes code from the issue description
+= It catches broken builds early.
+
+Q E What is a pipeline in CI/CD?
++ A series of automated steps, such as build, test, deploy
+- A network cable between two data centres
+- A list of people who must approve each release
+- A folder where source code is stored
+= Each stage must pass before the next runs.
+
+Q E Which file defines a GitHub Actions workflow?
++ A YAML file under .github/workflows/
+- A JSON file named actions.json at the root
+- A Dockerfile in the project's main folder
+- A README section titled "workflow"
+= Workflows run on pushes, pull requests or schedules.
+
+Q E What is a build artefact?
++ The output of a build, e.g. a JAR
+- A bug that was found during the build
+- A comment left in a pull request
+- A test that was skipped in the build
+= Build once and deploy the same artefact everywhere.
+
+Q M What is the difference between continuous delivery and continuous deployment?
++ Delivery needs a manual release step; deployment is automatic
+- Delivery releases automatically; deployment needs a manual approval
+- Delivery is for mobile apps only; deployment is for web apps only
+- They are the same practice, known by two different names
+= Both rely on a reliable automated pipeline.
+
+Q M Why "build once, deploy many"?
++ The same tested artefact reaches every environment
+- Building takes too long to repeat for each one
+- CI tools allow only one build per day
+- Each environment needs different source code
+= Rebuilding per environment can produce a different artefact.
+
+Q M Where should a pipeline get passwords and API keys?
++ From the CI system's encrypted secrets store
+- From a file committed next to the pipeline
+- From the pipeline's log output of a previous run
+- From a public wiki page that lists them all
+= Mask secrets in logs.
+
+Q M What is a CI runner (or agent)?
++ A machine that executes the pipeline's jobs
+- A person who watches the pipeline run
+- A script that writes release notes
+- A test that runs before every commit
+= Runners can be hosted or self-hosted.
+
+Q H Why cache dependencies in a CI pipeline?
++ Builds finish faster by reusing downloaded packages
+- Caching makes builds produce smaller artefacts
+- Dependencies must be cached to pass security checks
+- Without a cache, tests cannot read their test data
+= Key the cache on the lockfile so it refreshes on changes.
+
+Q H A pipeline is green but production breaks after deploy. What is a likely gap?
++ Tests don't cover real configuration, data or integrations
+- The pipeline ran too many unit tests for the change
+- The artefact was built only once for all environments
+- The deploy step ran after the test stage had passed
+= Add smoke tests after deploy and keep environments alike.
+
+Q H What does a matrix build do?
++ Runs the same job across versions or platforms in parallel
+- Builds a matrix of every possible feature combination
+- Splits a single test file into several smaller files
+- Runs the pipeline once for each developer on the team
+= e.g. test on Node 18, 20 and 22.
+
+Q H Why should pipelines be defined as code in the repository?
++ They are versioned, reviewed and reproducible with the app
+- Pipelines in the repository run faster than ones in the UI
+- CI tools refuse to run pipelines configured in their UI
+- Code-defined pipelines never need maintenance
+= Changes to the pipeline go through review like code.
+
+@topic devops-docker | FUNDAMENTALS | Docker and containers | Images and containers, Dockerfiles, layers, ports, volumes, environment variables and registries.
+Q E What is the difference between an image and a container?
++ An image is a template; a container is a running instance of it
+- A container is a template; an image is a running instance of it
+- An image runs on Linux; a container runs on Windows only
+- They are the same thing under two different names
+= Many containers can run from one image.
+
+Q E Which file describes how to build a Docker image?
++ Dockerfile
+- docker.yaml
+- image.json
+- Makefile
+= docker build -t myapp . builds it.
+
+Q E How do you make a container's port 8080 reachable on the host's port 80?
++ docker run -p 80:8080 myapp
+- docker run -p 8080:80 myapp
+- docker run --port 80 myapp
+- docker run -e PORT=80 myapp
+= The format is host:container.
+
+Q E Where are Docker images usually stored and shared?
++ In a registry such as Docker Hub or ECR
+- In a Git repository next to the code
+- On a USB drive passed between servers
+- In the database used by the application
+= CI pushes images; servers pull them.
+
+Q M Why are files in a container lost when it is removed?
++ The container's writable layer is deleted with it; use volumes
+- Docker deletes all files every time a container restarts
+- Containers cannot write any files at all
+- Files are moved to the image on removal
+= Volumes keep data outside the container's life cycle.
+
+Q M Why order a Dockerfile to copy package files and install dependencies before copying source code?
++ The dependency layer stays cached while code changes
+- Docker requires dependencies to be installed first
+- Copying source first makes the image larger
+- It stops the source code from being copied twice
+= Layers rebuild only from the first changed step.
+
+Q M How should configuration such as a database URL reach a container?
++ Through environment variables or mounted secrets
+- Baked into the image when it is built
+- Typed by hand after the container starts
+- Stored in the container's hostname
+= The same image can then run anywhere.
+
+Q M What does a multi-stage build achieve?
++ A small final image without build tools
+- Several containers built from one command
+- An image that runs on every operating system
+- Faster builds by skipping the test stage
+= Build in one stage, copy only the output into a slim stage.
+
+Q H Why avoid running containers as root?
++ A breakout or bug then has fewer rights on the host
+- Root containers are slower to start than others
+- Root users cannot open network ports in containers
+- Docker refuses to run any container as root
+= Set USER in the Dockerfile.
+
+Q H What does docker compose help with?
++ Running several related containers together locally
+- Compressing images so they download faster
+- Composing Dockerfiles from several smaller files
+- Deploying containers to many production servers
+= e.g. an app, a database and Redis for development.
+
+Q H Why pin base images to a version or digest instead of "latest"?
++ Builds stay reproducible and don't change unexpectedly
+- The latest tag is always slower to download
+- Registries delete images tagged latest each week
+- Versioned images run with more memory available
+= Update base images on purpose, then rebuild and test.
+
+Q H A container exits immediately after starting. Where do you look first?
++ docker logs <container> for its output and errors
+- docker images, to see if the image is too big
+- docker network ls, to list available networks
+- docker system df, to check disk usage
+= Often a missing env var or a crashing main process.
+
+@topic devops-cloud | FUNDAMENTALS | Cloud basics | IaaS, PaaS and SaaS, regions and zones, virtual machines, object storage, managed databases, IAM and pricing.
+Q E What is IaaS?
++ Renting virtual machines, storage and networks
+- Renting finished software used through a browser
+- Renting a platform that runs your code for you
+- Renting office space in a data centre
+= e.g. EC2 or Azure VMs; PaaS and SaaS are higher levels.
+
+Q E What is an availability zone?
++ A separate data centre within a cloud region
+- A country where the cloud is allowed to run
+- A group of users with the same permissions
+- A billing account for a cloud project
+= Spread across zones to survive one failing.
+
+Q E Which service stores files such as images and backups cheaply?
++ Object storage, such as Amazon S3
+- A virtual machine's local disk
+- A relational database table
+- A content-delivery network only
+= Object storage is durable and scales without limits.
+
+Q E What does IAM control in the cloud?
++ Who can do what with which resources
+- How much each service costs per month
+- Which region a service runs in
+- How fast the network connection is
+= Identity and access management.
+
+Q M Why use a managed database (e.g. RDS) instead of one on your own VM?
++ The provider handles backups, patches and failover
+- Managed databases have no limits on size or speed
+- Databases on VMs cannot be backed up at all
+- Managed databases don't need any configuration
+= You still own schema, queries and access.
+
+Q M What is autoscaling?
++ Adding or removing servers automatically with load
+- Moving servers to a cheaper region every night
+- Upgrading the operating system automatically
+- Scaling images down to save storage
+= Scale on metrics such as CPU or queue length.
+
+Q M What is a common way to save money on servers that run all the time?
++ Reserved instances or savings plans
+- Running them in more regions than needed
+- Choosing the largest instance types available
+- Keeping old snapshots forever just in case
+= Spot instances save more for interruptible work.
+
+Q M What is serverless computing, e.g. AWS Lambda?
++ Running functions without managing servers, paid per use
+- Running applications without any servers anywhere
+- A server that has no operating system installed
+- A database that stores data without disks
+= Good for spiky or event-driven work.
+
+Q H Why put databases in private subnets?
++ They aren't reachable directly from the internet
+- Private subnets give databases faster disks
+- Databases cannot run in public subnets at all
+- Private subnets remove the need for passwords
+= Only app servers in the VPC should reach them.
+
+Q H What is the shared responsibility model?
++ The provider secures the cloud; you secure what you run in it
+- The provider is responsible for all security of your app
+- You must secure the provider's data centres yourself
+- Security is shared equally between all customers
+= Misconfigured buckets and IAM are the customer's job.
+
+Q H Why tag cloud resources (e.g. team, environment, project)?
++ To track costs and ownership, and automate policies
+- Tags make resources run faster in every region
+- Untagged resources are deleted automatically
+- Tags are needed before resources can start
+= Untagged resources become forgotten costs.
+
+Q H What is data egress, and why does it matter?
++ Data leaving the cloud; it is often charged and can be costly
+- Data entering the cloud; it is always free of charge
+- Data deleted from the cloud; it can't be recovered
+- Data moved between disks; it slows the server
+= Design to keep heavy traffic within the provider or CDN.
+
+@topic devops-kubernetes | PRACTICAL | Kubernetes | Pods, Deployments, Services, Ingress, ConfigMaps and Secrets, probes, resources and scaling.
+Q E What is a pod in Kubernetes?
++ The smallest deployable unit: one or more containers
+- A physical server in the Kubernetes cluster
+- A network rule between two applications
+- A storage disk attached to the cluster
+= Containers in a pod share network and storage.
+
+Q E What does a Deployment manage?
++ Replicas of pods and rolling updates
+- Network traffic from the internet
+- Secrets such as passwords and keys
+- The cluster's physical nodes
+= It keeps the desired number of pods running.
+
+Q E What does a Service give a set of pods?
++ A stable address that load-balances to them
+- A disk that keeps their data permanently
+- A schedule for when they should run
+- A user account for each pod in the set
+= Pods come and go; the Service stays.
+
+Q E Which command lists pods in the current namespace?
++ kubectl get pods
+- kubectl show pods
+- kubectl pods list
+- kubectl ls pods
+= Add -A for all namespaces.
+
+Q M What is the difference between liveness and readiness probes?
++ Liveness restarts a stuck pod; readiness keeps traffic off until it's ready
+- Readiness restarts a stuck pod; liveness keeps traffic off until it's ready
+- Liveness runs only at start-up; readiness runs only at shutdown
+- They are the same check, configured in two different places
+= A failing readiness probe removes the pod from the Service.
+
+Q M Why set resource requests and limits on containers?
++ Pods get placed well and one can't starve others
+- Pods without limits cannot start in any cluster
+- Limits make containers start faster on every node
+- Requests decide which namespace the pod runs in
+= Exceeding a memory limit gets the container killed.
+
+Q M How should a database password reach a pod?
++ From a Secret, mounted or set as an env variable
+- Written into the container image at build time
+- Stored in a ConfigMap with other settings
+- Typed into the pod's terminal after start
+= Enable encryption at rest and limit who can read Secrets.
+
+Q M What does an Ingress do?
++ Routes outside HTTP traffic to Services
+- Stores the logs from every pod in the cluster
+- Schedules pods onto the most suitable nodes
+- Backs up the cluster's configuration nightly
+= An ingress controller (e.g. nginx) implements it.
+
+Q H A pod shows CrashLoopBackOff. What is the first step?
++ kubectl logs (and --previous) and kubectl describe pod
+- Delete the Deployment and create it again from scratch
+- Increase the replica count so more pods start
+- Restart every node in the cluster one by one
+= Often a bad config, missing secret or failing start command.
+
+Q H What does a HorizontalPodAutoscaler do?
++ Changes the number of pods based on metrics such as CPU
+- Makes each pod use more CPU and memory when busy
+- Adds new nodes to the cluster when it runs low
+- Moves pods to a cheaper region at night
+= The cluster autoscaler adds nodes when pods can't fit.
+
+Q H How does a rolling update avoid downtime?
++ New pods start and pass readiness before old ones stop
+- All old pods stop, then all new pods start together
+- Traffic is paused until every new pod is running
+- Old and new pods run forever side by side
+= Tune maxSurge and maxUnavailable.
+
+Q H Why use namespaces in a cluster?
++ To separate teams or environments, with own quotas
+- To make pods run faster by giving them their own CPU
+- To store container images inside the cluster itself
+- To give each pod its own public IP address
+= Combine with RBAC and network policies.
+
+@topic devops-iac | PRACTICAL | Infrastructure as code | Terraform basics, plan and apply, state, modules, variables, drift and reviewing infrastructure changes.
+Q E What is infrastructure as code?
++ Defining servers and networks in versioned files
+- Writing application code on cloud servers
+- Drawing network diagrams by hand
+- Recording infrastructure changes in a spreadsheet
+= Changes are reviewed and repeatable.
+
+Q E Which Terraform command shows what will change before applying?
++ terraform plan
+- terraform show
+- terraform init
+- terraform output
+= terraform apply makes the changes.
+
+Q E What does terraform init do?
++ Downloads providers and sets up the working folder
+- Creates all of the cloud resources defined
+- Deletes resources that are no longer needed
+- Formats every .tf file in the folder
+= Run it before plan in a new checkout.
+
+Q E What is a Terraform provider?
++ A plugin that talks to a platform, e.g. AWS
+- A cloud company that hosts Terraform itself
+- A person who approves infrastructure changes
+- A file that stores secret values for Terraform
+= Providers are versioned like any dependency.
+
+Q M What is Terraform state?
++ Its record of the real resources it manages
+- A list of everyone who ran Terraform recently
+- The cloud region where resources are created
+- A backup of the application's database
+= Keep it in a shared, locked remote backend.
+
+Q M Why store Terraform state remotely with locking?
++ Teams share it and two applies can't clash
+- Remote state makes every plan run faster
+- Local state files are rejected by Terraform
+- Locking encrypts the state file automatically
+= e.g. S3 with DynamoDB locking, or Terraform Cloud.
+
+Q M What are Terraform modules for?
++ Reusing groups of resources with inputs
+- Splitting state across several clouds
+- Speeding up terraform apply on large projects
+- Storing secrets outside of the code
+= e.g. one module for a standard service setup.
+
+Q M What is configuration drift?
++ Real infrastructure no longer matches the code
+- Code that changes on its own between commits
+- Servers that slowly move to other regions
+- State files that grow larger over time
+= Manual changes in the console are a common cause.
+
+Q H Why must terraform plan output be reviewed before apply?
++ It can reveal resources being destroyed or replaced
+- Apply ignores the plan unless it is approved
+- Plans expire after one minute if not reviewed
+- Reviewing the plan makes apply run faster
+= A small change can force replacing a database.
+
+Q H Why should secrets not be written as plain values in .tf files?
++ They end up in Git and in the state file
+- Terraform cannot read values longer than 32 characters
+- Plain values make plans fail on every run
+- Providers reject any value that is hard-coded
+= Use a secrets manager, and protect the state file too.
+
+Q H What does terraform import do?
++ Brings an existing resource under Terraform management
+- Copies resources from one cloud to another
+- Downloads modules from the public registry
+- Restores resources from a deleted state file
+= Then write matching configuration for it.
+
+Q H How do teams usually promote infrastructure changes safely?
++ Same code, per-env variables, applied dev → staging → prod
+- Separate hand-written code kept for each environment
+- Applying changes straight to production to save time
+- Copying the production state file into the dev setup
+= Pipelines run plan on pull requests and apply after merge.
+
+@topic devops-deploy | PRACTICAL | Deployment strategies | Rolling, blue-green and canary releases, feature flags, rollbacks, database migrations and environments.
+Q E What is a rollback?
++ Returning to the previous working version
+- Deleting the production database
+- Moving users to a different region
+- Restarting servers in a random order
+= Keep previous artefacts ready to redeploy.
+
+Q E What is a staging environment?
++ A production-like place to test before release
+- The developer's laptop with test data
+- A backup of production for disasters
+- The live system that customers use
+= Keep it as close to production as possible.
+
+Q E What is a canary release?
++ Releasing to a small share of users first
+- Releasing only on the first day of the month
+- Releasing to every user at the same time
+- Releasing only to the testing team
+= Watch errors and metrics, then widen.
+
+Q E What does a feature flag let you do?
++ Turn a feature on or off without redeploying
+- Mark a feature as finished in the tracker
+- Lock a feature so no one can change it
+- Test a feature without writing any code
+= It separates deploying code from releasing features.
+
+Q M How does blue-green deployment work?
++ Run the new version beside the old and switch traffic
+- Deploy blue servers by day and green servers by night
+- Release to blue-team users before green-team users
+- Paint the old servers blue and new servers green
+= Switching back is instant if something goes wrong.
+
+Q M Why make database migrations backward compatible?
++ Old and new app versions run during a rollout
+- Databases reject migrations that remove columns
+- Compatible migrations run faster on large tables
+- Rollbacks can then skip the database entirely
+= Expand first, migrate data, then contract later.
+
+Q M When is a rolling update preferable to blue-green?
++ When you can't afford a full second environment
+- When you need instant rollback for every release
+- When the new version is incompatible with the old
+- When you deploy only once a year
+= Rolling replaces instances a few at a time.
+
+Q M What should a deployment pipeline do right after deploying?
++ Run smoke tests and watch key metrics
+- Delete the previous version immediately
+- Send the full test report to every customer
+- Turn off monitoring to save money
+= Roll back automatically if checks fail.
+
+Q H How do you rename a database column with zero downtime?
++ Add the new column, write both, backfill, switch reads, then drop the old
+- Rename it during peak hours and restart every server at once
+- Drop the old column first, then add the new one quickly
+- Stop the database, rename it, and start it again
+= Each step is safe to deploy and roll back.
+
+Q H Why should old feature flags be removed?
++ Unused flags add complexity and risky code paths
+- Flags stop working after thirty days automatically
+- Each flag costs a fixed fee every month
+- Old flags make the application start slowly
+= Track flags with an owner and an expiry.
+
+Q H What makes a canary release decision trustworthy?
++ Comparing canary and baseline metrics automatically
+- Asking users on the canary whether they like it
+- Waiting a fixed hour, then releasing to everyone
+- Checking that the canary servers are still running
+= Look at errors, latency and business metrics.
+
+Q H Why keep environments (dev, staging, prod) configured the same way?
++ Differences hide bugs that appear only in production
+- Different configurations make deployments faster
+- Identical environments cost less than different ones
+- Cloud providers require all environments to match
+= Infrastructure as code helps keep them alike.
+
+@topic devops-networking | PRACTICAL | Networking for DevOps | DNS records, load balancers, TLS certificates, VPCs and subnets, security groups, NAT and ports.
+Q E What does an A record in DNS do?
++ Maps a domain name to an IPv4 address
+- Maps an email domain to a mail server
+- Points one domain name at another name
+- Stores text such as verification codes
+= CNAME points to another name; MX handles mail.
+
+Q E Which port does HTTPS use by default?
++ 443
+- 80
+- 22
+- 3306
+= 22 is SSH; 3306 is MySQL.
+
+Q E What does a TLS certificate prove?
++ The server's identity, enabling encrypted traffic
+- The server has enough CPU for the website
+- The website has no security bugs in it
+- The domain name was registered recently
+= Let's Encrypt issues free certificates.
+
+Q E What is a firewall (or security group) for?
++ Allowing only the traffic you intend to allow
+- Speeding up traffic between two servers
+- Storing logs of every network packet
+- Giving each server a domain name
+= Default deny, then open what is needed.
+
+Q M What is a VPC?
++ A private, isolated network in the cloud
+- A virtual machine that runs only at night
+- A cloud storage bucket for private files
+- A paid support plan from the provider
+= Subnets, routes and gateways live inside it.
+
+Q M How do servers in a private subnet download updates without being reachable from outside?
++ Through a NAT gateway for outbound traffic
+- By getting a public IP for each update
+- Through the load balancer's health checks
+- By copying updates from a USB drive
+= NAT allows outbound connections only.
+
+Q M Why can a DNS change take time to be seen everywhere?
++ Resolvers cache records until their TTL expires
+- DNS servers update only once a day by law
+- Browsers refuse new records for a week
+- The new IP must first be approved by ICANN
+= Lower the TTL before planned changes.
+
+Q M What does a layer-7 load balancer understand that a layer-4 one doesn't?
++ HTTP details such as paths, hosts and headers
+- The IP address and port of each connection
+- The physical cable each packet travels on
+- The disk usage of each backend server
+= It can route /api and /static to different backends.
+
+Q H A site's certificate expired and users see warnings. What prevents this?
++ Automatic renewal (e.g. ACME) plus expiry alerts
+- Buying a certificate that lasts for twenty years
+- Turning off HTTPS until a new certificate arrives
+- Asking users to ignore the browser warning for now
+= Monitor expiry dates across all domains.
+
+Q H An app can't reach its database. Which checks come first?
++ DNS, security group or firewall rules, and the port with nc or telnet
+- The app's colour scheme, then its log level, then its version
+- The database's backups, then its disk size, then its owner
+- The CI pipeline, then the test reports, then the README
+= Work from name resolution to port to credentials.
+
+Q H Why put TLS termination at the load balancer?
++ Certificates are managed in one place and backends are simpler
+- Backends cannot accept HTTPS connections at all
+- It makes traffic inside the network encrypted twice
+- Load balancers are the only place that supports TLS
+= Re-encrypt to backends where policy requires it.
+
+Q H What is the purpose of a bastion host (or SSM / IAP access)?
++ A single, audited way into private servers
+- A server that stores every backup of the system
+- A backup load balancer in another region
+- A host that runs all of the CI pipelines
+= Managed access tools can avoid open SSH entirely.
+
+@topic devops-observability | ADVANCED | Monitoring and observability | Metrics with Prometheus and Grafana, logs, traces, alerting, SLIs and SLOs, on-call and dashboards.
+Q E What is monitoring?
++ Watching systems with metrics, logs and alerts
+- Reading the source code before each release
+- Counting how many servers a team owns
+- Testing features before they are built
+= It tells you when something is wrong.
+
+Q E Which tool is widely used to collect metrics?
++ Prometheus
+- Terraform
+- Ansible
+- Jenkins
+= Grafana is often used to chart them.
+
+Q E What makes a good alert?
++ It signals user impact and needs action now
+- It fires for every warning in every log
+- It is emailed to the whole company at once
+- It repeats every minute until someone leaves
+= Too many alerts get ignored.
+
+Q E Why collect logs centrally?
++ To search across all servers in one place
+- To make each server's disk fill up faster
+- Because servers can't keep any local logs
+- To remove the need for metrics entirely
+= e.g. ELK, Loki or a cloud logging service.
+
+Q M What is an SLO?
++ A reliability target, e.g. 99.9% of requests succeed
+- A legal contract with penalties for downtime
+- The number of servers a service may use
+- A log level between info and warning
+= An SLA is the contract; an SLI is what you measure.
+
+Q M What do the "four golden signals" cover?
++ Latency, traffic, errors and saturation
+- CPU, memory, disk and network cards
+- Logs, metrics, traces and dashboards
+- Builds, tests, deploys and rollbacks
+= From Google's SRE book.
+
+Q M What is distributed tracing for?
++ Following one request across many services
+- Copying logs between two data centres
+- Tracking which engineer deployed what
+- Drawing the network map of the office
+= OpenTelemetry is the common standard.
+
+Q M Why alert on symptoms rather than causes like high CPU?
++ Symptoms reflect what users actually feel
+- CPU cannot be measured on cloud servers
+- Symptoms are cheaper to store than CPU data
+- Alerting tools only support symptom metrics
+= Keep cause metrics on dashboards for diagnosis.
+
+Q H What is an error budget?
++ The failure an SLO allows, used to pace releases
+- The money that is set aside to pay for outages
+- The maximum number of bugs allowed per sprint
+- The size limit placed on the error log files
+= When it's spent, focus on reliability.
+
+Q H Why are high-cardinality labels (e.g. user id) risky in Prometheus metrics?
++ They create huge numbers of series and overload storage
+- Prometheus refuses labels that contain any numbers
+- They hide errors from dashboards and alerts
+- They make each metric update more slowly
+= Put per-user detail in logs or traces instead.
+
+Q H What makes a blameless post-incident review effective?
++ Focusing on causes and fixes, not on who erred
+- Naming the engineer responsible in the report
+- Keeping the incident secret from other teams
+- Skipping it when the outage was short
+= It surfaces process and system gaps.
+
+Q H What is synthetic monitoring?
++ Scripted checks that act like users, run on a schedule
+- Monitoring based only on made-up test data
+- Metrics generated by a simulator instead of servers
+- Alerts that are written by an AI model
+= It catches outages even when no real users are active.
+
+@topic devops-security | ADVANCED | DevSecOps | Secrets management, least-privilege IAM, image and dependency scanning, supply-chain security, network policies and audits.
+Q E Where should production secrets be kept?
++ In a secrets manager, such as Vault or AWS Secrets Manager
+- In the Git repository, in a file called secrets.yml
+- In the CI logs so builds can find them later
+- In a shared spreadsheet the whole team can edit
+= Rotate secrets and audit who reads them.
+
+Q E What is the principle of least privilege?
++ Give only the access that is really needed
+- Give everyone admin access to move quickly
+- Use as few passwords as possible overall
+- Let all services share a single account
+= Limits damage if an account is compromised.
+
+Q E What does image scanning look for?
++ Known vulnerabilities in packages inside an image
+- Images that are larger than one gigabyte
+- Images that have not been used for a month
+- Images built on a weekend or holiday
+= e.g. Trivy or the registry's built-in scanner.
+
+Q E Why enable multi-factor authentication for cloud accounts?
++ A stolen password alone is no longer enough
+- MFA makes cloud services run faster
+- Cloud providers charge less with MFA on
+- MFA removes the need for strong passwords
+= Especially for admin and root accounts.
+
+Q M What should happen when a secret is committed to Git by mistake?
++ Rotate it at once, then clean history if needed
+- Delete the commit and assume nobody saw it
+- Make the repository private and do nothing else
+- Leave it, since Git history is never read
+= Assume it is compromised once pushed.
+
+Q M Why use short-lived credentials (e.g. OIDC from CI to the cloud)?
++ Stolen credentials expire quickly
+- Short credentials are shorter to type
+- Long-lived keys stop working after a week
+- Short credentials skip permission checks
+= No long-lived keys stored in the CI system.
+
+Q M What do Kubernetes NetworkPolicies do?
++ Limit which pods can talk to which
+- Encrypt all traffic leaving the cluster
+- Give each pod a public IP address
+- Decide which node each pod runs on
+= Default-deny plus explicit allows.
+
+Q M What is software supply-chain security about?
++ Trusting the code, dependencies and builds you ship
+- Securing the trucks that deliver servers
+- Protecting the office from unknown visitors
+- Encrypting emails sent to suppliers
+= Lockfiles, signed artefacts and SBOMs help.
+
+Q H What is an SBOM?
++ A list of every component in a piece of software
+- A backup of the build machine's operating system
+- A security bill paid to the cloud provider
+- A summary of every bug fixed in a release
+= It shows quickly whether you use a vulnerable library.
+
+Q H Why run CI jobs with minimal permissions?
++ A compromised dependency then can't do much damage
+- Jobs with more permissions always run slower
+- CI tools refuse to run jobs with full access
+- Minimal permissions make the logs shorter
+= Scope tokens per job and per repository.
+
+Q H What does an audit log (e.g. CloudTrail) give you?
++ A record of who did what, when, in your accounts
+- A list of every bug found in your applications
+- A backup of every file stored in the cloud
+- A report of how much each service costs
+= Essential for investigating incidents.
+
+Q H Why sign container images and verify signatures at deploy time?
++ Only images built by your pipeline can run
+- Signed images download much faster
+- Unsigned images cannot be stored in registries
+- Signatures make images smaller on disk
+= Tools such as Cosign support this.
+
+@topic devops-reliability | ADVANCED | Reliability, scaling and platform | High availability, backups and disaster recovery, incident response, capacity, cost optimisation, GitOps and platform engineering.
+Q E What is high availability?
++ Keeping a service running when parts fail
+- Making a service available only during office hours
+- Running a service on the largest server available
+- Letting anyone access a service without logging in
+= Redundancy across zones removes single points of failure.
+
+Q E Why test restoring backups regularly?
++ An untested backup may not actually restore
+- Restores make the backup files smaller
+- Backups expire unless they are restored
+- Testing restores speeds up the database
+= Many teams discover broken backups during a disaster.
+
+Q E What is an incident in operations?
++ An unplanned interruption or loss of service quality
+- A planned maintenance window announced in advance
+- A new feature released to all customers
+- A meeting held at the end of each sprint
+= Clear roles speed up incident response.
+
+Q E What is GitOps?
++ Git is the source of truth; clusters sync to it
+- Running the Git servers on Kubernetes clusters
+- Using Git only for storing operations scripts
+- Storing all application logs in a Git repository
+= e.g. Argo CD or Flux apply what is merged.
+
+Q M What do RPO and RTO mean?
++ RPO: data you can lose; RTO: time to recover
+- RPO: time to recover; RTO: data you can lose
+- RPO: backup size; RTO: restore speed per GB
+- RPO: primary region; RTO: target region
+= Lower targets cost more.
+
+Q M What does an incident commander do?
++ Coordinates the response and communication
+- Fixes every technical problem personally
+- Decides who is to blame for the outage
+- Writes all of the code for the fix
+= Others investigate and fix; the commander coordinates.
+
+Q M A cloud bill doubles in a month. What is a good first step?
++ Break costs down by service and tag to find the cause
+- Delete the largest resources immediately
+- Move everything to a different cloud provider
+- Turn off monitoring to save on metrics
+= Untagged or forgotten resources are common causes.
+
+Q M What is platform engineering?
++ Building self-service tools so teams ship safely
+- Engineering the physical platforms in data centres
+- A team that deploys every service for others
+- Designing railway platforms for transport
+= e.g. templates, pipelines and golden paths.
+
+Q H Why run active-passive across regions instead of active-active?
++ It is simpler, avoiding cross-region write conflicts
+- Active-passive always has zero recovery time
+- Active-active is not supported by any cloud
+- Passive regions cost nothing until they are used
+= Active-active gives faster failover at more complexity.
+
+Q H What is toil, in SRE terms?
++ Manual, repetitive ops work worth automating
+- Any work that is done outside office hours
+- Time spent in meetings about past incidents
+- Work that requires writing brand new code
+= SRE teams cap toil and automate it away.
+
+Q H How do you decide when to scale up capacity ahead of demand?
++ Forecast from growth and load tests, with headroom for peaks
+- Wait until users complain and then double everything
+- Scale only once a year at the start of the budget
+- Keep every server at 100% CPU to save money
+= Autoscaling handles short peaks; forecasts handle growth.
+
+Q H Why should runbooks exist for common alerts?
++ On-call engineers can act quickly and consistently
+- Runbooks replace the need for any monitoring
+- Alerts cannot fire unless a runbook exists
+- Runbooks make incidents happen less often
+= Keep them short, current and linked from the alert.

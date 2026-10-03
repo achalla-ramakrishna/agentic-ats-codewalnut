@@ -41,7 +41,8 @@ export function sectionTitle(section: string | null | undefined, categoryLabel?:
 }
 
 /** Areas with a question bank, in menu order. */
-export const BANK_AREAS: Category[] = ['APTITUDE', 'JAVA', 'PYTHON', 'JAVASCRIPT', 'REACT', 'ANGULAR', 'SQL', 'CS_FUNDAMENTALS', 'SYSTEM_DESIGN']
+export const BANK_AREAS: Category[] = ['APTITUDE', 'JAVA', 'PYTHON', 'JAVASCRIPT', 'REACT', 'ANGULAR', 'SQL', 'CS_FUNDAMENTALS', 'SYSTEM_DESIGN',
+  'NODEJS', 'QA_AUTOMATION', 'DEVOPS', 'DATA_ANALYTICS']
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = { EASY: 'Easy', MEDIUM: 'Medium', HARD: 'Hard' }
 
 export interface BankQuestion {

@@ -30,7 +30,8 @@ import org.hibernate.annotations.UuidGenerator;
 @Builder
 public class Assessment {
 
-    public enum Category { APTITUDE, JAVA, PYTHON, JAVASCRIPT, REACT, ANGULAR, SQL, CS_FUNDAMENTALS, SYSTEM_DESIGN, OTHER }
+    public enum Category { APTITUDE, JAVA, PYTHON, JAVASCRIPT, REACT, ANGULAR, SQL, CS_FUNDAMENTALS, SYSTEM_DESIGN, NODEJS, QA_AUTOMATION, DEVOPS,
+        DATA_ANALYTICS, OTHER }
 
     public enum Status { DRAFT, READY, ARCHIVED }
 
