@@ -35,8 +35,8 @@ public class QuestionBankController {
     private final CurrentUserService currentUserService;
 
     @GetMapping("/api/v1/question-bank/overview")
-    public BankOverview overview() {
-        return service.overview(currentUserService.require());
+    public BankOverview overview(@RequestParam(required = false) Assessment.Category area) {
+        return service.overview(currentUserService.require(), area);
     }
 
     @GetMapping("/api/v1/question-bank")

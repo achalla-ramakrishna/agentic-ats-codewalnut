@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { CATEGORY_LABEL, type Category } from '../api/assessments'
 import {
+  BANK_AREAS,
   DIFFICULTY_LABEL,
   MIXES,
-  SECTION_LABEL,
-  SECTIONS,
+  sectionName,
+  sectionsFor,
   buildFromBank,
   getBankOverview,
   planTopics,
@@ -39,13 +41,27 @@ interface BuilderProps {
   onCancel: () => void
 }
 
+interface AreaProps extends BuilderProps {
+  area: Category
+}
+
+const defaultTitle = (area: Category) => (area === 'APTITUDE' ? 'Aptitude test for freshers' : `${CATEGORY_LABEL[area]} test`)
+
 /** Build a test paper from the bank: by topics and a difficulty mix, or by a pattern / section counts (ADR-0014). */
 export function BuildFromBank(props: BuilderProps) {
   const [mode, setMode] = useState<'topics' | 'pattern'>('topics')
+  const [area, setArea] = useState<Category>('APTITUDE')
   return (
     <Card>
       <div className="stack">
-        <h2 style={{ margin: 0 }}>Build an aptitude test from the bank</h2>
+        <h2 style={{ margin: 0 }}>Build a test from the question bank</h2>
+        <div className="row" style={{ gap: 6, flexWrap: 'wrap' }} role="group" aria-label="Test area">
+          {BANK_AREAS.map((a) => (
+            <button key={a} type="button" className={`chip${a === area ? ' chip-on' : ''}`} aria-pressed={a === area} onClick={() => setArea(a)}>
+              {CATEGORY_LABEL[a]}
+            </button>
+          ))}
+        </div>
         <div className="tabs" role="tablist" aria-label="How to build">
           <button type="button" role="tab" aria-selected={mode === 'topics'} onClick={() => setMode('topics')}>
             By topics
@@ -54,30 +70,30 @@ export function BuildFromBank(props: BuilderProps) {
             By pattern or section
           </button>
         </div>
-        {mode === 'topics' ? <ByTopics {...props} /> : <ByPattern {...props} />}
+        {mode === 'topics' ? <ByTopics key={area} area={area} {...props} /> : <ByPattern key={area} area={area} {...props} />}
       </div>
     </Card>
   )
 }
 
 /** Tick the topics, say how many questions each, pick a difficulty mix and an order, and build. */
-function ByTopics({ onBuilt, onCancel }: BuilderProps) {
+function ByTopics({ area, onBuilt, onCancel }: AreaProps) {
   const [overview, setOverview] = useState<BankOverview | null>(null)
   const [chosen, setChosen] = useState<string[]>([])
   const [perTopic, setPerTopic] = useState(2)
   const [mix, setMix] = useState(MIXES[0].id)
   const [order, setOrder] = useState<Order>('EASY_FIRST')
-  const [title, setTitle] = useState('Aptitude test for freshers')
+  const [title, setTitle] = useState(defaultTitle(area))
   const [duration, setDuration] = useState<number | null>(null)
   const [pass, setPass] = useState(50)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    getBankOverview()
+    getBankOverview(area)
       .then((o) => setOverview(o))
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load the bank'))
-  }, [])
+  }, [area])
 
   const guide = (overview?.guide ?? []).filter((t) => t.easy + t.medium + t.hard > 0)
   const picked = guide.filter((t) => chosen.includes(t.id))
@@ -104,7 +120,7 @@ function ByTopics({ onBuilt, onCancel }: BuilderProps) {
     setBusy(true)
     setError(null)
     try {
-      const built = await buildFromBank({ title, area: 'APTITUDE', durationMinutes: minutes, passPercent: pass, topics: plans, order })
+      const built = await buildFromBank({ title, area, durationMinutes: minutes, passPercent: pass, topics: plans, order })
       onBuilt(built.summary.id)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not build the test')
@@ -124,7 +140,7 @@ function ByTopics({ onBuilt, onCancel }: BuilderProps) {
           {error}
         </div>
       )}
-      {SECTIONS.map((section) => {
+      {sectionsFor(area).map((section) => {
         const inSection = guide.filter((t) => t.section === section)
         if (!inSection.length) return null
         const all = inSection.every((t) => chosen.includes(t.id))
@@ -133,7 +149,7 @@ function ByTopics({ onBuilt, onCancel }: BuilderProps) {
             <legend>
               <label className="topic-pick-all">
                 <input type="checkbox" checked={all} onChange={(e) => setSection(section, e.target.checked)} />{' '}
-                {SECTION_LABEL[section]}
+                {sectionName(section)}
               </label>
             </legend>
             <div className="topic-pick-grid">
@@ -215,23 +231,23 @@ function ByTopics({ onBuilt, onCancel }: BuilderProps) {
 }
 
 /** A preset pattern (TCS NQT, Wipro …) or your own easy / medium / hard counts per section. */
-function ByPattern({ onBuilt, onCancel }: BuilderProps) {
+function ByPattern({ area, onBuilt, onCancel }: AreaProps) {
   const [overview, setOverview] = useState<BankOverview | null>(null)
-  const [title, setTitle] = useState('Aptitude test for freshers')
+  const [title, setTitle] = useState(defaultTitle(area))
   const [duration, setDuration] = useState(25)
   const [pass, setPass] = useState(50)
   const [order, setOrder] = useState<Order>('BY_SECTION')
-  const [plans, setPlans] = useState<SectionPlan[]>(SECTIONS.map((section) => ({ section, easy: 0, medium: 0, hard: 0 })))
+  const [plans, setPlans] = useState<SectionPlan[]>(sectionsFor(area).map((section) => ({ section, easy: 0, medium: 0, hard: 0 })))
   const [preset, setPreset] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    getBankOverview()
+    getBankOverview(area)
       .then((o) => {
         setOverview(o)
-        const quick = o.presets.find((p) => p.id === 'quick')
-        if (quick) choose(quick.id, o)
+        const first = o.presets.find((p) => p.id === 'quick') ?? o.presets[0]
+        if (first) choose(first.id, o)
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load the bank'))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -241,18 +257,18 @@ function ByPattern({ onBuilt, onCancel }: BuilderProps) {
     setPreset(id)
     const p = o?.presets.find((x) => x.id === id)
     if (!p) return
-    setTitle(p.id === 'quick' ? 'Aptitude screening for freshers' : `Aptitude test — ${p.name}`)
+    setTitle(p.id === 'quick' ? 'Aptitude screening for freshers' : area === 'APTITUDE' ? `Aptitude test — ${p.name}` : `${p.name} test`)
     setDuration(p.durationMinutes)
     setPass(p.passPercent)
     // Keep the pattern's own section order (e.g. TCS: numerical, verbal, reasoning), then any others.
     setPlans([
       ...p.sections,
-      ...SECTIONS.filter((section) => !p.sections.some((s) => s.section === section)).map((section) => ({ section, easy: 0, medium: 0, hard: 0 })),
+      ...sectionsFor(area).filter((section) => !p.sections.some((s) => s.section === section)).map((section) => ({ section, easy: 0, medium: 0, hard: 0 })),
     ])
   }
 
   const available = (section: string, difficulty: Difficulty) =>
-    overview?.counts.find((c) => c.area === 'APTITUDE' && c.section === section && c.difficulty === difficulty)?.count ?? 0
+    overview?.counts.find((c) => c.area === area && c.section === section && c.difficulty === difficulty)?.count ?? 0
   const total = plans.reduce((n, p) => n + p.easy + p.medium + p.hard, 0)
 
   async function submit(event: FormEvent) {
@@ -262,7 +278,7 @@ function ByPattern({ onBuilt, onCancel }: BuilderProps) {
     try {
       const built = await buildFromBank({
         title,
-        area: 'APTITUDE',
+        area,
         durationMinutes: duration,
         passPercent: pass,
         sections: plans.filter((p) => p.easy + p.medium + p.hard > 0),
@@ -329,7 +345,7 @@ function ByPattern({ onBuilt, onCancel }: BuilderProps) {
           <tbody>
             {plans.map((p, i) => (
               <tr key={p.section}>
-                <td style={{ textAlign: 'left' }}>{SECTION_LABEL[p.section]}</td>
+                <td style={{ textAlign: 'left' }}>{sectionName(p.section)}</td>
                 {LEVELS.map((l) => (
                   <td key={l.key}>
                     <input
@@ -337,7 +353,7 @@ function ByPattern({ onBuilt, onCancel }: BuilderProps) {
                       type="number"
                       min={0}
                       max={available(p.section, l.difficulty)}
-                      aria-label={`${SECTION_LABEL[p.section]} ${l.key}`}
+                      aria-label={`${sectionName(p.section)} ${l.key}`}
                       style={{ width: 70 }}
                       value={p[l.key]}
                       onChange={(e) => {

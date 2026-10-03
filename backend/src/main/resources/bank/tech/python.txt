@@ -1,0 +1,1224 @@
+# CodeWalnut built-in Python bank (ADR-0015). Format: see TechBank.java.
+# Bands: FUNDAMENTALS = freshers, PRACTICAL = 1–3 years, ADVANCED = 3+ years.
+
+@topic py-basics | FUNDAMENTALS | Python basics | Types, operators (/, //, %, **), truthiness, strings and f-strings, input/output, None.
+Q E Which of these is immutable in Python?
++ tuple
+- list
+- dict
+- set
+= Tuples (like str, int and frozenset) cannot be changed after creation.
+
+Q E What does this print?
+| print(7 // 2, 7 / 2)
++ 3 3.5
+- 3.5 3.5
+- 3 3
+- 4 3.5
+= // is floor division (an int for int operands); / always gives a float.
+
+Q E What does this print?
+| print(2 ** 3)
++ 8
+- 6
+- 9
+- 5
+= ** is exponentiation: 2 to the power 3.
+
+Q E What does this print?
+| name = "Asha"
+| print(f"Hi {name}!")
++ Hi Asha!
+- Hi {name}!
+- Hi name!
+- f"Hi Asha!"
+= f-strings replace {expressions} with their values.
+
+Q M What does this print?
+| print(-7 // 2, -7 % 2)
++ -4 1
+- -3 -1
+- -3 1
+- -4 -1
+= // rounds down (towards minus infinity), so -3.5 becomes -4; % then gives 1 because -4 × 2 + 1 = -7.
+
+Q M Which values are "falsy" in Python?
++ 0, "", [], {}, None and False
+- Only False and None
+- 0 and False only
+- Every empty value except ""
+= Empty containers, zero and None all count as False in an if.
+
+Q M What does this print?
+| print("5" + "3", int("5") + 3)
++ 53 8
+- 8 8
+- 53 53
+- An error
+= Adding strings joins them; int() converts text to a number first.
+
+Q M What does this print?
+| print(0.1 + 0.2 == 0.3, round(0.1 + 0.2, 2) == 0.3)
++ False True
+- True True
+- False False
+- True False
+= Binary floats cannot store 0.1 exactly; compare with rounding, math.isclose or decimal.Decimal.
+
+Q H What does this print?
+| print(True + True, type(True + True).__name__)
++ 2 int
+- True bool
+- 2 bool
+- An error
+= bool is a subclass of int (True == 1), so adding two bools gives the int 2.
+
+Q H What does this print?
+| a = 256
+| b = 256
+| print(a == b, a is b)
++ True True
+- True False
+- False False
+- False True
+= CPython caches small integers (-5 to 256), so both names refer to the same object. Never rely on is for numbers; use ==.
+
+Q H What does this print?
+| print("abc" * 2, [0] * 3)
++ abcabc [0, 0, 0]
+- abc2 [0, 3]
+- An error
+- abcabc [0]
+= * repeats sequences.
+
+Q H What does this print?
+| x = 5
+| print(1 < x < 10, 10 < x < 1)
++ True False
+- True True
+- An error
+- False False
+= Comparisons chain: 1 < x < 10 means 1 < x and x < 10.
+
+@topic py-data | FUNDAMENTALS | Lists, tuples, dicts and sets | Indexing and slicing, list methods, dictionaries, sets, tuples and unpacking, copying vs referencing.
+Q E What does this print?
+| nums = [10, 20, 30, 40]
+| print(nums[-1])
++ 40
+- 10
+- An IndexError
+- 30
+= Negative indexes count from the end; -1 is the last item.
+
+Q E Which adds one item to the end of a list?
++ items.append(x)
+- items.add(x)
+- items.push(x)
+- items.insert(x)
+= append adds one item; extend adds all items of another iterable; add is for sets.
+
+Q E What does this print?
+| d = {"a": 1}
+| d["b"] = 2
+| print(len(d))
++ 2
+- 1
+- 3
+- An error
+= Assigning to a new key adds it to the dictionary.
+
+Q E What does this print?
+| print(set([1, 2, 2, 3, 3, 3]))
++ {1, 2, 3}
+- {1, 2, 2, 3, 3, 3}
+- [1, 2, 3]
+- {3}
+= Sets keep each value once.
+
+Q M What does this print?
+| nums = [0, 1, 2, 3, 4, 5]
+| print(nums[1:4], nums[::2])
++ [1, 2, 3] [0, 2, 4]
+- [1, 2, 3, 4] [0, 2, 4]
+- [0, 1, 2, 3] [1, 3, 5]
+- [1, 2, 3] [1, 3, 5]
+= Slices include the start and exclude the stop; a step of 2 takes every second item.
+
+Q M What does this print?
+| a = [1, 2, 3]
+| b = a
+| b.append(4)
+| print(a)
++ [1, 2, 3, 4]
+- [1, 2, 3]
+- [4]
+- An error
+= b = a makes both names refer to the same list. Use a.copy() or list(a) for a copy.
+
+Q M What does this print?
+| d = {"x": 1}
+| print(d.get("y", 0), d.get("x", 0))
++ 0 1
+- None 1
+- A KeyError
+- 0 0
+= get returns the default when the key is missing; d["y"] would raise KeyError.
+
+Q M What does this print?
+| a, *rest = [1, 2, 3, 4]
+| print(a, rest)
++ 1 [2, 3, 4]
+- 1 (2, 3, 4)
+- [1] [2, 3, 4]
+- An error
+= Starred unpacking collects the remaining items into a list.
+
+Q H What does this print?
+| grid = [[0] * 2] * 2
+| grid[0][0] = 9
+| print(grid)
++ [[9, 0], [9, 0]]
+- [[9, 0], [0, 0]]
+- [[9, 9], [9, 9]]
+- An error
+= [row] * 2 repeats a reference to the same inner list. Build rows with [[0] * 2 for _ in range(2)].
+
+Q H What does this print?
+| print({1, 2, 3} & {2, 3, 4}, {1, 2} | {2, 5})
++ {2, 3} {1, 2, 5}
+- {1, 4} {1, 2, 5}
+- {2, 3} {1, 2, 2, 5}
+- An error
+= & is intersection; | is union.
+
+Q H Which can be a dictionary key?
++ (1, 2)
+- [1, 2]
+- {1, 2}
+- {"a": 1}
+= Keys must be hashable; tuples of immutable values are, lists, sets and dicts are not.
+
+Q H What does this print?
+| import copy
+| a = [[1], [2]]
+| b = copy.copy(a)
+| b[0].append(9)
+| print(a)
++ [[1, 9], [2]]
+- [[1], [2]]
+- [[1, 9], [2, 9]]
+- An error
+= A shallow copy makes a new outer list but shares the inner lists. copy.deepcopy copies them too.
+
+@topic py-functions | FUNDAMENTALS | Functions and scope | Defining functions, default and keyword arguments, *args and **kwargs, return values, local vs global scope, lambda.
+Q E What does a function return if it has no return statement?
++ None
+- 0
+- An empty string
+- It raises an error
+= Every Python function returns None unless it returns something else.
+
+Q E What does this print?
+| def greet(name="friend"):
+|     return "Hi " + name
+| print(greet())
++ Hi friend
+- Hi
+- Hi name
+- An error
+= When no argument is passed, the default value is used.
+
+Q E What does this print?
+| square = lambda x: x * x
+| print(square(4))
++ 16
+- 8
+- 4
+- An error
+= A lambda is a small anonymous function; this one returns x × x.
+
+Q E Which keyword defines a function?
++ def
+- function
+- fun
+- define
+= def name(params): starts a function definition.
+
+Q M What does this print?
+| def total(*args):
+|     return sum(args)
+| print(total(1, 2, 3))
++ 6
+- (1, 2, 3)
+- 123
+- An error
+= *args collects extra positional arguments into a tuple.
+
+Q M What does this print?
+| def show(**kwargs):
+|     return sorted(kwargs)
+| print(show(b=2, a=1))
++ ['a', 'b']
+- [1, 2]
+- {'a': 1, 'b': 2}
+- An error
+= **kwargs collects keyword arguments into a dict; sorted() on a dict sorts its keys.
+
+Q M What does this print?
+| x = 10
+| def change():
+|     x = 20
+| change()
+| print(x)
++ 10
+- 20
+- None
+- An error
+= Assigning inside a function creates a local x; the global x is unchanged unless you declare global x.
+
+Q M What does this print?
+| def f(a, b=2, c=3):
+|     return a + b * c
+| print(f(1, c=10))
++ 21
+- 13
+- 7
+- An error
+= a = 1, b keeps its default 2, c = 10: 1 + 2 × 10 = 21.
+
+Q H What does this print?
+| def add(item, items=[]):
+|     items.append(item)
+|     return items
+| add(1)
+| print(add(2))
++ [1, 2]
+- [2]
+- [1]
+- An error
+= The default list is created once, when the function is defined, and shared between calls. Use items=None and create a new list inside.
+
+Q H What happens when this runs?
+| count = 0
+| def bump():
+|     count += 1
+| bump()
++ UnboundLocalError
+- count becomes 1
+- count stays 0 silently
+- SyntaxError before it runs
+= count += 1 assigns, so count is local to bump, and it is read before being set. Use global count (or better, return a value).
+
+Q H What does this print?
+| def outer():
+|     n = 0
+|     def inner():
+|         nonlocal n
+|         n += 1
+|         return n
+|     return inner
+| f = outer()
+| f()
+| print(f())
++ 2
+- 1
+- 0
+- An error
+= inner is a closure over n; nonlocal lets it update n, which persists between calls.
+
+Q H What does this print?
+| funcs = [lambda: i for i in range(3)]
+| print([f() for f in funcs])
++ [2, 2, 2]
+- [0, 1, 2]
+- [0, 0, 0]
+- An error
+= Each lambda looks up i when called, after the loop ended at 2. Bind it early with lambda i=i: i.
+
+@topic py-oop-errors | FUNDAMENTALS | Classes and exceptions | Classes, __init__ and self, inheritance and super(), class vs instance attributes, try/except/else/finally, raising exceptions.
+Q E What is self in a method?
++ The object the method was called on
+- The class the method is defined in
+- A global variable Python creates per module
+- The parent class of the current class
+= Python passes the instance as the first argument; naming it self is a convention.
+
+Q E Which method runs when a new object is created, to set it up?
++ __init__
+- __new_object__
+- __start__
+- __create__
+= __init__ initialises the new instance (__new__ creates it, rarely overridden).
+
+Q E Which block handles an error raised inside try?
++ except
+- catch
+- finally
+- error
+= Python uses try / except; finally always runs afterwards.
+
+Q E How do you raise an error yourself?
++ raise ValueError("bad input")
+- throw ValueError("bad input")
+- error ValueError("bad input")
+- except ValueError("bad input")
+= raise starts an exception; callers can catch it with except.
+
+Q M What does this print?
+| class Animal:
+|     def speak(self):
+|         return "..."
+| class Dog(Animal):
+|     def speak(self):
+|         return "Woof"
+| print(Dog().speak())
++ Woof
+- ...
+- Woof...
+- An error
+= Dog overrides speak from Animal.
+
+Q M What does this print?
+| try:
+|     x = 1 / 0
+| except ZeroDivisionError:
+|     print("A", end=" ")
+| else:
+|     print("B", end=" ")
+| finally:
+|     print("C")
++ A C
+- A B C
+- B C
+- C
+= else runs only when no exception happened; finally always runs.
+
+Q M What does super().__init__(...) do in a subclass's __init__?
++ Runs the parent's __init__ so its setup happens too
+- Creates a second object of the parent class
+- Copies the parent's methods into the subclass
+- Makes the subclass abstract until it is done
+= Without it the parent's attributes are not set up.
+
+Q M What does this print?
+| class C:
+|     count = 0
+|     def __init__(self):
+|         C.count += 1
+| C(); C()
+| print(C.count)
++ 2
+- 0
+- 1
+- An error
+= count is a class attribute shared by all instances; each __init__ increments it.
+
+Q H What does this print?
+| class A:
+|     items = []
+| a, b = A(), A()
+| a.items.append(1)
+| print(b.items)
++ [1]
+- []
+- An error
+- None
+= items is one list on the class, shared by every instance. Create per-object lists in __init__.
+
+Q H Why is a bare except: discouraged?
++ It also catches KeyboardInterrupt and SystemExit, hiding bugs
+- It is a syntax error in Python 3 and will not run
+- It catches only SyntaxError raised while importing
+- It is slower than except Exception for every error
+= Catch the specific exceptions you can handle, or at most except Exception.
+
+Q H What does this print?
+| class Point:
+|     def __init__(self, x):
+|         self.x = x
+|     def __eq__(self, other):
+|         return self.x == other.x
+| print(Point(1) == Point(1), Point(1) is Point(1))
++ True False
+- False False
+- True True
+- An error
+= == calls __eq__ (compares values); is checks whether both are the same object.
+
+Q H What does a leading double underscore (self.__secret) do?
++ Name mangling to _ClassName__secret, avoiding subclass clashes
+- It makes the attribute truly private and unreachable from outside
+- It makes the attribute a constant that cannot be reassigned
+- It turns the attribute into a class attribute shared by instances
+= Python has no real private members; the single underscore is a "please don't touch" convention.
+
+@topic py-comprehensions | PRACTICAL | Comprehensions, iterators and generators | List/dict/set comprehensions, generator expressions, yield, iterators, enumerate, zip, sorted with key.
+Q E What does this produce?
+| [n * n for n in range(4)]
++ [0, 1, 4, 9]
+- [1, 4, 9, 16]
+- [0, 1, 2, 3]
+- (0, 1, 4, 9)
+= range(4) is 0, 1, 2, 3; each is squared.
+
+Q E What does enumerate(["a", "b"]) give when looped over?
++ (0, 'a') then (1, 'b')
+- 'a' then 'b'
+- 0 then 1
+- ('a', 0) then ('b', 1)
+= enumerate pairs each item with its index.
+
+Q E What does this produce?
+| list(zip([1, 2, 3], ["a", "b"]))
++ [(1, 'a'), (2, 'b')]
+- [(1, 'a'), (2, 'b'), (3, None)]
+- [1, 'a', 2, 'b']
+- An error
+= zip stops at the shortest input.
+
+Q E What does this produce?
+| [n for n in range(10) if n % 3 == 0]
++ [0, 3, 6, 9]
+- [3, 6, 9]
+- [0, 3, 6]
+- [1, 4, 7]
+= The if filters the numbers divisible by 3, including 0.
+
+Q M What does this produce?
+| {w: len(w) for w in ["hi", "hello"]}
++ {'hi': 2, 'hello': 5}
+- [('hi', 2), ('hello', 5)]
+- {2: 'hi', 5: 'hello'}
+- {'hi', 'hello'}
+= A dict comprehension builds key: value pairs.
+
+Q M What does this print?
+| def gen():
+|     yield 1
+|     yield 2
+| g = gen()
+| print(next(g), next(g))
++ 1 2
+- 1 1
+- [1, 2]
+- An error
+= Each next() resumes the generator until the following yield.
+
+Q M What does this print?
+| words = ["pear", "fig", "banana"]
+| print(sorted(words, key=len))
++ ['fig', 'pear', 'banana']
+- ['banana', 'fig', 'pear']
+- ['banana', 'pear', 'fig']
+- ['pear', 'fig', 'banana']
+= key=len sorts by length (3, 4, 6).
+
+Q M What is the main benefit of a generator expression like (x * x for x in data) over a list comprehension?
++ It yields values one at a time instead of building the whole list
+- It is always faster than a list comprehension, for every use
+- It can be indexed and sliced exactly like a list
+- It can be looped over again and again without being rebuilt
+= Generators are lazy and single-use.
+
+Q H What does this print?
+| g = (x for x in range(3))
+| print(list(g), list(g))
++ [0, 1, 2] []
+- [0, 1, 2] [0, 1, 2]
+- [] []
+- An error
+= A generator is exhausted after one full pass.
+
+Q H What does this print?
+| print(sum(x for x in range(5) if x % 2))
++ 4
+- 10
+- 6
+- 9
+= The odd numbers are 1 and 3; their sum is 4.
+
+Q H What does this produce?
+| [(i, j) for i in range(2) for j in range(2) if i != j]
++ [(0, 1), (1, 0)]
+- [(0, 0), (1, 1)]
+- [(0, 1)]
+- [(1, 0), (0, 1)]
+= Nested for clauses run like nested loops, outer first.
+
+Q H Which makes a class usable in a for loop?
++ Defining __iter__ (returning an iterator)
+- Defining __len__ and nothing else
+- Inheriting from list and nothing else
+- Defining __call__ to return each item
+= The for statement calls iter(obj), which uses __iter__ (or __getitem__ as a fallback).
+
+@topic py-decorators | PRACTICAL | Decorators, closures and context managers | Writing decorators, functools.wraps, closures, with statements, contextlib, properties.
+Q E What does the with statement do with a file?
++ Closes the file automatically when the block ends
+- Reads the file twice to check its contents
+- Locks the file so no other program can open it
+- Deletes the file once the block has finished
+= with open(path) as f: ... closes f even if an error happens.
+
+Q E What is a decorator?
++ A function that takes a function and returns a wrapped version
+- A comment above a function that documents its parameters
+- A class whose attributes cannot be changed after creation
+- A statement that imports a module only when it is first used
+= @timer above def f(): is the same as f = timer(f).
+
+Q E What does @property do?
++ Lets obj.area be read like an attribute while running a method
+- Makes the attribute private so only the class can read it
+- Makes the method static so it needs no instance at all
+- Caches the class so new instances are created faster
+= Properties can also have setters to validate assignments.
+
+Q E What does @staticmethod mean?
++ It receives neither the instance nor the class automatically
+- It can only be called once, when the class is first defined
+- It runs once when the module is imported, then never again
+- It is private, so it cannot be called from outside the class
+= @classmethod gets the class (cls) instead.
+
+Q M What does this print?
+| def shout(func):
+|     def wrapper():
+|         return func().upper()
+|     return wrapper
+|
+| @shout
+| def hello():
+|     return "hi"
+|
+| print(hello())
++ HI
+- hi
+- wrapper
+- An error
+= hello now refers to wrapper, which calls the original function and upper-cases the result.
+
+Q M Why use functools.wraps inside a decorator?
++ It copies the original's name and docstring onto the wrapper
+- It makes the decorated function run faster by caching it
+- It is required, or the decorator raises a TypeError
+- It catches exceptions thrown by the wrapped function
+= Without it, hello.__name__ would be "wrapper", which confuses logs and tools.
+
+Q M What does this print?
+| def counter():
+|     count = 0
+|     def inc():
+|         nonlocal count
+|         count += 1
+|         return count
+|     return inc
+| c = counter()
+| c(); c()
+| print(c())
++ 3
+- 1
+- 0
+- An error
+= The closure keeps count between calls.
+
+Q M Which methods make an object usable in a with statement?
++ __enter__ and __exit__
+- __open__ and __close__
+- __start__ and __stop__
+- __init__ and __del__
+= contextlib.contextmanager lets you write one as a generator instead.
+
+Q H What does this print?
+| def deco(n):
+|     def wrap(f):
+|         def inner():
+|             return f() * n
+|         return inner
+|     return wrap
+|
+| @deco(3)
+| def two():
+|     return 2
+|
+| print(two())
++ 6
+- 2
+- 3
+- An error
+= deco(3) returns the actual decorator wrap, which then wraps two.
+
+Q H What does this print?
+| from functools import lru_cache
+| calls = 0
+| @lru_cache
+| def sq(n):
+|     global calls
+|     calls += 1
+|     return n * n
+| sq(4); sq(4); sq(5)
+| print(calls)
++ 2
+- 3
+- 1
+- 0
+= The second sq(4) comes from the cache; only sq(4) and sq(5) actually run.
+
+Q H If __exit__ returns True, what happens to an exception raised inside the with block?
++ It is suppressed and execution continues after the block
+- It is raised again once __exit__ has finished running
+- The program exits with the exception's error code
+- It is logged to stderr and then raised again
+= Returning a true value swallows the exception; return False (or None) to let it propagate.
+
+Q H In which order are stacked decorators applied?
+| @a
+| @b
+| def f(): ...
++ f = a(b(f)): the one nearest the function applies first
+- f = b(a(f)): the top decorator applies first
+- Only @a applies; the lower decorator is ignored
+- Both are applied in parallel and then merged
+= Decorators apply bottom-up; at call time the outermost wrapper (a) runs first.
+
+@topic py-web | PRACTICAL | Web APIs: Django, Flask and FastAPI | Routing, request and response handling, REST, status codes, ORM basics, validation with Pydantic, settings and environment.
+Q E Which Python framework uses type hints and Pydantic models to validate requests automatically?
++ FastAPI
+- Flask
+- Tkinter
+- NumPy
+= FastAPI builds validation and OpenAPI docs from type hints.
+
+Q E In Flask, what does @app.route("/hello") do?
++ Maps requests for /hello to the function below it
+- Starts the development server listening on /hello
+- Creates a database table named hello for the app
+- Redirects every request to /hello to the home page
+= Route decorators connect URLs to view functions.
+
+Q E Which HTTP status code means "Not Found"?
++ 404
+- 200
+- 500
+- 301
+= 2xx success, 3xx redirect, 4xx client error, 5xx server error.
+
+Q E Where should secrets such as database passwords live?
++ In environment variables or a secrets manager
+- Hard-coded in settings.py, which is not public
+- In the README so the whole team can find them
+- In the URL query string of each database call
+= Read them with os.environ (or a settings library) so they never get committed.
+
+Q M In Django, what does a model class map to?
++ A database table
+- An HTML page
+- A URL
+- A CSS file
+= Django's ORM creates and queries tables from model classes.
+
+Q M Which status should an API return when the input fails validation?
++ 400 Bad Request, or 422 as FastAPI does
+- 200 OK with an error message in the body
+- 500 Internal Server Error with the stack trace
+- 302 Found, redirecting back to the form
+= 4xx tells the client the request was wrong; 5xx means the server failed.
+
+Q M What does python manage.py makemigrations do in Django?
++ Creates migration files from changes to your models
+- Applies pending migrations to the database tables
+- Deletes and recreates the database from your models
+- Starts the development server after checking models
+= migrate then applies those migrations to the database.
+
+Q M What is a Pydantic model used for in FastAPI?
++ Declaring and validating the shape of request and response data
+- Rendering HTML templates for pages returned by the API
+- Scheduling background jobs that run after each request
+- Hashing passwords before they are stored in the database
+= Invalid bodies are rejected with a clear error before your code runs.
+
+Q H Why is the Django development server (runserver) not used in production?
++ It is not built for load or security; use Gunicorn/Uvicorn behind a proxy
+- It cannot return JSON, only HTML pages rendered from templates
+- It runs only on Windows, while production servers run on Linux
+- It deletes the database each time the server is restarted
+= Production servers handle concurrency, timeouts and process management.
+
+Q H What is the N+1 problem in Django, and a fix?
++ A loop runs one query per related object; fix with select_related / prefetch_related
+- A view returns one more item than asked for; fix it with queryset slicing
+- The URL config has too many patterns; fix it by splitting with include()
+- The app has too many migrations; fix it by squashing them into one file
+= select_related joins foreign keys; prefetch_related batches many-to-many and reverse lookups.
+
+Q H Why are async endpoints in FastAPI harmed by calling a blocking function like time.sleep or requests.get?
++ They block the event loop, so other requests wait
+- They raise a SyntaxError inside async functions
+- They run twice because of the async wrapper
+- They make FastAPI return 404 for that route
+= Use async libraries (httpx, asyncio.sleep) or define the endpoint with def so it runs in a thread pool.
+
+Q H How should an API store user passwords?
++ As salted hashes from a slow algorithm like bcrypt
+- Encrypted with AES using a key kept in the code
+- In plain text, in a table only admins can read
+- As MD5 hashes, which are fast to check at login
+= Slow, salted hashes make stolen hashes very hard to crack.
+
+@topic py-testing | PRACTICAL | Testing, packaging and tooling | pytest basics and fixtures, assertions, mocking, virtual environments, pip and requirements, linting and formatting.
+Q E Which tool is most commonly used to write and run Python tests?
++ pytest
+- pip
+- venv
+- black
+= pytest discovers test_*.py files and functions named test_*.
+
+Q E Why use a virtual environment (venv)?
++ To keep each project's packages separate from others
+- To make Python code run faster on the same machine
+- To run Python programs inside a web browser
+- To encrypt the project's source code on disk
+= python -m venv .venv creates an isolated environment.
+
+Q E How do you install the packages listed in requirements.txt?
++ pip install -r requirements.txt
+- pip install requirements.txt
+- python requirements.txt
+- pip get -all
+= -r reads package names (and versions) from the file.
+
+Q E In pytest, how do you check that a value is correct?
++ A plain assert, e.g. assert total == 10
+- self.assertEqual(total, 10), and only that
+- print(total) and check the output by eye
+- raise Exception(total) when it looks wrong
+= pytest rewrites assert to show helpful failure messages.
+
+Q M What is a pytest fixture?
++ A reusable setup (and teardown) function tests request by name
+- A test that is marked to always pass while it is being written
+- A file of test data that pytest loads before each test module
+- A command-line option that changes how pytest discovers tests
+= Tests list fixtures as parameters; pytest creates and injects them.
+
+Q M How do you check in pytest that code raises an error?
+| def test_divide():
+|     ...
++ with pytest.raises(ZeroDivisionError): divide(1, 0)
+- assert divide(1, 0) == ZeroDivisionError
+- try: divide(1, 0) except: pass
+- pytest.fail(divide(1, 0))
+= The test passes only if the block raises that exception.
+
+Q M What is mocking used for in unit tests?
++ Replacing external parts like APIs with fakes you control
+- Running the test suite against the production database
+- Deleting test data automatically after each test run
+- Making the Python interpreter run the tests faster
+= unittest.mock.patch swaps an object for a Mock during a test.
+
+Q M What does pinning versions (e.g. requests==2.32.3) achieve?
++ Everyone gets the same versions, so builds are reproducible
+- Packages update automatically to their newest versions
+- Packages download and install noticeably faster
+- Unused packages are removed from the environment
+= Tools like pip-tools or Poetry lock exact versions.
+
+Q H You patch a function with unittest.mock.patch("app.services.send_email"), but the real one still runs. The likely reason?
++ The module under test imported it by name; patch where it is looked up
+- patch() only works on classes, never on plain module functions
+- Mocks cannot replace functions, only methods on objects
+- Python caches functions, so you must restart it after patching
+= Patch the name in the module that uses it, e.g. "app.views.send_email".
+
+Q H What does @pytest.mark.parametrize do?
++ Runs one test with several sets of inputs
+- Runs the selected tests in parallel processes
+- Skips tests marked as slow unless asked
+- Marks a test as expected to fail for now
+= Each parameter set becomes its own test case in the report.
+
+Q H What is the purpose of a pyproject.toml file?
++ It declares the build system, metadata, dependencies and tool settings
+- It stores secrets such as database passwords for each environment
+- It replaces the Python source files when the package is built
+- It configures Django settings and is not used by other projects
+= It is the standard project file (PEP 517/518/621); tools like ruff and pytest read settings from it.
+
+Q H What does test coverage measure, and what does it not tell you?
++ Which lines ran; not whether the assertions check the right thing
+- How long each test takes, so slow tests can be found
+- How many bugs are still left in the code under test
+- How many users run each feature in production
+= 100% coverage with weak assertions can still miss bugs.
+
+@topic py-concurrency | ADVANCED | Concurrency and async | The GIL, threads vs processes, asyncio and await, concurrent.futures, choosing a model for I/O-bound vs CPU-bound work.
+Q E What does the GIL (Global Interpreter Lock) in CPython do?
++ Lets one thread at a time run Python bytecode in a process
+- Locks each file while a thread is writing to it
+- Stops threads from importing modules at the same time
+- Encrypts the interpreter's memory between threads
+= Threads still help with I/O-bound work, because the GIL is released while waiting.
+
+Q E Which keyword pauses a coroutine until an awaitable finishes?
++ await
+- yield from only
+- wait
+- pause
+= await can only be used inside async def functions.
+
+Q E Which is best for many slow network calls?
++ asyncio or threads
+- One process per call
+- A tight for loop
+- time.sleep between calls
+= I/O-bound work spends its time waiting, so concurrency helps.
+
+Q E Which is best for CPU-heavy work such as image processing on many cores?
++ multiprocessing
+- threading
+- asyncio
+- generators
+= Separate processes each have their own interpreter and GIL, so they use several cores.
+
+Q M What does this print?
+| import asyncio
+| async def hello():
+|     return "hi"
+| print(asyncio.run(hello()))
++ hi
+- <coroutine object hello>
+- None
+- An error
+= asyncio.run starts an event loop, runs the coroutine and returns its result.
+
+Q M What happens if you call an async function without await (e.g. hello())?
++ You get a coroutine object; the body does not run
+- It runs immediately like a normal function
+- It raises SyntaxError
+- It runs in a new thread
+= Python warns "coroutine was never awaited".
+
+Q M What does asyncio.gather(a(), b()) do?
++ Runs both concurrently and returns their results in order
+- Runs a() to the end, then starts b() and waits for it
+- Runs each coroutine in its own operating system process
+- Returns only the result of whichever finishes first
+= Total time is roughly the longest of the two, not the sum.
+
+Q M What does ThreadPoolExecutor.map(fetch, urls) give you?
++ fetch's results for each URL, run on threads, in input order
+- fetch's results for each URL, in the order they finish
+- Only the result of the first URL that finishes
+- The list of thread objects that were started
+= Use as_completed if you want results as they finish.
+
+Q H Two threads each run counter += 1 a million times. Is the final total guaranteed to be two million?
++ No; += takes several steps, and a switch between them can lose updates
+- Yes, because the GIL makes every += operation atomic
+- Yes, because ints are immutable and cannot be corrupted
+- No, because Python raises an error when two threads write
+= The GIL protects the interpreter, not your logic. Use a threading.Lock.
+
+Q H In an async web app, a request handler calls a CPU-heavy function directly. What is the effect?
++ The event loop is blocked, so every other request waits
+- Only that request slows down
+- Python moves it to another core automatically
+- The function is skipped
+= Offload with loop.run_in_executor (a process pool for CPU work).
+
+Q H Why can multiprocessing be slower than expected for small tasks?
++ Starting processes and pickling data can cost more than the work
+- All processes share one GIL, so only one can run at a time
+- Processes cannot return values to the parent process
+- multiprocessing uses only one CPU core by default
+= Batch work into larger chunks to amortise the overhead.
+
+Q H What does Python 3.13 offer regarding the GIL?
++ An experimental free-threaded build without the GIL
+- The GIL has been removed from every Python build
+- The GIL now also locks across separate processes
+- Threads were removed in favour of asyncio
+= The default build still has the GIL; the free-threaded build (python3.13t) is opt-in.
+
+@topic py-internals | ADVANCED | Python internals and memory | Names and references, mutability, is vs ==, reference counting and garbage collection, copying, hashing, __slots__.
+Q E What does is check?
++ Whether two names refer to the same object
+- Whether two objects have equal values
+- Whether an object counts as true
+- Whether two objects share a type
+= Use == for equality and is mainly for None (x is None).
+
+Q E What happens to an object when nothing refers to it any more (in CPython)?
++ It is freed, usually right away by reference counting
+- It stays in memory until the program finishes
+- It is moved to disk in case it is needed again
+- Python raises a warning about the unused object
+= A cycle detector also collects groups of objects that refer only to each other.
+
+Q E Which of these can change in place?
++ A list
+- A string
+- A tuple
+- An int
+= Strings, tuples and ints are immutable; "changing" them creates a new object.
+
+Q E What does this print?
+| s = "hi"
+| t = s
+| s += "!"
+| print(t)
++ hi
+- hi!
+- !
+- An error
+= s += "!" makes a new string and points s at it; t still refers to "hi".
+
+Q M What does this print?
+| def f(lst):
+|     lst.append(1)
+|     lst = [9]
+| a = []
+| f(a)
+| print(a)
++ [1]
+- [9]
+- []
+- [1, 9]
+= Arguments are passed by object reference: append changes the shared list; rebinding lst inside f does not affect a.
+
+Q M Why can't a list be used as a dict key?
++ Lists are mutable, so they are not hashable
+- Lists are too large to be used as keys
+- Dictionary keys must always be strings
+- Only numbers and strings can be keys
+= A key's hash must not change while it is in the dict.
+
+Q M What does __slots__ in a class do?
++ Fixes the allowed attributes and drops the per-object __dict__
+- Makes the class abstract so it cannot be instantiated
+- Makes imports of the module noticeably faster
+- Makes every attribute private to the class
+= Useful when you create millions of small objects.
+
+Q M What does sys.getrefcount(obj) show?
++ How many references point to the object (plus one)
+- The object's size in memory, measured in bytes
+- How many times the object has been printed
+- The object's address in memory, like id()
+= Reference counts drive CPython's memory management.
+
+Q H What does this print?
+| a = [1, 2, 3]
+| b = a[:]
+| print(a == b, a is b)
++ True False
+- True True
+- False False
+- False True
+= Slicing makes a new list with equal contents.
+
+Q H What does this print?
+| x = (1, [2])
+| x[1].append(3)
+| print(x)
++ (1, [2, 3])
+- An error: tuples are immutable
+- (1, [2])
+- (1, 2, 3)
+= The tuple cannot change which objects it holds, but the list inside it is mutable.
+
+Q H Why can objects with a __del__ method, or caught in reference cycles, be released later than expected?
++ Cycles are freed only when the cycle collector runs
+- __del__ always runs before __init__ for such objects
+- The GIL blocks deletion while other threads are running
+- Python never frees objects that are part of a cycle
+= Prefer context managers (with) to release resources deterministically.
+
+Q H What does this print?
+| print(hash((1, 2)) == hash((1, 2)), [1] == [1])
++ True True
+- False True
+- True False
+- An error
+= Equal tuples hash the same; lists compare by value but cannot be hashed.
+
+@topic py-performance | ADVANCED | Performance, typing and data structures | Time complexity of built-ins, choosing structures, profiling, type hints and mypy, NumPy/pandas basics, avoiding common slow patterns.
+Q E What is the average time to check x in a set?
++ O(1)
+- O(n)
+- O(log n)
+- O(n²)
+= Sets and dicts use hashing; x in a list is O(n).
+
+Q E Which tool shows where a Python program spends its time?
++ cProfile
+- pip
+- venv
+- black
+= python -m cProfile -s cumtime app.py lists the slowest functions.
+
+Q E What do type hints such as def total(n: int) -> int do at run time?
++ Nothing by default; tools like mypy use them to find mistakes
+- They convert each argument to the hinted type automatically
+- They raise a TypeError whenever a value has the wrong type
+- They make the function run faster by skipping type checks
+= Python does not enforce hints; libraries like Pydantic can use them for validation.
+
+Q E Why is "".join(parts) preferred over += in a loop to build a long string?
++ join builds it once; += can copy the string each time
+- += is not allowed on strings, so join is required
+- join sorts the parts before joining them together
+- They are always exactly the same speed in CPython
+= Repeated concatenation can become quadratic for many pieces.
+
+Q M Which structure is best as a queue where you add at one end and remove from the other?
++ collections.deque
+- list with pop(0)
+- tuple
+- set
+= list.pop(0) shifts every element (O(n)); deque.popleft() is O(1).
+
+Q M What does this print?
+| from collections import Counter
+| print(Counter("banana").most_common(1))
++ [('a', 3)]
+- [('b', 1)]
+- {'a': 3}
+- [('n', 2)]
+= Counter counts items; "a" appears three times.
+
+Q M Why is NumPy much faster than Python lists for numeric work?
++ It stores numbers compactly and runs vectorised loops in C
+- It starts more threads automatically for every operation
+- It skips calculations whose results are not printed
+- It caches every result so repeated work is free
+= Replace Python loops with array operations like arr * 2.
+
+Q M What does this mypy-style hint mean?
+| def find(id: int) -> User | None: ...
++ The function returns a User or None
+- The function returns both a User and None
+- id may be None
+- It is a syntax error
+= Callers must handle the None case; X | None needs Python 3.10+ (or Optional[X]).
+
+Q H A loop does if item in big_list for 100,000 items. What is the simplest big speed-up?
++ Convert big_list to a set once, before the loop
+- Replace the for loop with an equivalent while loop
+- Sort the list again before each membership check
+- Run the loop on several threads at the same time
+= That turns an O(n × m) search into roughly O(n + m).
+
+Q H In pandas, why should df.apply(row-wise function) often be replaced?
++ apply runs Python for each row; column operations are vectorised
+- apply changes the original DataFrame instead of returning a copy
+- apply does not work on DataFrames, only on Python lists
+- apply cannot return values, so results are lost after each row
+= e.g. df["total"] = df["price"] * df["qty"] instead of applying a function per row.
+
+Q H What does functools.lru_cache trade?
++ Memory for speed: results are kept for repeated arguments
+- Speed for memory: results are recomputed to save space
+- Accuracy for speed: results are rounded to save time
+- Nothing: caching has no cost in time or memory
+= Set maxsize to limit memory; arguments must be hashable.
+
+Q H What is a typing.Protocol used for?
++ Structural typing: any class with the right methods matches
+- Describing network protocols such as HTTP and WebSocket
+- Making classes immutable once they are created
+- Running functions in parallel across processes
+= Like Go interfaces: "if it has a read() method, it is a Reader".
+
+@topic py-design | ADVANCED | Design and architecture in Python | Dataclasses, abstract base classes, composition, dependency injection, common patterns, project structure, SOLID in Python.
+Q E What does @dataclass generate for a class?
++ __init__, __repr__ and __eq__ from the fields
+- A database table with one column per field
+- A REST API endpoint for each declared field
+- Getters and setters, but no __init__ method
+= Options such as frozen=True make instances immutable.
+
+Q E What is an abstract base class (abc.ABC) used for?
++ Declaring methods subclasses must implement; it can't be instantiated
+- Making a class faster by compiling its methods ahead of time
+- Storing constants that the rest of the program should share
+- Creating singletons so only one instance exists in the program
+= @abstractmethod marks the methods that must be overridden.
+
+Q E What does "composition over inheritance" mean?
++ Build objects from parts they hold, not deep class hierarchies
+- Never use classes; write everything as plain functions
+- Inherit from as many classes as possible to reuse code
+- Put all the code in one module so it is easy to find
+= Holding a Storage object is more flexible than inheriting from FileStorage.
+
+Q E What is the purpose of an if __name__ == "__main__": block?
++ Its code runs only when the file is run directly, not when imported
+- Python requires it in every file or the file will not run at all
+- It makes the module private so other files cannot import it
+- It starts a web server when the file is imported by another module
+= It keeps imports free of side effects.
+
+Q M What does this print?
+| from dataclasses import dataclass
+| @dataclass(frozen=True)
+| class P:
+|     x: int
+| p = P(1)
+| p.x = 2
++ FrozenInstanceError
+- Nothing; p.x becomes 2
+- 1
+- SyntaxError
+= frozen=True makes assignment to fields raise dataclasses.FrozenInstanceError.
+
+Q M How do you apply dependency injection in Python without a framework?
++ Pass collaborators such as a repository into __init__ or as arguments
+- Import every dependency globally inside each function that uses it
+- Keep dependencies in global variables that every module can change
+- Subclass each dependency so the class inherits what it needs
+= Tests can then pass fakes instead of real services.
+
+Q M In Python, what is "duck typing"?
++ Using an object by what it can do, not its declared type
+- Writing type hints that Python ignores at run time
+- A testing library that replaces objects with fakes
+- Converting values between types automatically
+= "If it walks like a duck and quacks like a duck…"
+
+Q M Which pattern does Python's logging.getLogger(name) follow?
++ The same logger object is returned for the same name
+- A new logger object is created on every call
+- The Builder pattern, configuring a logger step by step
+- The Observer pattern and nothing else
+= Loggers are cached by name, so modules share configuration.
+
+Q H Why do mutable default values in dataclasses (items: list = []) raise an error?
++ It would be shared by every instance; use field(default_factory=list)
+- Dataclasses cannot have fields that hold lists of any kind
+- Lists must be declared as tuples inside a dataclass
+- Default values are not allowed in dataclasses at all
+= default_factory creates a new list for each instance.
+
+Q H What is a good way to structure a growing Flask/FastAPI service?
++ Routes call services, services call repositories; config from the environment
+- One file holding every route, SQL query and setting, so nothing is hard to find
+- SQL written inside the templates so each page loads exactly what it needs
+- One class per HTTP method, each containing all the logic for that method
+= Thin routes and testable services keep changes local.
+
+Q H What is the main risk of circular imports between modules?
++ A module may be used before it finishes loading, so names are missing
+- Python runs out of memory loading the same modules repeatedly
+- Imports become faster, which hides other problems in the code
+- The test runner stops discovering tests in those modules
+= Fix by moving shared code to a third module or importing inside functions.
+
+Q H How does an abstract base class (ABC) differ from a typing.Protocol?
++ An ABC needs explicit inheritance; a Protocol matches by methods
+- They are the same feature with two different names
+- Protocols are checked only once, at import time
+- ABCs cannot contain methods that have a body
+= Protocols suit loose coupling and third-party classes you cannot change.

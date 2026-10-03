@@ -30,9 +30,12 @@ public final class BankDtos {
      */
     public record BankOverview(List<Count> counts, List<TopicCount> topics, List<Preset> presets, List<TopicGuide> guide) {}
 
-    /** A topic in the guide; covers and example are empty for topics added by hand. */
-    public record TopicGuide(String id, BankQuestion.Section section, String sectionLabel, String name, String covers, String example,
-            long easy, long medium, long hard) {}
+    /**
+     * A topic in the guide; covers and example are empty for topics added by hand. level: who the
+     * band is for in technical areas (e.g. "Freshers"), null for aptitude.
+     */
+    public record TopicGuide(String id, BankQuestion.Section section, String sectionLabel, String level, String name, String covers,
+            String example, long easy, long medium, long hard) {}
 
     public record Count(Assessment.Category area, BankQuestion.Section section, String sectionLabel,
             BankQuestion.Difficulty difficulty, long count) {}
@@ -48,7 +51,9 @@ public final class BankDtos {
             @NotNull BankQuestion.Difficulty difficulty,
             @NotNull @Valid AssessmentDtos.QuestionRequest question) {}
 
+    /** area defaults to APTITUDE. */
     public record BankDraftRequest(
+            Assessment.Category area,
             @NotNull BankQuestion.Section section,
             @NotBlank @Size(max = 60) String topic,
             @NotNull BankQuestion.Difficulty difficulty,

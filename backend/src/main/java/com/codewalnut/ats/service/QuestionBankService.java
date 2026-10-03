@@ -4,6 +4,7 @@ import com.codewalnut.ats.bank.AptitudeBank;
 import com.codewalnut.ats.bank.Presets;
 import com.codewalnut.ats.bank.Seed;
 import com.codewalnut.ats.bank.Svg;
+import com.codewalnut.ats.bank.TechBank;
 import com.codewalnut.ats.client.AssessmentDraft;
 import com.codewalnut.ats.client.AssessmentDrafter;
 import com.codewalnut.ats.client.CalendarException;
@@ -82,7 +83,8 @@ public class QuestionBankService {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void loadBuiltIn() {
-        List<Seed> seeds = AptitudeBank.all();
+        List<Seed> seeds = new ArrayList<>(AptitudeBank.all());
+        seeds.addAll(TechBank.all());
         Set<String> current = seeds.stream().map(Seed::key).collect(Collectors.toSet());
         Set<String> have = bankRepository.findBuiltinKeys();
         List<BankQuestion> fresh = new ArrayList<>();
@@ -91,8 +93,8 @@ public class QuestionBankService {
                 continue;
             }
             fresh.add(BankQuestion.builder()
-                    .area(Assessment.Category.APTITUDE).section(seed.section()).topic(seed.topic()).difficulty(seed.difficulty())
-                    .kind(seed.kind()).prompt(seed.prompt()).figure(seed.figure())
+                    .area(seed.area()).section(seed.section()).topic(seed.topic()).difficulty(seed.difficulty())
+                    .kind(seed.kind()).prompt(seed.prompt()).code(seed.code()).figure(seed.figure())
                     .optionsJson(assessmentService.write(seed.options()))
                     .optionFiguresJson(seed.optionFigures() == null ? null : assessmentService.write(seed.optionFigures()))
                     .answerJson(assessmentService.write(seed.kind() == AssessmentQuestion.Kind.SHORT_ANSWER ? seed.accepted() : seed.correct()))
@@ -116,15 +118,16 @@ public class QuestionBankService {
     // ---- browsing ----
 
     @Transactional(readOnly = true)
-    public BankOverview overview(AppUser actor) {
+    public BankOverview overview(AppUser actor, Assessment.Category requested) {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        Assessment.Category area = requested == null ? Assessment.Category.APTITUDE : requested;
         List<Count> counts = bankRepository.countActive().stream()
                 .map(r -> new Count((Assessment.Category) r[0], (BankQuestion.Section) r[1], ((BankQuestion.Section) r[1]).getLabel(),
                         (BankQuestion.Difficulty) r[2], (Long) r[3]))
                 .toList();
         Map<String, long[]> topics = new LinkedHashMap<>();
         Map<String, BankQuestion.Section> sectionOf = new LinkedHashMap<>();
-        for (BankQuestion q : bankRepository.findByAreaAndStatusOrderBySectionAscTopicAscDifficultyAsc(Assessment.Category.APTITUDE,
+        for (BankQuestion q : bankRepository.findByAreaAndStatusOrderBySectionAscTopicAscDifficultyAsc(area,
                 BankQuestion.Status.ACTIVE)) {
             String k = q.getSection() + "/" + q.getTopic();
             sectionOf.put(k, q.getSection());
@@ -137,28 +140,35 @@ public class QuestionBankService {
         List<TopicCount> topicCounts = topics.entrySet().stream()
                 .map(e -> new TopicCount(sectionOf.get(e.getKey()), e.getKey().substring(e.getKey().indexOf('/') + 1), e.getValue()[0], e.getValue()[1]))
                 .toList();
-        return new BankOverview(counts, topicCounts, Presets.APTITUDE, guide());
+        return new BankOverview(counts, topicCounts, Presets.forArea(area), guide(area));
     }
 
     /** The built-in topics in their catalogue order, then any topics added by hand. */
-    private List<TopicGuide> guide() {
+    private List<TopicGuide> guide(Assessment.Category area) {
         Map<String, long[]> levels = new LinkedHashMap<>();
         Map<String, BankQuestion.Section> sectionOf = new LinkedHashMap<>();
-        for (BankQuestion q : bankRepository.findByAreaAndStatusOrderBySectionAscTopicAscDifficultyAsc(Assessment.Category.APTITUDE,
+        for (BankQuestion q : bankRepository.findByAreaAndStatusOrderBySectionAscTopicAscDifficultyAsc(area,
                 BankQuestion.Status.ACTIVE)) {
             String k = q.getSection() + "/" + q.getTopic();
             sectionOf.put(k, q.getSection());
             levels.computeIfAbsent(k, x -> new long[3])[q.getDifficulty().ordinal()]++;
         }
         List<TopicGuide> out = new ArrayList<>();
-        for (AptitudeBank.Topic t : AptitudeBank.TOPICS) {
+        if (area == Assessment.Category.APTITUDE) {
+            for (AptitudeBank.Topic t : AptitudeBank.TOPICS) {
+                long[] c = levels.remove(t.section() + "/" + t.name());
+                c = c == null ? new long[3] : c;
+                out.add(new TopicGuide(t.id(), t.section(), t.section().getLabel(), t.section().getLevel(), t.name(), t.covers(), t.example(), c[0], c[1], c[2]));
+            }
+        }
+        for (TechBank.Topic t : TechBank.topics(area)) {
             long[] c = levels.remove(t.section() + "/" + t.name());
             c = c == null ? new long[3] : c;
-            out.add(new TopicGuide(t.id(), t.section(), t.section().getLabel(), t.name(), t.covers(), t.example(), c[0], c[1], c[2]));
+            out.add(new TopicGuide(t.id(), t.section(), t.section().getLabel(), t.section().getLevel(), t.name(), t.covers(), t.example(), c[0], c[1], c[2]));
         }
         levels.forEach((k, c) -> {
             String name = k.substring(k.indexOf('/') + 1);
-            out.add(new TopicGuide("custom:" + name, sectionOf.get(k), sectionOf.get(k).getLabel(), name, "", "", c[0], c[1], c[2]));
+            out.add(new TopicGuide("custom:" + name, sectionOf.get(k), sectionOf.get(k).getLabel(), sectionOf.get(k).getLevel(), name, "", "", c[0], c[1], c[2]));
         });
         return out;
     }
@@ -188,6 +198,7 @@ public class QuestionBankService {
     @Transactional
     public BankQuestionView create(AppUser actor, BankQuestionRequest request) {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        checkSection(request.area(), request.section());
         QuestionRequest q = assessmentService.normalise(request.question());
         BankQuestion saved = bankRepository.save(apply(BankQuestion.builder()
                 .area(request.area()).section(request.section()).topic(request.topic().strip()).difficulty(request.difficulty())
@@ -202,6 +213,7 @@ public class QuestionBankService {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);
         BankQuestion b = bank(id);
         QuestionRequest q = assessmentService.normalise(request.question());
+        checkSection(request.area(), request.section());
         b.setArea(request.area());
         b.setSection(request.section());
         b.setTopic(request.topic().strip());
@@ -234,12 +246,16 @@ public class QuestionBankService {
         if (!drafter.available()) {
             throw new CalendarException("AI question drafting isn't set up yet. An admin needs to add ANTHROPIC_API_KEY.");
         }
-        List<String> avoid = bankRepository.findByAreaAndSectionAndDifficultyAndStatus(Assessment.Category.APTITUDE, request.section(),
+        Assessment.Category area = request.area() == null ? Assessment.Category.APTITUDE : request.area();
+        checkSection(area, request.section());
+        List<String> avoid = bankRepository.findByAreaAndSectionAndDifficultyAndStatus(area, request.section(),
                         request.difficulty(), BankQuestion.Status.ACTIVE).stream()
                 .filter(b -> b.getTopic().equalsIgnoreCase(request.topic()))
                 .map(BankQuestion::getPrompt).limit(40).toList();
-        AssessmentDraft draft = drafter.draft(new AssessmentDrafter.Request("APTITUDE", request.section().getLabel(), request.topic(),
-                request.difficulty().name().toLowerCase(Locale.ROOT) + " (freshers' campus aptitude test)", request.count(), avoid));
+        String level = area == Assessment.Category.APTITUDE ? " (freshers' campus aptitude test)"
+                : " (for " + request.section().getLevel().toLowerCase(Locale.ROOT) + " developers)";
+        AssessmentDraft draft = drafter.draft(new AssessmentDrafter.Request(area.name(), request.section().getLabel(), request.topic(),
+                request.difficulty().name().toLowerCase(Locale.ROOT) + level, request.count(), avoid));
         List<String> notes = new ArrayList<>();
         List<BankQuestionView> added = new ArrayList<>();
         for (AssessmentDraft.Question d : draft.questions() == null ? List.<AssessmentDraft.Question>of() : draft.questions()) {
@@ -253,7 +269,7 @@ public class QuestionBankService {
                         d.options(), d.correctOptions(), d.acceptedAnswers(),
                         d.points() == null ? 1 : Math.max(1, Math.min(10, d.points())), d.explanation(), figure));
                 BankQuestion saved = bankRepository.save(apply(BankQuestion.builder()
-                        .area(Assessment.Category.APTITUDE).section(request.section()).topic(request.topic().strip())
+                        .area(area).section(request.section()).topic(request.topic().strip())
                         .difficulty(request.difficulty()).source(BankQuestion.Source.AI).status(BankQuestion.Status.REVIEW)
                         .createdBy(actor.getEmail()).build(), q));
                 added.add(view(saved));
@@ -381,6 +397,13 @@ public class QuestionBankService {
     }
 
     // ---- helpers ----
+
+    /** Aptitude uses numerical/logical/verbal; technical areas use the experience bands. */
+    private static void checkSection(Assessment.Category area, BankQuestion.Section section) {
+        if (!BankQuestion.Section.forArea(area).contains(section)) {
+            throw new IllegalArgumentException("section: " + section.getLabel() + " is not a section of this area");
+        }
+    }
 
     /** Least-used first, random among equals, so repeated papers vary. */
     private static List<BankQuestion> pickSpread(List<BankQuestion> pool, int n) {

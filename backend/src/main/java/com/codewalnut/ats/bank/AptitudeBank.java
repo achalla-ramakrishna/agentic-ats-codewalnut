@@ -1,5 +1,7 @@
 package com.codewalnut.ats.bank;
 
+import static com.codewalnut.ats.domain.Assessment.Category.APTITUDE;
+
 import com.codewalnut.ats.domain.AssessmentQuestion.Kind;
 import com.codewalnut.ats.domain.BankQuestion.Difficulty;
 import com.codewalnut.ats.domain.BankQuestion.Section;
@@ -113,7 +115,7 @@ public final class AptitudeBank {
                             + (s.optionFigures() == null ? "" : new java.util.TreeSet<>(s.optionFigures()));
                     if (seen.add(signature)) {
                         // The topic guide's name is the one shown everywhere.
-                        made = new Seed(s.key(), topic.section(), topic.name(), d, s.kind(), s.prompt(), s.figure(), s.options(),
+                        made = new Seed(s.key(), APTITUDE, topic.section(), topic.name(), d, s.kind(), s.prompt(), null, s.figure(), s.options(),
                                 s.optionFigures(), s.correct(), s.accepted(), s.explanation());
                     }
                 }
@@ -164,7 +166,7 @@ public final class AptitudeBank {
         }
         List<String> shuffled = new ArrayList<>(options);
         Collections.shuffle(shuffled, new Random((key + "#options").hashCode()));
-        return new Seed(key, section, topic, d, Kind.SINGLE_CHOICE, prompt, figure, shuffled, null,
+        return new Seed(key, APTITUDE, section, topic, d, Kind.SINGLE_CHOICE, prompt, null, figure, shuffled, null,
                 List.of(shuffled.indexOf(answer)), List.of(), explanation);
     }
 
@@ -185,7 +187,7 @@ public final class AptitudeBank {
             throw new IllegalStateException("Need four different option pictures for " + key);
         }
         Collections.shuffle(figures, new Random((key + "#options").hashCode()));
-        return new Seed(key, section, topic, d, Kind.SINGLE_CHOICE, prompt, figure,
+        return new Seed(key, APTITUDE, section, topic, d, Kind.SINGLE_CHOICE, prompt, null, figure,
                 List.of("Figure A", "Figure B", "Figure C", "Figure D"), figures, List.of(figures.indexOf(answerFigure)),
                 List.of(), explanation);
     }

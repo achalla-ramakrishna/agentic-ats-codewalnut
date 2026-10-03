@@ -68,6 +68,10 @@ Question bank (ADR-0014): `bank/AptitudeBank` generates the built-in
 aptitude questions with `bank/Svg` pictures; `QuestionBankService` loads them
 at start-up, serves the bank, drafts more through `AssessmentDrafter` (held
 for review) and builds papers by copying questions into a draft assessment.
+Technical banks (ADR-0015): `bank/TechBank` parses the hand-written
+`resources/bank/tech/*.txt` files (Java, Python, JavaScript, React, Angular,
+SQL) into the same seeds, banded FUNDAMENTALS / PRACTICAL / ADVANCED, with
+keys hashed from content so edited questions replace old ones on load.
 
 View as (ADR-0013): a session attribute makes the `Current*Service`
 resolvers return a candidate, client contact or role-limited copy of the

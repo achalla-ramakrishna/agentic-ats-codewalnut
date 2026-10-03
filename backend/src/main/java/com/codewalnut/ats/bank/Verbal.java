@@ -204,7 +204,7 @@ final class Verbal {
                 List.of("(A) " + e[0], "(B) " + e[1], "(C) " + e[2], "(D) No error"), e[4]);
         // Keep A–D in order: easier to read than shuffled labels.
         List<String> ordered = List.of("(A) " + e[0], "(B) " + e[1], "(C) " + e[2], "(D) No error");
-        return new Seed(s.key(), s.section(), s.topic(), s.difficulty(), s.kind(), s.prompt(), null, ordered, null,
+        return new Seed(s.key(), s.area(), s.section(), s.topic(), s.difficulty(), s.kind(), s.prompt(), null, null, ordered, null,
                 List.of(ordered.indexOf(answer)), List.of(), s.explanation());
     }
 

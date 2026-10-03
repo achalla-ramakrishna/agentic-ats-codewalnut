@@ -1,0 +1,867 @@
+# CodeWalnut built-in Angular bank (ADR-0015). Format: see TechBank.java.
+# Bands: FUNDAMENTALS = freshers, PRACTICAL = 1–3 years, ADVANCED = 3+ years. Written for Angular 17+.
+# Distractors are kept as long and as plausible as the answer, so length gives nothing away.
+
+@topic ng-components | FUNDAMENTALS | Components and templates | Components, templates and styles, interpolation, standalone components, lifecycle hooks, the Angular CLI.
+Q E What does the @Component decorator define?
++ The selector, template and styles of a component
+- The routes and guards of a feature module
+- The HTTP endpoints a service will call
+- The database entities used by the app
+= Each component pairs a TypeScript class with a template.
+
+Q E How do you show a component property title in its template?
++ {{ title }}
+- ${title}
+- <%= title %>
+- [[ title ]]
+= Double curly braces are interpolation.
+
+Q E Which CLI command creates a new component?
++ ng generate component user-card
+- npm create component user-card
+- ng new component user-card
+- ng add component user-card
+= The short form is ng g c user-card. ng new creates a whole workspace; ng add installs libraries.
+
+Q E What is a standalone component?
++ A component that lists its own imports instead of being declared in an NgModule
+- A component that has no inputs and cannot receive data
+- A component that is rendered only on the server
+- A component that cannot be used inside other components
+= Standalone is the default for new projects since Angular 17.
+
+Q M Which lifecycle hook is the usual place to load initial data?
++ ngOnInit
+- constructor
+- ngAfterViewChecked
+- ngDoCheck
+= Inputs are set by ngOnInit; keep constructors for dependency injection. ngDoCheck and ngAfterViewChecked run on every check.
+
+Q M When does ngOnChanges run?
++ When a bound @Input value changes, including before ngOnInit
+- After every change detection pass, whether or not inputs changed
+- Only once, after the component's view has been created
+- When any property of the component class is reassigned
+= It receives a SimpleChanges object with previous and current values.
+
+Q M What does ngOnDestroy help you do?
++ Release subscriptions, timers and listeners
+- Reset the component's inputs to their defaults
+- Re-create the component with fresh state
+- Save the component's state to local storage
+= Leaks happen when subscriptions outlive their component.
+
+Q M How are a component's styles scoped by default?
++ To that component's own template
+- To the whole application, like a global stylesheet
+- To the component and every component nested inside it
+- To the component's host element only, not its template
+= Angular's emulated encapsulation adds attributes to scope the CSS.
+
+Q H Why might reading a @ViewChild element in ngOnInit give undefined?
++ The view is not built yet; read it in ngAfterViewInit
+- ViewChild queries only find elements inside ng-content
+- ViewChild only works on components, never on HTML elements
+- The element must also be declared in the component's providers
+= Child views are created after ngOnInit (unless the query is { static: true } on static content).
+
+Q H What is content projection?
+| <app-card><h2>Title</h2></app-card>
++ Showing markup passed by the parent where the child places <ng-content>
+- Copying the child's template into the parent at build time
+- Rendering the child component in a separate browser window
+- Passing the h2 element to the child as an @Input value
+= Multiple slots use <ng-content select="...">.
+
+Q H What do signal inputs (input()) give over @Input()?
+| name = input.required<string>();
++ A read-only signal, read as name(), usable in computed()
+- A writable property that also updates the parent automatically
+- An observable that must be subscribed to in ngOnInit
+- A value that is set once and never changes afterwards
+= Available since Angular 17.1. Two-way binding uses model() instead.
+
+Q H What does inject() do inside a component class field?
+| private api = inject(ApiService);
++ Gets ApiService from the injector, like constructor injection
+- Creates a new ApiService instance each time the field is read
+- Lazy-loads the module that contains ApiService on first use
+- Registers ApiService as a provider for child components
+= inject() works in fields, constructors and factory functions run in an injection context.
+
+@topic ng-binding | FUNDAMENTALS | Data binding and component communication | Property binding, event binding, two-way binding, @Input and @Output, EventEmitter, template reference variables.
+Q E Which syntax binds a value to an element's property?
++ [disabled]="isSaving"
+- (disabled)="isSaving"
+- {disabled}="isSaving"
+- #disabled="isSaving"
+= Square brackets bind a value from the component to the element.
+
+Q E Which syntax handles a click event?
++ (click)="save()"
+- [click]="save()"
+- {click}="save()"
+- #click="save()"
+= Parentheses bind events from the element to the component.
+
+Q E What does [(ngModel)]="name" do?
++ Shows name in the input and updates name as the user types
+- Copies name into the input once, when the page loads
+- Updates name as the user types, but never shows its value
+- Validates that name is not empty before the form submits
+= The "banana in a box" combines property and event binding (needs FormsModule).
+
+Q E How does a parent pass data into a child component?
++ Through the child's @Input, e.g. [user]="selected"
+- Through the child's @Output, e.g. (user)="selected"
+- By setting a global variable the child reads
+- By adding the data to the child's providers array
+= @Output and events send data back up.
+
+Q M How does a child notify its parent of something?
+| @Output() saved = new EventEmitter<string>();
++ this.saved.emit(value), handled by (saved)="onSaved($event)"
+- this.saved.next(value), read by the parent through @ViewChild
+- this.saved = value, which the parent sees through [saved]
+- this.parent.onSaved(value), using an injected parent reference
+= $event holds the emitted value.
+
+Q M What is a template reference variable?
+| <input #email /> <button (click)="send(email.value)">Send</button>
++ A name (#email) for an element, usable elsewhere in that template
+- A component property that Angular creates for every input
+- A CSS id that Angular adds to the element at run time
+- A route parameter read from the URL by the template
+= It avoids extra component properties for simple cases.
+
+Q M What is the difference between [value]="x" and value="{{ x }}"?
++ Interpolation always turns the value into a string
+- Interpolation is two-way; property binding is one-way
+- Property binding runs once; interpolation updates live
+- Interpolation works on components, property binding does not
+= Property binding can pass objects, booleans and numbers as they are.
+
+Q M How do you add a CSS class only when isActive is true?
++ [class.active]="isActive"
+- (class.active)="isActive"
+- class="{{ active: isActive }}"
+- [active.class]="isActive"
+= [ngClass] binds several classes at once.
+
+Q H What does model() (Angular 17.2+) create?
+| value = model(0);
++ A signal input that supports [(value)] two-way binding
+- A read-only signal input that the child cannot change
+- A form control with built-in validation for the value
+- A store slice that is shared across the application
+= Writing value.set(...) in the child updates the parent's bound signal.
+
+Q H Why can binding {{ total() }} to a plain method in a template hurt performance?
++ The method runs on every change detection pass
+- The method's result is cached and never updates
+- The method is moved to a web worker and runs late
+- The template stops detecting changes until reload
+= Use a signal, a pure pipe or a precomputed property instead.
+
+Q H How do sibling components share data cleanly?
++ Through a shared service or their common parent
+- By reading each other's fields through @ViewChild
+- By writing the data to localStorage on every change
+- By each keeping its own copy and syncing on input
+= A service holding a signal or observable acts as the single source of truth.
+
+Q H What does output() (Angular 17.3+) replace?
+| saved = output<string>();
++ @Output() with an EventEmitter
+- @Input() with a setter method
+- @ViewChild() with a static query
+- @HostListener() with an event name
+= Call this.saved.emit(value) as before, with a simpler typed API.
+
+@topic ng-directives-pipes | FUNDAMENTALS | Control flow, directives and pipes | @if, @for and @switch, structural vs attribute directives, ngClass and ngStyle, built-in and custom pipes.
+Q E Which Angular 17+ syntax shows a block only when a condition is true?
++ @if (isLoggedIn) { <p>Welcome</p> }
+- @show (isLoggedIn) { <p>Welcome</p> }
+- @when isLoggedIn { <p>Welcome</p> }
+- #if (isLoggedIn) { <p>Welcome</p> }
+= The older *ngIf directive still works.
+
+Q E What does a pipe do in a template?
++ Formats a value for display, e.g. as currency
+- Sends the value to the server for saving
+- Creates a new component from the value
+- Checks the value against a form validator
+= Built-in pipes include date, currency, uppercase, json and async.
+
+Q E Which loops over a list in Angular 17+ templates?
++ @for (job of jobs; track job.id) { ... }
+- @for (job in jobs; key job.id) { ... }
+- @each (job of jobs; by job.id) { ... }
+- @loop (job of jobs; track job.id) { ... }
+= track is required in @for.
+
+Q E What does {{ today | date:'dd/MM/yyyy' }} show for 3 October 2026?
++ 03/10/2026
+- 10/03/2026
+- 2026-10-03
+- 3 Oct 2026
+= The format string decides the order: day, month, year.
+
+Q M What is the difference between structural and attribute directives?
++ Structural ones add or remove elements; attribute ones change an element
+- Structural ones change styles; attribute ones add or remove elements
+- Structural ones work on components; attribute ones on plain HTML
+- Structural ones run once; attribute ones run on every change check
+= *ngIf is structural; ngClass is an attribute directive.
+
+Q M Why is track important in @for?
++ It lets Angular reuse DOM for items it has seen before
+- It sorts the list by the tracked property before rendering
+- It removes duplicate items that share the same tracked value
+- It turns on two-way binding for every item in the loop
+= Use a unique id; trackBy did the same for *ngFor.
+
+Q M What does @empty do inside an @for block?
++ Shows its content when the list has no items
+- Removes empty strings and nulls from the list
+- Shows its content after the last item of the list
+- Clears the list when the component is destroyed
+= e.g. @for (...) { ... } @empty { <p>No jobs</p> }.
+
+Q M What is a pure pipe?
++ A pipe that reruns only when its input reference changes
+- A pipe that has no parameters and no dependencies
+- A pipe that runs on every change detection pass
+- A pipe that can only transform strings and numbers
+= Pipes are pure by default, which keeps them cheap.
+
+Q H Why does a pure pipe not update after items.push(newItem)?
++ The array reference is unchanged, so the pipe is not rerun
+- push is asynchronous, so the pipe runs before the item arrives
+- Pure pipes cache results permanently until the page reloads
+- Arrays must be wrapped in a signal before a pipe can read them
+= Create a new array (items = [...items, newItem]) or use an impure pipe sparingly.
+
+Q H What does the async pipe do?
+| {{ user$ | async }}
++ Subscribes, shows the latest value and unsubscribes on destroy
+- Subscribes once and keeps the subscription open after destroy
+- Converts the observable to a promise and awaits the first value
+- Delays rendering of the whole template until the value arrives
+= It avoids manual subscriptions and leaks.
+
+Q H How do you build a directive that highlights an element on hover?
++ A @Directive with host listeners for mouseenter and mouseleave
+- A @Pipe whose transform method returns the highlight colour
+- A @Component whose template wraps the element in a span
+- An @Injectable service that watches the mouse position
+= Use host: { '(mouseenter)': '...' } or @HostListener.
+
+Q H What does @defer (Angular 17+) do?
+| @defer (on viewport) { <app-chart /> } @placeholder { <p>…</p> }
++ Loads the block's code when its trigger fires, e.g. on scroll
+- Renders the block on the server and skips it in the browser
+- Delays the whole page until the chart's data has loaded
+- Retries rendering the block if it throws an error
+= Angular splits that code into a separate chunk automatically.
+
+@topic ng-services-di | FUNDAMENTALS | Services and dependency injection | Services, @Injectable, providedIn root, injector hierarchy, singletons, sharing data and logic.
+Q E What is a service in Angular?
++ A class holding shared logic or data, such as API calls
+- A component that has a template but no styles
+- A file that lists the routes of the application
+- A pipe that formats values coming from the server
+= Components stay focused on the view; services hold the logic.
+
+Q E What does providedIn: 'root' mean?
++ The whole app shares one instance
+- Each component gets its own instance
+- The service runs only on the server
+- The service is created on every call
+= It is also tree-shakable when unused.
+
+Q E How does a component get a service?
++ Angular injects it, through the constructor or inject()
+- The component creates it with new ApiService()
+- The component imports it and calls it statically
+- The service registers itself on the window object
+= Angular creates and supplies the instance.
+
+Q E What does @Injectable() mark?
++ A class Angular can inject and give dependencies to
+- A component that can be loaded lazily by the router
+- A pipe that can be used in any template of the app
+- A test that runs in the browser rather than in Node
+= Services are usually @Injectable({ providedIn: 'root' }).
+
+Q M What happens if a service is listed in a component's providers array?
++ That component and its children get their own instance
+- The whole application switches to that new instance
+- Angular reports an error because it is already in root
+- The service becomes lazy and is created on first click
+= Injectors form a hierarchy; the nearest provider wins.
+
+Q M Why use dependency injection instead of creating dependencies with new?
++ Code stays loosely coupled and is easy to test with fakes
+- Objects created with new are not garbage collected
+- Angular forbids using new anywhere in a component
+- Injected objects run faster than objects made with new
+= Tests can provide a mock in place of the real service.
+
+Q M What is an InjectionToken used for?
++ Injecting non-class values, like configuration objects
+- Signing users in and storing their access token
+- Naming routes so they can be linked from templates
+- Marking which components can be lazy-loaded
+= e.g. { provide: API_URL, useValue: 'https://...' }.
+
+Q M How can components share a selected job through a service?
++ The service holds it in a signal or BehaviorSubject
+- Each component stores its own copy of the job
+- The service stores it in a static field of a component
+- The components pass it through @Output to the service
+= The service is the single source of truth.
+
+Q H What do useClass, useValue and useFactory providers give?
++ A class instance, a fixed value, or a function's result
+- A singleton, a transient object, or a scoped object
+- A service, a component, or a directive respectively
+- A lazy value, an eager value, or a cached value
+= Factories can depend on other injected values.
+
+Q H Why might a lazy-loaded route get a different service instance than the rest of the app?
++ The service is provided in that route's own providers
+- Lazy routes always duplicate every service they use
+- The router clears the root injector on each navigation
+- Services in lazy routes are recreated on every visit
+= Use providedIn: 'root' for app-wide singletons.
+
+Q H What does inject(X, { optional: true }) do when no provider exists?
++ Returns null instead of throwing
+- Creates a default instance of X
+- Throws when the component is used
+- Waits until a provider is added
+= Useful for optional plugins or configuration.
+
+Q H What is multi: true used for in a provider?
++ Collecting several values for one token into an array
+- Running one service on several threads at the same time
+- Allowing the same component to be declared twice
+- Creating a new service instance for every injection
+= HTTP interceptors and app initialisers use multi providers.
+
+@topic ng-routing | PRACTICAL | Routing and guards | Routes and router-outlet, routerLink, route parameters, child routes, lazy loading, guards and resolvers.
+Q E Where does Angular render the component for the current route?
++ In <router-outlet>
+- In <ng-content>
+- In <ng-template>
+- In <ng-container>
+= Nested outlets render child routes.
+
+Q E Which makes a navigation link without reloading the page?
++ <a routerLink="/jobs">Jobs</a>
+- <a href="/jobs" ngLink>Jobs</a>
+- <a [route]="'/jobs'">Jobs</a>
+- <a (navigate)="'/jobs'">Jobs</a>
+= routerLink changes the URL through the router.
+
+Q E How do you navigate in code?
++ this.router.navigate(["/jobs", id])
+- this.route.go("/jobs/" + id)
+- this.router.push("/jobs/" + id)
+- this.location.open("/jobs/" + id)
+= Inject Router to navigate from components or services.
+
+Q E How do you define a route with a parameter?
++ { path: "jobs/:id", component: JobDetail }
+- { path: "jobs/{id}", component: JobDetail }
+- { path: "jobs/<id>", component: JobDetail }
+- { path: "jobs/$id", component: JobDetail }
+= Read it with ActivatedRoute or a component input binding.
+
+Q M What does a canActivate guard do?
++ Decides whether navigation to a route may continue
+- Highlights the link of the currently active route
+- Loads the route's data before the component starts
+- Stops the user leaving a page with unsaved changes
+= Always enforce permissions on the server too.
+
+Q M How do you lazy-load a feature's routes?
++ loadChildren: () => import("./admin/routes").then(m => m.ROUTES)
+- children: [import("./admin/routes")] at the top of the file
+- component: AdminComponent with lazy: true on the route
+- canLoad: () => import("./admin/routes") on the route
+= loadComponent lazy-loads a single standalone component.
+
+Q M Moving from /jobs/1 to /jobs/2 reuses the component. How do you see the new id?
++ Subscribe to route.paramMap, or bind the id as an input
+- Read route.snapshot once in the constructor
+- Read window.location in ngOnInit only
+- Call router.navigate again from ngOnInit
+= The snapshot only shows the id the component started with.
+
+Q M What does routerLinkActive do?
++ Adds a CSS class to a link while its route is active
+- Disables a link while its route is already open
+- Preloads the route's code when the link is hovered
+- Opens the link's route in a new browser tab
+= Useful for highlighting the current menu item.
+
+Q H What does a resolver do?
++ Loads data before the route activates
+- Fixes broken links by redirecting them
+- Loads the route's code in the background
+- Decides which component a path maps to
+= Navigation waits for it, so keep it fast.
+
+Q H What is a canDeactivate guard useful for?
++ Asking before leaving a page with unsaved changes
+- Signing the user out when they close the tab
+- Preventing a route from being lazy-loaded
+- Blocking the browser's reload button
+= Return false (or a confirm result) to stay on the page.
+
+Q H What does withPreloading(PreloadAllModules) do?
++ Loads lazy routes in the background after start-up
+- Loads every route before the first page is shown
+- Turns lazy routes back into eagerly bundled ones
+- Caches each route's data for offline use
+= First load stays fast and later navigation is instant.
+
+Q H Refreshing /jobs/5 on a static host gives 404. What is the fix?
++ Serve index.html for unknown paths
+- Add a canActivate guard to the route
+- Switch the router to eager loading
+- Rename the route to /jobs?id=5
+= The server looks for a real file at that path; the app must handle the route.
+
+@topic ng-forms | PRACTICAL | Forms | Template-driven vs reactive forms, FormControl and FormGroup, validators, custom validators, showing errors, typed forms.
+Q E What are the two main ways to build forms in Angular?
++ Template-driven forms and reactive forms
+- Static forms and dynamic forms
+- Server forms and client forms
+- Simple forms and wizard forms
+= Reactive forms suit complex or dynamic forms.
+
+Q E Which built-in validator makes a field mandatory?
++ Validators.required
+- Validators.mandatory
+- Validators.notEmpty
+- Validators.present
+= Others include minLength, maxLength, email and pattern.
+
+Q E How do you check whether a reactive form is valid?
++ form.valid
+- form.ok
+- form.checked
+- form.isValid()
+= status is VALID, INVALID, PENDING or DISABLED.
+
+Q E Which module do reactive forms need?
++ ReactiveFormsModule
+- FormsModule
+- FormBuilderModule
+- ValidationModule
+= Import it in a standalone component's imports. FormsModule is for template-driven forms.
+
+Q M What does this create?
+| form = new FormGroup({
+|   email: new FormControl("", [Validators.required, Validators.email])
+| });
++ A form whose email field is required and must look like an email
+- A form that sends an email when it is submitted successfully
+- A form whose email field is optional but checked if filled
+- A template-driven form bound to the email property
+= Bind it with [formGroup]="form" and formControlName="email".
+
+Q M When should a field's error message usually appear?
++ Once the field is touched or the form is submitted
+- As soon as the page loads, before any typing
+- Only after the server rejects the submission
+- Only while the field has keyboard focus
+= Check control.touched (or a submitted flag) with control.errors.
+
+Q M What does a custom validator function return?
++ null if valid, or an object describing the error
+- true if valid, or false if invalid
+- The corrected value of the control
+- A promise that resolves to a message
+= e.g. (c) => c.value?.includes(" ") ? { noSpaces: true } : null.
+
+Q M What is FormArray used for?
++ A changing list of controls, like several phone numbers
+- Sorting the values of a form before submission
+- Uploading several files from one input
+- Storing form values in the browser
+= Push or remove controls as the user adds rows.
+
+Q H How do you check that two password fields match?
++ A validator on the FormGroup that compares both
+- A validator on each field that reads the DOM
+- A pipe on the second field's value
+- An *ngIf that compares them in the template
+= Cross-field rules belong at the group level.
+
+Q H What is an async validator for?
++ Checks that need the server, like a taken username
+- Running several validators in parallel threads
+- Validating fields only after the form submits
+- Validating dates in the user's time zone
+= The control's status is PENDING while it runs; debounce it.
+
+Q H What do typed reactive forms (Angular 14+) give you?
++ Compile-time types for form.value and each control
+- Automatic server-side validation of every field
+- Faster validation of large forms at run time
+- Forms that need no validators at all
+= NonNullableFormBuilder avoids null in values.
+
+Q H What is the difference between setValue and patchValue on a FormGroup?
++ setValue needs every control; patchValue can set some
+- patchValue needs every control; setValue can set some
+- setValue validates; patchValue skips validation
+- setValue works on arrays only; patchValue on groups
+= setValue throws if a control is missing.
+
+@topic ng-http-rxjs | PRACTICAL | HttpClient and RxJS basics | HttpClient requests, observables and subscribing, the async pipe, common operators, error handling, interceptors.
+Q E What does HttpClient.get return?
++ An Observable of the response body
+- A Promise of the response body
+- The response body directly
+- A callback registration id
+= Nothing is sent until something subscribes.
+
+Q E What is an Observable?
++ A stream of values you subscribe to
+- A value that can never change
+- A component that watches the DOM
+- A list that sorts itself
+= HTTP observables emit once and complete.
+
+Q E Which operator transforms each emitted value?
++ map
+- filter
+- tap
+- take
+= filter drops values; tap runs side effects without changing values; take limits how many.
+
+Q E How do you make HttpClient available in a standalone app?
++ provideHttpClient() in the app's providers
+- new HttpClient() in each component
+- import { http } from "@angular/core"
+- HttpClient is global, so no setup is needed
+= Add withInterceptors(...) to register interceptors.
+
+Q M What happens if you call http.get(url) but never subscribe?
++ No request is sent
+- The request is sent once
+- The request is sent and cached
+- An error is thrown immediately
+= HTTP observables are cold and lazy.
+
+Q M How do you handle an HTTP error in an observable chain?
++ With the catchError operator
+- With try/catch around subscribe
+- With the finalize operator alone
+- Errors are retried automatically
+= Return a fallback value or rethrow a friendlier error.
+
+Q M What is an HTTP interceptor used for?
++ Changing every request or response, e.g. adding a token
+- Rendering a loading component for every route
+- Validating forms before they are submitted
+- Caching templates so pages load faster
+= Functional interceptors are registered with withInterceptors.
+
+Q M Why unsubscribe from long-lived observables in components?
++ They keep running after the component is gone
+- Observables stop after their first value anyway
+- Unsubscribing makes HTTP requests faster
+- Angular throws if a subscription stays open
+= The async pipe and takeUntilDestroyed handle it for you.
+
+Q H Two components subscribe to the same HTTP observable. How many requests are sent?
++ Two, unless the observable is shared
+- One, because HTTP observables are shared
+- None until a third component subscribes
+- One per change detection pass
+= Each subscription to a cold observable runs it again; shareReplay shares it.
+
+Q H Why does retry(3) on a POST that creates an order need care?
++ Retries may create duplicate orders
+- retry only works with GET requests
+- retry waits a minute between attempts
+- Retries are sent to a different server
+= Use idempotency keys or retry only safe requests.
+
+Q H What does toSignal(this.http.get(url)) give you?
++ A signal of the latest value, cleaned up automatically
+- A new HTTP request every time the signal is read
+- A promise that resolves when the request completes
+- An observable that can be subscribed to many times
+= toSignal lives in @angular/core/rxjs-interop.
+
+Q H How do you test a service that uses HttpClient without real calls?
++ provideHttpClientTesting with HttpTestingController
+- Point the service at a test copy of the real API
+- Replace window.fetch with a mock function
+- Skip HTTP tests and rely on end-to-end tests
+= Expect requests, flush fake responses and call httpMock.verify().
+
+@topic ng-change-detection | ADVANCED | Change detection and signals | Zone.js, default vs OnPush, signals (signal, computed, effect), zoneless Angular, immutability.
+Q E What does change detection do in Angular?
++ Updates the DOM when component data changes
+- Recompiles the app when source files change
+- Detects security problems in templates
+- Tracks which files changed in git
+= Traditionally Zone.js triggers it after events, timers and HTTP calls.
+
+Q E What is a signal?
++ A reactive value that notifies readers when it changes
+- An event emitted by a DOM element on click
+- A message sent from a service to the server
+- A route event fired after navigation ends
+= count = signal(0); read count(), change with set() or update().
+
+Q E What does computed() create?
++ A read-only signal derived from other signals
+- A writable signal with a default value
+- A function that runs once at start-up
+- A pipe that formats a signal's value
+= total = computed(() => price() * qty()).
+
+Q E With ChangeDetectionStrategy.OnPush, when is a component checked?
++ When its inputs change, it handles an event, or a signal it reads changes
+- On every change detection pass, like the default strategy
+- Only when you call ChangeDetectorRef.detectChanges() manually
+- Only once, when the component is first created
+= It reduces work in large apps.
+
+Q M With OnPush, why does this not update the child?
+| this.user.name = "New";   // parent changes the object passed as [user]
++ The input reference did not change, so the child is skipped
+- OnPush blocks every update until the page reloads
+- Objects cannot be passed as inputs to OnPush children
+- name is read-only on objects passed through inputs
+= Pass a new object: this.user = { ...this.user, name: "New" }.
+
+Q M What does effect() do?
++ Runs code whenever the signals it reads change
+- Derives a new read-only value from other signals
+- Runs code once when the component is destroyed
+- Batches HTTP calls made inside the component
+= Use it for side effects (logging, storage), not for deriving state.
+
+Q M With Zone.js, what triggers change detection?
++ Async events such as clicks, timers and HTTP responses
+- Only explicit calls to detectChanges()
+- Only route changes and form submissions
+- A timer that runs every 100 milliseconds
+= Zone.js patches browser APIs to know when to check.
+
+Q M Why update array signals immutably?
+| items.update(list => [...list, newItem]);
++ A new reference makes readers reliably see the change
+- Signals cannot store arrays that are mutated
+- It makes the array use less memory
+- It turns off change detection for the list
+= Mutating the same array in place may not notify readers.
+
+Q H What does zoneless Angular rely on instead of Zone.js?
++ Signals and other explicit notifications
+- Polling the component tree every frame
+- Web workers watching the DOM for changes
+- A full page reload after each event
+= Enabled with provideZonelessChangeDetection().
+
+Q H What does ExpressionChangedAfterItHasBeenCheckedError mean?
++ A bound value changed in the same pass after it was checked
+- A template expression has a syntax error
+- An HTTP response arrived after the component was destroyed
+- A child component was checked twice in one pass
+= Often caused by changing parent state in a child's ngAfterViewInit (dev mode check).
+
+Q H When would you call ChangeDetectorRef.markForCheck()?
++ In an OnPush component after data changes outside its inputs
+- In every component after every click to be safe
+- To stop change detection for a component entirely
+- To reload the current route with fresh data
+= Signals and the async pipe usually make it unnecessary.
+
+Q H Why should computed() never write to signals?
++ It must be a pure derivation; writes can cause loops
+- computed() cannot read more than one signal
+- Writing makes the computed value asynchronous
+- Signals written there are reset on every read
+= Use effect() or event handlers for writes.
+
+@topic ng-rxjs-advanced | ADVANCED | Advanced RxJS | switchMap vs mergeMap vs concatMap vs exhaustMap, Subjects, combining streams, avoiding leaks, debouncing searches.
+Q E Which operator waits for a pause in typing before searching?
++ debounceTime(300)
+- throttleTime(300)
+- delay(300)
+- auditTime(300)
+= Often paired with distinctUntilChanged(). delay only postpones every value.
+
+Q E What is a Subject?
++ An observable you can also push values into
+- An observable that can only be read once
+- An observable that replays every past value
+- An observable that never completes or errors
+= Subjects multicast to all subscribers; ReplaySubject replays past values.
+
+Q E What does BehaviorSubject add over Subject?
++ A current value that new subscribers get at once
+- Automatic retries when a subscriber errors
+- Values that are emitted on a fixed timer
+- Values that are delivered in reverse order
+= It needs an initial value.
+
+Q E What does takeUntilDestroyed() do in a component?
++ Ends the subscription when the component is destroyed
+- Destroys the component when the stream completes
+- Delays values until the component is rendered
+- Retries the stream if the component is recreated
+= It needs an injection context or a DestroyRef.
+
+Q M For a search box, which operator cancels the previous request when a new term arrives?
++ switchMap
+- mergeMap
+- concatMap
+- exhaustMap
+= Only the latest search's results arrive.
+
+Q M Which operator runs requests one after another, in order?
++ concatMap
+- switchMap
+- mergeMap
+- exhaustMap
+= Useful for saves that must not overlap.
+
+Q M A Submit button should ignore extra clicks while a save is running. Which operator fits?
++ exhaustMap
+- switchMap
+- concatMap
+- mergeMap
+= It ignores new values until the current inner observable completes.
+
+Q M What does combineLatest([a$, b$]) emit?
++ Both latest values each time either emits, once both have emitted
+- Only when a$ and b$ emit at exactly the same moment
+- A single array when both streams have completed
+- Every value from both streams, one at a time
+= forkJoin waits for all to complete and emits once.
+
+Q H What does shareReplay({ bufferSize: 1, refCount: true }) do?
++ Shares one subscription and replays the last value to newcomers
+- Retries the source once and then shares its error
+- Sends each value twice to make sure it arrives
+- Buffers values until one subscriber has read them
+= With refCount it unsubscribes from the source when no one is left.
+
+Q H What is a common bug with nested subscribe() calls?
++ Inner subscriptions leak and race; flatten with higher-order operators
+- They run synchronously and block the browser
+- RxJS forbids subscribing inside a subscribe callback
+- The outer stream completes before the inner one starts
+= Use switchMap, concatMap or mergeMap instead.
+
+Q H An error reaches the outer stream without catchError. What happens next?
++ The stream ends and emits nothing more
+- The stream skips the error and continues
+- The stream restarts from the beginning
+- The error becomes a normal value
+= Catch inside the inner observable to keep the outer stream alive.
+
+Q H What is the difference between hot and cold observables?
++ Cold ones start fresh per subscriber; hot ones share live values
+- Hot ones start fresh per subscriber; cold ones share live values
+- Cold ones complete at once; hot ones never complete
+- Hot ones are synchronous; cold ones are asynchronous
+= HTTP calls are cold; DOM events and Subjects are hot.
+
+@topic ng-architecture | ADVANCED | State, performance and architecture | NgRx and signal stores, lazy loading and bundles, SSR and hydration, @defer, large-app structure, testing strategy.
+Q E What is NgRx?
++ A Redux-style state library using actions, reducers and selectors
+- A component library of ready-made Angular UI widgets
+- A testing library for rendering Angular components
+- A routing library that replaces the Angular router
+= Simpler apps often use services with signals instead.
+
+Q E What does server-side rendering give an Angular app?
++ Faster first content and better SEO
+- An embedded database for the app
+- Smaller images and fonts by default
+- Offline use without a service worker
+= Hydration then makes the page interactive.
+
+Q E Why lazy-load feature routes?
++ The first download is smaller, so the app starts faster
+- Lazy routes are more secure than eager ones
+- Lazy routes do not need any components
+- Lazy loading removes the need for a router
+= Each feature loads when first visited.
+
+Q E What are bundle budgets in angular.json?
++ Size limits that warn or fail the build
+- Limits on monthly hosting costs for the app
+- Limits on how many components a module has
+- Time limits for running the unit tests
+= They catch accidental large dependencies early.
+
+Q M In NgRx, what is an effect for?
++ Running side effects like API calls in response to actions
+- Changing the store state directly from a component
+- Styling components based on values in the store
+- Declaring which routes can read which state
+= Reducers stay pure; effects talk to the outside world.
+
+Q M What is a selector in NgRx?
++ A memoised function that reads or derives store data
+- A CSS selector that styles components using the store
+- The tag name used to place a component in a template
+- A guard that decides which users may read the store
+= Memoisation avoids recomputing when inputs are unchanged.
+
+Q M What does non-destructive hydration improve?
++ It reuses server-rendered DOM instead of rebuilding it
+- It removes all JavaScript from server-rendered pages
+- It caches API responses in the browser for later
+- It renders every route at build time as static files
+= Enable with provideClientHydration().
+
+Q M Which keeps a 10,000-row list fast in Angular?
++ CDK virtual scrolling with track by a unique id
+- Rendering every row once and hiding them with CSS
+- Using the array index as the track value
+- Switching the list to the default change strategy
+= Only visible rows are in the DOM.
+
+Q H When is NgRx worth its extra code over a signal-based service?
++ Large apps with complex shared state that needs strict, traceable updates
+- Small apps with one or two screens and simple forms
+- Any app that makes more than one HTTP request
+- Apps that do not use TypeScript strict mode
+= Signal stores or services fit most small and medium apps.
+
+Q H How should a large Angular app be structured?
++ By feature, with lazy routes, shared UI and core services
+- By file type, with all components in one folder
+- As one module that declares every component
+- As separate apps for each developer on the team
+= Feature boundaries keep builds and teams independent.
+
+Q H What is a good testing mix for an Angular app?
++ Many unit tests, fewer integration tests, a few end-to-end tests
+- Only end-to-end tests, since they cover everything
+- Only snapshot tests of every component template
+- Only manual testing before each release
+= Playwright or Cypress cover the key user journeys.
+
+Q H Why can import * as _ from "lodash" bloat the bundle?
++ It may pull in the whole library, not just what you use
+- It loads lodash twice, once for each import style
+- It disables tree shaking for Angular itself
+- It forces the app to use the slower JIT compiler
+= Use per-function imports or ES-module builds such as lodash-es.

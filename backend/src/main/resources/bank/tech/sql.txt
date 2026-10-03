@@ -1,0 +1,963 @@
+# CodeWalnut built-in SQL bank (ADR-0015). Format: see TechBank.java.
+# Bands: FUNDAMENTALS = freshers, PRACTICAL = 1–3 years, ADVANCED = 3+ years. Standard SQL; MySQL 8 where dialect matters.
+
+@topic sql-select | FUNDAMENTALS | Querying with SELECT | SELECT, WHERE, ORDER BY, LIMIT, DISTINCT, LIKE, IN, BETWEEN, aliases.
+Q E Which clause filters rows in a SELECT?
++ WHERE
+- ORDER BY
+- GROUP BY
+- SELECT
+= WHERE keeps only rows that match the condition.
+
+Q E Which query returns the names of employees in the Sales department?
++ SELECT name FROM employees WHERE dept = 'Sales';
+- SELECT name WHERE dept = 'Sales' FROM employees;
+- GET name FROM employees IF dept = 'Sales';
+- SELECT employees.name = 'Sales';
+= The order is SELECT … FROM … WHERE ….
+
+Q E Which keyword removes duplicate rows from the result?
++ DISTINCT
+- UNIQUE
+- DIFFERENT
+- SINGLE
+= SELECT DISTINCT city FROM customers lists each city once.
+
+Q E Which sorts results from highest to lowest salary?
++ ORDER BY salary DESC
+- ORDER BY salary ASC
+- SORT salary DOWN
+- GROUP BY salary DESC
+= ASC (lowest first) is the default.
+
+Q M From Arjun, Aman, Anita and Kiran, which names match WHERE name LIKE 'A%n'?
++ Arjun and Aman
+- Arjun only
+- Arjun, Aman and Anita
+- Anita and Kiran
+= % matches any number of characters; the name must start with A and end with n.
+
+Q M What does this return?
+| SELECT name FROM employees
+| WHERE salary BETWEEN 30000 AND 50000;
++ Employees earning from 30000 to 50000, including both ends
+- Employees earning more than 30000 and less than 50000 only
+- Employees earning exactly 30000 or 50000
+- An error
+= BETWEEN is inclusive.
+
+Q M Which query returns the 3 highest-paid employees in MySQL?
++ SELECT * FROM employees ORDER BY salary DESC LIMIT 3;
+- SELECT TOP 3 * FROM employees ORDER BY salary;
+- SELECT * FROM employees LIMIT 3 ORDER BY salary DESC;
+- SELECT * FROM employees WHERE ROWNUM <= 3;
+= LIMIT comes after ORDER BY. TOP is SQL Server; ROWNUM is old Oracle.
+
+Q M Which is the shortest correct way to find customers in Pune, Delhi or Chennai?
++ WHERE city IN ('Pune', 'Delhi', 'Chennai')
+- WHERE city = 'Pune', 'Delhi', 'Chennai'
+- WHERE city LIKE ('Pune', 'Delhi', 'Chennai')
+- WHERE city BETWEEN 'Pune' AND 'Chennai'
+= IN checks membership in a list.
+
+Q H Given this table, what does the query return?
+| -- employees(name, manager_id): ('Asha', NULL), ('Ravi', 1), ('Meena', 1)
+| SELECT COUNT(*) FROM employees WHERE manager_id <> 1;
++ 0
+- 1
+- 3
+- An error
+= manager_id <> 1 is unknown (not true) for NULL, so Asha is not counted either. Use OR manager_id IS NULL.
+
+Q H In which order does the database logically process these clauses?
++ FROM, WHERE, GROUP BY, HAVING, SELECT, ORDER BY, LIMIT
+- SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT
+- FROM, SELECT, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT
+- FROM, WHERE, SELECT, GROUP BY, ORDER BY, HAVING, LIMIT
+= That is why a column alias defined in SELECT cannot be used in WHERE.
+
+Q H Why does this fail in most databases?
+| SELECT salary * 12 AS annual FROM employees WHERE annual > 600000;
++ WHERE runs before SELECT, so annual doesn't exist yet
+- AS cannot be used to name an arithmetic expression
+- annual is a reserved word and must be quoted
+- Arithmetic is not allowed in the SELECT list
+= Repeat the expression in WHERE, or wrap the query in a subquery or CTE.
+
+Q H What does ORDER BY dept, salary DESC do?
++ dept A–Z, then salary highest first within each dept
+- dept Z–A, then salary highest first within each dept
+- salary highest first, then dept A–Z for equal salaries
+- dept A–Z, then salary lowest first within each dept
+= Each column has its own direction; ASC is the default.
+
+@topic sql-aggregates | FUNDAMENTALS | Aggregates and GROUP BY | COUNT, SUM, AVG, MIN, MAX, GROUP BY, HAVING vs WHERE, COUNT(*) vs COUNT(column).
+Q E Which function counts rows?
++ COUNT(*)
+- SUM(*)
+- TOTAL(*)
+- NUMBER(*)
+= COUNT(*) counts all rows; COUNT(col) counts non-NULL values.
+
+Q E Which query gives the average salary?
++ SELECT AVG(salary) FROM employees;
+- SELECT MEAN(salary) FROM employees;
+- SELECT salary AVG FROM employees;
+- SELECT AVERAGE OF salary FROM employees;
+= Other aggregates: SUM, MIN, MAX, COUNT.
+
+Q E Which clause groups rows so you can count per department?
++ GROUP BY
+- ORDER BY
+- PARTITION
+- SPLIT BY
+= SELECT dept, COUNT(*) FROM employees GROUP BY dept;
+
+Q E Which clause filters groups after aggregation?
++ HAVING
+- WHERE
+- FILTER
+- LIMIT
+= WHERE filters rows before grouping; HAVING filters groups after.
+
+Q M Which query lists departments with more than 5 employees?
++ SELECT dept FROM employees GROUP BY dept HAVING COUNT(*) > 5;
+- SELECT dept FROM employees WHERE COUNT(*) > 5 GROUP BY dept;
+- SELECT dept FROM employees GROUP BY dept WHERE COUNT(*) > 5;
+- SELECT dept, COUNT(*) > 5 FROM employees;
+= Aggregates cannot be used in WHERE.
+
+Q M Given these rows, what does the query return?
+| -- orders(id, coupon): (1, 'NEW'), (2, NULL), (3, 'NEW'), (4, NULL)
+| SELECT COUNT(*), COUNT(coupon), COUNT(DISTINCT coupon) FROM orders;
++ 4, 2, 1
+- 4, 4, 2
+- 4, 2, 2
+- 2, 2, 1
+= COUNT(column) skips NULLs; DISTINCT then counts unique values.
+
+Q M What does AVG ignore?
++ NULL values
+- Zero values
+- Negative values
+- Duplicate values
+= AVG(bonus) over 100, NULL, 200 is 150, not 100.
+
+Q M Why is this query rejected with ONLY_FULL_GROUP_BY (MySQL's default)?
+| SELECT dept, name, MAX(salary) FROM employees GROUP BY dept;
++ name is not grouped or aggregated, so its value is ambiguous
+- MAX cannot be combined with GROUP BY in the same query
+- dept must be the last column in the SELECT list
+- A grouped query can select at most two columns
+= To get the top earner's name per dept, use a window function or a join.
+
+Q H Given these rows, what does the query return?
+| -- sales(region, amount): ('N', 100), ('N', 50), ('S', 70), ('S', NULL)
+| SELECT region, SUM(amount) FROM sales
+| GROUP BY region HAVING SUM(amount) > 60;
++ N 150 and S 70
+- N 150 only
+- S 70 only
+- N 150, S 70 and NULL
+= SUM ignores NULL, so S sums to 70, which passes HAVING.
+
+Q H What does SUM(amount) return when every amount in the group is NULL (or there are no rows)?
++ NULL
+- 0
+- An error
+- An empty string
+= Use COALESCE(SUM(amount), 0) to show 0.
+
+Q H Which counts orders per status in one row, e.g. paid and pending columns?
++ SELECT SUM(status = 'paid') AS paid, SUM(status = 'pending') AS pending FROM orders;
+- SELECT COUNT(status = 'paid') AS paid, COUNT(status = 'pending') AS pending FROM orders;
+- SELECT status, COUNT(*) FROM orders GROUP BY status HAVING status IN ('paid', 'pending');
+- SELECT COUNT(*) AS paid, COUNT(*) AS pending FROM orders WHERE status IN ('paid', 'pending');
+= In MySQL a comparison is 1 or 0; portable SQL uses SUM(CASE WHEN … THEN 1 ELSE 0 END).
+
+Q H Is WHERE or HAVING better for filtering on a non-aggregated column like dept = 'IT'?
++ WHERE, because it removes rows before grouping
+- HAVING, because dept is used in GROUP BY
+- Either; they always do exactly the same work
+- HAVING, because WHERE cannot see dept here
+= Keep HAVING for conditions on aggregates.
+
+@topic sql-joins | FUNDAMENTALS | Joins | INNER, LEFT, RIGHT and FULL OUTER joins, self joins, joining on keys, finding missing matches.
+Q E Which join returns only rows that match in both tables?
++ INNER JOIN
+- LEFT JOIN
+- FULL OUTER JOIN
+- CROSS JOIN
+= JOIN on its own means INNER JOIN.
+
+Q E Which join keeps every row from the left table, even without a match?
++ LEFT JOIN
+- INNER JOIN
+- RIGHT JOIN
+- SELF JOIN
+= Unmatched right-side columns come back as NULL.
+
+Q E What links rows between two tables in a join?
++ A condition on related columns, usually foreign key = primary key
+- The physical order the rows were inserted into each table
+- The table names, which must share a common prefix
+- The number of columns, which must be the same in both tables
+= e.g. ON orders.customer_id = customers.id.
+
+Q E What is a self join?
++ Joining a table to itself, e.g. employees to managers
+- A join that has no ON condition and pairs every row
+- A join that removes matching rows from the table
+- A join between tables in two different databases
+= Give the table two aliases: employees e JOIN employees m ON e.manager_id = m.id.
+
+Q M Which query finds customers who have never placed an order?
++ SELECT c.name FROM customers c LEFT JOIN orders o ON o.customer_id = c.id WHERE o.id IS NULL;
+- SELECT c.name FROM customers c JOIN orders o ON o.customer_id = c.id WHERE o.id IS NULL;
+- SELECT name FROM customers WHERE orders = 0;
+- SELECT c.name FROM customers c RIGHT JOIN orders o ON o.customer_id = c.id;
+= LEFT JOIN keeps all customers; those with no order have NULL order columns. NOT EXISTS also works.
+
+Q M customers has 3 rows and orders has 4 rows. How many rows does a CROSS JOIN return?
++ 12
+- 7
+- 4
+- 3
+= A cross join pairs every row with every row: 3 × 4.
+
+Q M Given these tables, how many rows does the query return?
+| -- customers(id, name): (1, 'Asha'), (2, 'Ravi'), (3, 'Meena')
+| -- orders(id, customer_id): (10, 1), (11, 1), (12, 2)
+| SELECT c.name, o.id FROM customers c LEFT JOIN orders o ON o.customer_id = c.id;
++ 4
+- 3
+- 6
+- 9
+= Asha appears twice (two orders), Ravi once, and Meena once with a NULL order.
+
+Q M What does a FULL OUTER JOIN return?
++ All rows from both tables, NULL-filled where there is no match
+- Only rows that have a match in both tables, like an inner join
+- All rows from the left table and matching rows from the right
+- Every combination of rows from both tables, like a cross join
+= MySQL has no FULL OUTER JOIN; combine LEFT and RIGHT joins with UNION.
+
+Q H Why does this turn a LEFT JOIN into an inner join?
+| SELECT c.name, o.total
+| FROM customers c LEFT JOIN orders o ON o.customer_id = c.id
+| WHERE o.status = 'paid';
++ WHERE drops rows where o is NULL; move the status check into ON
+- LEFT JOIN cannot be combined with a WHERE clause in MySQL
+- status is a reserved word, so the condition is ignored
+- It does not; every customer is still returned by the query
+= Conditions on the right table belong in ON to keep unmatched left rows.
+
+Q H Joining orders to order_items and summing orders.total gives inflated totals. Why?
++ Each order repeats once per item, so its total is counted again
+- SUM does not work correctly on columns that come from a join
+- The join needs DISTINCT on the item ids to work at all
+- Totals must be stored as text to be summed after a join
+= Aggregate items in a subquery first, or sum at the right level.
+
+Q H Which returns employees with their manager's name, including those without a manager?
++ SELECT e.name, m.name FROM employees e LEFT JOIN employees m ON e.manager_id = m.id;
+- SELECT e.name, m.name FROM employees e JOIN employees m ON e.id = m.id;
+- SELECT name, manager FROM employees;
+- SELECT e.name, m.name FROM employees e, employees m;
+= A LEFT self join keeps the top manager, with NULL as their manager's name.
+
+Q H What is an anti-join, and a common way to write it?
++ Rows in A with no match in B, e.g. with NOT EXISTS
+- A join that deletes the matching rows from table B
+- A join with no condition that pairs every row of A and B
+- A join that matches rows only on non-equal columns
+= Avoid NOT IN when B's column can be NULL: then it returns no rows.
+
+@topic sql-ddl | FUNDAMENTALS | Tables, keys and changing data | CREATE TABLE, data types, primary and foreign keys, constraints, INSERT, UPDATE, DELETE, TRUNCATE vs DROP.
+Q E What does a primary key guarantee?
++ Each row is unique by the key, and the key is never NULL
+- Rows are stored and returned sorted by the key
+- The key column gets a full-text search index
+- The table can never hold more than one row per day
+= A table has at most one primary key, which can span several columns.
+
+Q E Which statement adds a new row?
++ INSERT INTO candidates (name, email) VALUES ('Asha', 'asha@example.com');
+- INSERT candidates SET VALUES name = 'Asha', email = 'asha@example.com';
+- UPDATE candidates ADD (name, email) VALUES ('Asha', 'asha@example.com');
+- ADD ROW INTO candidates (name, email) = ('Asha', 'asha@example.com');
+= List the columns, then the values in the same order.
+
+Q E What is a foreign key?
++ A column referring to another table's primary key, keeping links valid
+- A key used to encrypt sensitive columns before they are stored
+- A column whose data is stored on a different database server
+- A second primary key that duplicates the first for safety
+= The database stops you from inserting an order for a customer that does not exist.
+
+Q E Which statement changes existing rows?
++ UPDATE
+- ALTER
+- MODIFY
+- CHANGE
+= ALTER changes a table's structure, not its data.
+
+Q M What happens here?
+| UPDATE employees SET salary = salary * 1.1;
++ Every employee's salary rises by 10%
+- Nothing, because there is no WHERE
+- Only the first row changes
+- A syntax error
+= Without WHERE, UPDATE and DELETE affect every row. Check the WHERE before running.
+
+Q M What is the difference between DELETE FROM t, TRUNCATE TABLE t and DROP TABLE t?
++ DELETE removes chosen rows; TRUNCATE empties the table; DROP removes the table
+- DELETE removes the table; TRUNCATE removes chosen rows; DROP empties the table
+- All three remove every row and keep the table, at different speeds
+- DROP removes chosen rows; DELETE and TRUNCATE both remove the table
+= TRUNCATE also resets AUTO_INCREMENT in MySQL and cannot use WHERE.
+
+Q M Which column type should store money amounts?
++ DECIMAL(12, 2)
+- FLOAT
+- DOUBLE
+- VARCHAR(20)
+= DECIMAL stores exact values; floating types introduce rounding errors.
+
+Q M What does a UNIQUE constraint on email do?
++ Stops two rows having the same email (NULLs aside)
+- Makes email the table's primary key automatically
+- Encrypts the email column so it stays private
+- Stores rows sorted by email for faster reads
+= It also creates an index on the column.
+
+Q H What does ON DELETE CASCADE on orders.customer_id do?
++ Deleting a customer automatically deletes their orders
+- Deleting an order automatically deletes its customer
+- It blocks deleting any customer who still has orders
+- It sets customer_id to 0 when the customer is deleted
+= Alternatives: RESTRICT (block) or SET NULL. Use cascade with care.
+
+Q H Why might adding a NOT NULL column to a large live table be risky?
++ It may lock or rewrite the table for long, and fails without a default
+- NOT NULL columns can only be added when the table is first created
+- It deletes existing rows that do not have a value for the column
+- It drops all the table's indexes, which must then be rebuilt
+= Add it nullable, backfill in batches, then add the constraint (or use online DDL).
+
+Q H What does INSERT … ON DUPLICATE KEY UPDATE do in MySQL?
++ Inserts a row, or updates the existing one on a unique-key clash
+- Inserts a second copy of the row even when the key already exists
+- Deletes the existing row with that key, then inserts the new one
+- Fails with an error whenever the key already exists in the table
+= PostgreSQL uses INSERT … ON CONFLICT … DO UPDATE.
+
+Q H What is the difference between CHAR(10) and VARCHAR(10)?
++ CHAR is fixed length and padded; VARCHAR stores only what is used
+- VARCHAR is fixed length and padded; CHAR stores only what is used
+- CHAR can hold up to 10 words; VARCHAR up to 10 characters
+- They behave the same; VARCHAR is just the newer name
+= CHAR suits fixed codes (e.g. country codes); VARCHAR suits names and emails.
+
+@topic sql-subqueries | PRACTICAL | Subqueries, CTEs and set operations | Subqueries in WHERE and FROM, correlated subqueries, EXISTS vs IN, WITH (CTEs), recursive CTEs, UNION vs UNION ALL.
+Q E What is a subquery?
++ A query inside another query
+- A query that runs on a replica
+- A stored procedure
+- A table index
+= e.g. SELECT * FROM employees WHERE salary > (SELECT AVG(salary) FROM employees).
+
+Q E What is the difference between UNION and UNION ALL?
++ UNION removes duplicate rows; UNION ALL keeps them
+- UNION ALL removes duplicate rows; UNION keeps them
+- UNION joins tables side by side; UNION ALL stacks them
+- Both remove duplicates; UNION ALL also sorts the rows
+= UNION ALL is faster when duplicates do not matter.
+
+Q E What does WITH … AS (…) create?
++ A named result (a CTE) that the main query can use
+- A new permanent table that is saved in the database
+- An index that speeds up the query that follows it
+- A database user that runs the query with its rights
+= CTEs make long queries easier to read.
+
+Q E Which finds employees earning more than the average?
++ SELECT name FROM employees WHERE salary > (SELECT AVG(salary) FROM employees);
+- SELECT name FROM employees WHERE salary > AVG(salary) GROUP BY name;
+- SELECT name FROM employees GROUP BY name HAVING salary > AVG(salary);
+- SELECT name, AVG(salary) FROM employees WHERE salary > AVG(salary);
+= Aggregates are not allowed directly in WHERE, but a subquery is.
+
+Q M What is a correlated subquery?
++ A subquery that uses the outer row, so it runs once per row
+- A subquery written in the FROM clause and given an alias
+- A subquery that is guaranteed to return no rows at all
+- Two subqueries joined together with a correlation key
+= e.g. employees earning more than their own department's average.
+
+Q M What does EXISTS check?
++ Whether the subquery returns at least one row
+- Whether the named table exists in the schema
+- Whether the column has no NULL values in it
+- Whether the subquery's values equal the outer row
+= It can stop at the first match.
+
+Q M Which finds the second-highest distinct salary?
++ SELECT MAX(salary) FROM employees WHERE salary < (SELECT MAX(salary) FROM employees);
+- SELECT MAX(salary) FROM employees WHERE salary <> MAX(salary) GROUP BY salary;
+- SELECT salary FROM employees ORDER BY salary DESC LIMIT 2;
+- SELECT MAX(salary) FROM employees WHERE salary < MIN(salary) + 1;
+= DENSE_RANK() or ORDER BY salary DESC LIMIT 1 OFFSET 1 over DISTINCT salaries also works.
+
+Q M What do UNION queries require of their SELECT lists?
++ The same number of columns, with compatible types, in order
+- The same table name in every SELECT that is combined
+- The same WHERE clause in every SELECT that is combined
+- Nothing; each SELECT can return any columns it likes
+= Column names come from the first SELECT.
+
+Q H Why can WHERE id NOT IN (SELECT manager_id FROM employees) return no rows at all?
++ If manager_id has a NULL, x NOT IN (…, NULL) is never true
+- NOT IN cannot be used with a subquery in standard SQL
+- The subquery must have a LIMIT when used with NOT IN
+- id and manager_id must both be strings for NOT IN
+= Use NOT EXISTS, or filter NULLs inside the subquery.
+
+Q H What is a recursive CTE used for?
++ Walking hierarchies such as org charts or category trees
+- Running the same query again on a schedule, like a cron job
+- Building indexes automatically for frequently used columns
+- Splitting a large table into smaller tables by date
+= WITH RECURSIVE has an anchor part and a part that refers to the CTE itself.
+
+Q H What does this return?
+| SELECT 1 UNION SELECT 1 UNION ALL SELECT 1;
++ Two rows, both 1
+- One row
+- Three rows
+- An error
+= Operations apply left to right: the first UNION gives one row; UNION ALL then adds another.
+
+Q H Which returns the latest order per customer?
++ ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY created_at DESC) = 1
+- SELECT * FROM orders GROUP BY customer_id ORDER BY created_at DESC
+- SELECT customer_id, MAX(*) FROM orders GROUP BY customer_id
+- SELECT * FROM orders ORDER BY customer_id, created_at DESC LIMIT 1
+= Filter on the row number in an outer query or CTE.
+
+@topic sql-window | PRACTICAL | Window functions | ROW_NUMBER, RANK, DENSE_RANK, PARTITION BY, running totals, LAG and LEAD, moving averages.
+Q E What does a window function do?
++ Computes across related rows while keeping every row
+- Collapses rows into one row per group, like GROUP BY
+- Deletes rows that fall outside a sliding window
+- Opens a new connection for each group of rows
+= Unlike GROUP BY, rows are not collapsed.
+
+Q E Which clause defines the window?
++ OVER (…)
+- WINDOW BY
+- GROUP OVER
+- PARTITION ONLY
+= OVER can include PARTITION BY and ORDER BY.
+
+Q E What does PARTITION BY dept do in a window function?
++ Restarts the calculation for each department
+- Splits the table into separate files
+- Sorts by department
+- Deletes other departments
+= e.g. rank employees within each department.
+
+Q E Which function gives each row a unique sequence number?
++ ROW_NUMBER()
+- RANK()
+- COUNT()
+- SEQUENCE()
+= Ties still get different numbers.
+
+Q M Salaries are 100, 90, 90, 80. What are RANK() and DENSE_RANK() for 80, ordering by salary DESC?
++ RANK 4, DENSE_RANK 3
+- RANK 3, DENSE_RANK 3
+- RANK 4, DENSE_RANK 4
+- RANK 3, DENSE_RANK 4
+= RANK leaves a gap after ties (1, 2, 2, 4); DENSE_RANK does not (1, 2, 2, 3).
+
+Q M What does LAG(amount) OVER (ORDER BY month) return?
++ The previous month's amount
+- The next month's amount
+- The smallest amount so far
+- The running total so far
+= LEAD looks at the next row; the first row's LAG is NULL.
+
+Q M Which gives a running total of sales by date?
++ SUM(amount) OVER (ORDER BY sale_date)
+- SUM(amount) GROUP BY sale_date
+- RUNNING(amount)
+- TOTAL(amount) OVER ()
+= With ORDER BY, the default frame runs from the first row to the current one.
+
+Q M What does SUM(amount) OVER () (empty OVER) give each row?
++ The grand total of all rows
+- The row's own amount
+- NULL, as there is no window
+- The running total so far
+= Useful for percent of total: amount / SUM(amount) OVER ().
+
+Q H Why can't you filter WHERE ROW_NUMBER() OVER (…) = 1 directly?
++ Window functions run after WHERE; filter in an outer query
+- ROW_NUMBER returns text, so it cannot be compared to 1
+- WHERE cannot compare any value with a number literal
+- It does work in every database, including MySQL
+= Some databases add QUALIFY for this, but MySQL does not.
+
+Q H What does this frame compute?
+| AVG(price) OVER (ORDER BY day ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)
++ A 3-day moving average
+- The average of all days
+- The average of the next 2 days
+- The average of 2 days only
+= The frame covers the current row and the two before it.
+
+Q H What does NTILE(4) OVER (ORDER BY score) do?
++ Splits rows into 4 roughly equal buckets numbered 1–4
+- Returns only the top 4 rows ordered by score
+- Divides each score by 4 and rounds it down
+- Repeats each row 4 times with numbers 1–4
+= Useful for percentile bands.
+
+Q H Ties in ORDER BY make ROW_NUMBER() results change between runs. How do you fix that?
++ Add a unique tie-breaker, e.g. ORDER BY created_at DESC, id DESC
+- Switch to RANK(), which always numbers ties in the same order
+- Add DISTINCT to the SELECT so tied rows are merged
+- Remove ORDER BY so the database picks a stable order
+= Deterministic ordering needs a unique final sort key.
+
+@topic sql-nulls-functions | PRACTICAL | NULLs, CASE and built-in functions | NULL logic, IS NULL, COALESCE, NULLIF, CASE expressions, string and date functions.
+Q E How do you find rows where phone has no value?
++ WHERE phone IS NULL
+- WHERE phone = NULL
+- WHERE phone == NULL
+- WHERE phone EMPTY
+= NULL is not equal to anything, even NULL; use IS NULL / IS NOT NULL.
+
+Q E What does COALESCE(phone, 'n/a') return when phone is NULL?
++ 'n/a'
+- NULL
+- An empty string
+- 0
+= COALESCE returns the first non-NULL argument.
+
+Q E What is a CASE expression for?
++ Returning different values by condition, like if/else
+- Changing text between upper case and lower case
+- Creating tables only when a condition is true
+- Looping over rows one at a time in a query
+= CASE WHEN score >= 60 THEN 'Pass' ELSE 'Fail' END.
+
+Q E Which function joins strings in MySQL?
++ CONCAT(first_name, ' ', last_name)
+- JOIN(first_name, last_name)
+- first_name & last_name
+- MERGE(first_name, last_name)
+= Standard SQL also has ||, but in MySQL || means OR by default.
+
+Q M What is the result of NULL + 5?
++ NULL
+- 5
+- 0
+- An error
+= Most operations with NULL give NULL.
+
+Q M What does NULLIF(a, b) return?
++ NULL if a equals b, otherwise a
+- The larger of a and b
+- b if a is NULL, otherwise a
+- a if a equals b, otherwise NULL
+= Handy to avoid dividing by zero: total / NULLIF(count, 0).
+
+Q M Which counts candidates added in the last 7 days in MySQL?
++ SELECT COUNT(*) FROM candidates WHERE created_at >= NOW() - INTERVAL 7 DAY;
+- SELECT COUNT(*) FROM candidates WHERE created_at >= NOW() - 7;
+- SELECT COUNT(*) FROM candidates WHERE DAY(created_at) >= DAY(NOW()) - 7;
+- SELECT COUNT(*) FROM candidates WHERE created_at IN LAST 7 DAY;
+= Comparing the raw column keeps any index on created_at usable.
+
+Q M What does this return for a row with score 75?
+| CASE WHEN score >= 90 THEN 'A'
+|      WHEN score >= 70 THEN 'B'
+|      WHEN score >= 50 THEN 'C'
+|      ELSE 'F' END
++ B
+- A
+- C
+- F
+= CASE returns the first branch whose condition is true.
+
+Q H What does NULL = NULL evaluate to?
++ NULL (unknown), so a WHERE with it matches nothing
+- TRUE, because both sides have the same value
+- FALSE, because NULL is never equal to anything
+- An error, because NULL cannot be compared
+= SQL uses three-valued logic. MySQL's <=> is a NULL-safe equals.
+
+Q H What does this return?
+| SELECT CASE WHEN NULL THEN 'yes' ELSE 'no' END;
++ no
+- yes
+- NULL
+- An error
+= NULL is not true, so the ELSE branch is taken.
+
+Q H Why is WHERE YEAR(created_at) = 2026 often slow on a big table?
++ The function on the column stops an index on it being used
+- YEAR is not a real function in MySQL, so it is emulated
+- It returns rows from other years as well as 2026
+- It locks the whole table while YEAR is computed
+= Use a range instead: created_at >= '2026-01-01' AND created_at < '2027-01-01'.
+
+Q H What does NOT (x > 5) give when x is NULL?
++ NULL (unknown), so the row is filtered out
+- TRUE, because NULL is not greater than 5
+- FALSE, because NULL is treated as 0
+- 5, because NOT returns the right-hand value
+= NOT unknown is still unknown.
+
+@topic sql-indexes | PRACTICAL | Indexes | What indexes are, B-trees, composite indexes and column order, covering indexes, when indexes are not used, write cost.
+Q E What is an index for?
++ Finding rows without scanning the whole table
+- Storing backup copies of the table's rows
+- Encrypting the column's values on disk
+- Keeping the table sorted permanently on disk
+= Like a book's index: jump to the right page.
+
+Q E Which columns are usually good candidates for an index?
++ Columns used often in WHERE, JOIN and ORDER BY
+- Every column of every table, to be safe
+- Columns that queries never filter or sort on
+- Large text columns such as descriptions
+= Index what your queries filter and join on.
+
+Q E What is a downside of indexes?
++ They take space and slow down writes
+- They make every SELECT query slower
+- They can delete rows that are not indexed
+- They stop tables from being joined
+= Each write must also update every index.
+
+Q E Is the primary key indexed?
++ Yes, automatically
+- No, never
+- Only if you ask
+- Only in PostgreSQL
+= In MySQL InnoDB the table is stored in primary-key order (clustered index).
+
+Q M There is an index on (last_name, first_name). Which query can use it best?
++ WHERE last_name = 'Rao' AND first_name = 'Asha'
+- WHERE first_name = 'Asha' AND age > 30
+- WHERE UPPER(last_name) = 'RAO'
+- WHERE first_name LIKE '%sha' OR last_name LIKE '%ao'
+= Composite indexes work from the leftmost column (the leftmost-prefix rule).
+
+Q M Why does WHERE email LIKE '%@gmail.com' not use a normal index on email?
++ With a leading wildcard the start is unknown, so the index can't be searched
+- LIKE can never use an index, whatever the pattern looks like
+- Email columns cannot be indexed because they contain an @ sign
+- Only numeric columns can be indexed with a normal B-tree index
+= LIKE 'asha%' can use the index; full-text or reversed columns help suffix searches.
+
+Q M What is a covering index?
++ An index holding every column a query needs, so the table isn't read
+- An index created on every column of a table at the same time
+- The index on the primary key, which covers the whole table
+- An index that spans several tables used in the same join
+= EXPLAIN in MySQL shows "Using index".
+
+Q M Is an index on a boolean column like is_active usually helpful on its own?
++ Rarely; with so few distinct values it often scans anyway
+- Always, because every WHERE column should have its own index
+- Never; MySQL does not allow indexes on boolean columns
+- Only if is_active is also the table's primary key
+= Low-selectivity columns work better as part of a composite index.
+
+Q H Index on (status, created_at). Which query benefits most?
++ WHERE status = 'open' ORDER BY created_at DESC LIMIT 20
+- WHERE created_at > '2026-01-01'
+- ORDER BY status DESC, created_at ASC on the whole table
+- WHERE status <> 'open'
+= Equality on the first column plus ordering on the second reads only the needed rows, in order.
+
+Q H Why can comparing a VARCHAR column to a number, e.g. WHERE phone = 9876543210, skip the index?
++ Each row's value is converted to a number, so the index can't be used
+- Numbers cannot appear in a WHERE clause on a text column
+- The query returns no rows because the types do not match
+- MySQL deletes the index when the types do not match
+= Compare with the same type: WHERE phone = '9876543210'.
+
+Q H What is the difference between a clustered and a non-clustered (secondary) index in InnoDB?
++ The clustered index holds the rows by primary key; secondary ones point to it
+- They are the same structure with different names in different databases
+- Secondary indexes hold full copies of each row; the clustered one holds keys
+- Clustered indexes are only used for text columns and full-text search
+= A secondary-index lookup may then fetch the row by primary key.
+
+Q H Why can a random UUID primary key slow inserts in InnoDB compared with an increasing key?
++ Random keys insert all over the index, causing page splits
+- UUIDs cannot be used as primary keys in InnoDB at all
+- UUIDs are too short to be unique in large tables
+- InnoDB sorts rows by insertion time, so keys don't matter
+= Time-ordered UUIDs (v7) or binary(16) storage reduce the cost.
+
+@topic sql-optimization | ADVANCED | Query optimisation | Reading EXPLAIN, full scans vs index lookups, sargable predicates, N+1 queries, pagination at scale, statistics.
+Q E What does EXPLAIN show?
++ The query plan: indexes used, join order and estimated rows
+- The query's results, formatted as a readable table
+- The data types of every column in the tables used
+- Which users have run the query and how often
+= EXPLAIN ANALYZE also runs the query and shows actual timings.
+
+Q E In MySQL EXPLAIN, what does type = ALL mean?
++ A full table scan
+- All indexes are used
+- The query is optimal
+- All rows are cached
+= Look for ref, range or const instead on large tables.
+
+Q E What is the N+1 query problem?
++ One query for a list, then one more per item
+- A query that returns one more row than needed
+- A table that has N+1 columns instead of N
+- A join that involves N+1 tables at once
+= Fetch related data in one query with a join or IN list.
+
+Q E Why avoid SELECT * in application queries?
++ It fetches unneeded columns and can defeat covering indexes
+- It is a syntax error in strict SQL mode
+- It returns every row twice in some drivers
+- It locks the whole table while it runs
+= List the columns you actually use.
+
+Q M What does "sargable" mean for a WHERE condition?
++ Written so an index can be used, e.g. the raw column compared to a value
+- It contains a subquery that the optimiser can rewrite as a join
+- It sorts the results using an ORDER BY on an indexed column
+- It compares values without regard to upper or lower case
+= Avoid functions on the column: use created_at >= ? rather than DATE(created_at) = ?.
+
+Q M Why does OFFSET 100000 LIMIT 20 get slow?
++ The database still reads and skips the first 100,000 rows
+- OFFSET is not supported on tables with many rows
+- LIMIT is ignored when OFFSET is larger than 1,000
+- It returns the wrong rows once OFFSET passes 100,000
+= Keyset pagination (WHERE id < :last_id ORDER BY id DESC LIMIT 20) stays fast.
+
+Q M A query is fast in development but slow in production. What is a first step?
++ Run EXPLAIN on production-sized data and check indexes and row estimates
+- Add more RAM to the production server straight away and see if it helps
+- Rewrite the query in the application's language and filter rows in code
+- Restart the database server to clear out any cached query plans
+= Plans change with data size and distribution.
+
+Q M What does the slow query log help with?
++ Finding queries slower than a threshold, to fix the worst first
+- Recording every login so suspicious sign-ins can be found
+- Backing up the data that slow queries have changed
+- Making slow queries faster automatically by adding indexes
+= Combine it with EXPLAIN to see why each is slow.
+
+Q H Why can outdated table statistics cause a bad plan?
++ The optimiser misjudges row counts and may choose the wrong index
+- Statistics change which rows the query returns
+- Old statistics lock the table until they are refreshed
+- Old statistics disable every index on the table
+= Run ANALYZE TABLE (MySQL) or let auto-analyse refresh them.
+
+Q H A query filters on an indexed column but EXPLAIN shows a full scan. Which is a likely reason?
++ The condition matches much of the table, so a scan is cheaper
+- Indexes are skipped whenever the table has more than a million rows
+- EXPLAIN reports full scans even when an index is actually used
+- Any query with an ORDER BY clause always ignores WHERE indexes
+= Indexes pay off for selective conditions.
+
+Q H How can you rewrite OR across different columns to use indexes better?
+| SELECT * FROM users WHERE email = ? OR phone = ?;
++ Split it into two queries combined with UNION
+- Add DISTINCT so duplicate users are removed
+- Replace = with LIKE so both columns are searched
+- Add ORDER BY email, phone so the index is used
+= Each branch can use its own index; some optimisers do this with index merge.
+
+Q H Why can counting rows with SELECT COUNT(*) on a huge InnoDB table be slow?
++ InnoDB keeps no exact row count, so it scans an index
+- COUNT(*) reads every column of every row from disk
+- COUNT(*) locks the whole database until it finishes
+- It is always instant; the slowness is in the network
+= Use approximate counts or maintain a counter if exact speed matters.
+
+@topic sql-transactions | ADVANCED | Transactions, isolation and locking | ACID, COMMIT and ROLLBACK, isolation levels and anomalies, row locks, SELECT … FOR UPDATE, deadlocks, optimistic locking.
+Q E What does a transaction guarantee?
++ A group of statements succeeds or fails as one unit
+- Every statement inside it runs faster than normal
+- The data it changes is encrypted when it commits
+- The tables it touches are backed up automatically
+= COMMIT saves the changes; ROLLBACK undoes them.
+
+Q E What does the A in ACID stand for?
++ Atomicity
+- Availability
+- Accuracy
+- Authorization
+= Atomicity, Consistency, Isolation, Durability.
+
+Q E Which statement undoes the changes made in the current transaction?
++ ROLLBACK
+- UNDO
+- REVERT
+- CANCEL
+= Changes before COMMIT are not visible to others (at most isolation levels).
+
+Q E Why wrap a money transfer (debit one account, credit another) in a transaction?
++ So a failure halfway never debits without crediting
+- So both updates run faster as one statement
+- So the transfer is logged for auditors to review
+- So the account numbers are encrypted in transit
+= Either both updates happen or neither does.
+
+Q M What is a dirty read?
++ Reading another transaction's uncommitted changes
+- Reading rows that were deleted and committed
+- Reading the same committed row twice
+- Reading data that is stored encrypted
+= Only READ UNCOMMITTED allows it.
+
+Q M What is MySQL InnoDB's default isolation level?
++ REPEATABLE READ
+- READ UNCOMMITTED
+- READ COMMITTED
+- SERIALIZABLE
+= PostgreSQL and SQL Server default to READ COMMITTED.
+
+Q M What does SELECT … FOR UPDATE do inside a transaction?
++ Locks the rows so others can't change them until you commit
+- Updates the selected rows automatically when you commit
+- Reads the rows faster by skipping the buffer pool
+- Creates a backup of the rows before you change them
+= Useful for "check then update" logic, such as reserving stock.
+
+Q M What is a deadlock in a database?
++ Two transactions each wait for the other's lock; one is aborted
+- A query that runs for longer than the configured timeout
+- A table that was dropped while a transaction was using it
+- A disk that has filled up while a transaction was writing
+= Retry the aborted transaction; lock rows in a consistent order to reduce deadlocks.
+
+Q H What is a non-repeatable read?
++ Reading a row twice in one transaction and getting different committed values
+- Reading a row that another transaction changed but has not committed yet
+- A row that cannot be read because another transaction has locked it
+- A query that the database refuses to run a second time in a transaction
+= REPEATABLE READ prevents it.
+
+Q H Two users read stock = 1 and both buy the last item. Which fixes this?
++ UPDATE items SET stock = stock - 1 WHERE id = ? AND stock > 0, then check rows affected
+- Read stock a second time just before the update and compare it with the first read
+- Add an index on the stock column so concurrent reads see the latest value
+- Use READ UNCOMMITTED so each user sees the other's purchase immediately
+= Or lock the row with SELECT … FOR UPDATE, or use a version column (optimistic locking).
+
+Q H Why should transactions be kept short?
++ Long ones hold locks and old row versions, blocking other work
+- Short transactions are encrypted, while long ones are not
+- Long transactions can never be committed successfully
+- The database allows only one statement per transaction
+= Do slow work (API calls, emails) outside the transaction.
+
+Q H What is a phantom read?
++ A repeated query sees new rows another transaction inserted
+- A row disappears from the table right after it is committed
+- The database reads an index instead of the table's rows
+- A query unexpectedly returns no rows the second time
+= SERIALIZABLE prevents it; InnoDB's next-key locks also prevent it for locking reads at REPEATABLE READ.
+
+@topic sql-design | ADVANCED | Database design and scaling | Normalisation (1NF–3NF), denormalisation, modelling one-to-many and many-to-many, choosing keys, partitioning, replication, SQL vs NoSQL.
+Q E What is normalisation?
++ Organising tables to reduce duplicated data
+- Converting all text values to lower case
+- Compressing tables so they use less disk
+- Adding an index to every column in a table
+= e.g. store a customer's address once, not in every order.
+
+Q E How do you model a many-to-many relationship, e.g. candidates and skills?
++ A junction table, e.g. candidate_skills(candidate_id, skill_id)
+- A comma-separated skills column on the candidates table
+- One column per skill on the candidates table, e.g. skill_java
+- Two foreign keys to the skills table on each candidate row
+= The junction table can also hold extras such as years of experience.
+
+Q E What is a read replica?
++ A synced copy of the database that serves read queries
+- A nightly backup file that can be restored when needed
+- A cache of query results stored in the user's browser
+- A second schema in the same database for read-only users
+= It spreads read load but may lag slightly behind.
+
+Q E Which violates first normal form (1NF)?
++ A column holding several values, e.g. skills = 'Java,SQL'
+- A table whose primary key is made of two columns together
+- A table that has a foreign key to another table
+- A table that has more than ten columns in it
+= 1NF needs atomic values in each column.
+
+Q M What is denormalisation, and when is it used?
++ Duplicating data on purpose (e.g. a stored count) to speed up reads, at a sync cost
+- Deleting duplicate rows so that every row in a table is unique
+- Removing indexes from tables that are written more often than read
+- Splitting one wide table into many narrow tables to save space
+= Common in reporting tables and read-heavy features.
+
+Q M What is a natural key vs a surrogate key?
++ A natural key comes from the data (e.g. email); a surrogate key is generated (e.g. an id)
+- A natural key is generated (e.g. an id); a surrogate key comes from the data (e.g. email)
+- They are the same thing; surrogate is just the term used in data warehouses
+- A natural key is always a number; a surrogate key must always be text
+= Surrogate keys stay stable even when business values change.
+
+Q M What does partitioning a large table by month do?
++ Splits it so queries and maintenance touch only relevant months
+- Copies it to another server once each month has ended
+- Encrypts the rows of older months with a separate key
+- Deletes rows older than a month automatically each night
+= Dropping an old partition is much faster than deleting millions of rows.
+
+Q M Which is a good reason to choose a document (NoSQL) database over SQL?
++ Flexible nested data read whole, simple access patterns, huge scale
+- You need complex joins and strong transactions across many tables
+- You want to avoid running backups of production data
+- SQL databases cannot store long text such as descriptions
+= Relational databases suit related data with joins and transactions.
+
+Q H What is sharding?
++ Splitting data across several servers by a key, e.g. customer_id
+- Adding indexes to every column used in a query's WHERE
+- Creating read replicas, and nothing else, for heavy read traffic
+- Compressing tables so more of them fit on one server
+= It scales writes but makes cross-shard queries and transactions harder.
+
+Q H Replication lag causes a user to not see the profile they just saved. What is a common fix?
++ Read from the primary for a short while after a write
+- Turn off replication so every read uses the primary
+- Cache the profile forever so it never needs reloading
+- Retry the write until the replica shows the change
+= Or route reads that need fresh data to the primary.
+
+Q H What is third normal form (3NF) about?
++ Non-key columns depend only on the key, not on other non-key columns
+- Every table must have exactly three columns, including the key
+- Every table must have three indexes: primary, unique and secondary
+- Every value must be stored in three places for redundancy
+= e.g. city depends on pincode, so store pincode → city in its own table.
+
+Q H What is the soft delete pattern, and a common pitfall?
++ Marking rows deleted instead of removing them; queries and unique indexes must allow for it
+- Deleting rows slowly in small steps; the pitfall is that it locks the table for hours
+- Deleting rows in batches overnight; the pitfall is that it loses recent data
+- Archiving deleted rows to CSV files; the pitfall is that MySQL cannot do this
+= Forgetting the filter shows "deleted" data, and unique emails block re-registration.

@@ -1,0 +1,1142 @@
+# CodeWalnut built-in Java bank (ADR-0015). Format: see TechBank.java.
+# Bands: FUNDAMENTALS = freshers, PRACTICAL = 1–3 years, ADVANCED = 3+ years.
+
+@topic java-basics | FUNDAMENTALS | Java basics | Data types, operators, integer division, casting, increment operators, string concatenation order, wrapper caching.
+Q E Which of these is NOT a primitive type in Java?
++ String
+- int
+- boolean
+- char
+= String is a class (java.lang.String); the eight primitives are byte, short, int, long, float, double, char and boolean.
+
+Q E What does this print?
+| int a = 7 / 2;
+| System.out.println(a);
++ 3
+- 3.5
+- 4
+- 3.0
+= Dividing two ints gives an int; the fraction is dropped (truncated), so 7 / 2 is 3.
+
+Q E What is the default value of an int field (instance variable) that is never assigned?
++ 0
+- null
+- -1
+- It has no value and will not compile
+= Fields get defaults (0, false, null). Local variables get no default and must be assigned before use.
+
+Q E Which keyword stops a variable from being reassigned after it gets a value?
++ final
+- static
+- const
+- immutable
+= final prevents reassignment. const is a reserved word in Java but is not used.
+
+Q M What does this print?
+| System.out.println(1 + 2 + "3" + 4 + 5);
++ 3345
+- 12345
+- 339
+- 15
+= Evaluated left to right: 1 + 2 = 3, then 3 + "3" = "33", then "334", then "3345".
+
+Q M What does this print?
+| int i = 5;
+| int j = i++ + ++i;
+| System.out.println(j);
++ 12
+- 11
+- 10
+- 13
+= i++ gives 5 (i becomes 6), then ++i makes i 7 and gives 7: 5 + 7 = 12.
+
+Q M What happens when this compiles?
+| long x = 10;
+| int y = x;
++ Compile error: lossy conversion from long to int
+- It compiles, and y becomes 10
+- It compiles, then throws at run time
+- It compiles, and y becomes 0
+= Narrowing a long to an int needs an explicit cast: int y = (int) x;
+
+Q M What does this print?
+| System.out.println(10 % 3 + " " + (-10 % 3));
++ 1 -1
+- 1 2
+- 1 1
+- -1 1
+= In Java the remainder takes the sign of the left operand, so -10 % 3 is -1.
+
+Q H What does this print?
+| byte b = (byte) 130;
+| System.out.println(b);
++ -126
+- 130
+- 126
+- Compile error
+= A byte holds -128 to 127. 130 wraps around: 130 - 256 = -126.
+
+Q H What does this print?
+| Integer a = 127, b = 127;
+| Integer c = 128, d = 128;
+| System.out.println((a == b) + " " + (c == d));
++ true false
+- true true
+- false false
+- false true
+= Autoboxing caches Integer values from -128 to 127, so a and b are the same object; 128 creates two objects. Compare wrappers with equals().
+
+Q H What does this print?
+| System.out.println(0.1 + 0.2 == 0.3);
++ false
+- true
+- Compile error
+- 0.3
+= 0.1 and 0.2 cannot be stored exactly in binary floating point; the sum is 0.30000000000000004. Use BigDecimal for money.
+
+Q H What does this print?
+| char c = 'A';
+| c += 2;
+| System.out.println(c);
++ C
+- 67
+- Compile error
+- A2
+= Compound assignment (+=) casts the result back to char, so 'A' + 2 becomes 'C'. Writing c = c + 2 would not compile.
+
+@topic java-oop | FUNDAMENTALS | Object-oriented programming | Classes and objects, constructors, inheritance, overloading vs overriding, polymorphism, abstract classes, interfaces, access modifiers.
+Q E Which concept lets a subclass give its own version of a method defined in its parent class?
++ Method overriding
+- Method overloading
+- Encapsulation
+- Abstraction
+= Overriding replaces an inherited method's behaviour in a subclass; overloading is several methods with the same name and different parameters.
+
+Q E Which keyword does a class use to inherit from another class?
++ extends
+- implements
+- inherits
+- super
+= class B extends A. A class implements interfaces.
+
+Q E Which access modifier makes a member visible only inside its own class?
++ private
+- protected
+- default (no modifier)
+- public
+= private is the most restrictive; default is package-wide, protected adds subclasses, public is everywhere.
+
+Q E What does a constructor return?
++ Nothing; it has no return type
+- void, like any method without a result
+- The new object, so it is declared with its class type
+- An int status code, 0 meaning success
+= Constructors have no return type, not even void. The new expression gives you the object.
+
+Q M What does this print?
+| class A { void hi() { System.out.println("A"); } }
+| class B extends A { void hi() { System.out.println("B"); } }
+|
+| A obj = new B();
+| obj.hi();
++ B
+- A
+- AB
+- Compile error
+= Run-time polymorphism: the method of the actual object (B) runs, whatever the variable's declared type.
+
+Q M Which statement about interfaces (Java 8 and later) is true?
++ An interface can have default methods with a body
+- An interface can have instance fields that each object changes
+- Interface methods are private unless marked public
+- A class can implement only one interface
+= Default and static methods can have bodies; fields are implicitly public static final; a class can implement many interfaces.
+
+Q M Can you create an object of an abstract class with new?
++ No; only a concrete subclass can be instantiated
+- Yes, as long as it declares a constructor
+- Yes, but only from inside the same package
+- Only if every one of its methods is abstract
+= Abstract classes cannot be instantiated directly. Their constructors run when a subclass object is created.
+
+Q M How does Java choose between overloaded methods?
++ By the arguments' number and types, at compile time
+- By the method's return type, at compile time
+- By the object's actual class, at run time
+- By the first matching name, at run time
+= Overloading is resolved at compile time from the parameter list; the return type alone cannot distinguish overloads.
+
+Q H What does this print?
+| class P { static void show() { System.out.println("P"); } }
+| class C extends P { static void show() { System.out.println("C"); } }
+|
+| P p = new C();
+| p.show();
++ P
+- C
+- Compile error
+- PC
+= Static methods are hidden, not overridden. The call is resolved by the variable's declared type, P.
+
+Q H What does this print?
+| class Base {
+|     Base() { print(); }
+|     void print() { System.out.println("Base"); }
+| }
+| class Child extends Base {
+|     int x = 5;
+|     void print() { System.out.println(x); }
+| }
+|
+| new Child();
++ 0
+- 5
+- Base
+- NullPointerException
+= Base's constructor runs before Child's fields are initialised, but calls the overridden print(), which sees x = 0. Avoid calling overridable methods from constructors.
+
+Q H Which statement about equals() and hashCode() is true?
++ If two objects are equal by equals(), they must return the same hashCode()
+- Two objects with the same hashCode() must be equal
+- You only need to override equals() for objects used as HashMap keys
+- hashCode() must be unique for every object
+= Equal objects must have equal hash codes; collisions (same hash, not equal) are allowed. Override both together.
+
+Q H Why is composition often preferred over inheritance?
++ Parts can be swapped without a fragile class hierarchy
+- Composed objects are always faster than subclasses
+- Java does not allow inheritance between your own classes
+- Inheritance cannot reuse any code from the parent
+= "Has-a" keeps classes loosely coupled; deep "is-a" hierarchies break when a parent changes.
+
+@topic java-strings | FUNDAMENTALS | Strings and arrays | String immutability, == vs equals, StringBuilder, common String methods, arrays, indexes and references.
+Q E What does this print?
+| String s = "hello";
+| s.toUpperCase();
+| System.out.println(s);
++ hello
+- HELLO
+- Hello
+- Compile error
+= Strings are immutable. toUpperCase() returns a new String, which is thrown away here.
+
+Q E What is the index of the first element of a Java array?
++ 0
+- 1
+- -1
+- It depends on the array type
+= Arrays are zero-indexed; the last element is at length - 1.
+
+Q E Which gives the number of characters in a String s?
++ s.length()
+- s.length
+- s.size()
+- s.count()
+= Strings use the method length(); arrays use the field length; collections use size().
+
+Q E What happens here?
+| int[] a = new int[3];
+| System.out.println(a[3]);
++ It throws ArrayIndexOutOfBoundsException
+- It prints 0, the default int value
+- It prints null for the missing element
+- It fails to compile: index out of range
+= Valid indexes are 0 to 2. Java checks bounds at run time.
+
+Q M What does this print?
+| String a = "java";
+| String b = "java";
+| String c = new String("java");
+| System.out.println((a == b) + " " + (a == c) + " " + a.equals(c));
++ true false true
+- true true true
+- false false true
+- true false false
+= Literals share one pooled object; new String creates another object. == compares references, equals() compares text.
+
+Q M Why use StringBuilder to join strings inside a loop?
++ It appends to one buffer instead of making a new String each time
+- It is synchronized, so it is safe to share between threads
+- Strings cannot be joined with + inside a loop body
+- It compresses the text so the result uses less memory
+= Each + on Strings creates a new object; StringBuilder avoids that. (StringBuffer is the synchronized one.)
+
+Q M What does this print?
+| System.out.println("abcdef".substring(2, 4));
++ cd
+- cde
+- bcd
+- bc
+= substring(begin, end) includes begin and excludes end: indexes 2 and 3.
+
+Q M What does this print?
+| int[] a = {3, 1, 2};
+| int[] b = a;
+| b[0] = 9;
+| System.out.println(a[0]);
++ 9
+- 3
+- 1
+- Compile error
+= b = a copies the reference, not the array. Both names point to the same array.
+
+Q H What does this print?
+| String s = null;
+| System.out.println(s + "x");
++ nullx
+- x
+- NullPointerException
+- Compile error
+= String concatenation turns null into the text "null". Calling a method on s (s.length()) would throw.
+
+Q H What does this print?
+| System.out.println("a,b,,c,".split(",").length);
++ 4
+- 5
+- 3
+- 6
+= split gives ["a", "b", "", "c", ""] and then drops trailing empty strings, leaving 4 elements.
+
+Q H What does this print?
+| String s1 = "ja" + "va";
+| String s2 = "java";
+| System.out.println(s1 == s2);
++ true
+- false
+- Compile error
+- It depends on the JVM
+= "ja" + "va" is a compile-time constant, so the compiler stores the single pooled "java".
+
+Q H What does this print?
+| int[][] grid = new int[3][];
+| System.out.println(grid[1]);
++ null
+- 0
+- []
+- ArrayIndexOutOfBoundsException
+= Only the outer array is created; each inner array reference starts as null.
+
+@topic java-exceptions | FUNDAMENTALS | Exceptions | try/catch/finally, checked vs unchecked, throw vs throws, try-with-resources, custom exceptions, good practice.
+Q E Which block runs whether or not an exception is thrown (unless the JVM exits)?
++ finally
+- catch
+- throw
+- final
+= finally runs after try (and any catch), even when try returns or throws.
+
+Q E Which of these is a checked exception?
++ IOException
+- NullPointerException
+- ArithmeticException
+- ArrayIndexOutOfBoundsException
+= Checked exceptions extend Exception but not RuntimeException; the compiler makes you catch or declare them.
+
+Q E What does throws in a method signature mean?
++ The method may pass this exception to its caller
+- The method catches this exception inside itself
+- The method throws this exception on every call
+- The exception is logged and then ignored
+= throws declares exceptions that can leave the method; throw actually raises one.
+
+Q E What happens when this line runs?
+| int x = 10 / 0;
++ An ArithmeticException is thrown
+- x becomes 0 and a warning is logged
+- x becomes Infinity, like double division
+- x becomes NaN because the result is undefined
+= Integer division by zero throws ArithmeticException. (Floating-point 10.0 / 0 gives Infinity.)
+
+Q M What does this print?
+| static int f() {
+|     try { return 1; }
+|     finally { System.out.print("F "); }
+| }
+|
+| System.out.println(f());
++ F 1
+- 1
+- 1 F
+- Compile error
+= The return value is computed, finally runs (printing "F "), then the value 1 is returned and printed.
+
+Q M What is try-with-resources for?
++ Closing files and connections automatically
+- Retrying a block automatically when it fails
+- Catching every exception the block may throw
+- Running each resource's code in parallel
+= Resources declared in try (...) that implement AutoCloseable are closed at the end, even on error.
+
+Q M What happens with these catch blocks?
+| try {
+|     Files.readString(Path.of("a.txt"));
+| } catch (Exception e) {
+|     System.out.println("any");
+| } catch (IOException e) {
+|     System.out.println("io");
+| }
++ Compile error: the IOException catch is unreachable
+- It prints "io" when the file is missing
+- It prints "any" and then "io" for a missing file
+- It compiles and always prints "any" on failure
+= Catch the most specific type first. A subclass catch after its superclass is unreachable code.
+
+Q M Which is good practice with exceptions?
++ Catch only what you can handle; log or rethrow the rest
+- Catch Throwable everywhere so nothing escapes
+- Use empty catch blocks to keep logs clean
+- Use exceptions to end normal loops
+= Swallowing exceptions hides bugs; exceptions are for exceptional cases, not flow control.
+
+Q H What does this print?
+| static int g() {
+|     int x = 1;
+|     try { return x; }
+|     finally { x = 2; }
+| }
+|
+| System.out.println(g());
++ 1
+- 2
+- 0
+- Compile error
+= The value of x (1) is saved when return runs; changing x in finally does not change it.
+
+Q H What does this print?
+| static int h() {
+|     try { throw new RuntimeException("boom"); }
+|     finally { return 3; }
+| }
+|
+| System.out.println(h());
++ 3
+- A RuntimeException stack trace
+- Compile error
+- 0
+= A return in finally discards the pending exception, which is why returning from finally is a bad idea.
+
+Q H When should a custom exception extend RuntimeException rather than Exception?
++ When callers are not expected to recover, e.g. bad input
+- When every caller must be forced by the compiler to handle it
+- Never; custom exceptions in Java must always be checked
+- Only when the exception is thrown from the main method
+= Unchecked exceptions suit errors callers cannot sensibly handle; checked ones force handling of recoverable cases.
+
+Q H In try-with-resources, the body throws and then close() also throws. What reaches the caller?
++ The body's exception, with close()'s attached as suppressed
+- The close() exception, which replaces the body's exception
+- Neither; both exceptions are swallowed by the try block
+- Both, thrown one after another to the calling method
+= Java keeps the original exception and records the other via getSuppressed().
+
+@topic java-collections | PRACTICAL | Collections and generics | Choosing List/Set/Map, HashMap behaviour, equals/hashCode, iterating safely, generics and wildcards, sorting with Comparator.
+Q E Which collection does not allow duplicate elements?
++ HashSet
+- ArrayList
+- LinkedList
+- ArrayDeque
+= A Set holds each element at most once (by equals/hashCode).
+
+Q E Which collection stores key–value pairs?
++ HashMap
+- ArrayList
+- HashSet
+- LinkedList
+= A Map maps keys to values; each key appears once.
+
+Q E What does this print?
+| List<Integer> list = new ArrayList<>();
+| list.add(5);
+| list.add(5);
+| System.out.println(list.size());
++ 2
+- 1
+- 5
+- 10
+= Lists allow duplicates, so both 5s are kept.
+
+Q E Which Map keeps keys in the order they were inserted?
++ LinkedHashMap
+- HashMap
+- TreeMap
+- Hashtable
+= LinkedHashMap keeps insertion order; TreeMap sorts by key; HashMap gives no order.
+
+Q M What does this print?
+| Map<String, Integer> m = new HashMap<>();
+| m.put("a", 1);
+| m.put("a", 2);
+| System.out.println(m.get("a") + " " + m.size());
++ 2 1
+- 1 1
+- 2 2
+- 1 2
+= put with an existing key replaces the value; the map still has one entry.
+
+Q M What happens when this runs?
+| List<String> names = new ArrayList<>(List.of("a", "b", "c"));
+| for (String n : names) {
+|     if (n.equals("a")) names.remove(n);
+| }
++ ConcurrentModificationException
+- names becomes [b, c] without errors
+- names stays [a, b, c] without errors
+- IndexOutOfBoundsException
+= Changing a list while a for-each loop iterates it breaks the iterator. Use names.removeIf(...) or Iterator.remove().
+
+Q M You need fast lookups by key and the keys kept in sorted order. Which fits best?
++ TreeMap
+- HashMap
+- ArrayList
+- LinkedList
+= TreeMap keeps keys sorted with O(log n) lookups.
+
+Q M What can you do with a List<? extends Number>?
++ Read elements as Number, but not add them (except null)
+- Add any Number, but read elements only as Object
+- Add only Integer values, since Integer extends Number
+- Add and read any subtype of Number freely
+= "Producer extends": the exact element type is unknown, so adding is unsafe; reading as Number is safe.
+
+Q H A key class overrides equals() but not hashCode(). What can go wrong when it is used in a HashMap?
++ get() can return null for a key equal to one in the map
+- Nothing, because HashMap compares keys only with equals()
+- The code fails to compile until hashCode() is added
+- The map keeps the keys sorted in the wrong order
+= Equal keys may get different hash codes and land in different buckets, so the lookup never compares them.
+
+Q H In Java 8 and later, what is HashMap.get's typical and worst-case time when many keys collide?
++ O(1) typical; O(log n) worst case, as full buckets become trees
+- O(n) typical, because every key is compared one by one
+- O(log n) typical, because keys are kept in a sorted tree
+- O(1) even in the worst case, because hashing never collides
+= Since Java 8, buckets with many entries switch from linked lists to balanced trees.
+
+Q H What happens here?
+| List<Integer> list = Arrays.asList(1, 2, 3);
+| list.add(4);
++ UnsupportedOperationException
+- list becomes [1, 2, 3, 4]
+- Compile error
+- IndexOutOfBoundsException
+= Arrays.asList returns a fixed-size view of the array; set() works, add() and remove() do not.
+
+Q H Which sorts employees by salary (highest first), then by name (A–Z)?
++ Comparator.comparing(Employee::salary).reversed().thenComparing(Employee::name)
+- Comparator.comparing(Employee::name).reversed()
+- Comparator.comparing(Employee::salary).thenComparing(Employee::name).reversed()
+- Collections.sort(list, true)
+= reversed() applies to the comparator built so far; adding thenComparing after it keeps names A–Z. The third option would also reverse names.
+
+@topic java-streams | PRACTICAL | Java 8+ features | Lambdas, functional interfaces, streams (map/filter/reduce/collect), Optional, method references, records, laziness.
+Q E Which is a valid lambda for a Runnable?
++ () -> System.out.println("hi")
+- x -> x + 1
+- (a, b) -> a + b
+- -> System.out.println("hi")
+= Runnable.run() takes no arguments and returns nothing, so the lambda needs empty parentheses.
+
+Q E What is Optional for?
++ Showing that a value may be missing, instead of returning null
+- Making method calls run faster by skipping null checks
+- Catching exceptions thrown inside lambda expressions
+- Running a computation in parallel on several threads
+= Optional makes "no value" explicit and offers orElse, map and similar methods.
+
+Q E What does this return?
+| List.of(1, 2, 3, 4).stream().filter(n -> n % 2 == 0).count()
++ 2
+- 4
+- 6
+- 1
+= Only 2 and 4 pass the filter.
+
+Q E What is a functional interface?
++ An interface with exactly one abstract method
+- Any interface that declares default methods
+- A class that contains only static methods
+- An interface that declares no methods at all
+= Lambdas and method references can implement a functional interface (e.g. Runnable, Function, Predicate).
+
+Q M What does this print?
+| System.out.println(Stream.of("a", "bb", "ccc").map(String::length).reduce(0, Integer::sum));
++ 6
+- 3
+- abbccc
+- 0
+= The lengths are 1, 2 and 3; reduce adds them starting from 0.
+
+Q M What does this print?
+| Stream.of(1, 2, 3).peek(System.out::print).map(n -> n * 2);
++ Nothing: there is no terminal operation
+- 123, once peek has seen every element
+- 246, after map has doubled each element
+- 112233, as peek and map both print
+= Streams are lazy: intermediate steps (peek, map) run only when a terminal operation such as collect or forEach is called.
+
+Q M What does this produce?
+| Stream.of("hi", "yo", "hey").collect(Collectors.groupingBy(String::length))
++ {2=[hi, yo], 3=[hey]}
+- {hi=2, yo=2, hey=3}
+- {2=2, 3=1}
+- [[hi, yo], [hey]]
+= groupingBy builds a Map from each key (the length) to the list of elements with that key.
+
+Q M Which is true about this record?
+| record Point(int x, int y) {}
++ It gets a constructor, x() and y(), equals, hashCode and toString
+- It gets getters and setters, so its fields can be changed later
+- It can extend another class, like any other class can
+- It gets accessors named getX() and getY(), as in JavaBeans
+= Records are immutable data carriers; they cannot extend classes (they can implement interfaces).
+
+Q H What happens here?
+| Optional<String> o = Optional.of(null);
++ NullPointerException
+- An empty Optional
+- An Optional containing null
+- Compile error
+= Optional.of requires a non-null value. Use Optional.ofNullable for values that may be null.
+
+Q H What is the difference between map and flatMap on a stream?
++ flatMap maps each element to a stream and joins them into one
+- map runs in parallel, while flatMap always runs sequentially
+- flatMap removes null elements, while map keeps them
+- flatMap sorts the result, while map keeps the original order
+= e.g. a stream of lists becomes a stream of their elements with flatMap(List::stream).
+
+Q H What happens when this runs (Java 16+)?
+| List<Integer> out = List.of(3, 1, 2).stream().sorted().toList();
+| out.add(4);
++ UnsupportedOperationException
+- out becomes [1, 2, 3, 4]
+- out becomes [3, 1, 2, 4]
+- Compile error
+= Stream.toList() returns an unmodifiable list. Collect to new ArrayList<>(...) if you need to change it.
+
+Q H When is parallelStream() usually a bad idea?
++ For small collections, shared mutable state, or blocking I/O
+- For large, CPU-heavy work where each element is independent
+- For summing a very large array of primitive numbers
+- Never; a parallel stream is always faster than a sequential one
+= Parallel streams share the common fork-join pool; overhead and contention often outweigh gains for small or I/O-bound work.
+
+@topic java-spring | PRACTICAL | Spring Boot and REST | Dependency injection, beans and scopes, REST controllers and mappings, configuration and profiles, validation, transactions, auto-configuration.
+Q E What does @RestController combine?
++ @Controller and @ResponseBody
+- @Service and @Repository
+- @Component and @Bean
+- @Configuration and @Autowired
+= Return values of its methods are written straight to the response body, usually as JSON.
+
+Q E Which annotation maps HTTP GET requests to a method?
++ @GetMapping
+- @PostMapping
+- @RequestBody
+- @PutMapping
+= @GetMapping is a shortcut for @RequestMapping(method = GET).
+
+Q E What is dependency injection?
++ Objects receive what they need from the container instead of creating it
+- JAR files are added to the classpath automatically at start-up
+- SQL statements are injected into queries to build them faster
+- Code is copied between classes at compile time to avoid duplication
+= Spring creates beans and wires them together, which keeps classes loosely coupled and testable.
+
+Q E Where is configuration such as a database URL usually kept in a Spring Boot app?
++ application.yml or properties, or environment variables
+- pom.xml, under the dependencies section
+- A constant in the main application class
+- web.xml, inside the servlet configuration
+= Spring Boot reads properties from those files and from the environment, which overrides them.
+
+Q M What is the default scope of a Spring bean?
++ Singleton
+- Prototype
+- Request
+- Session
+= One shared instance per application context unless another scope is set.
+
+Q M Why is constructor injection preferred over @Autowired on fields?
++ Dependencies are explicit, can be final and are easy to replace in tests
+- It is the only kind of injection that Spring Boot still supports
+- It makes every bean lazy, so the application starts faster
+- It removes the need to annotate the class with @Component
+= Field injection hides dependencies and needs reflection to set them in tests.
+
+Q M Which annotation reads the id in a request to /users/{id}?
++ @PathVariable
+- @RequestParam
+- @RequestBody
+- @RequestHeader
+= @PathVariable binds URL path segments; @RequestParam binds query parameters like ?page=2.
+
+Q M How do you run a Spring Boot app with the "prod" profile?
++ Set spring.profiles.active=prod, e.g. via SPRING_PROFILES_ACTIVE
+- Rename the main class to ProdApplication and rebuild
+- Add @Profile("prod") to the main method only
+- Start the JVM with -Dprofile=production on the command line
+= Profiles switch beans and property files such as application-prod.yml.
+
+Q H A @Transactional method is called from another method of the same class. What happens?
++ It bypasses Spring's proxy, so no new transaction starts
+- A new transaction always starts for the inner method
+- Spring fails at start-up because of the self-call
+- Two nested transactions start, one for each method
+= Transactions are applied by a proxy around the bean; a call through this skips the proxy. Move the method to another bean.
+
+Q H What status should a successful POST that creates a resource return?
++ 201 Created
+- 200 OK, always
+- 204 No Content
+- 302 Found
+= 201 with a Location header pointing to the new resource is the REST convention.
+
+Q H How does Spring Boot auto-configuration decide what to set up?
++ From conditions such as classes on the classpath and existing beans
+- It configures every module it knows about, then removes unused ones
+- It reads a list of features from the main application class
+- It asks the developer which modules to enable at first start-up
+= @ConditionalOnClass, @ConditionalOnMissingBean and similar conditions let your own beans override the defaults.
+
+Q H How do you validate a JSON request body in a Spring controller?
++ Constraints like @NotBlank on fields, @Valid on the parameter
+- If statements in the controller; Spring has no built-in validation
+- Database constraints only; invalid rows are rejected on insert
+- @Transactional on the controller, which rolls back bad input
+= Bean Validation runs before the method; failures raise MethodArgumentNotValidException, mapped to 400.
+
+@topic java-jpa | PRACTICAL | Databases with JDBC and JPA | JDBC and PreparedStatement, JPA entities and relationships, lazy loading and N+1, Spring Data repositories, transactions and locking.
+Q E What does @Entity mark?
++ A class mapped to a database table
+- A class that handles HTTP requests
+- A Spring bean that holds business logic
+- A class that runs as a unit test
+= JPA maps each @Entity class to a table and its fields to columns.
+
+Q E Which annotation marks an entity's primary key?
++ @Id
+- @Key
+- @Primary
+- @Column(primary = true)
+= @Id marks the identifier; @GeneratedValue can generate it.
+
+Q E What is JDBC?
++ Java's standard API for talking to databases with SQL
+- A lightweight database that ships with the JDK
+- A web framework for building database-backed apps
+- A build tool for managing database dependencies
+= JDBC drivers implement it for each database; JPA and Spring Data build on top of it.
+
+Q E Why use PreparedStatement instead of building SQL by joining strings?
++ It blocks SQL injection and lets the database reuse the plan
+- It is the only JDBC class that can run a SELECT statement
+- It returns more rows than a plain Statement would
+- It runs the query without opening a database connection
+= Parameters are sent separately from the SQL text, so user input cannot change the query.
+
+Q M What is the N+1 query problem?
++ One query loads a list, then one more runs for each item's relation
+- A query returns one row more than the page size you asked for
+- Each request opens N+1 database transactions instead of one
+- An index has N+1 columns, which makes every write slower
+= For 100 orders that is 101 queries. Fetch joins or entity graphs load the data in one go.
+
+Q M What is the default fetch type of @OneToMany in JPA?
++ LAZY
+- EAGER
+- IMMEDIATE
+- NONE
+= Collections are lazy by default; @ManyToOne and @OneToOne are eager by default.
+
+Q M What does LazyInitializationException usually mean?
++ A lazy relation was read after the session (transaction) closed
+- The database server went down while an entity was being loaded
+- Two threads updated the same row at the same time
+- The entity class is missing an @Id field
+= Load what you need inside the transaction, e.g. with a fetch join or a DTO query.
+
+Q M What does this Spring Data JPA method do?
+| List<User> findByEmail(String email);
++ Spring builds the query from the method name
+- Nothing happens until you add an @Query with SQL
+- It always finds users by their primary key
+- It fails to compile without an implementation
+= Derived queries parse names like findByEmailAndActive into JPQL.
+
+Q H What does optimistic locking with @Version do?
++ An update fails if someone else changed the row since it was read
+- Every row is locked as soon as it is read, until the commit
+- Only one user at a time can open the record for editing
+- The database records each version of the table's schema
+= Each update checks and bumps the version column; a stale version raises OptimisticLockException.
+
+Q H How do you avoid N+1 queries when loading orders with their items?
++ Use JOIN FETCH or an entity graph to load both in one query
+- Make every relation EAGER so JPA always loads items too
+- Add more database connections so the extra queries run in parallel
+- Call findAll() twice so the second call hits the cache
+= EAGER everywhere loads too much and can still cause N+1; fetch exactly what each use case needs.
+
+Q H A @Transactional method throws a checked exception. By default, what happens to the transaction?
++ It commits; by default only unchecked exceptions roll back
+- It rolls back, as it does for every exception type
+- It stays open until the caller commits it manually
+- It is retried once and then rolled back if it fails again
+= Use @Transactional(rollbackFor = Exception.class) if checked exceptions should roll back too.
+
+Q H Why mark a query method @Transactional(readOnly = true)?
++ Hibernate can skip dirty checking and flushing
+- It stops the method from running SELECT queries
+- It makes INSERT and UPDATE statements run faster
+- It turns off the first-level cache for the method
+= Read-only transactions avoid tracking changes to loaded entities; some setups also route them to read replicas.
+
+@topic java-concurrency | ADVANCED | Concurrency | Threads and Runnable, synchronized and volatile, race conditions, executors, CompletableFuture, concurrent collections, deadlocks, virtual threads.
+Q E Which is a way to run a task in a separate thread?
++ Pass a Runnable to a new Thread, then call start()
+- Override toString() and call it from main
+- Declare the method static and call it directly
+- Call the method inside a for loop with a sleep
+= You can also submit tasks to an ExecutorService, which is usually better.
+
+Q E What does synchronized guarantee?
++ Only one thread at a time runs code guarded by the same lock
+- The method is compiled ahead of time so it runs faster
+- The method's work is split across every CPU core
+- The method's local variables can never be changed
+= It also makes changes made inside the block visible to the next thread that takes the lock.
+
+Q E What happens if you call run() instead of start() on a Thread?
++ run() runs in the current thread; no new thread starts
+- Two threads start: one for run() and one for start()
+- An IllegalThreadStateException is thrown at once
+- Nothing happens until start() is also called
+= start() creates the new thread, which then calls run().
+
+Q E What is a deadlock?
++ Threads waiting forever for locks held by each other
+- A thread that finishes before the others have started
+- A JVM crash caused by running too many threads
+- A thread stuck in an infinite loop of its own
+= e.g. thread 1 holds A and waits for B while thread 2 holds B and waits for A.
+
+Q M What does volatile guarantee?
++ Writes are visible to other threads, but count++ is still not atomic
+- Every operation on the variable, including count++, becomes atomic
+- The whole object is locked while the variable is being changed
+- The variable can never be null once it has been assigned
+= count++ is read-modify-write; use AtomicInteger or a lock for that.
+
+Q M What does this print?
+| int[] count = {0};
+| Runnable r = () -> { for (int i = 0; i < 100_000; i++) count[0]++; };
+| Thread a = new Thread(r), b = new Thread(r);
+| a.start(); b.start();
+| a.join(); b.join();
+| System.out.println(count[0]);
++ Up to 200000, often less, because ++ is not atomic
+- Always 200000, because join() waits for both threads
+- Always 100000, because the threads share one loop
+- It fails to compile: arrays cannot be used in lambdas
+= Both threads can read the same old value and write back the same result, losing updates (a race condition).
+
+Q M Why use an ExecutorService rather than creating threads by hand?
++ It reuses pooled threads and manages queuing and shutdown
+- It removes the need for any synchronization in tasks
+- It runs every task on the main thread, one at a time
+- Java no longer allows creating threads by hand
+= Creating a thread per task is expensive and unbounded; pools cap and reuse them.
+
+Q M Which map is safe for concurrent puts and gets from many threads?
++ ConcurrentHashMap
+- HashMap
+- TreeMap
+- LinkedHashMap
+= ConcurrentHashMap allows concurrent access without locking the whole map; HashMap can corrupt under concurrent writes.
+
+Q H What does this return?
+| CompletableFuture.supplyAsync(() -> 2)
+|     .thenApply(x -> x * 3)
+|     .thenCombine(CompletableFuture.supplyAsync(() -> 4), Integer::sum)
+|     .join();
++ 10
+- 24
+- 14
+- 9
+= 2 × 3 = 6, then combined with 4 by addition: 10.
+
+Q H What is a reliable way to prevent deadlocks between locks?
++ Always acquire locks in the same global order
+- Start more threads so one of them always gets the lock
+- Make every method static so there is only one lock
+- Catch InterruptedException around each lock call
+= If every thread takes A before B, a cycle of waiting cannot form. tryLock with a timeout also helps.
+
+Q H How does AtomicInteger.incrementAndGet() work internally?
++ A lock-free compare-and-swap (CAS) loop
+- A synchronized block around the increment
+- A dedicated thread that performs the increment
+- A volatile write followed by a full memory flush
+= CAS retries until no other thread changed the value in between, avoiding locks.
+
+Q H Virtual threads (Java 21) are best suited for:
++ Many concurrent tasks that mostly wait on I/O
+- CPU-heavy number crunching on every core
+- Replacing every synchronized block in the code
+- Rendering a desktop GUI on the main thread
+= They are cheap to create and park while blocked; they do not make CPU-bound work faster.
+
+@topic java-jvm | ADVANCED | JVM, memory and performance | Heap and stack, garbage collection and pauses, memory leaks, OutOfMemoryError, JIT, JVM flags, heap dumps, class loading.
+Q E Where are objects created with new stored?
++ On the heap
+- On the stack
+- In the method's bytecode
+- Only in the CPU cache
+= Local primitives and references live on each thread's stack; the objects themselves live on the heap.
+
+Q E What does the garbage collector do?
++ Frees memory of objects that are no longer reachable
+- Deletes source files that are no longer referenced
+- Closes database connections that have been idle
+- Compiles Java source code to bytecode at run time
+= Objects with no live references can be collected; you never free memory by hand.
+
+Q E What runs compiled Java bytecode (.class files)?
++ The JVM
+- javac
+- The operating system directly
+- Maven
+= javac compiles source to bytecode; the Java Virtual Machine runs it on any platform.
+
+Q E What usually causes a StackOverflowError?
++ Method calls nested too deeply, usually endless recursion
+- Too many objects created on the heap at the same time
+- Writing to a disk that has no free space left
+- Dividing an integer by zero inside a loop
+= Each call adds a frame to the thread's stack; recursion without a base case fills it.
+
+Q M "OutOfMemoryError: Java heap space" usually means:
++ The heap is full of reachable objects: too small, or a leak
+- The call stack is too deep because of endless recursion
+- The CPU is overloaded and the JVM cannot keep up
+- The disk is full, so the JVM cannot swap memory out
+= Check a heap dump to see what is holding memory before simply raising -Xmx.
+
+Q M Can a Java program leak memory even with garbage collection?
++ Yes, if objects stay reachable by mistake, e.g. a growing static map
+- No, because the garbage collector frees every unused object
+- Only in native code called through JNI, never in plain Java
+- Only when arrays are used, because they are never collected
+= GC frees unreachable objects only; forgotten references (caches, listeners, ThreadLocals) keep objects alive.
+
+Q M What is JIT compilation?
++ The JVM compiles hot bytecode to native code while the program runs
+- javac compiles Java source to native code before the program runs
+- The JVM interprets every bytecode instruction for the program's life
+- A tool compiles Java to JavaScript so it can run in a browser
+= Hot methods get optimised machine code, which is why Java speeds up after warm-up.
+
+Q M What is the difference between the JDK and the JRE?
++ The JDK includes build tools like javac; the JRE only runs programs
+- They are the same download under two different names
+- The JRE is the newer replacement for the JDK
+- The JDK is used only for building Android apps
+= Since Java 11 you usually install a JDK and can build slim runtimes with jlink.
+
+Q H Which JVM option sets the maximum heap size?
++ -Xmx
+- -Xss
+- -Xms
+- -XX:MaxStack
+= -Xmx is the maximum heap, -Xms the initial heap and -Xss the per-thread stack size.
+
+Q H What does a heap dump help you find?
++ Which objects use memory and what keeps them alive
+- Which SQL queries are slow and how often they run
+- Where network latency comes from between services
+- Which lines of code have compiler warnings
+= Tools like Eclipse MAT show retained sizes and the reference paths to GC roots.
+
+Q H Why do garbage-collection "stop-the-world" pauses matter for web services?
++ All app threads pause, which shows up as latency spikes
+- They free memory faster, so requests get quicker
+- They only happen once, while the app is starting up
+- They pause the database while memory is reclaimed
+= Collectors such as G1 and ZGC aim to keep these pauses short.
+
+Q H How does the default class-loader delegation work?
++ A loader asks its parent first and loads the class itself only if the parent can't
+- A loader always loads the class itself first and asks its parent only on failure
+- All classes are loaded together at compile time, so there is no delegation
+- Classes are loaded in alphabetical order by the system class loader
+= Parent-first delegation stops application code from replacing core classes such as java.lang.String.
+
+@topic java-design | ADVANCED | Design principles and patterns | SOLID, singleton, factory, builder, strategy, observer and decorator patterns, immutability, refactoring code smells.
+Q E What does the Single Responsibility Principle say?
++ A class should have one reason to change
+- A class should be a singleton
+- Every class should have one method
+- Only one developer should edit a class
+= Keeping one job per class makes changes smaller and safer.
+
+Q E Which pattern makes sure a class has only one instance?
++ Singleton
+- Factory
+- Observer
+- Adapter
+= In Spring, beans are singletons by default, so you rarely hand-write this pattern.
+
+Q E When is the Builder pattern useful?
++ Creating objects with many optional fields readably
+- Making a class safe to share between threads
+- Iterating over the elements of a collection
+- Writing log messages in a consistent format
+= e.g. User.builder().name("Asha").email("a@x.com").build() instead of a long constructor.
+
+Q E What does DRY stand for?
++ Don't Repeat Yourself
+- Do Run Yearly
+- Data Requires Yielding
+- Design, Review, Yield
+= Keep each piece of knowledge in one place so a change is made once.
+
+Q M What does the Open/Closed Principle mean?
++ Open for extension, closed for modification
+- Classes should be open source and freely shared
+- Fields should be public so others can extend them
+- Files should be closed as soon as they are read
+= Add new behaviour with new classes (e.g. a new strategy) rather than editing working code.
+
+Q M What does the Strategy pattern do?
++ Swaps algorithms at run time behind a common interface
+- Notifies many objects automatically when one object changes
+- Wraps an object to add behaviour without changing its class
+- Creates families of related objects without naming classes
+= e.g. different PaymentStrategy implementations chosen per order.
+
+Q M Why prefer immutable objects?
++ They are thread-safe and easier to reason about
+- They always use less memory than mutable objects
+- They are faster to create than mutable objects
+- They are never removed by the garbage collector
+= An object that cannot change can be shared freely between threads without locks.
+
+Q M What does the Dependency Inversion Principle say?
++ High-level code should depend on abstractions, not concrete classes
+- Lower layers should call upper layers instead of the other way round
+- Every if condition should be inverted to reduce nesting in methods
+- Dependencies should be listed in reverse order in the build file
+= Depending on an interface (e.g. PaymentGateway) lets you swap implementations and test easily.
+
+Q H Which is a classic violation of the Liskov Substitution Principle?
++ Square extends Rectangle, and setting the width also sets the height
+- A class implements two interfaces that declare the same method
+- An abstract class declares a constructor that subclasses must call
+- A final class cannot be extended by any other class
+= Code written for Rectangle breaks when given a Square, so Square is not a safe substitute.
+
+Q H Which is a correct thread-safe, lazy singleton in Java?
++ The initialization-on-demand holder class, or an enum with one value
+- A static field set in a getter without any synchronization
+- Creating a new instance on every call
+- Cloning the instance
+= The JVM initialises the holder class only on first use, safely across threads.
+
+Q H Where do you see the Observer pattern in practice?
++ Event listeners and publish–subscribe, e.g. Spring events
+- Builders that create objects with many optional fields
+- Database indexes that speed up lookups by key
+- Logging levels that filter messages by importance
+= Subjects publish events; observers react without the subject knowing them directly.
+
+Q H What is the best fix for a "God class" that does everything?
++ Split it into smaller classes with one responsibility each
+- Make all its methods static so it needs no instance
+- Add detailed comments explaining every method in it
+- Rename it so its name matches what it mostly does
+= Extract cohesive groups of fields and methods into their own classes.
+
+@topic java-microservices | ADVANCED | Microservices and system design | Service boundaries, API gateways, REST vs messaging, resilience (circuit breakers, retries), idempotency, sagas, caching, JWT security, observability.
+Q E What is a microservice?
++ An independently deployable service owning one business capability
+- Any class in the codebase that has fewer than 100 lines of code
+- A function inside a monolith that is called over HTTP internally
+- A database table that is accessed by only one application
+= Each service can be built, deployed and scaled on its own.
+
+Q E Which format do most REST APIs use for request and response bodies?
++ JSON
+- CSV
+- Binary serialized Java objects
+- Plain text only
+= JSON is language-neutral and easy to read; formats like Protobuf are used for gRPC.
+
+Q E Which HTTP method fetches data without changing it?
++ GET
+- POST
+- PATCH
+- DELETE
+= GET is safe (no side effects) and idempotent, so it can be cached and retried.
+
+Q E What does an API gateway do?
++ One entry point that routes requests and handles auth and rate limits
+- A shared database that every service reads and writes directly
+- A build server that compiles and deploys all the services
+- A replacement for the database layer that caches every query
+= Clients call the gateway instead of each service directly.
+
+Q M What does a circuit breaker do?
++ Stops calling a failing service for a while to avoid cascading failures
+- Encrypts all traffic between services so failures cannot leak data
+- Splits a database into shards when one shard starts failing
+- Balances CPU between containers when one service is overloaded
+= After repeated failures it "opens" and fails fast, then lets a few test calls through before closing.
+
+Q M Why should each microservice own its own database?
++ So a service can change its schema without breaking others
+- Because separate databases cost less than one shared database
+- Because SQL joins across services run faster that way
+- Because the HTTP standard requires one database per service
+= A shared database couples services tightly; others get data through the owning service's API or events.
+
+Q M What is an idempotency key in a payments API for?
++ Letting a client retry safely without being charged twice
+- Encrypting card numbers before they reach the server
+- Making payment responses come back faster
+- Identifying which user made the payment request
+= The server stores the result per key and returns it again for a repeated request.
+
+Q M What is a JWT?
++ A signed token with claims a server can verify without a session store
+- An encrypted database file that stores each user's session
+- A Java web toolkit for building login pages and forms
+- A special cookie that only administrators are allowed to use
+= The signature proves the token was not changed; its contents are readable unless also encrypted.
+
+Q H Which pattern handles a business transaction that spans several services?
++ Saga: local transactions with compensating steps on failure
+- Two-phase commit across every service on each request
+- One global lock that every service takes before writing
+- Retrying the whole request until every service succeeds
+= e.g. if payment fails after stock is reserved, a compensating step releases the stock.
+
+Q H Why add random jitter to exponential backoff when retrying?
++ To spread retries so many clients don't retry at the same moment
+- To make each retried request smaller than the original
+- To encrypt retried requests so they cannot be replayed
+- To guarantee that each request is retried exactly once
+= Without jitter, clients that failed together retry together and overload the service again.
+
+Q H How does the cache-aside pattern work?
++ Read the cache; on a miss load from the DB and cache it; on writes update the DB and evict
+- The database pushes every change straight into all caches as it happens
+- Entries are written once and never invalidated, so reads are always fast
+- Writes go only to the cache, which copies them to the database later
+= It is simple and common; stale reads are limited by eviction on write and by expiry times.
+
+Q H What are the three pillars of observability?
++ Logs, metrics and traces
+- CPU, memory and disk
+- Unit, integration and end-to-end tests
+- Development, testing and production
+= Distributed tracing (e.g. OpenTelemetry) follows one request across many services.

@@ -87,6 +87,38 @@ describe('Question bank', () => {
     })
   })
 
+  it('switches the builder to a technical area with experience bands', async () => {
+    const javaOverview = {
+      counts: [],
+      topics: [],
+      presets: [{ id: 'java-fresher', name: 'Java — freshers', description: '20 questions', durationMinutes: 30, passPercent: 60,
+        sections: [{ section: 'FUNDAMENTALS', easy: 8, medium: 8, hard: 4 }] }],
+      guide: [
+        { id: 'java-oop', section: 'FUNDAMENTALS', sectionLabel: 'Fundamentals', level: 'Freshers', name: 'Object-oriented programming', covers: 'Classes', example: 'x', easy: 4, medium: 4, hard: 4 },
+        { id: 'java-concurrency', section: 'ADVANCED', sectionLabel: 'Advanced', level: '3+ years', name: 'Concurrency', covers: 'Threads', example: 'y', easy: 4, medium: 4, hard: 4 },
+      ],
+    }
+    const fetchMock = fakeFetch([
+      { path: '/question-bank/overview?area=JAVA', body: javaOverview },
+      { path: '/question-bank/overview', body: overview },
+      { path: '/question-bank/build', method: 'POST', status: 201, body: { summary: { id: 't8' }, questions: [] } },
+    ])
+    const onBuilt = vi.fn()
+    render(<BuildFromBank onBuilt={onBuilt} onCancel={() => undefined} />)
+    await screen.findByRole('checkbox', { name: /Percentages/ })
+    await userEvent.click(screen.getByRole('button', { name: 'Java' }))
+
+    expect(await screen.findByRole('checkbox', { name: /Object-oriented programming/ })).toBeInTheDocument()
+    expect(screen.getByText('Fundamentals (Freshers)')).toBeInTheDocument()
+    expect(screen.getByText('Advanced (3+ years)')).toBeInTheDocument()
+    expect(screen.getByLabelText('Title')).toHaveValue('Java test')
+    await userEvent.click(screen.getByRole('checkbox', { name: /Concurrency/ }))
+    await userEvent.click(screen.getByRole('button', { name: /Create test/ }))
+    await vi.waitFor(() => expect(onBuilt).toHaveBeenCalledWith('t8'))
+    const build = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/question-bank/build'))!
+    expect(JSON.parse(build[1]!.body as string)).toMatchObject({ area: 'JAVA', topics: [{ section: 'ADVANCED', topic: 'Concurrency' }] })
+  })
+
   it('shows the topic guide', async () => {
     fakeFetch([
       { path: '/question-bank/overview', body: overview },

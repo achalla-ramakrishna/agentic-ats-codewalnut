@@ -304,6 +304,7 @@ function Editor({
         {draftMode && picking && (
           <QuestionBankPanel
             pickLabel="Add"
+            initialArea={s.category}
             onPick={async (ids) => {
               await run(() => addFromBank(id, ids), `Added ${ids.length} question${ids.length === 1 ? '' : 's'} from the bank.`)
             }}

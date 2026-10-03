@@ -1,0 +1,1100 @@
+# CodeWalnut built-in JavaScript bank (ADR-0015). Format: see TechBank.java.
+# Bands: FUNDAMENTALS = freshers, PRACTICAL = 1–3 years, ADVANCED = 3+ years.
+
+@topic js-basics | FUNDAMENTALS | JavaScript basics | Types, typeof, == vs ===, type coercion, truthy and falsy values, numbers and NaN, template literals.
+Q E Which operator checks equality without type conversion?
++ ===
+- ==
+- =
+- !=
+= === compares value and type; == converts types first, which causes surprises.
+
+Q E What does this print?
+| console.log(typeof "hello");
++ string
+- String
+- text
+- object
+= typeof returns a lowercase string naming the type.
+
+Q E What does this print?
+| const name = "Ravi";
+| console.log(`Hi ${name}`);
++ Hi Ravi
+- Hi ${name}
+- Hi name
+- An error
+= Template literals (backticks) substitute ${expressions}.
+
+Q E Which keyword declares a variable that cannot be reassigned?
++ const
+- let
+- var
+- static
+= const prevents reassignment (objects it points to can still be changed).
+
+Q M What does this print?
+| console.log("5" + 3, "5" - 3);
++ 53 2
+- 8 2
+- 53 53
+- 8 8
+= + with a string concatenates; - converts both sides to numbers.
+
+Q M What does this print?
+| console.log(0 == "", null == undefined, null === undefined);
++ true true false
+- false true false
+- true false false
+- false false false
+= == converts "" to 0 and treats null and undefined as equal to each other only; === does not convert.
+
+Q M What does this print?
+| console.log(typeof null, typeof []);
++ object object
+- null array
+- null object
+- object array
+= Both are "object" (typeof null is a long-standing quirk). Use Array.isArray to detect arrays.
+
+Q M Which of these values is truthy?
++ "0"
+- 0
+- ""
+- null
+= Any non-empty string is truthy, even "0" and "false".
+
+Q H What does this print?
+| console.log(NaN === NaN, Number.isNaN(NaN));
++ false true
+- true true
+- false false
+- true false
+= NaN is not equal to anything, including itself. Use Number.isNaN to test for it.
+
+Q H What does this print?
+| console.log(0.1 + 0.2 === 0.3);
++ false
+- true
+- NaN
+- undefined
+= Floating-point rounding makes 0.1 + 0.2 equal 0.30000000000000004.
+
+Q H What does this print?
+| console.log([] + [], [] + {});
++ (an empty string) [object Object]
+- [] {} (both printed as written)
+- 0 NaN (both converted to numbers)
+- undefined undefined (no conversion)
+= Arrays and objects are converted to strings: [] becomes "" and {} becomes "[object Object]".
+
+Q H What does this print?
+| console.log([10, 1, 3].sort());
++ [1, 10, 3]
+- [1, 3, 10]
+- [10, 3, 1]
+- [3, 1, 10]
+= Without a compare function, sort compares as strings. Use sort((a, b) => a - b) for numbers.
+
+@topic js-scope | FUNDAMENTALS | Variables, scope and functions | var vs let vs const, block scope, hoisting, function declarations vs expressions, arrow functions, default parameters.
+Q E What is the scope of a variable declared with let inside an if block?
++ Only that block
+- The whole function
+- The whole file
+- Global
+= let and const are block-scoped; var is function-scoped.
+
+Q E Which is an arrow function?
++ const add = (a, b) => a + b;
+- function add(a, b) { return a + b; }
+- const add = function(a, b) { return a + b; };
+- add(a, b) => a + b;
+= Arrow functions are shorter and do not have their own this.
+
+Q E What does this print?
+| function greet(name = "friend") {
+|   return "Hi " + name;
+| }
+| console.log(greet());
++ Hi friend
+- Hi undefined
+- Hi
+- An error
+= Default parameters apply when the argument is missing (undefined).
+
+Q E What does a function return when it has no return statement?
++ undefined
+- null
+- 0
+- An empty string
+= Functions return undefined by default.
+
+Q M What does this print?
+| console.log(x);
+| var x = 5;
++ undefined
+- 5
+- ReferenceError
+- null
+= var declarations are hoisted (moved up) but not their values.
+
+Q M What happens here?
+| console.log(y);
+| let y = 5;
++ ReferenceError: y is used before initialization
+- undefined, because let is hoisted just like var
+- 5, because declarations are moved to the top
+- null, because the variable exists but is empty
+= let and const are hoisted but stay in the "temporal dead zone" until their line runs.
+
+Q M What does this print?
+| sayHi();
+| function sayHi() { console.log("hi"); }
++ hi
+- undefined
+- TypeError
+- ReferenceError
+= Function declarations are hoisted with their body.
+
+Q M What does this print?
+| const obj = { a: 1 };
+| obj.a = 2;
+| console.log(obj.a);
++ 2
+- 1
+- TypeError
+- undefined
+= const stops reassigning obj, not changing its properties. Use Object.freeze for that.
+
+Q H What does this print?
+| for (var i = 0; i < 3; i++) {
+|   setTimeout(() => console.log(i), 0);
+| }
++ 3 3 3
+- 0 1 2
+- 0 0 0
+- undefined three times
+= var is shared across iterations; when the timeouts run, i is 3. With let each iteration gets its own i.
+
+Q H What does this print?
+| const f = function g() { return typeof g; };
+| console.log(f(), typeof g);
++ function undefined
+- function function
+- undefined undefined
+- ReferenceError
+= The name of a named function expression is visible only inside the function.
+
+Q H What does this print?
+| let a = 1;
+| {
+|   let a = 2;
+| }
+| console.log(a);
++ 1
+- 2
+- SyntaxError
+- undefined
+= The inner a is a separate block-scoped variable that shadows the outer one.
+
+Q H What does this print?
+| console.log(typeof undeclaredVariable);
++ undefined
+- ReferenceError
+- null
+- object
+= typeof is safe on undeclared names; reading them directly would throw.
+
+@topic js-arrays-objects | FUNDAMENTALS | Arrays and objects | map, filter, reduce, find, includes, spread and rest, destructuring, object keys and copying.
+Q E What does this return?
+| [1, 2, 3].map(n => n * 2)
++ [2, 4, 6]
+- [1, 2, 3]
+- 12
+- [2, 3, 4]
+= map returns a new array with each element transformed.
+
+Q E What does this return?
+| [5, 12, 8].filter(n => n > 6)
++ [12, 8]
+- [5]
+- true
+- 12
+= filter keeps the elements that pass the test.
+
+Q E How do you get the number of elements in an array arr?
++ arr.length
+- arr.size()
+- arr.count
+- length(arr)
+= length is a property, not a method.
+
+Q E What does this print?
+| const user = { name: "Asha", age: 25 };
+| const { name } = user;
+| console.log(name);
++ Asha
+- { name: "Asha" }
+- undefined
+- An error
+= Object destructuring takes properties out into variables.
+
+Q M What does this return?
+| [1, 2, 3, 4].reduce((sum, n) => sum + n, 0)
++ 10
+- [1, 3, 6, 10]
+- 0
+- 24
+= reduce carries an accumulator through the array, starting at 0.
+
+Q M What does this print?
+| const a = [1, 2];
+| const b = [...a, 3];
+| console.log(a.length, b.length);
++ 2 3
+- 3 3
+- 2 2
+- 3 2
+= Spread copies elements into a new array; a is unchanged.
+
+Q M What does this return?
+| [3, 7, 9].find(n => n > 5)
++ 7
+- [7, 9]
+- true
+- 1
+= find returns the first matching element (findIndex returns its index).
+
+Q M What does this print?
+| const copy = { ...{ a: 1, b: 2 }, b: 3 };
+| console.log(copy);
++ { a: 1, b: 3 }
+- { a: 1, b: 2 }
+- { a: 1, b: 2, b: 3 }
+- An error
+= Later properties overwrite earlier ones with the same key.
+
+Q H What does this print?
+| const original = { inner: { x: 1 } };
+| const copy = { ...original };
+| copy.inner.x = 2;
+| console.log(original.inner.x);
++ 2
+- 1
+- undefined
+- An error
+= Spread makes a shallow copy; nested objects are shared. Use structuredClone for a deep copy.
+
+Q H What does this print?
+| const arr = [1, 2, 3];
+| arr[10] = 4;
+| console.log(arr.length);
++ 11
+- 4
+- 3
+- An error
+= length is one more than the highest index; the gap is empty slots.
+
+Q H What does this print?
+| const [first, , third = 30] = [1, 2];
+| console.log(first, third);
++ 1 30
+- 1 2
+- 1 undefined
+- An error
+= The empty slot skips 2; third has no value, so its default 30 is used.
+
+Q H What does this print?
+| console.log(["a", "b"].includes("a"), ["a", "b"].indexOf("c"));
++ true -1
+- true 0
+- 1 -1
+- false undefined
+= includes returns a boolean; indexOf returns -1 when the item is missing.
+
+@topic js-dom | FUNDAMENTALS | The DOM and events | Selecting elements, changing content, event listeners, bubbling and delegation, preventDefault, forms.
+Q E Which method selects the first element matching a CSS selector?
++ document.querySelector(".card")
+- document.getElement(".card")
+- document.find(".card")
+- document.select(".card")
+= querySelectorAll returns all matches.
+
+Q E Which method adds a click handler to a button element btn?
++ btn.addEventListener("click", handler)
+- btn.attachHandler("click", handler)
+- btn.listen("click", handler, true)
+- btn.onClick = handler.bind(btn)()
+= addEventListener can attach several handlers to the same event.
+
+Q E Which property safely sets plain text inside an element?
++ textContent
+- innerHTML
+- outerHTML
+- value
+= textContent never interprets HTML, which avoids injecting markup.
+
+Q E What does event.preventDefault() do on a form's submit event?
++ Stops the browser submitting the form and reloading the page
+- Stops every other event listener on the page from running
+- Clears all the form's fields so it can be filled again
+- Removes the submit listener after it has run once
+= Use it when you handle submission with JavaScript (e.g. fetch).
+
+Q M What is event bubbling?
++ An event on a child also fires on its ancestors, moving up the tree
+- Events fire in a random order across elements on the page
+- An event fires only on the document, never on the element
+- Events wait in a queue until the whole page has loaded
+= stopPropagation() stops the event moving up.
+
+Q M What is event delegation?
++ One listener on a parent that checks event.target, instead of one per child
+- Sending every DOM event to the server to be handled there instead
+- Handling events in a web worker so the main thread stays free
+- Cancelling events on children so only the parent's listener runs
+= It works for children added later and uses fewer listeners.
+
+Q M When does the DOMContentLoaded event fire?
++ When the HTML is parsed into the DOM, before images finish loading
+- After every image, stylesheet and script on the page has loaded
+- When the user first clicks or types anywhere on the page
+- When the user closes the tab or navigates to another page
+= The load event waits for images and other resources.
+
+Q M Why is setting innerHTML with user input dangerous?
++ It can run injected scripts (cross-site scripting)
+- It is slower than textContent for long strings
+- It removes every event listener on the page
+- It only works in older versions of browsers
+= Use textContent, or sanitise HTML before inserting it.
+
+Q H What is the difference between event.target and event.currentTarget?
++ target started the event; currentTarget is where the listener runs
+- They always refer to the same element in every situation
+- currentTarget is always the direct parent of target
+- target is always the window object for bubbling events
+= With delegation, currentTarget is the parent and target the clicked child.
+
+Q H Why can reading offsetHeight right after changing styles in a loop be slow?
++ Each read forces a fresh layout calculation (layout thrashing)
+- offsetHeight is no longer supported by modern browsers
+- Reading it blocks network requests until layout finishes
+- Reading it reloads the page's stylesheets every time
+= Batch reads first and writes after, or use requestAnimationFrame.
+
+Q H What does the third argument { passive: true } in addEventListener mean?
++ The handler won't call preventDefault, so scrolling stays smooth
+- The handler runs only once and is then removed automatically
+- The handler runs during the capture phase instead of bubbling
+- The handler is skipped whenever the page is scrolling
+= Browsers can scroll without waiting for the handler.
+
+Q H Which is the most efficient way to add 1,000 list items to the page?
++ Build them in a DocumentFragment and append it once
+- Append each item to the live list, one at a time
+- Reload the page after adding each group of items
+- Call document.write once for each new item
+= One insertion triggers one layout instead of a thousand.
+
+@topic js-async | PRACTICAL | Promises and async/await | Callbacks, promises, then/catch, async/await, error handling, Promise.all and friends, fetch.
+Q E What does an async function always return?
++ A Promise
+- The value directly
+- undefined
+- A callback
+= Returned values are wrapped in a resolved Promise; thrown errors reject it.
+
+Q E Which method handles a rejected promise?
++ .catch()
+- .error()
+- .fail()
+- .reject()
+= With async/await, use try/catch around await.
+
+Q E Which built-in function makes HTTP requests in modern browsers?
++ fetch
+- XMLHttp
+- http.get
+- request
+= fetch returns a Promise of a Response.
+
+Q E What does await do?
++ Pauses this async function until the promise settles
+- Blocks the whole browser tab until the promise settles
+- Starts a new thread that waits for the promise
+- Cancels the promise if it takes too long
+= Other code keeps running while the function waits.
+
+Q M What does fetch do when the server returns 404?
++ It resolves; you must check response.ok yourself
+- It rejects with a TypeError describing the 404
+- It retries the request automatically a few times
+- It resolves with null instead of a response
+= fetch only rejects on network failures, not on HTTP error statuses.
+
+Q M What does Promise.all do if one of the promises rejects?
++ It rejects straight away with that error
+- It waits and returns only the successful results
+- It ignores the error
+- It retries the failed promise
+= Use Promise.allSettled to get every outcome.
+
+Q M What does this print?
+| Promise.resolve(1)
+|   .then(x => x + 1)
+|   .then(x => console.log(x));
++ 2
+- 1
+- undefined
+- A Promise
+= Each then receives the previous step's return value.
+
+Q M Which runs two independent requests at the same time?
++ await Promise.all([getUser(), getOrders()])
+- await getUser(); await getOrders();
+- getUser().then(getOrders)
+- for (const p of [getUser, getOrders]) await p();
+= Awaiting one after the other makes them run in sequence.
+
+Q H What does this print?
+| async function f() {
+|   try {
+|     return Promise.reject(new Error("x"));
+|   } catch {
+|     return "caught";
+|   }
+| }
+| f().then(console.log, e => console.log("rejected"));
++ rejected
+- caught
+- x
+- undefined
+= Returning a promise without await skips the try/catch; return await would let catch handle it.
+
+Q H What does Promise.race resolve with?
++ The first promise to settle, resolved or rejected
+- The first promise to resolve, ignoring rejections
+- An array holding the results of every promise
+- The last promise to settle, after all others
+= Promise.any waits for the first success instead.
+
+Q H How do you cancel an in-flight fetch?
++ Pass an AbortController signal and call abort()
+- Call fetch.cancel() with the request's URL
+- Set the returned promise variable to null
+- Throw an error inside the first then callback
+= The fetch then rejects with an AbortError.
+
+Q H A promise rejects and nothing handles it. What happens in Node.js 15+?
++ The process exits with an unhandled rejection error
+- Nothing happens; the rejection is silently ignored
+- The promise retries until it finally resolves
+- A warning is logged and the process keeps running
+= Always attach a catch or wrap awaits in try/catch.
+
+@topic js-closures-this | PRACTICAL | Closures and this | Closures, private state, this in methods and arrow functions, call/apply/bind, losing this in callbacks.
+Q E What is a closure?
++ A function that keeps access to variables from where it was created
+- A function that takes no parameters and returns no value
+- A function that runs once and then deletes itself
+- A promise that has already resolved or rejected
+= Closures keep outer variables alive after the outer function returns.
+
+Q E Inside an object method called as obj.method(), what is this?
++ obj
+- The window
+- The method itself
+- undefined always
+= this depends on how the function is called.
+
+Q E Do arrow functions have their own this?
++ No, they use this from the surrounding code
+- Yes, this is always the arrow function itself
+- Yes, this is always the global window object
+- Only when they are defined inside a class
+= That makes them handy for callbacks inside methods.
+
+Q E What does bind return?
++ A new function with this fixed to the given value
+- The result of calling the function with that this
+- The same function, with this changed in place
+- A promise that resolves with the function's result
+= call and apply invoke immediately; bind returns a function for later.
+
+Q M What does this print?
+| function counter() {
+|   let n = 0;
+|   return () => ++n;
+| }
+| const c = counter();
+| c(); c();
+| console.log(c());
++ 3
+- 1
+- 0
+- undefined
+= The returned function closes over n and keeps it between calls.
+
+Q M What does this print?
+| const user = {
+|   username: "Asha",
+|   hi() { return this.username; }
+| };
+| const hi = user.hi;
+| console.log(hi());
++ undefined (or a TypeError in strict mode)
+- Asha, because the method came from user
+- hi, the name of the method that was called
+- user, the object the method was defined on
+= Taken out of the object, the function is called without a receiver, so this is not user.
+
+Q M What is the difference between call and apply?
++ call takes arguments one by one; apply takes an array
+- apply returns a new bound function; call runs it now
+- call works only on arrow functions; apply on others
+- There is no difference other than the method name
+= fn.call(obj, a, b) vs fn.apply(obj, [a, b]).
+
+Q M What does this print?
+| const obj = {
+|   n: 1,
+|   regular() { return [1].map(function () { return this; })[0]; },
+|   arrow() { return [1].map(() => this.n)[0]; }
+| };
+| console.log(obj.arrow());
++ 1
+- undefined
+- obj
+- An error
+= The arrow function uses the method's this (obj), so this.n is 1.
+
+Q H What does this print?
+| const fns = [];
+| for (let i = 0; i < 3; i++) fns.push(() => i);
+| console.log(fns.map(f => f()));
++ [0, 1, 2]
+- [3, 3, 3]
+- [2, 2, 2]
+- [undefined, undefined, undefined]
+= let creates a new binding for each iteration, and each closure captures its own.
+
+Q H What does this print?
+| class Timer {
+|   seconds = 0;
+|   start() { setTimeout(function () { this.seconds++; }, 0); }
+| }
+| const t = new Timer();
+| t.start();
+| setTimeout(() => console.log(t.seconds), 10);
++ 0
+- 1
+- NaN
+- undefined
+= The regular function's this is not the Timer, so t.seconds never changes. Use an arrow function.
+
+Q H How can a closure cause a memory leak?
++ A long-lived callback keeps a large object alive that it no longer needs
+- Every closure copies all variables in scope, doubling memory use
+- Closures can never be garbage collected once they are created
+- Closures keep running in the background after the page closes
+= Remove listeners and timers you no longer need so their closures can be collected.
+
+Q H What does this print?
+| function f() { return this; }
+| const bound = f.bind({ a: 1 });
+| console.log(bound.call({ a: 2 }).a);
++ 1
+- 2
+- undefined
+- An error
+= A bound function's this cannot be changed again with call or apply.
+
+@topic js-es6 | PRACTICAL | Modern JavaScript (ES6+) | Modules, classes, optional chaining, nullish coalescing, Map and Set, iterators, spread and rest.
+Q E Which syntax imports a named export?
++ import { sum } from "./math.js";
+- import sum from "./math.js" as named;
+- require { sum } "./math.js";
+- include sum from "./math.js";
+= Default exports are imported without braces.
+
+Q E What does user?.address?.city give if address is undefined?
++ undefined, without throwing
+- A TypeError is thrown
+- null is returned
+- An empty string is returned
+= Optional chaining stops at null or undefined.
+
+Q E What does this print?
+| console.log(0 ?? 5, null ?? 5);
++ 0 5
+- 5 5
+- 0 0
+- null 5
+= ?? falls back only for null or undefined, unlike ||, which also replaces 0 and "".
+
+Q E What does this print?
+| console.log(0 || 5, "" || "x");
++ 5 x
+- 0 x
+- 0 (an empty string)
+- 5 (an empty string)
+= || returns the first truthy value.
+
+Q M What does this print?
+| const m = new Map();
+| m.set("a", 1).set("a", 2);
+| console.log(m.size, m.get("a"));
++ 1 2
+- 2 2
+- 1 1
+- 2 1
+= Setting an existing key replaces its value.
+
+Q M What does this print?
+| console.log([...new Set([1, 1, 2, 3, 3])]);
++ [1, 2, 3]
+- [1, 1, 2, 3, 3]
+- {1, 2, 3}
+- [3]
+= A Set removes duplicates; spreading turns it back into an array.
+
+Q M What does this print?
+| function sum(...nums) { return nums.length; }
+| console.log(sum(1, 2, 3));
++ 3
+- 6
+- 1
+- undefined
+= Rest parameters collect arguments into a real array.
+
+Q M Which is true about ES6 classes?
++ They are mostly syntax over prototype inheritance
+- They copy every method into each new object
+- They make every property private by default
+- They cannot be extended by other classes
+= Methods live on the prototype; #fields are truly private.
+
+Q H What does this print?
+| class A {
+|   #secret = 42;
+|   reveal() { return this.#secret; }
+| }
+| const a = new A();
+| console.log(a.reveal(), a.secret);
++ 42 undefined
+- 42 42
+- undefined undefined
+- SyntaxError
+= #secret is a private field; a.secret is a different, non-existent property.
+
+Q H What is the main difference between CommonJS (require) and ES modules (import)?
++ ES modules are static, so bundlers can tree-shake them; CommonJS loads at run time
+- CommonJS is the newer standard and replaces ES modules in modern Node.js
+- ES modules cannot export functions, only constants and classes
+- There is no real difference besides the keywords used to import
+= Static imports enable removing unused code from bundles.
+
+Q H What does a generator function return when called?
+| function* count() { yield 1; yield 2; }
++ An iterator; each next() runs to the next yield
+- An array holding [1, 2], built straight away
+- The number 1, the first value it yields
+- A promise that resolves with all the values
+= count().next() gives { value: 1, done: false }.
+
+Q H What does this print?
+| const key = "role";
+| const obj = { [key]: "admin", [`${key}Id`]: 7 };
+| console.log(obj.role, obj.roleId);
++ admin 7
+- undefined undefined
+- role roleId
+- An error
+= Computed property names evaluate the expression in brackets.
+
+@topic js-typescript | PRACTICAL | TypeScript | Types and interfaces, unions, generics, optional properties, type narrowing, any vs unknown, utility types.
+Q E What does TypeScript add to JavaScript?
++ Static types checked at build time
+- A new runtime in the browser
+- Faster execution
+- Automatic tests
+= Types are erased when compiling to JavaScript.
+
+Q E What does the ? mean here?
+| interface User { name: string; phone?: string }
++ phone is optional
+- phone may be any type
+- phone is private
+- phone is required
+= Optional properties can be missing (their type includes undefined).
+
+Q E What does this type allow?
+| let id: string | number;
++ A string or a number
+- Only strings
+- A string and a number together
+- Anything
+= It is a union type.
+
+Q E Which type turns off type checking for a value?
++ any
+- unknown
+- never
+- void
+= Avoid any; prefer unknown and narrow it.
+
+Q M What is the difference between unknown and any?
++ unknown must be narrowed before use; any allows anything
+- They are identical; unknown is just a newer name for any
+- unknown allows anything; any must be narrowed before use
+- unknown can only be used as a function's return type
+= unknown is the type-safe counterpart of any.
+
+Q M What does this generic function return for identity<number>(5)?
+| function identity<T>(value: T): T { return value; }
++ 5, typed as number
+- "5", typed as string
+- 5, typed as any
+- undefined, typed as void
+= Generics keep the link between input and output types.
+
+Q M What does Partial<User> mean?
++ User with every property made optional
+- User with half of its properties removed
+- User with every property made read-only
+- User with all of its methods removed
+= Other utility types include Pick, Omit, Readonly and Record.
+
+Q M How does TypeScript narrow this union inside the if?
+| function len(x: string | string[]) {
+|   if (typeof x === "string") return x.length;
+|   return x.length;
+| }
++ Inside the if x is string; after it, string[]
+- It does not narrow; x stays string | string[]
+- It is a compile error to use typeof here
+- x becomes any inside the if statement
+= Type guards like typeof, instanceof and in narrow unions.
+
+Q H What is a discriminated union?
+| type Shape = { kind: "circle"; r: number } | { kind: "square"; side: number };
++ A union whose members share a literal kind field used to narrow it
+- A union made only of number types, used for numeric enums
+- A type that cannot be used in a switch statement
+- An enum whose values are generated at run time
+= switch (shape.kind) gives each branch the exact member type.
+
+Q H What does the never type represent?
++ A value that can never occur, e.g. after every case is handled
+- The null value, used when a variable is deliberately empty
+- The undefined value, used for missing optional properties
+- Any value at all, like the any type but stricter
+= Assigning the leftover case to never makes the compiler flag unhandled cases.
+
+Q H Do TypeScript types check data coming from an API at run time?
++ No; types are erased, so validate API data at run time
+- Yes, every API response is checked against its type
+- Only when strict mode is turned on in tsconfig
+- Only for JSON responses, not for other formats
+= A typed fetch result is a promise you make, not a check the compiler can enforce.
+
+Q H What does keyof User give for interface User { id: number; name: string }?
++ The union "id" | "name"
+- An array ["id", "name"]
+- The union number | string
+- The User type itself
+= keyof produces the union of property names.
+
+@topic js-event-loop | ADVANCED | The event loop | Call stack, task and microtask queues, setTimeout vs promises, async ordering, blocking the main thread, Node.js phases.
+Q E Is JavaScript in the browser single-threaded?
++ Yes: one main thread, with an event loop for async work
+- No: every function call runs in its own browser thread
+- Only in old browsers; modern ones use many threads
+- Only for promises; other code runs on several threads
+= Web Workers can run code on other threads, without access to the DOM.
+
+Q E What does setTimeout(fn, 0) do?
++ Schedules fn to run after the current code finishes
+- Runs fn immediately, before the next line of code
+- Never runs fn, because the delay is zero
+- Blocks the page for zero seconds, then runs fn
+= The delay is a minimum, not a guarantee.
+
+Q E What happens to the page while a long synchronous loop runs?
++ It freezes: no clicks, rendering or timers until it ends
+- Nothing; the browser runs the loop in the background
+- The browser pauses the loop automatically every second
+- The browser speeds the loop up to keep the page smooth
+= Split long work into chunks or move it to a Web Worker.
+
+Q E Which queue do promise callbacks (then/catch) go into?
++ The microtask queue
+- The timer queue
+- The rendering queue
+- They run synchronously
+= Microtasks run as soon as the current task finishes, before timers.
+
+Q M What does this print?
+| console.log("A");
+| setTimeout(() => console.log("B"), 0);
+| Promise.resolve().then(() => console.log("C"));
+| console.log("D");
++ A D C B
+- A B C D
+- A C D B
+- A D B C
+= Synchronous code first (A, D), then microtasks (C), then timers (B).
+
+Q M What does this print?
+| async function f() {
+|   console.log(1);
+|   await null;
+|   console.log(2);
+| }
+| f();
+| console.log(3);
++ 1 3 2
+- 1 2 3
+- 3 1 2
+- 1 3
+= Code before the first await runs synchronously; the rest continues as a microtask.
+
+Q M What does requestAnimationFrame do?
++ Runs a callback just before the next repaint
+- Runs a callback once every second, like setInterval
+- Pauses rendering until the callback has finished
+- Runs the callback in a separate web worker thread
+= It syncs with the display refresh rate and pauses in background tabs.
+
+Q M In Node.js, when does a setImmediate callback run?
++ In the "check" phase, after this loop iteration's I/O callbacks
+- Immediately, before the next line of synchronous code runs
+- Before any promise callbacks that are already in the queue
+- After exactly one second, like setTimeout(fn, 1000)
+= Despite the name, it is not immediate: synchronous code and microtasks run first.
+
+Q H What does this print?
+| setTimeout(() => console.log("T"), 0);
+| Promise.resolve()
+|   .then(() => console.log("P1"))
+|   .then(() => console.log("P2"));
+| console.log("S");
++ S P1 P2 T
+- S T P1 P2
+- S P1 T P2
+- P1 P2 S T
+= All microtasks, including ones queued by other microtasks, run before the next timer.
+
+Q H What can happen if a microtask keeps queueing new microtasks forever?
++ Timers and rendering never run; the page hangs
+- Nothing; the browser caps the number of microtasks
+- Each microtask is moved to a new thread to keep up
+- The extra microtasks are dropped without running
+= Unlike timers, the microtask queue is drained completely before moving on.
+
+Q H What does this print?
+| const p = new Promise(resolve => {
+|   console.log("in executor");
+|   resolve();
+| });
+| console.log("after");
++ in executor, then after
+- after, then in executor
+- Only after
+- Only in executor
+= The executor runs synchronously when the promise is created.
+
+Q H Why can a CPU-heavy function hurt a Node.js server more than a slow database query?
++ It blocks the event loop, so no other request is handled until it ends
+- Database queries are always faster than any CPU work in Node.js
+- Node.js cannot run CPU code at all, so the request fails
+- It uses more memory, which slows the garbage collector down
+= Waiting on I/O frees the loop; computation does not. Use worker threads for heavy CPU work.
+
+@topic js-prototypes | ADVANCED | Prototypes and inheritance | The prototype chain, constructor functions, Object.create, class inheritance internals, property lookup, own vs inherited properties.
+Q E Where does JavaScript look for a property that an object does not have itself?
++ Up its prototype chain
+- In the global scope
+- In the parent HTML element
+- It throws an error immediately
+= Lookup continues until null, then gives undefined.
+
+Q E What does Object.keys(obj) return?
++ An array of the object's own enumerable property names
+- An array of all property names, including inherited ones
+- An array of the object's property values
+- The object's prototype
+= Object.values and Object.entries give values and [key, value] pairs.
+
+Q E Which keyword creates an object from a class?
++ new
+- create
+- make
+- this
+= new User() runs the constructor and links the prototype.
+
+Q E What does instanceof check?
++ Whether the constructor's prototype is in the object's prototype chain
+- Whether two objects have exactly the same properties and values
+- The object's type, returned as a string like "object"
+- Whether the object has a property with the constructor's name
+= dog instanceof Animal is true if Animal.prototype is in dog's chain.
+
+Q M What does this print?
+| function Dog(name) { this.name = name; }
+| Dog.prototype.bark = function () { return this.name + " woofs"; };
+| console.log(new Dog("Rex").bark());
++ Rex woofs
+- undefined woofs
+- TypeError
+- woofs
+= Methods on the prototype are shared by every instance.
+
+Q M What does this print?
+| const parent = { greet() { return "hi"; } };
+| const child = Object.create(parent);
+| console.log(child.greet(), child.hasOwnProperty("greet"));
++ hi false
+- hi true
+- undefined false
+- TypeError
+= child inherits greet through its prototype but does not own it.
+
+Q M What does super.method() do inside a class method?
++ Calls the parent class's version of the method
+- Calls the method on the global object
+- Creates a new parent object
+- Skips the method
+= In constructors, super(...) must run before using this.
+
+Q M What does this print?
+| const a = {};
+| const b = {};
+| console.log(Object.getPrototypeOf(a) === Object.getPrototypeOf(b));
++ true
+- false
+- undefined
+- TypeError
+= Both object literals share Object.prototype.
+
+Q H What does this print?
+| function Counter() { this.count = 0; }
+| Counter.prototype.items = [];
+| const x = new Counter(), y = new Counter();
+| x.items.push(1);
+| console.log(y.items.length);
++ 1
+- 0
+- undefined
+- TypeError
+= The array lives on the shared prototype, so every instance sees the same list.
+
+Q H What is the prototype of Object.prototype?
++ null
+- Object
+- Function.prototype
+- undefined
+= null ends every prototype chain.
+
+Q H What does this print?
+| class A { static make() { return new this(); } }
+| class B extends A {}
+| console.log(B.make() instanceof B);
++ true
+- false
+- TypeError
+- undefined
+= In a static method, this is the class it was called on (B), so new this() creates a B.
+
+Q H Why is changing Object.prototype or Array.prototype considered bad practice?
++ It changes every object or array and can break libraries
+- It is a syntax error in strict mode and in modules
+- It only works in Node.js, not in browsers
+- It deletes the built-in methods that already exist
+= Use helper functions or subclasses instead.
+
+@topic js-performance-security | ADVANCED | Performance and web security | Debounce and throttle, memory leaks, lazy loading and bundles, Core Web Vitals, XSS, CSRF, CORS, CSP, storing tokens.
+Q E What does debouncing a search box handler do?
++ Waits for a pause in typing before running the search
+- Runs the search on every single key press
+- Blocks typing until the last search has finished
+- Runs the search once a day in the background
+= It avoids sending a request for every character.
+
+Q E What is cross-site scripting (XSS)?
++ An attacker's script runs in other users' browsers on your site
+- A network request that takes too long and times out
+- A CSS layout bug that hides content from some users
+- A database deadlock caused by two users saving at once
+= Escape output and avoid inserting untrusted HTML.
+
+Q E What does lazy loading images do?
++ Loads images only as they are about to come into view
+- Loads every image twice to make sure it arrives
+- Shows a blurred version of every image permanently
+- Removes images from the page to save bandwidth
+= Use loading="lazy" on img tags below the fold.
+
+Q E What does HTTPS protect?
++ Data travelling between browser and server, from eavesdropping and tampering
+- Data stored in your database, from anyone who steals the disk
+- Your application, from bugs that would expose user data
+- User accounts, from attackers guessing weak passwords
+= It encrypts traffic and proves the server's identity.
+
+Q M What is the difference between debounce and throttle?
++ Debounce waits for a pause; throttle runs at most once per time window
+- They are the same
+- Throttle waits for a pause; debounce runs once per window
+- Debounce is for clicks only
+= Throttle suits scroll handlers; debounce suits search inputs.
+
+Q M What does CORS control?
++ Which other origins browsers let read your API's responses
+- Whether your server is allowed to make outgoing requests
+- How cookies are encrypted before being sent to the server
+- How quickly responses are delivered to other origins
+= CORS is enforced by browsers, not a security boundary against servers or curl.
+
+Q M What is CSRF?
++ Another site makes the user's browser send an authenticated request to yours
+- A script on another site reads your site's cookies directly from the browser
+- An attacker types SQL into a form field to change your database queries
+- A flood of requests from many computers overloads your server
+= Defences: SameSite cookies, CSRF tokens, and checking the Origin header.
+
+Q M What is code splitting in a front-end build?
++ Loading only the code a page needs and fetching the rest on demand
+- Writing the application's code across many separate source files
+- Shortening variable names so the bundle downloads faster
+- Running the application's code on two threads at the same time
+= Dynamic import() creates separate chunks.
+
+Q H Why is storing a long-lived auth token in localStorage risky?
++ Any script injected through XSS can read and steal it
+- localStorage is cleared automatically every minute
+- localStorage is sent with every request automatically
+- localStorage cannot hold strings as long as a token
+= An HttpOnly, Secure, SameSite cookie cannot be read by JavaScript.
+
+Q H What does a Content Security Policy (CSP) header do?
++ Tells the browser which sources of scripts and other content are allowed
+- Encrypts the page so only the intended user can read it
+- Compresses responses so pages download faster
+- Blocks all cookies from being set by the page
+= A strict CSP makes injected inline scripts fail to run.
+
+Q H Which is a common front-end memory leak?
++ Listeners or intervals that are never removed when a component goes away
+- Using const instead of let for variables that never change
+- Using arrow functions instead of regular functions for callbacks
+- Declaring more CSS classes than the page actually uses
+= Clean up in teardown code (e.g. a React effect's cleanup function).
+
+Q H What does Largest Contentful Paint (LCP) measure?
++ How long the largest visible content takes to render
+- How long until the user can first scroll the page
+- How large the JavaScript bundle is, in kilobytes
+- How many HTTP requests the page makes while loading
+= Good LCP is under 2.5 seconds; it is one of Google's Core Web Vitals.

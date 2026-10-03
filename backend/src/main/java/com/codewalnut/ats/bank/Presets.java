@@ -1,12 +1,13 @@
 package com.codewalnut.ats.bank;
 
+import com.codewalnut.ats.domain.Assessment.Category;
 import com.codewalnut.ats.domain.BankQuestion.Section;
 import com.codewalnut.ats.dto.BankDtos.Preset;
 import com.codewalnut.ats.dto.BankDtos.SectionPlan;
 import java.util.List;
 
 /**
- * Ready-made aptitude blueprints modelled on published campus-test patterns (2025–26). The real
+ * Ready-made blueprints. Aptitude ones are modelled on published campus-test patterns (2025–26). The real
  * tests time each section separately; ours use one timer for the whole paper.
  */
 public final class Presets {
@@ -29,4 +30,24 @@ public final class Presets {
             new Preset("infosys", "Infosys style", "Quantitative 15, Logical 15, Verbal 10 — 40 questions in 65 minutes.", 65, 65,
                     List.of(new SectionPlan(Section.QUANT, 6, 6, 3), new SectionPlan(Section.LOGICAL, 6, 6, 3),
                             new SectionPlan(Section.VERBAL, 4, 4, 2))));
+
+    private static final java.util.Map<Category, String> NAMES = java.util.Map.of(Category.JAVA, "Java", Category.PYTHON, "Python",
+            Category.JAVASCRIPT, "JavaScript", Category.REACT, "React", Category.ANGULAR, "Angular", Category.SQL, "SQL");
+
+    /** Aptitude patterns, or for a technical area: freshers, 1–3 years and 3+ years papers. */
+    public static List<Preset> forArea(Category area) {
+        if (area == Category.APTITUDE) {
+            return APTITUDE;
+        }
+        String name = NAMES.getOrDefault(area, area.name());
+        String id = area.name().toLowerCase();
+        return List.of(
+                new Preset(id + "-fresher", name + " — freshers", "20 fundamentals questions in 30 minutes, mostly easy and medium.", 30, 60,
+                        List.of(new SectionPlan(Section.FUNDAMENTALS, 8, 8, 4))),
+                new Preset(id + "-mid", name + " — 1 to 3 years", "25 questions in 40 minutes: a few fundamentals, mostly applied, some advanced.", 40, 60,
+                        List.of(new SectionPlan(Section.FUNDAMENTALS, 0, 3, 2), new SectionPlan(Section.PRACTICAL, 4, 6, 4),
+                                new SectionPlan(Section.ADVANCED, 0, 3, 3))),
+                new Preset(id + "-senior", name + " — 3+ years", "25 questions in 40 minutes: applied and advanced, weighted to harder questions.", 40, 60,
+                        List.of(new SectionPlan(Section.PRACTICAL, 0, 4, 4), new SectionPlan(Section.ADVANCED, 3, 7, 7))));
+    }
 }

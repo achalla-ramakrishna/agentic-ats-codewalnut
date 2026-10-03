@@ -30,20 +30,43 @@ import org.hibernate.annotations.UuidGenerator;
 @Builder
 public class BankQuestion {
 
-    /** Aptitude sections, following the common Indian campus-test pattern. */
+    /**
+     * Aptitude uses the campus-test sections (numerical, logical, verbal). Technical areas (Java,
+     * Python, SQL …) use experience bands: fundamentals for freshers, applied for 1–3 years,
+     * advanced for 3+ years.
+     */
     public enum Section {
-        QUANT("Numerical ability"),
-        LOGICAL("Logical reasoning"),
-        VERBAL("Verbal ability");
+        QUANT("Numerical ability", null),
+        LOGICAL("Logical reasoning", null),
+        VERBAL("Verbal ability", null),
+        FUNDAMENTALS("Fundamentals", "Freshers"),
+        PRACTICAL("Applied", "1–3 years"),
+        ADVANCED("Advanced", "3+ years");
 
         private final String label;
+        private final String level;
 
-        Section(String label) {
+        Section(String label, String level) {
             this.label = label;
+            this.level = level;
         }
 
         public String getLabel() {
             return label;
+        }
+
+        /** Who the band is for (technical areas only), e.g. "Freshers". */
+        public String getLevel() {
+            return level;
+        }
+
+        public boolean isAptitude() {
+            return level == null;
+        }
+
+        /** The sections a question in this area may use. */
+        public static java.util.List<Section> forArea(Assessment.Category area) {
+            return java.util.Arrays.stream(values()).filter(s -> s.isAptitude() == (area == Assessment.Category.APTITUDE)).toList();
         }
     }
 

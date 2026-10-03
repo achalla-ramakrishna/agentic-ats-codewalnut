@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-03-tech-banks',
+    date: '2026-10-03',
+    title: 'Java, Python, JavaScript, React, Angular and SQL tests',
+    summary: 'The question bank now has technical tests for each stack, split by experience: Fundamentals for freshers, Applied for 1–3 years and Advanced for 3+ years. Many questions show code to read.',
+    steps: [
+      'Tests → Question bank → pick an area (e.g. Java) to browse its topics and the topic guide.',
+      'Tests → Build from bank → pick the area, then choose topics, or use a preset like “Java — 1 to 3 years”.',
+    ],
+    link: { to: '/tests', label: 'Open Tests' },
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-03-aptitude-topics',
     date: '2026-10-03',
     title: '1,300 aptitude questions and build-by-topic',

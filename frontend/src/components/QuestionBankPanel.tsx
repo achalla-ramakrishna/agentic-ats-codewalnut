@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { QuestionInput } from '../api/assessments'
+import { CATEGORY_LABEL, type Category, type QuestionInput } from '../api/assessments'
 import {
+  BANK_AREAS,
   DIFFICULTY_LABEL,
-  SECTION_LABEL,
-  SECTIONS,
+  sectionName,
+  sectionsFor,
   approveBankQuestion,
   archiveBankQuestion,
   createBankQuestion,
@@ -31,21 +32,23 @@ function TagFields({
   difficulty,
   onChange,
   topics,
+  sections,
 }: {
   section: Section
   topic: string
   difficulty: Difficulty
   onChange: (v: { section: Section; topic: string; difficulty: Difficulty }) => void
   topics: string[]
+  sections: Section[]
 }) {
   return (
     <div className="row" style={{ alignItems: 'flex-end' }}>
       <label className="field">
         Section
         <select className="select" value={section} onChange={(e) => onChange({ section: e.target.value as Section, topic, difficulty })}>
-          {SECTIONS.map((s) => (
+          {sections.map((s) => (
             <option key={s} value={s}>
-              {SECTION_LABEL[s]}
+              {sectionName(s)}
             </option>
           ))}
         </select>
@@ -78,7 +81,16 @@ function TagFields({
  * AI draft more (held for review), and approve or archive. Pickable mode adds selected questions
  * to a draft test.
  */
-export function QuestionBankPanel({ onPick, pickLabel }: { onPick?: (ids: string[]) => Promise<void>; pickLabel?: string }) {
+export function QuestionBankPanel({
+  onPick,
+  pickLabel,
+  initialArea = 'APTITUDE',
+}: {
+  onPick?: (ids: string[]) => Promise<void>
+  pickLabel?: string
+  initialArea?: Category
+}) {
+  const [area, setArea] = useState<Category>(BANK_AREAS.includes(initialArea) ? initialArea : 'APTITUDE')
   const [overview, setOverview] = useState<BankOverview | null>(null)
   const [section, setSection] = useState<Section | ''>('')
   const [difficulty, setDifficulty] = useState<Difficulty | ''>('')
@@ -90,7 +102,11 @@ export function QuestionBankPanel({ onPick, pickLabel }: { onPick?: (ids: string
   const [result, setResult] = useState<{ items: BankQuestion[]; total: number } | null>(null)
   const [showAnswers, setShowAnswers] = useState(false)
   const [editing, setEditing] = useState<string | 'new' | null>(null)
-  const [tags, setTags] = useState<{ section: Section; topic: string; difficulty: Difficulty }>({ section: 'QUANT', topic: '', difficulty: 'EASY' })
+  const [tags, setTags] = useState<{ section: Section; topic: string; difficulty: Difficulty }>({
+    section: sectionsFor(area)[0],
+    topic: '',
+    difficulty: 'EASY',
+  })
   const [drafting, setDrafting] = useState(false)
   const [draftCount, setDraftCount] = useState(5)
   const [selected, setSelected] = useState<string[]>([])
@@ -98,21 +114,30 @@ export function QuestionBankPanel({ onPick, pickLabel }: { onPick?: (ids: string
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(() => {
-    listBank({ section: section || undefined, difficulty: difficulty || undefined, topic: topic || undefined, pictures, status, q: q.trim() || undefined, page, size: PAGE })
+    listBank({ area, section: section || undefined, difficulty: difficulty || undefined, topic: topic || undefined, pictures, status, q: q.trim() || undefined, page, size: PAGE })
       .then(setResult)
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load the bank'))
-  }, [section, difficulty, topic, pictures, status, q, page])
+  }, [area, section, difficulty, topic, pictures, status, q, page])
   useEffect(() => {
     const timer = window.setTimeout(load, 200)
     return () => window.clearTimeout(timer)
   }, [load])
   const loadOverview = useCallback(() => {
-    getBankOverview().then(setOverview).catch(() => undefined)
-  }, [])
+    getBankOverview(area).then(setOverview).catch(() => undefined)
+  }, [area])
   useEffect(loadOverview, [loadOverview])
 
   const topics = (overview?.topics ?? []).filter((t) => !section || t.section === section)
-  const count = (s: Section, d: Difficulty) => overview?.counts.find((c) => c.area === 'APTITUDE' && c.section === s && c.difficulty === d)?.count ?? 0
+  const count = (s: Section, d: Difficulty) => overview?.counts.find((c) => c.area === area && c.section === s && c.difficulty === d)?.count ?? 0
+
+  function switchArea(next: Category) {
+    setArea(next)
+    setSection('')
+    setTopic('')
+    setPage(0)
+    setSelected([])
+    setTags({ section: sectionsFor(next)[0], topic: '', difficulty: 'EASY' })
+  }
 
   async function act(action: () => Promise<unknown>, done: string) {
     setError(null)
@@ -133,7 +158,7 @@ export function QuestionBankPanel({ onPick, pickLabel }: { onPick?: (ids: string
     }
     setDrafting(true)
     await act(async () => {
-      const r = await draftBankQuestions({ ...tags, topic: tags.topic.trim(), count: draftCount })
+      const r = await draftBankQuestions({ area, ...tags, topic: tags.topic.trim(), count: draftCount })
       setStatus('REVIEW')
       setMessage(`Drafted ${r.added}. They're under “Waiting for review” — check each one and approve it before it can be used.`)
     }, '')
@@ -142,13 +167,20 @@ export function QuestionBankPanel({ onPick, pickLabel }: { onPick?: (ids: string
 
   return (
     <div className="stack">
+      <div className="row" style={{ gap: 6, flexWrap: 'wrap' }} role="group" aria-label="Question bank area">
+        {BANK_AREAS.map((a) => (
+          <button key={a} type="button" className={`chip${a === area ? ' chip-on' : ''}`} aria-pressed={a === area} onClick={() => switchArea(a)}>
+            {CATEGORY_LABEL[a]}
+          </button>
+        ))}
+      </div>
       {!onPick && overview && (
         <Card>
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <table className="bank-grid" aria-label="Questions in the bank">
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left' }}>Aptitude</th>
+                  <th style={{ textAlign: 'left' }}>{CATEGORY_LABEL[area]}</th>
                   {DIFFICULTIES.map((d) => (
                     <th key={d} className={`diff-${d}`}>
                       {DIFFICULTY_LABEL[d]}
@@ -157,9 +189,9 @@ export function QuestionBankPanel({ onPick, pickLabel }: { onPick?: (ids: string
                 </tr>
               </thead>
               <tbody>
-                {SECTIONS.map((s) => (
+                {sectionsFor(area).map((s) => (
                   <tr key={s}>
-                    <td style={{ textAlign: 'left' }}>{SECTION_LABEL[s]}</td>
+                    <td style={{ textAlign: 'left' }}>{sectionName(s)}</td>
                     {DIFFICULTIES.map((d) => (
                       <td key={d}>{count(s, d)}</td>
                     ))}
@@ -168,13 +200,16 @@ export function QuestionBankPanel({ onPick, pickLabel }: { onPick?: (ids: string
               </tbody>
             </table>
             <p className="muted" style={{ maxWidth: 380, fontSize: 13, margin: 0 }}>
-              Modelled on campus tests (TCS NQT, Infosys, Wipro, Cognizant, Accenture): numerical ability with charts and tables,
-              logical reasoning with picture puzzles, and verbal ability. Java, Python, React, SQL and coding banks come next.
+              {area === 'APTITUDE'
+                ? 'Modelled on campus tests (TCS NQT, Infosys, Wipro, Cognizant, Accenture): numerical ability with charts and tables, logical reasoning with picture puzzles, and verbal ability.'
+                : `${CATEGORY_LABEL[area]} questions in three experience bands: fundamentals for freshers, applied for 1–3 years, and advanced for 3+ years. Many include code to read.`}
             </p>
           </div>
           {overview.guide.length > 0 && (
             <details className="topic-guide">
-              <summary>Topic guide — what each of the {overview.guide.length} topics covers</summary>
+              <summary>
+                Topic guide — what each of the {overview.guide.length} {area === 'APTITUDE' ? '' : `${CATEGORY_LABEL[area]} `}topics covers
+              </summary>
               <table className="topic-guide-table" aria-label="Topic guide">
                 <thead>
                   <tr>
@@ -191,7 +226,7 @@ export function QuestionBankPanel({ onPick, pickLabel }: { onPick?: (ids: string
                         <button type="button" className="linklike" onClick={() => { setSection(t.section); setTopic(t.name); setPage(0) }}>
                           {t.name}
                         </button>
-                        <div className="muted" style={{ fontSize: 11 }}>{t.sectionLabel}</div>
+                        <div className="muted" style={{ fontSize: 11 }}>{t.level ? `${t.sectionLabel} · ${t.level}` : t.sectionLabel}</div>
                       </td>
                       <td>{t.covers || '—'}</td>
                       <td className="muted">{t.example || '—'}</td>
@@ -210,9 +245,9 @@ export function QuestionBankPanel({ onPick, pickLabel }: { onPick?: (ids: string
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
           <select className="select" aria-label="Section" value={section} onChange={(e) => { setSection(e.target.value as Section | ''); setTopic(''); setPage(0) }}>
             <option value="">All sections</option>
-            {SECTIONS.map((s) => (
+            {sectionsFor(area).map((s) => (
               <option key={s} value={s}>
-                {SECTION_LABEL[s]}
+                {sectionName(s)}
               </option>
             ))}
           </select>
@@ -260,7 +295,7 @@ export function QuestionBankPanel({ onPick, pickLabel }: { onPick?: (ids: string
             <span className="muted" style={{ fontSize: 13 }}>using the section, topic and difficulty below</span>
           </div>
         )}
-        {!onPick && <TagFields {...tags} topics={(overview?.topics ?? []).map((t) => t.topic)} onChange={setTags} />}
+        {!onPick && <TagFields {...tags} sections={sectionsFor(area)} topics={(overview?.topics ?? []).map((t) => t.topic)} onChange={setTags} />}
         {message && <div className="alert alert-info">{message}</div>}
         {error && (
           <div role="alert" className="alert alert-error">
@@ -272,7 +307,7 @@ export function QuestionBankPanel({ onPick, pickLabel }: { onPick?: (ids: string
             onCancel={() => setEditing(null)}
             onSave={async (question: QuestionInput) => {
               if (!tags.topic.trim()) throw new Error('Enter a topic above (e.g. Percentages).')
-              await createBankQuestion({ area: 'APTITUDE', ...tags, topic: tags.topic.trim(), question })
+              await createBankQuestion({ area, ...tags, topic: tags.topic.trim(), question })
               setEditing(null)
               setMessage('Added to the bank.')
               load()

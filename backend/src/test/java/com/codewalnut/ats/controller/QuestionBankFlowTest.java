@@ -131,6 +131,32 @@ class QuestionBankFlowTest {
     }
 
     @Test
+    void technicalBanksHaveLevelsPresetsAndCodeQuestions() throws Exception {
+        mockMvc.perform(get("/api/v1/question-bank/overview?area=JAVA").with(RECRUITER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.guide.length()").value(Matchers.greaterThanOrEqualTo(12)))
+                .andExpect(jsonPath("$.guide[0].section").value("FUNDAMENTALS"))
+                .andExpect(jsonPath("$.guide[0].level").value("Freshers"))
+                .andExpect(jsonPath("$.guide[0].easy").value(4))
+                .andExpect(jsonPath("$.presets[*].id", Matchers.hasItems("java-fresher", "java-mid", "java-senior")));
+        mockMvc.perform(get("/api/v1/question-bank?area=SQL&section=ADVANCED").with(RECRUITER))
+                .andExpect(jsonPath("$.total").value(Matchers.greaterThanOrEqualTo(36)))
+                .andExpect(jsonPath("$.items[0].area").value("SQL"));
+        send(RECRUITER, "POST", "/api/v1/question-bank/build", """
+                {"title":"Java freshers %s","area":"JAVA","durationMinutes":30,"passPercent":60,"order":"EASY_FIRST",
+                 "sections":[{"section":"FUNDAMENTALS","easy":8,"medium":8,"hard":4}]}""".formatted(tag))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.summary.questionCount").value(20))
+                .andExpect(jsonPath("$.summary.category").value("JAVA"))
+                .andExpect(jsonPath("$.questions[*].code", Matchers.hasItem(Matchers.notNullValue())));
+        // A technical question cannot use an aptitude section.
+        send(RECRUITER, "POST", "/api/v1/question-bank", """
+                {"area":"PYTHON","section":"QUANT","topic":"Basics","difficulty":"EASY",
+                 "question":{"kind":"SINGLE_CHOICE","prompt":"2 + 2?","options":["4","5"],"correct":[0],"points":1}}""")
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void buildByTopicsHardestFirst() throws Exception {
         send(RECRUITER, "POST", "/api/v1/question-bank/build", """
                 {"title":"Topics %s","area":"APTITUDE","durationMinutes":15,"passPercent":50,"order":"HARD_FIRST",

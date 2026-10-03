@@ -1,0 +1,896 @@
+# CodeWalnut built-in React bank (ADR-0015). Format: see TechBank.java.
+# Bands: FUNDAMENTALS = freshers, PRACTICAL = 1–3 years, ADVANCED = 3+ years.
+# Distractors are kept as long and as plausible as the answer, so length gives nothing away.
+
+@topic react-components | FUNDAMENTALS | Components, JSX and props | Function components, JSX rules, props and children, one-way data flow, fragments, composition.
+Q E What is JSX?
++ HTML-like syntax written inside JavaScript
+- A templating language that runs on the server
+- A styling language that compiles to CSS
+- A query language for fetching component data
+= JSX compiles to function calls that create React elements.
+
+Q E How does a parent pass data to a child component?
++ Through props, like <Greeting name="Asha" />
+- Through state, by calling the child's setState
+- Through refs, by writing to the child's fields
+- Through context, which every child must use
+= Data flows down via props; children report back through callback props.
+
+Q E Which attribute sets a CSS class in JSX?
++ className
+- class
+- cssClass
+- styleName
+= class is a reserved word in JavaScript, so JSX uses className.
+
+Q E Why must a component's name start with a capital letter?
++ Lowercase tags are treated as built-in HTML elements
+- Lowercase names are not valid JavaScript functions
+- React sorts components alphabetically when rendering
+- Capital letters make the component render faster
+= <userCard /> would be treated as an unknown HTML tag.
+
+Q M Why does this fail to compile?
+| function Card() {
+|   return (
+|     <h2>Title</h2>
+|     <p>Body</p>
+|   );
+| }
++ JSX needs one root, e.g. a <>…</> fragment around both
+- A heading and a paragraph cannot be siblings in JSX
+- A component cannot return more than one HTML tag type
+- The return statement cannot use parentheses in JSX
+= Fragments group elements without adding an extra DOM node.
+
+Q M Can a child component change the props it receives?
++ No, props are read-only for the child
+- Yes, by assigning to props.name directly
+- Yes, but only props that hold strings
+- Only if the parent passes them with let
+= To change data, the parent passes a callback the child can call.
+
+Q M What does props.children contain here?
+| <Panel><p>Hello</p></Panel>
++ The <p>Hello</p> element placed between the tags
+- An array of the Panel component's own child components
+- The state of every component rendered inside Panel
+- Nothing, unless Panel declares a children parameter
+= children is how wrappers like Panel, Modal or Layout accept content.
+
+Q M How do you show user.name inside JSX?
++ <p>{user.name}</p>
+- <p>{{user.name}}</p>
+- <p>${user.name}</p>
+- <p>"user.name"</p>
+= Any expression works inside single braces; statements like if do not.
+
+Q H What does this render?
+| function Count({ items }) {
+|   return <p>{items.length && "You have items"}</p>;
+| }
+| <Count items={[]} />
++ <p>0</p>
+- <p></p>
+- <p>false</p>
+- <p>You have items</p>
+= && returns the left value when it is falsy, and React renders the number 0. Use items.length > 0 &&.
+
+Q H Why avoid defining a component inside another component's body?
++ It is re-created each render, so React remounts it and loses its state
+- Nested component definitions are a syntax error in JSX files
+- Components defined inside others cannot receive any props
+- React only allows one component definition per file
+= Define components at the top level and pass data as props.
+
+Q H What do true, false, null and undefined render as in JSX?
++ Nothing
+- The words "true", "false", "null" or "undefined"
+- An empty <span> element for each value
+- An error in development mode
+= That is why {condition && <X />} works when condition is false (but not when it is 0).
+
+Q H What is "lifting state up"?
++ Moving shared state to the closest common parent
+- Moving every piece of state into a global store
+- Moving state into the child that displays it
+- Copying state into each component that needs it
+= Siblings that need the same data then get it as props.
+
+@topic react-state | FUNDAMENTALS | State, events and forms | useState, updating state, event handlers, controlled inputs, form submission, state updates being asynchronous.
+Q E Which hook adds state to a function component?
++ useState
+- useEffect
+- useRef
+- useMemo
+= const [count, setCount] = useState(0);
+
+Q E Which correctly attaches a click handler?
++ <button onClick={handleClick}>Save</button>
+- <button onclick="handleClick()">Save</button>
+- <button onClick={handleClick()}>Save</button>
+- <button click={handleClick}>Save</button>
+= Pass the function itself; handleClick() would run it during render.
+
+Q E What happens when you call a state setter like setCount(5)?
++ React re-renders the component with the new value
+- The value changes, but the screen updates on reload
+- The page reloads to show the new value
+- The value changes only inside the current function
+= State changes trigger re-renders of that component and its children.
+
+Q E What is a controlled input?
++ An input whose value comes from state and updates through onChange
+- An input that the user cannot edit because it is read-only
+- An input that the browser validates without any JavaScript
+- An input whose value React reads from the DOM on submit
+= <input value={name} onChange={e => setName(e.target.value)} />
+
+Q M What does count show after one click?
+| const [count, setCount] = useState(0);
+| function add() {
+|   setCount(count + 1);
+|   setCount(count + 1);
+| }
++ 1
+- 2
+- 0
+- 3
+= Both calls use the same count from this render. setCount(c => c + 1) builds on the latest value.
+
+Q M Why is this state update a problem?
+| const [user, setUser] = useState({ name: "A", age: 20 });
+| user.age = 21;
+| setUser(user);
++ The same object is passed back, so React may skip the re-render
+- Objects cannot be stored in state, only primitive values
+- setUser must be called before the object is changed
+- The age field must be updated with a separate hook
+= Create a new object: setUser({ ...user, age: 21 }).
+
+Q M Why call event.preventDefault() in a form's onSubmit handler?
++ To stop the browser submitting the form and reloading the page
+- To clear every field in the form after it is submitted
+- To run the browser's built-in validation on each field
+- To stop React from re-rendering the form component
+= Then handle the data yourself, e.g. with fetch.
+
+Q M What does this log right after the click?
+| const [n, setN] = useState(0);
+| function click() {
+|   setN(1);
+|   console.log(n);
+| }
++ 0
+- 1
+- undefined
+- null
+= n is the value from the current render; the new value appears on the next render.
+
+Q H Several state updates happen inside one setTimeout callback. How many re-renders does React 18+ do?
++ One, because updates are batched
+- One per update, in the same order
+- None until the user clicks again
+- Two: one now and one when idle
+= Automatic batching covers promises and timeouts since React 18.
+
+Q H When should you pass a function to useState, like useState(() => expensive())?
++ When the initial value is costly to compute
+- When the state itself will hold a function
+- Whenever the state is an object or array
+- When the state must update asynchronously
+= Lazy initialisation runs only on the first render.
+
+Q H Two inputs must always show the same value. What is the React way?
++ Keep one state value in a parent and pass it to both inputs
+- Keep a state in each input and sync them with useEffect
+- Read one input's DOM value from the other on every change
+- Store the value in a module variable both inputs import
+= One source of truth avoids the two copies drifting apart.
+
+Q H Why avoid storing a value in state that can be computed from props or other state?
++ The copy can fall out of sync; compute it during render instead
+- State can only hold values that come from user input
+- Computed values in state trigger an error in Strict Mode
+- React recomputes all state on every render anyway
+= e.g. compute fullName from first and last names instead of storing it.
+
+@topic react-lists | FUNDAMENTALS | Lists, keys and conditional rendering | Rendering lists with map, choosing keys, conditional rendering patterns, filtering lists, empty states.
+Q E How do you render a list of items in React?
++ items.map(i => <li key={i.id}>{i.name}</li>)
+- for (const i of items) <li>{i.name}</li>
+- <li v-for="i in items">{i.name}</li>
+- <li *ngFor="let i of items">{i.name}</li>
+= map returns an array of elements, which React renders.
+
+Q E Why does React need a key on list items?
++ To match each item between renders
+- To decide the order items are shown
+- To give each item a unique CSS style
+- To make each item focusable by keyboard
+= Keys must be unique among siblings and stable.
+
+Q E Which shows <Welcome /> only when isLoggedIn is true?
++ {isLoggedIn && <Welcome />}
+- {if (isLoggedIn) <Welcome />}
+- <Welcome if={isLoggedIn} />
+- {isLoggedIn ? <Welcome />}
+= Use a ternary when you also need an else.
+
+Q E What is the best key for items loaded from a database?
++ Their unique id
+- Math.random()
+- Their array index
+- Their display name
+= Stable, unique ids keep each item's state with the right row.
+
+Q M Why can using the array index as a key cause bugs?
++ After inserts or reorders, state can stay with the wrong item
+- React does not accept numbers as keys
+- Index keys make React render the list twice
+- Index keys stop the list from updating at all
+= Index keys are fine only for static lists that never change order.
+
+Q M What happens with key={Math.random()}?
++ Every item remounts on every render
+- React sorts the items in random order
+- React reuses the items more efficiently
+- React warns once and then ignores it
+= Keys must be stable across renders.
+
+Q M How do you show "No results" when a filtered list is empty?
++ {results.length === 0 ? <p>No results</p> : <ul>…</ul>}
+- React shows a "No results" message automatically
+- Give the list key="empty" so React knows to hide it
+- Throw an error in render and catch it in the parent
+= Handle empty, loading and error states explicitly.
+
+Q M What does returning null from a component do?
++ Renders nothing
+- Renders "null"
+- Throws an error
+- Unmounts the parent
+= A component can return null to hide itself.
+
+Q H After reordering a list, text typed in each row's input appears in the wrong row. Likely cause?
++ The rows use the array index as their key
+- The inputs are controlled by state
+- The list is rendered with map
+- The rows are wrapped in fragments
+= React matched rows by position, so input state stayed while the data moved.
+
+Q H How do you reset a component's state when switching between users?
++ Give it a changing key, e.g. <Profile key={userId} />
+- Call a reset() method on the component through a ref
+- Remove the component from the DOM with removeChild
+- Pass a reset={true} prop that React handles for you
+= A new key makes React mount a fresh instance.
+
+Q H Where must the key go here?
+| items.map(item => <Row item={item} />)
++ On <Row>, the element returned from map
+- On the first element inside Row
+- On the <ul> that wraps the list
+- On the first Row only
+= Keys belong to the elements in the array React receives.
+
+Q H How unique do keys need to be?
++ Unique among siblings in the same list
+- Unique across the whole page
+- Unique across the whole app
+- Unique per component file
+= Two different lists can reuse the same keys.
+
+@topic react-effects | FUNDAMENTALS | useEffect and data fetching | When effects run, dependency arrays, cleanup, fetching data, loading and error states.
+Q E What is useEffect for?
++ Syncing with things outside React, like fetching data
+- Declaring state that survives page reloads
+- Styling a component based on its props
+- Defining routes for a single-page app
+= Effects run after React updates the screen.
+
+Q E When does an effect with an empty dependency array [] run?
++ After the first render, once per mount
+- Before the first render, once per mount
+- After every render of the component
+- Only when the component unmounts
+= In development Strict Mode it runs twice to reveal missing cleanups.
+
+Q E How should a component track that data is still loading?
++ With a loading flag in state
+- With a global variable
+- With a CSS class on body
+- With a query in the URL
+= Track loading, error and data so the UI handles each case.
+
+Q E What does an effect's returned function do?
++ Cleans up before the next run or on unmount
+- Returns a value to the component's parent
+- Runs before the effect runs for the first time
+- Replaces the effect on the next render
+= Use it to remove listeners, clear timers or cancel requests.
+
+Q M When does this effect run?
+| useEffect(() => {
+|   document.title = `Hello ${name}`;
+| }, [name]);
++ After the first render and whenever name changes
+- Only once, after the first render
+- On every render, whatever name is
+- Only when the component unmounts
+= Effects re-run when any dependency changes.
+
+Q M What is wrong here?
+| useEffect(() => {
+|   setCount(count + 1);
+| });
++ It sets state after every render, causing an infinite loop
+- Effects are not allowed to call state setters at all
+- count must be listed as the effect's first argument
+- It runs only once, so count never goes above 1
+= Add a dependency array, or avoid deriving state in effects.
+
+Q M Why clean up an interval created in useEffect?
+| useEffect(() => {
+|   const id = setInterval(tick, 1000);
+|   return () => clearInterval(id);
+| }, []);
++ Otherwise it keeps running after unmount
+- React clears intervals only on page reload
+- Intervals cannot start inside an effect
+- Cleanup makes the interval tick faster
+= Every subscription created in an effect should be undone in its cleanup.
+
+Q M Why can't the effect callback itself be async?
++ It would return a promise instead of a cleanup function
+- React does not support await anywhere in components
+- Async callbacks make the component render twice
+- Async effects run before the DOM is ready
+= Define an async function inside the effect and call it.
+
+Q H The user switches quickly from profile A to B, and A's slower response overwrites B. How do you fix it?
++ Ignore or abort the old request in the effect's cleanup
+- Wait a second before starting each new request
+- Remove the dependency array so the effect re-runs
+- Fetch each profile twice and keep the second result
+= Data libraries like React Query handle this by tracking requests per key.
+
+Q H Why does React Strict Mode run effects twice in development?
++ To reveal effects that lack cleanup
+- To warm up the cache for production
+- Because each effect needs two passes
+- To measure how long each effect takes
+= Production runs them once; correct effects behave the same either way.
+
+Q H A filtered list is computed in an effect and stored in state. What is better?
++ Compute it during render, with useMemo if it is costly
+- Compute it in a second effect after the first one
+- Store it in a ref so it does not trigger renders
+- Compute it on the server for every keystroke
+= Derived data belongs in render, not in an effect.
+
+Q H What happens if you leave out a dependency the effect uses?
++ The effect keeps using a stale value
+- React adds the missing dependency for you
+- The effect stops running after the first time
+- The component throws an error on render
+= The react-hooks/exhaustive-deps lint rule catches this.
+
+@topic react-hooks | PRACTICAL | Hooks in depth | useRef, useMemo, useCallback, useReducer, useContext, custom hooks, rules of hooks.
+Q E What are the rules of hooks?
++ Call hooks at the top level, never in loops or conditions
+- Call hooks only inside event handlers and effects
+- Call each built-in hook at most once per component
+- Call hooks only in components, never in other hooks
+= React relies on hooks running in the same order every render.
+
+Q E What is useRef commonly used for?
++ A DOM element or a value that should not trigger renders
+- Data that must be shared across the whole application
+- A value that triggers a re-render whenever it changes
+- A cached result of an expensive calculation
+= ref.current can change freely without re-rendering.
+
+Q E What is a custom hook?
++ A function starting with "use" that reuses stateful logic
+- A built-in browser API that React wraps for you
+- A component that renders nothing but its children
+- A configuration file that changes how hooks behave
+= e.g. useFetch(url) returning { data, loading, error }.
+
+Q E What does useContext do?
++ Reads the value from the nearest matching provider
+- Creates a new context and a provider for it
+- Updates a context value for every component
+- Passes props down exactly one level
+= It avoids passing props through many levels.
+
+Q M What does useMemo do?
++ Caches a computed value until its dependencies change
+- Caches a function so it keeps the same identity
+- Stores a value that survives a full page reload
+- Runs a side effect after the component renders
+= Use it for expensive calculations, not for every value.
+
+Q M What does useCallback return?
++ The same function instance until its dependencies change
+- The result of calling the function with no arguments
+- A new function on every render, wrapped for errors
+- A promise that resolves when the function finishes
+= Useful for memoised children or effect dependencies.
+
+Q M When is useReducer a better fit than useState?
++ When several related values change together under complex rules
+- When the state is a single boolean toggled by one button
+- When the state must be shared with the server
+- When the component has no event handlers at all
+= A reducer keeps the update rules in one pure function.
+
+Q M Why does changing ref.current not update the screen?
++ Refs are not state, so changing them does not re-render
+- Refs are read-only once the component has rendered
+- React batches ref changes until the next click
+- ref.current is copied, so the change is lost
+= Use state for anything that is displayed.
+
+Q H Every consumer of a context re-renders when its value changes. How can you limit that?
++ Split contexts by concern and memoise the provider value
+- Merge all contexts into one large context object
+- Wrap each consumer in an error boundary
+- Move the provider inside each consumer
+= value={{ user, setUser }} creates a new object each render unless memoised.
+
+Q H What is wrong with this component?
+| function Profile({ id }) {
+|   if (!id) return null;
+|   const user = useUser(id);
+|   return <p>{user.name}</p>;
+| }
++ The hook is skipped on some renders, so hook order can change
+- Custom hooks cannot receive props as arguments
+- A component cannot return null before its hooks
+- useUser must be called inside a useEffect
+= Call hooks first and handle the missing id inside the hook or after it.
+
+Q H Why can wrapping every function in useCallback make things slower?
++ It costs work and memory each render, with no gain unless reference equality matters
+- It makes React call each wrapped function twice per render
+- It disables reconciliation for the component and its children
+- It moves the function to a web worker, adding message delays
+= Memoise when a child is memoised or the function is a dependency.
+
+Q H What is useLayoutEffect used for?
++ Measuring layout and updating before the browser paints
+- Running effects only after all images have loaded
+- Fetching data before the component first renders
+- Running effects on the server during rendering
+= It blocks painting, so prefer useEffect unless you must measure the DOM.
+
+@topic react-routing | PRACTICAL | Routing and forms | React Router (routes, links, params, nested routes, navigation), protected routes, form libraries and validation.
+Q E Which component makes a navigation link in React Router?
++ <Link to="/jobs">Jobs</Link>
+- <a href="/jobs" router>Jobs</a>
+- <Route link="/jobs">Jobs</Route>
+- <Navigate href="/jobs">Jobs</Navigate>
+= Link changes the URL without reloading the page.
+
+Q E How do you read the id from the route /jobs/:id?
++ const { id } = useParams();
+- const id = props.match.id;
+- const id = useState("id");
+- const id = window.params.id;
+= useParams returns the dynamic segments of the current route.
+
+Q E What is client-side routing?
++ Switching views by URL in the browser, without full reloads
+- Sending every link click to the server for a new page
+- Choosing which server handles a request by region
+- Redirecting users with HTTP 301 responses
+= The server returns the same app for every route; the router picks the view.
+
+Q E How do you navigate in code after saving a form?
++ const navigate = useNavigate(); navigate("/jobs");
+- const router = useRouter(); router.go("/jobs");
+- history.redirect("/jobs") from react-router
+- <Link to="/jobs" /> called inside the handler
+= navigate(-1) goes back.
+
+Q M How do you protect a route so only signed-in users see it?
++ Wrap it in a component that renders <Navigate to="/login" /> when signed out
+- Hide the link to it in the menu for signed-out users
+- Add display: none to the page when the user is signed out
+- Mark the route as private: true in the router config
+= Always enforce permissions on the server too.
+
+Q M What does <Outlet /> do in React Router?
++ Renders the matched child route inside a parent layout
+- Opens the matched route in a new browser window
+- Renders the 404 page when no route matches
+- Logs the current route for debugging
+= Layouts keep their sidebar while child pages change.
+
+Q M Refreshing /jobs/5 on a static host gives 404. Why?
++ The host looks for a real file; it must fall back to index.html
+- React Router does not support page refreshes
+- The route needs a key prop to survive a refresh
+- The browser cache must be cleared after each deploy
+= Configure the host to serve index.html for unknown paths.
+
+Q M How do you read ?page=2 from the URL?
++ const [params] = useSearchParams(); params.get("page")
+- const { page } = useParams();
+- const page = useLocation().page;
+- const page = props.query.page;
+= Search params are separate from route params.
+
+Q H Why use a form library such as React Hook Form for large forms?
++ Fewer re-renders and less code for values, validation and errors
+- React cannot handle forms with more than ten fields
+- It sends the form to the server without any code
+- It replaces HTML inputs with faster custom inputs
+= It keeps inputs uncontrolled by default and reads them with refs.
+
+Q H What should happen to client-side validation on the server?
++ Repeat it; client checks are only for the user's convenience
+- Skip it, since the client already checked the data
+- Move it to the client completely to save server time
+- Replace it with TypeScript types on the API
+= Anyone can bypass the browser and call the API directly.
+
+Q H How do you lazy-load a page component?
+| const Reports = lazy(() => import("./Reports"));
++ Render it inside <Suspense fallback={...}>
+- Call Reports() inside a useEffect
+- Import it at the top of the file as usual
+- Wrap it in React.memo before rendering
+= React.lazy splits the page into its own chunk.
+
+Q H What does navigate("/login", { replace: true }) do differently?
++ It replaces the current history entry, so Back skips it
+- It reloads the whole page before showing /login
+- It clears every entry from the browser history
+- It opens /login in a new tab and keeps this one
+= Useful after logout and redirects.
+
+@topic react-state-management | PRACTICAL | State management and data fetching | Context vs Redux Toolkit vs Zustand, server state with React Query, caching, optimistic updates, testing with React Testing Library.
+Q E What problem does a state library like Redux solve?
++ Sharing and updating state used by many components
+- Styling components consistently across the app
+- Routing between pages without full reloads
+- Compiling JSX into browser-ready JavaScript
+= For small apps, local state and context are often enough.
+
+Q E What is "server state"?
++ Data owned by the server that the client fetches and caches
+- State that React keeps in cookies between page loads
+- State that lives only inside a useRef in the browser
+- The CPU and memory usage of the web server
+= TanStack Query handles caching, refetching and loading flags for it.
+
+Q E How is state changed in Redux?
++ By dispatching actions that reducers handle
+- By assigning new values to the store object
+- By calling setState on the store directly
+- By editing the state saved in localStorage
+= Redux Toolkit's createSlice writes reducers with less boilerplate.
+
+Q E What does React Testing Library encourage?
++ Testing what users see: text, roles and labels
+- Testing each component's internal state values
+- Testing that CSS class names never change
+- Testing private methods of each component
+= screen.getByRole("button", { name: "Save" }) mirrors what a user sees.
+
+Q M What does useQuery({ queryKey: ["jobs"], queryFn: fetchJobs }) give you?
++ Caching by key, loading and error states, and background refetching
+- A Redux store slice with actions for every job operation
+- A route that loads jobs before the page renders
+- A form with validation for creating new jobs
+= Components using the same key share one cached result.
+
+Q M What is an optimistic update?
++ Showing the change at once and rolling back if the request fails
+- Waiting for the server's reply before showing any change
+- Retrying a failed request until it finally succeeds
+- Caching responses forever so requests are never repeated
+= Keep a snapshot to restore when the request fails.
+
+Q M When is React Context a poor choice for global state?
++ For values that change often and are read by many components
+- For a theme that changes when the user toggles dark mode
+- For the signed-in user that rarely changes in a session
+- For the language setting chosen once by the user
+= Selector-based stores re-render only components using the changed slice.
+
+Q M In React Testing Library, how do you wait for text that appears after a fetch?
++ await screen.findByText("Loaded")
+- screen.getByText("Loaded")
+- await sleep(1000) then getByText
+- expect(fetch).toHaveBeenCalled()
+= findBy queries retry until the element appears or a timeout passes.
+
+Q H Why does copying API data into Redux and again into local state cause bugs?
++ The copies drift apart; keep one source of truth and derive the rest
+- Redux cannot hold arrays of objects returned by APIs
+- Local state is cleared every time Redux changes
+- React forbids holding the same data in two places
+= Separate server state (a query cache) from UI state.
+
+Q H What does useSelector(s => s.cart.items.length) help with?
++ The component re-renders only when that number changes
+- The component fetches the cart from the server on render
+- The component can change the cart without dispatching
+- The component sorts the cart items before showing them
+= Returning a new object each time from a selector defeats it.
+
+Q H How should component tests handle network calls?
++ Mock the network layer (e.g. MSW) so components run their real code
+- Mock every hook the component uses so nothing real runs
+- Call the real production API so tests stay realistic
+- Skip any test whose component fetches data from an API
+= Tests then cover loading, success and error paths as users see them.
+
+Q H What does queryClient.invalidateQueries({ queryKey: ["jobs"] }) do after a mutation?
++ Marks cached jobs as stale so they refetch
+- Deletes the jobs from the server database
+- Clears the browser's HTTP cache for the site
+- Cancels the mutation that was just made
+= Pair mutations with invalidation or direct cache updates.
+
+@topic react-rendering | ADVANCED | Rendering and performance | Reconciliation, what triggers re-renders, React.memo, referential equality, profiling, virtualization, concurrent features, Web Vitals.
+Q E What causes a component to re-render?
++ Its state changes, its parent re-renders, or a context it reads changes
+- Only a full page reload, since React renders each component once
+- Only a change to its props; state changes are batched until reload
+- Only a user event such as a click inside that component
+= A re-render does not always change the DOM; React compares the output.
+
+Q E What does React.memo do?
++ Skips re-rendering when props are shallowly equal
+- Stores the component's output in localStorage
+- Turns the component into a class component
+- Caches API responses made inside the component
+= It only helps if the props are actually stable.
+
+Q E What is the virtual DOM?
++ An in-memory description of the UI that React diffs
+- A second, hidden browser window that React controls
+- A copy of the DOM that React saves to the server
+- A faster DOM built into modern browsers
+= Comparing the old and new trees is called reconciliation.
+
+Q E Which tool shows which components render and how long they take?
++ The React DevTools Profiler
+- The browser's CSS inspector
+- The npm audit command
+- The network tab's waterfall
+= Profile before optimising.
+
+Q M A memoised child still re-renders on every parent render. Why?
+| <Child onSave={() => save(id)} options={{ sort: "asc" }} />
++ New function and object props each render fail the shallow check
+- React.memo cannot be used on components that receive functions
+- The child must also be wrapped in useMemo inside the parent
+- Memoised children always re-render when the parent uses hooks
+= Use useCallback and useMemo, or move constants outside the component.
+
+Q M How do you keep a list of 10,000 rows fast?
++ Virtualise it, rendering only rows in view
+- Wrap each row in its own error boundary
+- Use the array index as each row's key
+- Render all rows inside a single div
+= Libraries such as react-window keep the DOM small.
+
+Q M What does React compare when deciding whether to reuse a DOM element?
++ The element type and key at the same position
+- The CSS classes and inline styles of the element
+- The element's text content and its attributes only
+- Nothing; React rebuilds the DOM on every render
+= A different type (div → span) or key causes a remount.
+
+Q M Why can moving state down into a smaller component improve performance?
++ Only that small component re-renders when the state changes
+- State in child components is read faster than in parents
+- React skips rendering for state stored in leaf components
+- It turns off reconciliation for the rest of the tree
+= Keep state as close as possible to where it is used.
+
+Q H What does useTransition help with?
++ Keeping typing responsive while a slow update renders in the background
+- Animating CSS transitions between two routes in the app
+- Fetching data in parallel before the component renders
+- Moving component rendering to a separate browser thread
+= Urgent updates render first; the transition can be interrupted.
+
+Q H What does useDeferredValue do?
++ Gives slow UI a lagging copy of a value while urgent updates render first
+- Delays a value by a fixed number of milliseconds before it is used
+- Saves a value to the server and returns it when the save finishes
+- Replaces useState for values that change more than once a second
+= e.g. defer the search results while the input stays responsive.
+
+Q H Why does the React Compiler matter for useMemo and useCallback?
++ It memoises automatically, so manual memo hooks are needed far less
+- It removes hooks from React and replaces them with classes
+- It compiles React components to native mobile code
+- It only minifies code and has no effect on rendering
+= Manual memoisation becomes an escape hatch rather than the default.
+
+Q H What commonly causes a poor Interaction to Next Paint (INP) in React apps?
++ Long renders or handlers blocking the main thread after input
+- Using CSS modules instead of a CSS-in-JS library
+- Using function components instead of class components
+- Using TypeScript instead of plain JavaScript
+= Break up work, use transitions, and keep event handlers light.
+
+@topic react-architecture | ADVANCED | Architecture: SSR, Next.js and server components | Client vs server rendering, hydration, Next.js routing, React Server Components, Suspense and streaming, error boundaries.
+Q E What is server-side rendering (SSR)?
++ Building the page's HTML on the server for each request
+- Running the app's database inside the user's browser
+- Rendering images on the server and text in the browser
+- Sending JavaScript only, with an empty HTML page
+= It improves first load and SEO compared with an empty shell.
+
+Q E What is Next.js?
++ A React framework with routing and server rendering
+- A database designed for React applications
+- A testing tool for React component behaviour
+- A new language that replaces JavaScript
+= It adds conventions and server features on top of React.
+
+Q E What is an error boundary?
++ A component that catches render errors below it and shows a fallback
+- A try/catch block that wraps every fetch call in the app
+- A CSS border drawn around components that have errors
+- A lint rule that stops errors from reaching production
+= Without one, a rendering error unmounts the whole tree.
+
+Q E What is hydration?
++ React attaching handlers and state to server-rendered HTML
+- React compressing images before sending them to the browser
+- React loading CSS files after the JavaScript has run
+- React re-rendering the page from scratch in the browser
+= Until hydration finishes, the page is visible but not interactive.
+
+Q M What causes a hydration mismatch warning?
++ The client renders different HTML than the server, e.g. using Date.now()
+- A stylesheet failed to load before React started hydrating
+- A component used hooks while it was rendering on the server
+- A list was rendered without keys on the server side
+= Render the same output on both sides; put browser-only code in effects.
+
+Q M What is static site generation (SSG)?
++ Building pages to HTML at build time and serving them as files
+- Rendering every page on the server for each request
+- Rendering every page in the browser from JavaScript
+- Generating CSS at run time based on the user's device
+= Fast and cacheable; incremental regeneration refreshes pages later.
+
+Q M What can React Server Components do that client components cannot?
++ Read data directly on the server and ship no component code to the browser
+- Use useState and onClick handlers to respond to user input
+- Read window and document while rendering in the browser
+- Run in a web worker separate from the main thread
+= Interactive parts need client components ("use client").
+
+Q M What does Suspense do while data or code is loading?
++ Shows a fallback for that part of the tree
+- Pauses every other part of the application
+- Retries the request until it succeeds
+- Hides any errors thrown while loading
+= With streaming SSR, ready parts are sent first.
+
+Q H Why can't a Server Component pass an ordinary function prop to a Client Component?
++ Props sent to the client must be serialisable, and functions are not
+- Client Components cannot receive props from Server Components
+- Function props make the bundle too large to send
+- Server Components can pass any prop with no limits
+= Pass data instead, or use a Server Action for server-side behaviour.
+
+Q H Which errors do error boundaries NOT catch?
++ Errors thrown in event handlers or async callbacks
+- Errors thrown while a child component renders
+- Errors thrown in a class component's constructor
+- Errors thrown in a lifecycle method of a child
+= Handle those with try/catch and state.
+
+Q H How should you choose between SSR, SSG and client rendering for a page?
++ By how often its data changes and who sees it
+- Always SSR, because it is the newest approach
+- Always client rendering, because it is simplest
+- Always SSG, because static pages are fastest
+= Static for rarely changing pages, SSR for per-request data, client for private dashboards.
+
+Q H What is a micro-frontend?
++ Parts of one front end built and deployed separately by different teams
+- A very small React component with no state and only a few props
+- A front end designed only for mobile phones and small screens
+- A CSS framework that keeps each component's styles isolated
+= It gives team independence at the cost of duplication and integration work.
+
+@topic react-patterns | ADVANCED | Patterns, accessibility and quality | Composition patterns (compound components, render props, HOCs), controlled vs uncontrolled APIs, accessibility, design systems, folder structure.
+Q E Why use a real <button> rather than a clickable <div>?
++ Buttons work with the keyboard and screen readers
+- Divs cannot have click handlers attached in React
+- Buttons render faster than divs in every browser
+- Divs are deprecated in the latest HTML standard
+= Native elements give accessibility for free.
+
+Q E What does an image's alt attribute do?
++ Describes the image for screen readers
+- Sets the image's width and height
+- Shows a tooltip when the image is hovered
+- Makes the image load only when visible
+= Use alt="" for purely decorative images.
+
+Q E What is a design system?
++ Shared components, styles and rules for a consistent product
+- A database schema that describes the app's data model
+- A deployment pipeline that builds and ships the front end
+- A testing framework for checking component behaviour
+= Teams build screens from the same buttons, inputs and tokens.
+
+Q E What does <label htmlFor="email"> do for an input with id="email"?
++ Links the label to the input for clicks and screen readers
+- Styles the input with the label's font and colour
+- Checks that the input contains a valid email
+- Hides the input until the label is clicked
+= Every form control needs an accessible name.
+
+Q M What is a higher-order component (HOC)?
++ A function that takes a component and returns an enhanced one
+- A component that is always rendered at the top of the page
+- A component that has more than ten child components
+- A class component that extends another class component
+= Hooks have replaced most HOC use cases.
+
+Q M What are compound components?
+| <Tabs><Tabs.List /><Tabs.Panel /></Tabs>
++ Components that work together and share state through context
+- Components that are compiled together into one bundle file
+- Components that must always return two root elements
+- Components that are generated from a single JSON schema
+= They give flexible markup with a clear API.
+
+Q M What is a render prop?
++ A function prop the component calls to decide what to render
+- A prop named render that must always hold an HTML string
+- A prop that tells React to render the component twice
+- A CSS property that controls how a component renders
+= e.g. <DataLoader render={data => <List data={data} />} />.
+
+Q M When should a reusable input support both controlled and uncontrolled use?
++ When some callers want to own the value and others don't
+- Never; components should only ever be controlled
+- Only for checkboxes and radio buttons, not text inputs
+- Only when the component is written as a class
+= Accept value/onChange or defaultValue, as native inputs do.
+
+Q H How should a custom modal dialog behave for keyboard and screen-reader users?
++ Move focus in, trap it, close on Escape, and return focus on close
+- Block mouse clicks behind it and leave keyboard focus where it was
+- Open in a new browser tab so that screen readers can find it
+- Close automatically after a few seconds to avoid trapping users
+= The native <dialog> element provides much of this.
+
+Q H What is prop drilling, and a good remedy?
++ Passing props through layers that don't use them; use composition or context
+- Validating props at every layer; use PropTypes in production instead
+- Changing props inside children; copy them into state at each layer
+- Using too many keys in lists; use array indexes as keys instead
+= Passing children down often removes the extra layers.
+
+Q H How do feature folders (features/jobs/…) compare with type folders (components/, hooks/)?
++ Feature folders keep related code together as the app grows
+- Type folders are required by React's build tooling
+- Feature folders break imports between parts of the app
+- There is no practical difference between the two
+= Shared building blocks still live in a common folder.
+
+Q H What does aria-live="polite" do?
++ Screen readers announce changes in that region when idle
+- The region's text becomes bold and easier to notice
+- The region is hidden from screen readers entirely
+- The region refreshes its content every few seconds
+= Use it for status messages such as "Saved" or result counts.

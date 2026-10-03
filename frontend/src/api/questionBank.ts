@@ -3,7 +3,7 @@ import type { AssessmentDetail, Category, QuestionInput, QuestionKind } from './
 
 /** The question bank and the test-paper builder (ADR-0014). */
 
-export type Section = 'QUANT' | 'LOGICAL' | 'VERBAL'
+export type Section = 'QUANT' | 'LOGICAL' | 'VERBAL' | 'FUNDAMENTALS' | 'PRACTICAL' | 'ADVANCED'
 export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD'
 export type BankStatus = 'ACTIVE' | 'REVIEW' | 'ARCHIVED'
 
@@ -11,8 +11,26 @@ export const SECTION_LABEL: Record<Section, string> = {
   QUANT: 'Numerical ability',
   LOGICAL: 'Logical reasoning',
   VERBAL: 'Verbal ability',
+  FUNDAMENTALS: 'Fundamentals',
+  PRACTICAL: 'Applied',
+  ADVANCED: 'Advanced',
 }
-export const SECTIONS = Object.keys(SECTION_LABEL) as Section[]
+/** Who each technical band is for. */
+export const SECTION_LEVEL: Partial<Record<Section, string>> = {
+  FUNDAMENTALS: 'Freshers',
+  PRACTICAL: '1–3 years',
+  ADVANCED: '3+ years',
+}
+export const APTITUDE_SECTIONS: Section[] = ['QUANT', 'LOGICAL', 'VERBAL']
+export const TECH_SECTIONS: Section[] = ['FUNDAMENTALS', 'PRACTICAL', 'ADVANCED']
+/** Aptitude sections (kept for existing callers). */
+export const SECTIONS = APTITUDE_SECTIONS
+export const sectionsFor = (area: Category): Section[] => (area === 'APTITUDE' ? APTITUDE_SECTIONS : TECH_SECTIONS)
+/** A section's label, with the band's audience for technical areas, e.g. "Fundamentals (Freshers)". */
+export const sectionName = (s: Section) => (SECTION_LEVEL[s] ? `${SECTION_LABEL[s]} (${SECTION_LEVEL[s]})` : SECTION_LABEL[s])
+
+/** Areas with a question bank, in menu order. */
+export const BANK_AREAS: Category[] = ['APTITUDE', 'JAVA', 'PYTHON', 'JAVASCRIPT', 'REACT', 'ANGULAR', 'SQL']
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = { EASY: 'Easy', MEDIUM: 'Medium', HARD: 'Hard' }
 
 export interface BankQuestion {
@@ -66,6 +84,7 @@ export interface TopicGuide {
   id: string
   section: Section
   sectionLabel: string
+  level: string | null
   name: string
   covers: string
   example: string
@@ -116,6 +135,7 @@ export function planTopics(topics: { section: Section; name: string }[], perTopi
 }
 
 export interface BankFilter {
+  area?: Category
   section?: Section
   difficulty?: Difficulty
   topic?: string
@@ -126,7 +146,7 @@ export interface BankFilter {
   size?: number
 }
 
-export const getBankOverview = () => api<BankOverview>('/question-bank/overview')
+export const getBankOverview = (area: Category = 'APTITUDE') => api<BankOverview>(`/question-bank/overview?area=${area}`)
 export function listBank(filter: BankFilter) {
   const params = new URLSearchParams()
   Object.entries(filter).forEach(([k, v]) => {
@@ -140,7 +160,7 @@ export const updateBankQuestion = (id: string, input: { area: Category; section:
   api<BankQuestion>(`/question-bank/${id}`, { method: 'PUT', body: JSON.stringify(input) })
 export const approveBankQuestion = (id: string) => api<BankQuestion>(`/question-bank/${id}/approve`, { method: 'POST' })
 export const archiveBankQuestion = (id: string) => api<BankQuestion>(`/question-bank/${id}/archive`, { method: 'POST' })
-export const draftBankQuestions = (input: { section: Section; topic: string; difficulty: Difficulty; count: number }) =>
+export const draftBankQuestions = (input: { area: Category; section: Section; topic: string; difficulty: Difficulty; count: number }) =>
   api<{ added: number; notes: string[]; questions: BankQuestion[] }>('/question-bank/draft', { method: 'POST', body: JSON.stringify(input) })
 export const buildFromBank = (input: {
   title: string
