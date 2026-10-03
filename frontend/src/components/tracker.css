@@ -258,3 +258,7 @@
   color: #854d0e;
   font-weight: 500;
 }
+.cwr-section {
+  border-left: 3px solid var(--color-primary-soft, #c7d2fe);
+  padding-left: 8px;
+}

@@ -5,6 +5,10 @@ import com.anthropic.client.okhttp.AnthropicOkHttpClient;
 import com.codewalnut.ats.client.AssessmentDrafter;
 import com.codewalnut.ats.client.ClaudeAssessmentDrafter;
 import com.codewalnut.ats.client.ClaudeResumeAnalyzer;
+import com.codewalnut.ats.client.ClaudeResumeWriter;
+import com.codewalnut.ats.client.DisabledResumeWriter;
+import com.codewalnut.ats.client.PlainResumeWriter;
+import com.codewalnut.ats.client.ResumeWriter;
 import com.codewalnut.ats.client.DisabledAssessmentDrafter;
 import com.codewalnut.ats.client.SampleAssessmentDrafter;
 import com.codewalnut.ats.client.DisabledResumeAnalyzer;
@@ -89,6 +93,21 @@ public class IntegrationsConfig {
     @Profile({"dev", "demo"})
     public AssistantClient ruleBasedAssistantClient() {
         return new RuleBasedAssistantClient();
+    }
+
+    @Bean
+    @Profile({"dev", "demo"})
+    public ResumeWriter plainResumeWriter() {
+        return new PlainResumeWriter();
+    }
+
+    /** Claude writes CodeWalnut résumés when ANTHROPIC_API_KEY is set; otherwise they're made by hand. */
+    @Bean
+    @Profile("!dev & !demo")
+    public ResumeWriter resumeWriter(@Value("${ANTHROPIC_API_KEY:}") String apiKey,
+            @Value("${ats.assistant.model:claude-opus-5-5}") String model) {
+        return anthropic(apiKey).<ResumeWriter>map(c -> new ClaudeResumeWriter(c, model))
+                .orElseGet(DisabledResumeWriter::new);
     }
 
     @Bean

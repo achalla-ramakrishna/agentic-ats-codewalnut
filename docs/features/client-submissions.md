@@ -56,6 +56,15 @@ flow back into the pipeline.
 | SUB-15 | Per-client choice of showing bill rate, expected CTC, or neither. | v1 |
 | SUB-16 | Full client portal: client users see all their jobs, submissions, interviews and history. | v1 |
 
+### CodeWalnut résumé (shipped 2026-10-03, ADR-0012)
+
+| ID | Requirement | Priority |
+| --- | --- | --- |
+| SUB-17 | Drawer → Profile → **CodeWalnut résumé** → **✨ Create with AI** (`MANAGE_JOBS`): drafts the client version from the latest original résumé, tailored to the opening (title line, 2–3 sentence summary, skill groups, experience, projects, education, achievements, additional info). No invented facts. | Done |
+| SUB-18 | Phone numbers and links are removed by the app from every draft and edit; email is a toggle (on by default); address, date of birth and personal details are left out. | Done |
+| SUB-19 | Everything is editable (name, city, title line, summary, skill groups, sections, entries, bullets; reorder and remove sections); "CodeWalnut screening" lists passed tests (toggle). | Done |
+| SUB-20 | **Preview PDF**, **Download Word** (editable), **Save PDF to documents** (stored as the CodeWalnut résumé, new version each time; then **Share with client**). Logo, CodeWalnut layout and footer on every page (`ATS_RESUME_FOOTER`). | Done |
+
 ## Business rules
 
 - A Client Reviewer can only ever see submissions sent to their own client —
@@ -106,4 +115,8 @@ flow back into the pipeline.
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md; review link confirmed as enough for MVP, commercials deferred to v1 |
+| 2026-10-03 | CodeWalnut-branded résumé generator (SUB-17…SUB-20, ADR-0012) |
 | 2026-10-01 | Client contacts can now sign in and see explicitly shared candidates ([client-access.md](client-access.md), ADR-0007); submissions with snapshots and feedback stay in this chunk |
+
+Tests: `CodeWalnutResumeFlowTest`, `BrandedResumeRendererTest`, `CodeWalnutResumeServiceTest` (backend);
+`CodeWalnutResumeEditor.test.tsx` (frontend).

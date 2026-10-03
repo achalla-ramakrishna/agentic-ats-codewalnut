@@ -64,6 +64,13 @@ Tests (ADR-0011): `AssessmentService` manages the library and asks
 the candidate without answers, enforces the timer and scores on submit or
 when an overdue invite is next read.
 
+CodeWalnut résumés (ADR-0012): `CodeWalnutResumeService` asks
+`client/ClaudeResumeWriter` (dev/demo: `PlainResumeWriter`) for a
+`BrandedResume`, strips phones and links, stores it per application, and
+`BrandedResumeRenderer` renders it to PDF (openhtmltopdf, fonts and logo
+from `resources/branding/`) or Word; saving stores the PDF as a
+`CODEWALNUT_RESUME` document.
+
 WhatsApp (ADR-0008): staff messages to a candidate can also go by WhatsApp —
 a `wa.me` click-to-chat link by default, or `client/WhatsAppCloudClient`
 (Meta Cloud API) when configured. Replies and receipts come in on

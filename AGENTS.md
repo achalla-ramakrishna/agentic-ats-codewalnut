@@ -124,7 +124,9 @@ Frontend (from `frontend/`):
   is computed by the app from per-requirement evidence, prompts ignore
   personal attributes, and nothing moves a candidate. Test scores
   (ADR-0011) are a signal too: no auto-advance or auto-reject, and
-  AI-drafted questions are labelled until a person checks them. All model calls go
+  AI-drafted questions are labelled until a person checks them.
+  CodeWalnut résumés (ADR-0012) are AI drafts a person edits; the app (not
+  the model) strips phone numbers and links. All model calls go
   through a `client/` adapter using the official Anthropic SDK.
 - **Least privilege** for integrations: request only the OAuth scopes a
   feature needs (e.g. calendar free-busy + event create, not full

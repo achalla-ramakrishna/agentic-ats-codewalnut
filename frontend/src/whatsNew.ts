@@ -16,6 +16,20 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-03-codewalnut-resume',
+    date: '2026-10-03',
+    title: 'Make the CodeWalnut résumé in a minute',
+    summary:
+      'The AI turns the candidate’s original résumé into the client-ready CodeWalnut version: mobile number removed, a summary tailored to the opening, CodeWalnut logo and footer, and passed tests. You edit it and save it as PDF (or download Word).',
+    steps: [
+      'Open a candidate who has an original résumé → Profile → CodeWalnut résumé → ✨ Create with AI.',
+      'Click Edit and check every line against the original. Change the summary, skills or bullets as you like.',
+      'Choose whether to show their email and the “CodeWalnut screening” test results.',
+      'Preview PDF, then Save PDF to documents. Share it with the client from “Share with client”.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-03-profile-from-resume',
     date: '2026-10-03',
     title: 'Profiles filled from the résumé',

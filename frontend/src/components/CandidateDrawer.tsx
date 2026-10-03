@@ -4,6 +4,7 @@ import { useMe } from '../auth/AuthContext'
 import { Conversation } from './Conversation'
 import { DocumentsSection } from './DocumentsSection'
 import { InterviewsPanel } from './InterviewsPanel'
+import { CodeWalnutResumeEditor } from './CodeWalnutResumeEditor'
 import { ProfileSection } from './ProfileSection'
 import { ResumeInsightSection } from './ResumeInsightSection'
 import { TestsSection } from './TestsSection'
@@ -66,6 +67,7 @@ export function CandidateDrawer({
   const [note, setNote] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [contact, setContact] = useState({ name: row.name, email: row.email, phone: row.phone })
+  const [docsVersion, setDocsVersion] = useState(0)
 
   const load = useCallback(() => {
     getHistory(row.id).then(setHistory).catch(() => undefined)
@@ -161,6 +163,7 @@ export function CandidateDrawer({
               </div>
             )}
             <DocumentsSection
+              key={docsVersion}
               candidateId={row.candidateId}
               candidateEmail={contact.email}
               canEdit={canEdit}
@@ -173,8 +176,17 @@ export function CandidateDrawer({
                 }
               }}
             />
+            <CodeWalnutResumeEditor
+              applicationId={row.id}
+              canEdit={canEdit}
+              onSaved={() => {
+                setDocsVersion((v) => v + 1)
+                changed()
+              }}
+            />
             {hasClient && (
               <ShareWithClient
+                key={`share-${docsVersion}`}
                 applicationId={row.id}
                 candidateId={row.candidateId}
                 clientName={row.clientName!}
