@@ -5,3 +5,8 @@ spring:
     active: dev
   datasource:
     url: ${TEST_DB_URL:jdbc:mysql://localhost:3306/ats_test?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true}
+
+# Run background AI work inline so tests can check the results straight away.
+ats:
+  ai:
+    async: false

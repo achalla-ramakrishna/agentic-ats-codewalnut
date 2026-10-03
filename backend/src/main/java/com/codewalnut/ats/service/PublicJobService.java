@@ -93,6 +93,7 @@ public class PublicJobService {
         Application application = trackerService.createApplication(account.getEmail(), job, candidate,
                 Stage.SOURCED, fullNote.length() > 5000 ? fullNote.substring(0, 5000) : fullNote,
                 ApplicationSource.JOB_LINK, Instant.now());
+        documentService.resumeAdded(candidate.getId(), DocumentKind.ORIGINAL_RESUME);
         auditService.recordAnonymous(account.getEmail(), AuditAction.CANDIDATE_APPLIED,
                 Map.of("jobId", job.getId(), "applicationId", application.getId(), "documentId", document.getId()));
         return toMine(application);

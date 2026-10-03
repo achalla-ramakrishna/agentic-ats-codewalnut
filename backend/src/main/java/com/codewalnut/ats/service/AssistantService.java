@@ -3,12 +3,14 @@ package com.codewalnut.ats.service;
 import com.codewalnut.ats.client.AssistantClient;
 import com.codewalnut.ats.client.AssistantPlan;
 import com.codewalnut.ats.client.CalendarException;
+import com.codewalnut.ats.client.ResumeInsight;
 import com.codewalnut.ats.domain.AppUser;
 import com.codewalnut.ats.domain.Application;
 import com.codewalnut.ats.domain.AuditAction;
 import com.codewalnut.ats.domain.JobOpening;
 import com.codewalnut.ats.domain.Stage;
 import com.codewalnut.ats.dto.AssistantDtos.AssistantStatus;
+import com.codewalnut.ats.dto.AssistantDtos.Match;
 import com.codewalnut.ats.dto.AssistantDtos.Option;
 import com.codewalnut.ats.dto.AssistantDtos.PlanResponse;
 import com.codewalnut.ats.dto.AssistantDtos.ProposedAction;
@@ -40,19 +42,24 @@ import org.springframework.util.StringUtils;
  * The AI assistant on an opening: "sagar, sucheth and amogh are shortlisted". It only proposes;
  * every proposal is checked here against the opening's real candidates and stages, and nothing
  * changes until a person applies it through the normal endpoints (AGENTS.md "AI is advisory",
- * ADR-0009). Only candidate names and stages are sent to the model, never contact details.
+ * ADR-0009). It also answers questions about the candidates from their résumé readings
+ * (ADR-0010). Names, stages and job-related résumé profiles are sent to the model, never contact
+ * details.
  */
 @Service
 @RequiredArgsConstructor
 public class AssistantService {
 
     static final int HOURLY_LIMIT = 60;
+    /** Enough for "everyone not interviewed yet" in a big opening. */
+    static final int MAX_MATCHES = 200;
 
     private final JobOpeningRepository jobRepository;
     private final ApplicationRepository applicationRepository;
     private final AssistantClient assistantClient;
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
+    private final ResumeIntelligenceService intelligence;
     private final Map<String, Deque<Instant>> recent = new ConcurrentHashMap<>();
 
     public AssistantStatus status(AppUser actor) {
@@ -68,11 +75,13 @@ public class AssistantService {
         List<Application> applications = applicationRepository.findByJobIdOrderByCandidateNameAsc(jobId);
         Map<UUID, Application> byId = new LinkedHashMap<>();
         applications.forEach(a -> byId.put(a.getId(), a));
+        Map<UUID, ResumeInsight> profiles = intelligence.profiles(applications);
         AssistantPlan plan = assistantClient.plan(new AssistantClient.Request(
                 instruction.strip(),
                 job.getTitle(),
                 applications.stream()
-                        .map(a -> new AssistantClient.Candidate(a.getId().toString(), a.getCandidate().getName(), a.getStage().getLabel()))
+                        .map(a -> new AssistantClient.Candidate(a.getId().toString(), a.getCandidate().getName(),
+                                a.getStage().getLabel(), profileText(profiles.get(a.getId()))))
                         .toList(),
                 Arrays.stream(Stage.values()).map(s -> new AssistantClient.StageOption(s.name(), s.getLabel())).toList()));
 
@@ -123,10 +132,74 @@ public class AssistantService {
             unresolved.add(new Unresolved(StringUtils.hasText(u.mention()) ? u.mention().strip() : "?", options, to,
                     to != null ? to.getLabel() : null, StringUtils.hasText(u.note()) ? u.note().strip() : null));
         }
+        List<Match> matches = new ArrayList<>();
+        Set<UUID> matched = new HashSet<>();
+        for (AssistantPlan.Match m : nullSafe(plan.matches())) {
+            Application application = byId.get(parseId(m.applicationId()));
+            if (application == null || !matched.add(application.getId()) || matches.size() >= MAX_MATCHES) {
+                continue;
+            }
+            ResumeInsight profile = profiles.get(application.getId());
+            matches.add(new Match(application.getId(), application.getCandidate().getName(),
+                    application.getStage().getLabel(),
+                    profile != null ? ResumeProcessor.fitPercent(profile.requirements()) : null,
+                    StringUtils.hasText(m.reason()) ? m.reason().strip() : null));
+        }
         auditService.record(actor, AuditAction.ASSISTANT_SUGGESTED, "JobOpening", jobId,
-                Map.of("actions", actions.size(), "unresolved", unresolved.size()));
+                Map.of("actions", actions.size(), "unresolved", unresolved.size(), "matches", matches.size()));
         return new PlanResponse(instruction.strip(), StringUtils.hasText(plan.summary()) ? plan.summary().strip() : "",
-                actions, unresolved, notes, true);
+                actions, unresolved, notes, true, StringUtils.hasText(plan.answer()) ? plan.answer().strip() : null,
+                matches);
+    }
+
+    /**
+     * A compact, job-related summary of the résumé reading for the model: match score, role,
+     * experience, education, skills and requirements. Never contact details.
+     */
+    static String profileText(ResumeInsight p) {
+        if (p == null) {
+            return null;
+        }
+        List<String> parts = new ArrayList<>();
+        Integer fit = ResumeProcessor.fitPercent(p.requirements());
+        if (fit != null) {
+            parts.add("fit " + fit + "%");
+        }
+        add(parts, p.headline());
+        add(parts, p.currentRole());
+        if (p.experienceMonths() != null && p.experienceMonths() > 0) {
+            parts.add(p.experienceMonths() + " months experience");
+        }
+        if (p.graduationYear() != null && p.graduationYear() > 0) {
+            parts.add("graduation " + p.graduationYear());
+        }
+        add(parts, p.education());
+        add(parts, p.location());
+        if (p.skills() != null && !p.skills().isEmpty()) {
+            parts.add("skills: " + String.join(", ", p.skills().stream().limit(20).toList()));
+        }
+        if (p.requirements() != null) {
+            for (String level : List.of("MET", "PARTIAL", "NOT_EVIDENT")) {
+                List<String> reqs = p.requirements().stream()
+                        .filter(r -> level.equalsIgnoreCase(String.valueOf(r.assessment())))
+                        .map(ResumeInsight.Requirement::requirement).filter(StringUtils::hasText).toList();
+                if (!reqs.isEmpty()) {
+                    parts.add(level.toLowerCase(java.util.Locale.ROOT).replace('_', ' ') + ": " + String.join("; ", reqs));
+                }
+            }
+        }
+        if (p.projects() != null && !p.projects().isEmpty()) {
+            parts.add("projects: " + String.join("; ", p.projects().stream().limit(3)
+                    .map(pr -> pr.name() + (StringUtils.hasText(pr.summary()) ? " (" + pr.summary() + ")" : "")).toList()));
+        }
+        String text = String.join(" · ", parts);
+        return text.length() > 1200 ? text.substring(0, 1200) : text;
+    }
+
+    private static void add(List<String> parts, String value) {
+        if (StringUtils.hasText(value)) {
+            parts.add(value.strip());
+        }
     }
 
     /** Keeps an accidental loop (or a stuck key) from running up the bill. */

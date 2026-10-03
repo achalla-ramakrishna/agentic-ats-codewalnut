@@ -14,7 +14,22 @@ public record AssistantPlan(
         @JsonPropertyDescription("Actions for candidates you could identify with confidence. Empty if none.")
         List<Action> actions,
         @JsonPropertyDescription("Names in the instruction you could not match to exactly one candidate. Empty if none.")
-        List<Unresolved> unresolved) {
+        List<Unresolved> unresolved,
+        @JsonPropertyDescription("When the recruiter asks a question about the candidates: the answer in plain words, a few sentences at most, based only on the candidate profiles. Empty when the instruction is an action.")
+        String answer,
+        @JsonPropertyDescription("When the recruiter asks a question: the candidates the answer points to (every one for a stage question; best first, at most 15, for a résumé question). Empty otherwise.")
+        List<Match> matches) {
+
+    /** An action-only plan (no question answered). */
+    public AssistantPlan(String summary, List<Action> actions, List<Unresolved> unresolved) {
+        this(summary, actions, unresolved, "", List.of());
+    }
+
+    public record Match(
+            @JsonPropertyDescription("The applicationId of the candidate, copied exactly from the candidate list")
+            String applicationId,
+            @JsonPropertyDescription("Why this candidate fits the question, in a few words, from their profile")
+            String reason) {}
 
     public record Action(
             @JsonPropertyDescription("MOVE_STAGE or ADD_NOTE")

@@ -119,8 +119,11 @@ Frontend (from `frontend/`):
 - **AI is advisory**: no code path may reject, advance or score a
   candidate from LLM output alone. AI output is labelled in the UI and
   logged. The opening assistant (ADR-0009) only proposes; changes happen
-  when a person clicks Apply, through the normal endpoints. All model calls
-  go through a `client/` adapter using the official Anthropic SDK.
+  when a person clicks Apply, through the normal endpoints. Résumé match
+  scores and suggestions (ADR-0010) are advisory and explained: the score
+  is computed by the app from per-requirement evidence, prompts ignore
+  personal attributes, and nothing moves a candidate. All model calls go
+  through a `client/` adapter using the official Anthropic SDK.
 - **Least privilege** for integrations: request only the OAuth scopes a
   feature needs (e.g. calendar free-busy + event create, not full
   mailbox access unless email sync is enabled).

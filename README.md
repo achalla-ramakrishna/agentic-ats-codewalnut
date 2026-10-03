@@ -13,7 +13,7 @@ plus **shareable job links** where candidates sign in with Google and apply, and
 **candidate profiles and background-verification documents** (candidates upload their own), and
 **client login**: a client's hiring manager sees only the candidates and documents you share;
 **WhatsApp** from the candidate chat (one click now, automatic with the WhatsApp Business API).
-an **AI assistant** on each opening ("sagar and amogh are shortlisted" → review → Apply).
+an **AI assistant** on each opening ("sagar and amogh are shortlisted" → review → Apply; "who has worked on Spring Boot projects?" → answer), and **résumé intelligence** (upload a pile of résumés; the AI reads them, adds the candidates, scores the match and suggests whom to contact first).
 Users see new features, with how to use them, under **What's new** in the app.
 
 - [`docs/SPEC.md`](docs/SPEC.md) — overview: goals, roles, pipeline, non-functional requirements, build plan

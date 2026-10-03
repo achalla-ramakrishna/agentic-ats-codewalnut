@@ -15,7 +15,18 @@ interface Row extends ProposedAction {
  * What the AI assistant proposes, for a person to check and apply. Nothing changes until
  * "Apply" — and then through the same stage and note actions as doing it by hand (ADR-0009).
  */
-export function AssistantPlanCard({ plan, onApplied, onClose }: { plan: AssistantPlan; onApplied: () => void; onClose: () => void }) {
+export function AssistantPlanCard({
+  plan,
+  onApplied,
+  onClose,
+  onOpen,
+}: {
+  plan: AssistantPlan
+  onApplied: () => void
+  onClose: () => void
+  /** Opens a candidate the answer points to. */
+  onOpen?: (applicationId: string) => void
+}) {
   const [rows, setRows] = useState<Row[]>(() =>
     plan.actions.map((a, i) => ({ ...a, key: `a${i}`, checked: true, reason: a.note ?? '' })),
   )
@@ -48,6 +59,8 @@ export function AssistantPlanCard({ plan, onApplied, onClose }: { plan: Assistan
   }
 
   const chosen = rows.filter((r) => r.checked)
+  const matches = plan.matches ?? []
+  const answerOnly = !!plan.answer && plan.actions.length === 0 && plan.unresolved.length === 0
   const missingReason = chosen.some((r) => r.type === 'MOVE_STAGE' && NEEDS_REASON.includes(r.toStage ?? '') && !r.reason.trim())
 
   async function apply() {
@@ -75,9 +88,11 @@ export function AssistantPlanCard({ plan, onApplied, onClose }: { plan: Assistan
     <div className="card stack" role="region" aria-label="AI assistant suggestion" style={{ gap: 10, borderColor: 'var(--color-primary)' }}>
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <span className="row" style={{ gap: 8 }}>
-          <Badge tone="primary">Suggested by AI</Badge>
+          <Badge tone="primary">{answerOnly ? 'Answered by AI' : 'Suggested by AI'}</Badge>
           <span className="muted" style={{ fontSize: 13 }}>
-            Check before applying. Nothing has changed yet.
+            {answerOnly
+              ? 'From the candidates’ stages and AI résumé readings. Check before deciding.'
+              : 'Check before applying. Nothing has changed yet.'}
           </span>
         </span>
         <Button size="sm" variant="ghost" onClick={onClose}>
@@ -87,7 +102,31 @@ export function AssistantPlanCard({ plan, onApplied, onClose }: { plan: Assistan
       <div style={{ fontSize: 14 }}>
         <span className="muted">You asked:</span> “{plan.instruction}”
       </div>
-      {plan.summary && <div>{plan.summary}</div>}
+      {plan.answer ? (
+        <div style={{ whiteSpace: 'pre-wrap' }}>{plan.answer}</div>
+      ) : (
+        plan.summary && <div>{plan.summary}</div>
+      )}
+      {matches.length > 0 && (
+        <ol className="stack" aria-label="Candidates in the answer" style={{ margin: 0, paddingLeft: 22, gap: 4 }}>
+          {matches.map((m) => (
+            <li key={m.applicationId}>
+              {onOpen ? (
+                <button type="button" className="row-link" onClick={() => onOpen(m.applicationId)}>
+                  {m.name}
+                </button>
+              ) : (
+                <strong>{m.name}</strong>
+              )}{' '}
+              <span className="muted" style={{ fontSize: 13 }}>
+                {m.stageLabel}
+                {m.fitPercent != null ? ` · ${m.fitPercent}% match` : ''}
+                {m.reason ? ` · ${m.reason}` : ''}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
       {rows.length > 0 && (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0 }} className="stack">
           {rows.map((r) => (
@@ -158,6 +197,7 @@ export function AssistantPlanCard({ plan, onApplied, onClose }: { plan: Assistan
           {errors.join(' ')}
         </div>
       )}
+      {!answerOnly && (
       <div className="row">
         <Button disabled={busy || chosen.length === 0 || missingReason} onClick={() => void apply()}>
           {busy ? 'Applying…' : `Apply ${chosen.length} change${chosen.length === 1 ? '' : 's'}`}
@@ -166,6 +206,7 @@ export function AssistantPlanCard({ plan, onApplied, onClose }: { plan: Assistan
           Cancel
         </Button>
       </div>
+      )}
     </div>
   )
 }

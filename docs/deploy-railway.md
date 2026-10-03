@@ -74,14 +74,17 @@ ADR-0006). `gmail.send` can only send — the app never reads anyone's mailbox.
 ### AI assistant (optional)
 
 On an opening, recruiters can type "sagar, sucheth and amogh are shortlisted"
-and click **Ask AI**; the AI suggests the changes and they click Apply.
+or ask "who has worked on Spring Boot projects?" and click **Ask AI**. The same
+key turns on **Upload résumés**, AI match scores and suggestions (ADR-0010).
 
 1. **console.anthropic.com** → sign in → **API keys** → **Create key**.
    Add a payment method under **Billing** (each instruction costs a fraction
    of a rupee to a few rupees, depending on the opening's size).
 2. Railway variable (app service): `ANTHROPIC_API_KEY=<the key>` → Deploy.
 
-Without the key the **Ask AI** button simply doesn't appear.
+Without the key the **Ask AI** and **Upload résumés** buttons simply don't
+appear. Reading a résumé costs roughly ₹2–₹10, once per résumé; set
+`ATS_AI_WORKERS` (default 3) to read more at a time.
 
 ### WhatsApp (optional)
 

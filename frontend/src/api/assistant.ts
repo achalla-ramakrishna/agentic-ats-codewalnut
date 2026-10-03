@@ -26,6 +26,9 @@ export interface AssistantPlan {
   }[]
   notes: string[]
   aiGenerated: boolean
+  /** Set when the instruction was a question about the candidates. */
+  answer?: string | null
+  matches?: { applicationId: string; name: string; stageLabel: string; fitPercent: number | null; reason: string | null }[]
 }
 
 export const getAssistantStatus = () => api<{ available: boolean }>('/assistant/status')

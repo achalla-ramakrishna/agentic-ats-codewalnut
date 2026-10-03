@@ -5,7 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ApplicationRow } from '../api/tracker'
 import type { Me } from '../api/types'
 import { App } from '../App'
-import { matchesSearch } from './JobDetailPage'
+import { matchesInsight, matchesSearch } from './JobDetailPage'
+import type { InsightSummary } from '../api/insights'
 import { AuthProvider } from '../auth/AuthContext'
 import { fakeFetch } from '../test/fakeFetch'
 
@@ -55,6 +56,35 @@ const row = {
   documents: ['ORIGINAL_RESUME'],
 }
 
+const noInsights = {
+  available: false,
+  hasDescription: false,
+  analyzed: 0,
+  pending: 0,
+  failed: 0,
+  noResume: 0,
+  notAnalyzed: 1,
+  insights: [],
+  contactNext: [],
+  closestToSelection: [],
+}
+
+const insight: InsightSummary = {
+  applicationId: 'a1',
+  status: 'DONE',
+  fitPercent: 50,
+  headline: null,
+  error: null,
+  stale: false,
+  met: 1,
+  partial: 0,
+  total: 2,
+  skills: [],
+  projects: 0,
+  experienceMonths: 0,
+  graduationYear: null,
+}
+
 function renderJob() {
   return render(
     <MemoryRouter initialEntries={['/jobs/j1']}>
@@ -74,6 +104,7 @@ describe('JobDetailPage', () => {
       { path: '/me', body: recruiter },
       { path: '/stages', body: stages },
       { path: '/jobs/j1/applications', body: [row] },
+      { path: '/jobs/j1/insights', body: noInsights },
       { path: '/jobs/j1', body: job },
     ])
     renderJob()
@@ -104,6 +135,7 @@ describe('JobDetailPage', () => {
           ],
         },
       },
+      { path: '/jobs/j1/insights', body: noInsights },
       { path: '/jobs/j1', body: { ...job, stageCounts: {}, total: 0 } },
     ])
     renderJob()
@@ -130,6 +162,7 @@ describe('JobDetailPage', () => {
       { path: '/me', body: recruiter },
       { path: '/stages', body: stages },
       { path: '/jobs/j1/applications', body: [row] },
+      { path: '/jobs/j1/insights', body: noInsights },
       { path: '/jobs/j1', body: job },
       { method: 'PATCH', path: '/applications/a1/stage', body: { ...row, stage: 'REJECTED', stageLabel: 'Rejected' } },
       { path: '/applications/a1/history', body: [] },
@@ -175,6 +208,7 @@ describe('JobDetailPage', () => {
       { path: '/me', body: recruiter },
       { path: '/stages', body: stages },
       { path: '/jobs/j1/applications', body: more },
+      { path: '/jobs/j1/insights', body: noInsights },
       { path: '/jobs/j1', body: { ...job, total: 3 } },
       { path: '/applications/a3/history', body: [] },
       { path: '/candidates/p3/profile', body: { id: 'p3', name: 'Meera Iyer', email: 'meera@example.com', phone: '9123456780' } },
@@ -206,6 +240,7 @@ describe('JobDetailPage', () => {
       { path: '/me', body: recruiter },
       { path: '/stages', body: stages },
       { path: '/jobs/j1/applications', body: [row] },
+      { path: '/jobs/j1/insights', body: noInsights },
       { path: '/jobs/j1', body: job },
     ])
     renderJob()
@@ -222,6 +257,7 @@ describe('JobDetailPage', () => {
       { path: '/me', body: recruiter },
       { path: '/stages', body: stages },
       { path: '/jobs/j1/applications', body: [row] },
+      { path: '/jobs/j1/insights', body: noInsights },
       { path: '/jobs/j1', body: job },
       { path: '/assistant/status', body: { available: true } },
       {
@@ -249,6 +285,103 @@ describe('JobDetailPage', () => {
     const ask = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/jobs/j1/assistant'))!
     expect(JSON.parse(ask[1]!.body as string)).toEqual({ instruction: 'asha is shortlisted' })
     expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'PATCH')).toBe(false)
+  })
+
+  it('shows AI match scores, résumé filters, sorting and suggestions', async () => {
+    const ravi = { ...row, id: 'a2', candidateId: 'p2', name: 'Ravi Teja', email: 'ravi@example.com', phone: '9000000002', stage: 'SOURCED', stageLabel: 'Applied / Sourced' }
+    const asha = { ...row, stage: 'SOURCED', stageLabel: 'Applied / Sourced' }
+    fakeFetch([
+      { path: '/auth/session', body: { type: 'STAFF' } },
+      { path: '/me', body: recruiter },
+      { path: '/stages', body: stages },
+      { path: '/jobs/j1/applications', body: [asha, ravi] },
+      {
+        path: '/jobs/j1/insights',
+        body: {
+          ...noInsights,
+          available: true,
+          hasDescription: true,
+          analyzed: 2,
+          notAnalyzed: 0,
+          insights: [
+            { ...insight, applicationId: 'a1', fitPercent: 40, projects: 0, skills: ['Python'] },
+            { ...insight, applicationId: 'a2', fitPercent: 90, projects: 2, skills: ['Java', 'Spring Boot'] },
+          ],
+          contactNext: [{ applicationId: 'a2', candidateName: 'Ravi Teja', stageLabel: 'Applied / Sourced', fitPercent: 90, reason: 'Meets 3 of 3 requirements' }],
+        },
+      },
+      { path: '/jobs/j1', body: { ...job, total: 2 } },
+    ])
+    renderJob()
+
+    const panel = await screen.findByRole('region', { name: 'AI suggestions' })
+    expect(within(panel).getByText('Meets 3 of 3 requirements')).toBeInTheDocument()
+    expect(await screen.findByText('90%')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Upload résumés' })).toBeInTheDocument()
+
+    await userEvent.selectOptions(screen.getByLabelText('Sort candidates'), 'match')
+    const names = () => screen.getAllByRole('row').slice(1).map((r) => within(r).getAllByRole('button')[0].textContent)
+    expect(names()).toEqual(['Ravi Teja', 'Asha Rao'])
+
+    await userEvent.click(screen.getByRole('button', { name: /Has projects/ }))
+    expect(names()).toEqual(['Ravi Teja'])
+    await userEvent.click(screen.getByRole('button', { name: /Has projects/ }))
+    await userEvent.selectOptions(screen.getByLabelText('Filter by skill'), 'Python')
+    expect(names()).toEqual(['Asha Rao'])
+  })
+
+  it('answers a question with the candidates it points to', async () => {
+    const fetchMock = fakeFetch([
+      { path: '/auth/session', body: { type: 'STAFF' } },
+      { path: '/me', body: recruiter },
+      { path: '/stages', body: stages },
+      { path: '/jobs/j1/applications', body: [row] },
+      { path: '/jobs/j1/insights', body: noInsights },
+      { path: '/jobs/j1', body: job },
+      { path: '/assistant/status', body: { available: true } },
+      { path: '/applications/a1/insight', body: { applicationId: 'a1', status: 'NONE' } },
+      {
+        method: 'POST',
+        path: '/jobs/j1/assistant',
+        body: {
+          instruction: 'who has worked on spring boot projects?',
+          summary: 'Answered.',
+          aiGenerated: true,
+          actions: [],
+          unresolved: [],
+          notes: [],
+          answer: 'Asha built two Spring Boot projects.',
+          matches: [{ applicationId: 'a1', name: 'Asha Rao', stageLabel: 'Interviewed', fitPercent: 80, reason: 'Two Spring Boot projects' }],
+        },
+      },
+    ])
+    renderJob()
+
+    await userEvent.type(await screen.findByLabelText('Search candidates in this opening'), 'who has worked on spring boot projects?')
+    await userEvent.click(await screen.findByRole('button', { name: '✨ Ask AI' }))
+
+    const card = await screen.findByRole('region', { name: 'AI assistant suggestion' })
+    expect(within(card).getByText('Answered by AI')).toBeInTheDocument()
+    expect(within(card).getByText('Asha built two Spring Boot projects.')).toBeInTheDocument()
+    expect(within(card).getByText(/80% match · Two Spring Boot projects/)).toBeInTheDocument()
+    expect(within(card).queryByRole('button', { name: /Apply/ })).not.toBeInTheDocument()
+    await userEvent.click(within(card).getByRole('button', { name: 'Asha Rao' }))
+    // The candidate drawer opens and loads the AI reading of their résumé.
+    await vi.waitFor(() =>
+      expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/applications/a1/insight'))).toBe(true),
+    )
+  })
+})
+
+describe('matchesInsight', () => {
+  it('needs a read résumé and every chosen filter to match', () => {
+    const i = { ...insight, fitPercent: 80, projects: 1, experienceMonths: 0, skills: ['React'], graduationYear: 2026 }
+    expect(matchesInsight(undefined, [], '', '')).toBe(true)
+    expect(matchesInsight(undefined, ['strong'], '', '')).toBe(false)
+    expect(matchesInsight(i, ['strong', 'projects', 'fresher'], 'react', '2026')).toBe(true)
+    expect(matchesInsight(i, ['experience'], '', '')).toBe(false)
+    expect(matchesInsight(i, [], 'Java', '')).toBe(false)
+    expect(matchesInsight({ ...i, status: 'PENDING' }, ['strong'], '', '')).toBe(false)
   })
 })
 

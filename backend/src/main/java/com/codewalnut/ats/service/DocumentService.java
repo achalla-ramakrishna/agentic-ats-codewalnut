@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -64,6 +65,7 @@ public class DocumentService {
     private final ApplicationEventRepository eventRepository;
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
+    private final ApplicationEventPublisher events;
 
     // ---- staff ----
 
@@ -87,6 +89,7 @@ public class DocumentService {
         requireCandidate(candidateId);
         CandidateDocument saved = store(candidateId, kind, file, actor.getEmail());
         fulfil(candidateId, kind);
+        resumeAdded(candidateId, kind);
         auditService.record(actor, AuditAction.DOCUMENT_UPLOADED, "Candidate", candidateId,
                 Map.of("kind", kind, "documentId", saved.getId(), "bytes", saved.getSizeBytes()));
         return info(candidateId, saved.getId());
@@ -162,6 +165,7 @@ public class DocumentService {
         Candidate candidate = mine(account);
         CandidateDocument saved = store(candidate.getId(), kind, file, account.getEmail());
         fulfil(candidate.getId(), kind);
+        resumeAdded(candidate.getId(), kind);
         history(candidate.getId(), ApplicationEventType.DOC_UPLOADED, "Candidate uploaded: " + kind.getLabel(),
                 account.getEmail());
         auditService.recordAnonymous(account.getEmail(), AuditAction.DOCUMENT_UPLOADED,
@@ -180,11 +184,21 @@ public class DocumentService {
         if (file.getSize() > MAX_BYTES) {
             throw new IllegalArgumentException("file: must be 10 MB or smaller");
         }
-        String name = safeFileName(file.getOriginalFilename());
-        String extension = name.contains(".") ? name.substring(name.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT) : "";
+        return store(candidateId, kind, file.getOriginalFilename(), file.getBytes(), uploadedBy);
+    }
+
+    /** As above, for a file already in memory (e.g. a résumé from a bulk upload). */
+    CandidateDocument store(UUID candidateId, DocumentKind kind, String originalName, byte[] data, String uploadedBy) {
+        if (data == null || data.length == 0) {
+            throw new IllegalArgumentException("file: please choose a file");
+        }
+        if (data.length > MAX_BYTES) {
+            throw new IllegalArgumentException("file: must be 10 MB or smaller");
+        }
+        String name = safeFileName(originalName);
+        String extension = extension(name);
         boolean allowed = DOCUMENT_EXTENSIONS.contains(extension)
                 || (kind.isImagesAllowed() && IMAGE_EXTENSIONS.contains(extension));
-        byte[] data = file.getBytes();
         if (!allowed || !looksLike(extension, data)) {
             throw new IllegalArgumentException(kind.isImagesAllowed()
                     ? "file: only PDF, Word, JPG or PNG files are accepted"
@@ -199,6 +213,13 @@ public class DocumentService {
                 .data(data)
                 .uploadedBy(uploadedBy)
                 .build());
+    }
+
+    /** A new original résumé: its readings get refreshed after this transaction commits (ADR-0010). */
+    void resumeAdded(UUID candidateId, DocumentKind kind) {
+        if (kind == DocumentKind.ORIGINAL_RESUME) {
+            events.publishEvent(new ResumeAddedEvent(candidateId));
+        }
     }
 
     private void fulfil(UUID candidateId, DocumentKind kind) {
@@ -250,7 +271,16 @@ public class DocumentService {
         return data.length >= prefix.length && Arrays.equals(Arrays.copyOf(data, prefix.length), prefix);
     }
 
-    private static String safeFileName(String original) {
+    /** The lower-case extension of a file name, or "". */
+    static String extension(String name) {
+        return name != null && name.contains(".") ? name.substring(name.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT) : "";
+    }
+
+    static String contentType(String extension) {
+        return CONTENT_TYPES.get(extension);
+    }
+
+    static String safeFileName(String original) {
         String name = original == null ? "document" : original.replaceAll("^.*[\\\\/]", "");
         name = name.replaceAll("[^A-Za-z0-9._() -]", "_").trim();
         return name.isEmpty() ? "document" : name.length() > 200 ? name.substring(name.length() - 200) : name;

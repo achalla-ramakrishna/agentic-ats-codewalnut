@@ -11,12 +11,15 @@ import {
   type Stage,
 } from '../api/tracker'
 import { askAssistant, getAssistantStatus, type AssistantPlan } from '../api/assistant'
+import { getInsights, type InsightSummary, type InsightsResponse } from '../api/insights'
 import { useMe } from '../auth/AuthContext'
 import { AssistantPlanCard } from '../components/AssistantPlanCard'
 import { CandidateDrawer, type DrawerTab } from '../components/CandidateDrawer'
 import { TEMPLATE_FOR_STAGE } from '../components/emailTemplates'
 import { ImportCandidates } from '../components/ImportCandidates'
+import { FitBadge, InsightsPanel } from '../components/InsightsPanel'
 import { JobDetailsEditor } from '../components/JobDetailsEditor'
+import { ResumeUpload } from '../components/ResumeUpload'
 import { StageSelect } from '../components/StageSelect'
 import { Button, Card, PageHeader } from '../components/ui'
 import { useOpenFromQuery } from '../components/useOpenFromQuery'
@@ -38,6 +41,31 @@ export function matchesSearch(row: ApplicationRow, query: string): boolean {
   return q
     .split(/\s+/)
     .every((word) => row.name.toLowerCase().includes(word) || (row.email ?? '').toLowerCase().includes(word))
+}
+
+export type Category = 'strong' | 'good' | 'projects' | 'experience' | 'fresher'
+
+export const CATEGORIES: { key: Category; label: string; test: (i: InsightSummary) => boolean }[] = [
+  { key: 'strong', label: 'Strong match (75%+)', test: (i) => (i.fitPercent ?? -1) >= 75 },
+  { key: 'good', label: 'Good match (50–74%)', test: (i) => (i.fitPercent ?? -1) >= 50 && (i.fitPercent ?? 0) < 75 },
+  { key: 'projects', label: 'Has projects', test: (i) => i.projects > 0 },
+  { key: 'experience', label: 'Has work / internship experience', test: (i) => i.experienceMonths > 0 },
+  { key: 'fresher', label: 'No work experience yet', test: (i) => i.status === 'DONE' && i.experienceMonths === 0 },
+]
+
+/** Résumé-based filters: every chosen category, the skill and the graduation year must match. */
+export function matchesInsight(
+  insight: InsightSummary | undefined,
+  categories: Category[],
+  skill: string,
+  year: string,
+): boolean {
+  if (!categories.length && !skill && !year) return true
+  if (!insight || insight.status !== 'DONE') return false
+  if (!categories.every((c) => CATEGORIES.find((x) => x.key === c)!.test(insight))) return false
+  if (skill && !insight.skills.some((s) => s.toLowerCase() === skill.toLowerCase())) return false
+  if (year && String(insight.graduationYear ?? '') !== year) return false
+  return true
 }
 
 function AddCandidateForm({ jobId, onAdded, onCancel }: { jobId: string; onAdded: () => void; onCancel: () => void }) {
@@ -112,7 +140,12 @@ export function JobDetailPage() {
   const [plan, setPlan] = useState<AssistantPlan | null>(null)
   const [asking, setAsking] = useState(false)
   const [askError, setAskError] = useState<string | null>(null)
-  const [panel, setPanel] = useState<'none' | 'add' | 'import'>('none')
+  const [panel, setPanel] = useState<'none' | 'add' | 'import' | 'resumes'>('none')
+  const [insights, setInsights] = useState<InsightsResponse | null>(null)
+  const [sort, setSort] = useState<'name' | 'match' | 'recent'>('name')
+  const [categories, setCategories] = useState<Category[]>([])
+  const [skill, setSkill] = useState('')
+  const [year, setYear] = useState('')
   const [open, setOpen] = useState<ApplicationRow | null>(null)
   const [openTab, setOpenTab] = useState<DrawerTab>('profile')
   const [openTemplate, setOpenTemplate] = useState<string | undefined>()
@@ -124,6 +157,7 @@ export function JobDetailPage() {
   const load = useCallback(() => {
     getJob(id).then(setJob).catch((e: unknown) => setError(e instanceof Error ? e.message : 'Not found'))
     listApplications(id).then(setRows).catch(() => setRows([]))
+    getInsights(id).then(setInsights).catch(() => setInsights(null))
   }, [id])
   useEffect(load, [load])
   const openDrawer = useCallback((row: ApplicationRow, tab: DrawerTab = 'profile', template?: string) => {
@@ -132,6 +166,16 @@ export function JobDetailPage() {
     setOpenTemplate(template)
   }, [])
   useOpenFromQuery(rows, openDrawer)
+
+  // While résumés are being read, refresh the scores every few seconds.
+  const reading = insights?.pending ?? 0
+  useEffect(() => {
+    if (!reading) return
+    const timer = window.setInterval(() => {
+      getInsights(id).then(setInsights).catch(() => undefined)
+    }, 4000)
+    return () => window.clearInterval(timer)
+  }, [id, reading])
 
   async function onStage(row: ApplicationRow, stage: Stage) {
     const option = stages.find((s) => s.key === stage)
@@ -191,8 +235,41 @@ export function JobDetailPage() {
   if (error && !job) return <p role="alert" className="alert alert-error">{error}</p>
   if (!job) return <p className="muted">Loading…</p>
 
-  const visible = (rows ?? []).filter((r) => (!filter || r.stage === filter) && matchesSearch(r, query))
-  const filtering = query.trim() !== '' || filter !== null
+  const byApplication = new Map((insights?.insights ?? []).map((i) => [i.applicationId, i]))
+  const visible = (rows ?? [])
+    .filter(
+      (r) =>
+        (!filter || r.stage === filter) &&
+        matchesSearch(r, query) &&
+        matchesInsight(byApplication.get(r.id), categories, skill, year),
+    )
+    .sort((a, b) => {
+      if (sort === 'match') {
+        const fa = byApplication.get(a.id)?.fitPercent ?? -1
+        const fb = byApplication.get(b.id)?.fitPercent ?? -1
+        return fb - fa || a.name.localeCompare(b.name)
+      }
+      if (sort === 'recent') return b.updatedAt.localeCompare(a.updatedAt)
+      return 0
+    })
+  const filtering = query.trim() !== '' || filter !== null || categories.length > 0 || skill !== '' || year !== ''
+  const read = (insights?.insights ?? []).filter((i) => i.status === 'DONE')
+  const skillOptions = Array.from(
+    read.flatMap((i) => i.skills).reduce((m, s) => m.set(s.toLowerCase(), m.get(s.toLowerCase()) ?? s), new Map<string, string>()).values(),
+  ).sort((a, b) => a.localeCompare(b))
+  const yearOptions = Array.from(new Set(read.map((i) => i.graduationYear).filter((y): y is number => y != null))).sort()
+  const showMatch = !!insights && (insights.available || insights.insights.length > 0)
+  const openById = (applicationId: string) => {
+    const row = rows?.find((r) => r.id === applicationId)
+    if (row) openDrawer(row)
+  }
+  const clearAll = () => {
+    setQuery('')
+    setFilter(null)
+    setCategories([])
+    setSkill('')
+    setYear('')
+  }
 
 
   return (
@@ -208,6 +285,11 @@ export function JobDetailPage() {
         actions={
           canEdit ? (
             <>
+              {insights?.available && (
+                <Button variant="secondary" onClick={() => setPanel(panel === 'resumes' ? 'none' : 'resumes')}>
+                  Upload résumés
+                </Button>
+              )}
               <Button variant="secondary" onClick={() => setPanel(panel === 'import' ? 'none' : 'import')}>
                 Import from spreadsheet
               </Button>
@@ -267,6 +349,12 @@ export function JobDetailPage() {
           }}
         />
       )}
+      {panel === 'resumes' && (
+        <ResumeUpload jobId={job.id} onProgress={load} onClose={() => setPanel('none')} />
+      )}
+      {insights && showMatch && (rows?.length ?? 0) > 0 && (
+        <InsightsPanel jobId={job.id} data={insights} canEdit={canEdit} onOpen={openById} onChanged={load} />
+      )}
       {panel === 'import' && (
         <ImportCandidates
           jobId={job.id}
@@ -284,7 +372,11 @@ export function JobDetailPage() {
           className="input"
           type="search"
           aria-label="Search candidates in this opening"
-          placeholder={assistantOn ? 'Search, or tell the AI: “sagar, amogh are shortlisted”  ( / )' : 'Search by name, email or phone  ( / )'}
+          placeholder={
+            assistantOn
+              ? 'Search, or ask the AI: “who has worked on Spring Boot projects?” · “sagar, amogh are shortlisted”  ( / )'
+              : 'Search by name, email or phone  ( / )'
+          }
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
@@ -319,6 +411,7 @@ export function JobDetailPage() {
           plan={plan}
           onApplied={load}
           onClose={() => setPlan(null)}
+          onOpen={openById}
         />
       )}
       <div className="stage-chips" role="group" aria-label="Filter by stage">
@@ -341,6 +434,50 @@ export function JobDetailPage() {
           )
         })}
       </div>
+      {read.length > 0 && (
+        <div className="row" role="group" aria-label="Filter by résumé" style={{ gap: 8, flexWrap: 'wrap' }}>
+          {CATEGORIES.map((c) => {
+            const n = read.filter(c.test).length
+            const on = categories.includes(c.key)
+            return (
+              <button
+                type="button"
+                key={c.key}
+                className="stage-chip"
+                aria-pressed={on}
+                onClick={() => setCategories(on ? categories.filter((x) => x !== c.key) : [...categories, c.key])}
+              >
+                {c.label} <strong>{n}</strong>
+              </button>
+            )
+          })}
+          {skillOptions.length > 0 && (
+            <select className="select" aria-label="Filter by skill" value={skill} onChange={(e) => setSkill(e.target.value)}>
+              <option value="">Any skill</option>
+              {skillOptions.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          )}
+          {yearOptions.length > 0 && (
+            <select className="select" aria-label="Filter by graduation year" value={year} onChange={(e) => setYear(e.target.value)}>
+              <option value="">Any graduation year</option>
+              {yearOptions.map((y) => (
+                <option key={y} value={String(y)}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          )}
+          <select className="select" aria-label="Sort candidates" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
+            <option value="name">Sort: name</option>
+            <option value="match">Sort: best match (AI)</option>
+            <option value="recent">Sort: recently updated</option>
+          </select>
+        </div>
+      )}
       <Card>
         {!rows && <p className="muted">Loading…</p>}
         {rows && rows.length === 0 && (
@@ -354,14 +491,7 @@ export function JobDetailPage() {
               No candidates match{query.trim() ? ` “${query.trim()}”` : ''}
               {filter ? ` in ${stages.find((s) => s.key === filter)?.label ?? filter}` : ''}.
             </span>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setQuery('')
-                setFilter(null)
-              }}
-            >
+            <Button size="sm" variant="ghost" onClick={clearAll}>
               Clear search
             </Button>
           </div>
@@ -375,6 +505,7 @@ export function JobDetailPage() {
                   <th>Email</th>
                   <th>Phone</th>
                   <th>Résumés</th>
+                  {showMatch && <th title="Share of the opening’s requirements the résumé shows (AI, advisory)">Match</th>}
                   <th>Stage</th>
                   <th>Latest note</th>
                   <th>Updated</th>
@@ -400,6 +531,11 @@ export function JobDetailPage() {
                         </span>
                       </span>
                     </td>
+                    {showMatch && (
+                      <td>
+                        <FitBadge insight={byApplication.get(r.id)} />
+                      </td>
+                    )}
                     <td>
                       {canEdit ? (
                         <StageSelect label={`Stage for ${r.name}`} value={r.stage} onChange={(s) => void onStage(r, s)} />

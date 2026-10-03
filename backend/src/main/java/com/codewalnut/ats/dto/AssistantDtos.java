@@ -10,7 +10,7 @@ public final class AssistantDtos {
 
     private AssistantDtos() {}
 
-    public record AskRequest(@NotBlank @Size(max = 1000) String instruction) {}
+    public record AskRequest(@NotBlank @Size(max = 2000) String instruction) {}
 
     public record AssistantStatus(boolean available) {}
 
@@ -20,7 +20,10 @@ public final class AssistantDtos {
      */
     public record PlanResponse(
             String instruction, String summary, List<ProposedAction> actions, List<Unresolved> unresolved,
-            List<String> notes, boolean aiGenerated) {}
+            List<String> notes, boolean aiGenerated, String answer, List<Match> matches) {}
+
+    /** A candidate an answer points to; fitPercent from their résumé reading, if any. */
+    public record Match(UUID applicationId, String name, String stageLabel, Integer fitPercent, String reason) {}
 
     /** needsReason: moving here requires a reason and none was given. */
     public record ProposedAction(

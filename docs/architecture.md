@@ -46,6 +46,17 @@ names and stages plus the recruiter's instruction to Claude through
 output), validates the proposed actions and returns them for review; the
 UI applies them through the normal stage and note endpoints.
 
+Résumé intelligence (ADR-0010): `ResumeIntelligenceService` stores bulk
+uploads as `resume_intake` rows and hands them to `AiWorkQueue` (a small
+thread pool, run after commit; inline in tests). `ResumeProcessor` does the
+short database steps (match or add the person, attach the résumé, save the
+`candidate_insight`) around the slow `client/ClaudeResumeAnalyzer` call
+(PDF as a document block, .docx as text, structured `ResumeInsight`). A
+`ResumeAddedEvent` from job-link, recruiter and candidate uploads triggers a
+reading after commit. Match % and suggestions are computed in the service;
+the assistant receives compact profiles from the readings to answer
+questions. Dev and demo use the offline `KeywordResumeAnalyzer`.
+
 WhatsApp (ADR-0008): staff messages to a candidate can also go by WhatsApp —
 a `wa.me` click-to-chat link by default, or `client/WhatsAppCloudClient`
 (Meta Cloud API) when configured. Replies and receipts come in on

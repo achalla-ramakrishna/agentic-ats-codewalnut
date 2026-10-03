@@ -15,7 +15,8 @@ spring:
   servlet:
     multipart:
       max-file-size: 10MB
-      max-request-size: 11MB
+      # Bulk résumé uploads send several files per request (the page sends them in small batches).
+      max-request-size: 60MB
   # Google sign-in: set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (see
   # PaasEnvironmentPostProcessor). Without them the app starts with Google sign-in disabled.
 
@@ -50,6 +51,10 @@ ats:
     verify-token: ${WHATSAPP_VERIFY_TOKEN:}
     app-secret: ${WHATSAPP_APP_SECRET:}
     default-country-code: ${WHATSAPP_DEFAULT_COUNTRY_CODE:91}
+  # Résumé reading runs in the background, this many at a time (ADR-0010).
+  ai:
+    async: true
+    workers: ${ATS_AI_WORKERS:3}
 
 ---
 # Local development only, never on by default: same MySQL, plus fake seed users and the

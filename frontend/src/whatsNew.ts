@@ -16,6 +16,22 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-03-resume-intelligence',
+    date: '2026-10-03',
+    title: 'Upload résumés and let the AI sort them',
+    summary:
+      'Got a pile of résumés by email? Upload them all to an opening. The AI reads each one, adds the candidate at Applied / Sourced with their résumé, scores how well it matches the job description, and suggests whom to contact first and who is closest to selection.',
+    steps: [
+      'Save the résumés from Gmail (open the email → Download all).',
+      'Open the opening → Upload résumés → choose all the files. Make sure the opening has a job description.',
+      'Watch the Match column fill in. Sort by best match, or filter: strong match, has projects, has experience, skill, graduation year.',
+      'See “AI suggestions” for Contact next and Closest to selection. Click a name to open their AI résumé insights.',
+      'Ask questions in the search box, e.g. “who has worked on Spring Boot projects?” or “who hasn’t been interviewed yet?”, then ✨ Ask AI.',
+      'Scores are advice based on the résumé only. You decide.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-02-ai-assistant',
     date: '2026-10-02',
     title: 'Tell the AI what happened',

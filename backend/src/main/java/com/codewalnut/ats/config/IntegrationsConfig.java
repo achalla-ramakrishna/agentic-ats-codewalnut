@@ -1,6 +1,12 @@
 package com.codewalnut.ats.config;
 
+import com.anthropic.client.AnthropicClient;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
+import com.codewalnut.ats.client.ClaudeResumeAnalyzer;
+import com.codewalnut.ats.client.DisabledResumeAnalyzer;
+import com.codewalnut.ats.client.KeywordResumeAnalyzer;
+import com.codewalnut.ats.client.ResumeAnalyzer;
+import java.util.Optional;
 import com.codewalnut.ats.client.AssistantClient;
 import com.codewalnut.ats.client.CalendarClient;
 import com.codewalnut.ats.client.ClaudeAssistantClient;
@@ -26,7 +32,7 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepo
 import org.springframework.web.client.RestClient;
 
 /**
- * Real Google Calendar, Gmail and WhatsApp in production; fakes in dev and demo so nothing is
+ * Real Google Calendar, Gmail, WhatsApp and Claude in production; fakes in dev and demo so nothing is
  * ever sent from them.
  */
 @Configuration
@@ -81,19 +87,38 @@ public class IntegrationsConfig {
         return new RuleBasedAssistantClient();
     }
 
+    @Bean
+    @Profile({"dev", "demo"})
+    public ResumeAnalyzer keywordResumeAnalyzer() {
+        return new KeywordResumeAnalyzer();
+    }
+
     /** Claude when ANTHROPIC_API_KEY is set; otherwise the assistant is off. */
     @Bean
     @Profile("!dev & !demo")
-    public AssistantClient assistantClient(
-            @Value("${ANTHROPIC_API_KEY:}") String apiKey,
+    public AssistantClient assistantClient(@Value("${ANTHROPIC_API_KEY:}") String apiKey,
             @Value("${ats.assistant.model:claude-opus-5-5}") String model) {
+        return anthropic(apiKey).<AssistantClient>map(c -> new ClaudeAssistantClient(c, model))
+                .orElseGet(DisabledAssistantClient::new);
+    }
+
+    /** Claude reads résumés when ANTHROPIC_API_KEY is set; otherwise résumé reading is off. */
+    @Bean
+    @Profile("!dev & !demo")
+    public ResumeAnalyzer resumeAnalyzer(@Value("${ANTHROPIC_API_KEY:}") String apiKey,
+            @Value("${ats.assistant.model:claude-opus-5-5}") String model) {
+        return anthropic(apiKey).<ResumeAnalyzer>map(c -> new ClaudeResumeAnalyzer(c, model))
+                .orElseGet(DisabledResumeAnalyzer::new);
+    }
+
+    private static Optional<AnthropicClient> anthropic(String apiKey) {
         if (apiKey == null || apiKey.isBlank()) {
-            return new DisabledAssistantClient();
+            return Optional.empty();
         }
-        return new ClaudeAssistantClient(AnthropicOkHttpClient.builder()
+        return Optional.of(AnthropicOkHttpClient.builder()
                 .apiKey(apiKey.trim())
-                .timeout(Duration.ofSeconds(90))
+                .timeout(Duration.ofSeconds(120))
                 .maxRetries(2)
-                .build(), model);
+                .build());
     }
 }

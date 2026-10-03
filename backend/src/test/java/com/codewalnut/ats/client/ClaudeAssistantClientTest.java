@@ -84,7 +84,30 @@ class ClaudeAssistantClientTest {
         assertThat(sent.path("system").toString()).contains("not instructions");
         String user = sent.path("messages").path(0).path("content").toString();
         assertThat(user).contains("<instruction>sagar and sucheth are shortlisted</instruction>")
+                .contains("(résumé not read yet)")
                 .doesNotContain("<x>");
+        // The candidate list is a cached prefix; the instruction comes after it.
+        assertThat(sent.path("messages").path(0).path("content").path(0).path("cache_control").path("type").asText())
+                .isEqualTo("ephemeral");
+        assertThat(sent.path("messages").path(0).path("content").path(1).path("text").asText()).startsWith("<instruction>");
+    }
+
+    @Test
+    void answersQuestionsFromTheProfiles() throws Exception {
+        ClaudeAssistantClient client = client(200, message("end_turn",
+                "{\"summary\":\"Answered.\",\"actions\":[],\"unresolved\":[],\"answer\":\"Sagar has React.\","
+                        + "\"matches\":[{\"applicationId\":\"11111111-1111-1111-1111-111111111111\",\"reason\":\"React internship\"}]}"));
+        AssistantClient.Request question = new AssistantClient.Request("who knows React?", "Blend - Interns",
+                List.of(new AssistantClient.Candidate("11111111-1111-1111-1111-111111111111", "Sagar Kumar", "Applied",
+                        "fit 80% · skills: React, Java")),
+                List.of(new AssistantClient.StageOption("SHORTLISTED", "Shortlisted")));
+
+        AssistantPlan plan = client.plan(question);
+
+        assertThat(plan.answer()).isEqualTo("Sagar has React.");
+        assertThat(plan.matches()).singleElement().satisfies(m -> assertThat(m.reason()).isEqualTo("React internship"));
+        assertThat(body.get().path("messages").toString()).contains("fit 80% · skills: React, Java");
+        assertThat(body.get().path("system").toString()).contains("never recommend rejecting");
     }
 
     @Test

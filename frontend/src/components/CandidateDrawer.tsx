@@ -5,6 +5,7 @@ import { Conversation } from './Conversation'
 import { DocumentsSection } from './DocumentsSection'
 import { InterviewsPanel } from './InterviewsPanel'
 import { ProfileSection } from './ProfileSection'
+import { ResumeInsightSection } from './ResumeInsightSection'
 import { ShareWithClient } from './ShareWithClient'
 import { Button } from './ui'
 import { useStages } from './useStages'
@@ -146,6 +147,7 @@ export function CandidateDrawer({
                 onChanged()
               }}
             />
+            <ResumeInsightSection applicationId={row.id} canEdit={canEdit} />
             {error && (
               <div role="alert" className="alert alert-error">
                 {error}
