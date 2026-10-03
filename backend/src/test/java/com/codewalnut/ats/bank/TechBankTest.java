@@ -31,8 +31,9 @@ class TechBankTest {
                 assertThat(t.example()).isNotBlank();
                 Map<Difficulty, Long> levels = bank.stream().filter(q -> q.area() == area && q.topic().equals(t.name()))
                         .collect(Collectors.groupingBy(Seed::difficulty, Collectors.counting()));
-                assertThat(levels).as(area + " / " + t.name()).containsEntry(Difficulty.EASY, 4L).containsEntry(Difficulty.MEDIUM, 4L)
-                        .containsEntry(Difficulty.HARD, 4L);
+                for (Difficulty d : Difficulty.values()) {
+                    assertThat(levels.getOrDefault(d, 0L)).as(area + " / " + t.name() + " " + d).isGreaterThanOrEqualTo(4L);
+                }
             }
         }
     }

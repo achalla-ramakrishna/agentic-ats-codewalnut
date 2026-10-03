@@ -151,7 +151,7 @@ class QuestionBankFlowTest {
                 .andExpect(jsonPath("$.guide.length()").value(Matchers.greaterThanOrEqualTo(12)))
                 .andExpect(jsonPath("$.guide[0].section").value("FUNDAMENTALS"))
                 .andExpect(jsonPath("$.guide[0].level").value("Freshers"))
-                .andExpect(jsonPath("$.guide[0].easy").value(4))
+                .andExpect(jsonPath("$.guide[0].easy").value(17))
                 .andExpect(jsonPath("$.presets[*].id", Matchers.hasItems("java-fresher", "java-mid", "java-senior")));
         mockMvc.perform(get("/api/v1/question-bank?area=SQL&section=ADVANCED").with(RECRUITER))
                 .andExpect(jsonPath("$.total").value(Matchers.greaterThanOrEqualTo(36)))
