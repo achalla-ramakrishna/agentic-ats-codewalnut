@@ -1,6 +1,8 @@
 package com.codewalnut.ats.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -10,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
@@ -25,6 +28,7 @@ public class Judge0CodeRunner implements CodeRunner {
     private static final Duration POLL_EVERY = Duration.ofMillis(400);
     private static final Duration GIVE_UP_AFTER = Duration.ofSeconds(90);
     private static final int MAX_TEXT = 20_000;
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private final RestClient http;
     private final Map<String, Integer> languageIds;
@@ -67,8 +71,11 @@ public class Judge0CodeRunner implements CodeRunner {
         }
         List<String> tokens = new ArrayList<>();
         try {
+            // A sized body (not chunked), which every proxy in front of Judge0 accepts.
+            byte[] body = JSON.writeValueAsBytes(Map.of("submissions", submissions));
             JsonNode created = http.post().uri("/submissions/batch?base64_encoded=true")
-                    .body(Map.of("submissions", submissions)).retrieve().body(JsonNode.class);
+                    .contentType(MediaType.APPLICATION_JSON).contentLength(body.length).body(body)
+                    .retrieve().body(JsonNode.class);
             for (JsonNode n : created) {
                 if (!n.hasNonNull("token")) {
                     throw new UnavailableException("Judge0 refused a submission: " + n, null);
@@ -91,6 +98,8 @@ public class Judge0CodeRunner implements CodeRunner {
                 }
                 Thread.sleep(POLL_EVERY.toMillis());
             }
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
         } catch (RestClientException e) {
             throw new UnavailableException("Judge0 call failed: " + e.getMessage(), e);
         } catch (InterruptedException e) {
