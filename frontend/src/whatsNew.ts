@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-04-admin-updates',
+    date: '2026-10-04',
+    title: 'Admin updates: feedback and shortlists at a glance',
+    summary: 'Admins now get a short candidate summary when someone submits interview feedback, and when a candidate is Shortlisted, Selected, accepts an offer or joins. It lists the candidate’s details, test scores and the panel’s recommendations. Each update is kept under Admin updates and emailed to admins from the sender’s Gmail when it’s connected.',
+    steps: [
+      'Open Admin updates in the menu.',
+      'Filter by Interview feedback or Stage changes; open the candidate or the feedback from any update.',
+    ],
+    link: { to: '/admin/updates', label: 'Open Admin updates' },
+    capability: 'VIEW_ADMIN_UPDATES',
+  },
+  {
     id: '2026-10-04-interview-feedback',
     date: '2026-10-04',
     title: 'Feedback form after each interview',

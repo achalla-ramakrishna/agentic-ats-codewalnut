@@ -21,5 +21,7 @@ public enum Capability {
     VIEW_APPROVALS,
     VIEW_REPORTS,
     MANAGE_USERS,
-    VIEW_AUDIT_LOG
+    VIEW_AUDIT_LOG,
+    /** Candidate summaries when feedback comes in or a key stage is reached (admins only). */
+    VIEW_ADMIN_UPDATES
 }

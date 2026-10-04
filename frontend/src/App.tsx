@@ -2,6 +2,7 @@ import { useEffect, type ReactElement } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext'
 import { AppShell } from './components/AppShell'
+import { AdminUpdatesPage } from './pages/AdminUpdatesPage'
 import { AuditLogPage } from './pages/AuditLogPage'
 import { CandidatesPage } from './pages/CandidatesPage'
 import { ClientHomePage } from './pages/ClientHomePage'
@@ -41,6 +42,7 @@ const SCREENS: Record<string, ReactElement> = {
   reports: <ComingSoonPage title="Reports" chunk="v1" spec="reports.md" />,
   users: <UsersPage />,
   'audit-log': <AuditLogPage />,
+  'admin-updates': <AdminUpdatesPage />,
 }
 
 /** After signing in from a job link, go back to that job page. */

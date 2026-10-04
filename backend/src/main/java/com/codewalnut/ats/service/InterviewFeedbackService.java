@@ -63,6 +63,7 @@ public class InterviewFeedbackService {
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
+    private final AdminUpdateService adminUpdates;
 
     @Transactional(readOnly = true)
     public InterviewFeedbackPage page(AppUser actor, UUID interviewId) {
@@ -119,6 +120,10 @@ public class InterviewFeedbackService {
         auditService.record(actor, created ? AuditAction.INTERVIEW_FEEDBACK_SUBMITTED : AuditAction.INTERVIEW_FEEDBACK_UPDATED,
                 "Interview", interviewId, Map.of("attendance", request.attendance().name(),
                         "recommendation", request.recommendation() == null ? "" : request.recommendation().name()));
+        if (created) {
+            adminUpdates.feedbackSubmitted(actor, interview, view(f),
+                    feedbackRepository.findByInterviewIdOrderBySubmittedAtAsc(interviewId));
+        }
         return page(actor, interviewId);
     }
 

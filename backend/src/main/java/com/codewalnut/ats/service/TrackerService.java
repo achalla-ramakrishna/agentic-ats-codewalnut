@@ -66,6 +66,7 @@ public class TrackerService {
     private final CandidateDocumentRepository documentRepository;
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
+    private final AdminUpdateService adminUpdates;
 
     // ---- clients ----
 
@@ -295,6 +296,7 @@ public class TrackerService {
                 .note(note)
                 .actorEmail(actor.getEmail())
                 .build());
+        adminUpdates.stageChanged(actor, application, from, request.stage(), note);
         return ApplicationResponse.from(application, note != null ? note : lastNote(applicationId));
     }
 

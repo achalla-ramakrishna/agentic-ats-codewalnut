@@ -96,6 +96,14 @@ giving theirs; staff with VIEW_CANDIDATES see it all; interviewers without it
 get "not found" for interviews they weren't on. Endpoints live on
 `InterviewController`.
 
+Admin updates (ADR-0018): `InterviewFeedbackService` (first submission) and
+`TrackerService.moveStage` (key stages only) call `AdminUpdateService`, which
+saves an `admin_update` row in the same transaction and publishes an event. An
+after-commit listener, still on the request thread so the actor's Google token
+is available, emails the other active admins through `MailClient` and records
+the outcome in a new transaction. `GET /api/v1/admin-updates` needs
+VIEW_ADMIN_UPDATES (admins only).
+
 View as (ADR-0013): a session attribute makes the `Current*Service`
 resolvers return a candidate, client contact or role-limited copy of the
 admin; `ViewAsReadOnlyFilter` refuses API writes while it is set.
