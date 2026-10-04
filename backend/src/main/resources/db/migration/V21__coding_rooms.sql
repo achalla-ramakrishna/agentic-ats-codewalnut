@@ -1,0 +1,26 @@
+-- Live coding rooms (INT-36…): one per interview. The candidate opens a private link, signs in,
+-- writes and runs code on sample tests; the panel watches live. Staff notes stay internal.
+CREATE TABLE coding_room (
+    id BINARY(16) NOT NULL PRIMARY KEY,
+    interview_id BINARY(16) NOT NULL,
+    token VARCHAR(40) NOT NULL,
+    problem_id VARCHAR(80),
+    title VARCHAR(200) NOT NULL,
+    statement TEXT NOT NULL,
+    spec_json TEXT NOT NULL,
+    language VARCHAR(20) NOT NULL,
+    code MEDIUMTEXT,
+    status VARCHAR(10) NOT NULL,
+    run_count INT NOT NULL DEFAULT 0,
+    last_run_json MEDIUMTEXT,
+    history_json MEDIUMTEXT,
+    notes TEXT,
+    created_by VARCHAR(254) NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    code_updated_at DATETIME(6),
+    candidate_seen_at DATETIME(6),
+    ended_at DATETIME(6),
+    CONSTRAINT fk_coding_room_interview FOREIGN KEY (interview_id) REFERENCES interview (id),
+    CONSTRAINT uk_coding_room_interview UNIQUE (interview_id),
+    CONSTRAINT uk_coding_room_token UNIQUE (token)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

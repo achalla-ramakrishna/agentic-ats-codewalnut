@@ -15,6 +15,7 @@ import {
   type Recommendation,
 } from '../api/interviews'
 import { useMe } from '../auth/AuthContext'
+import { CodingRoomPanel } from '../components/CodingRoomPanel'
 import { Badge, Button, Card, PageHeader } from '../components/ui'
 import '../components/tracker.css'
 
@@ -372,6 +373,7 @@ export function InterviewFeedbackPage() {
           · <Link to={`/interview-kits/${i.jobId}`}>Interview kit</Link>
         </div>
       )}
+      <CodingRoomPanel interviewId={i.id} jobId={i.jobId} cancelled={i.status === 'CANCELLED'} />
       {page.canSubmit && open && (
         <Card>
           <FeedbackForm

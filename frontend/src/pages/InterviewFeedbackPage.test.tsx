@@ -57,6 +57,8 @@ const theirs = {
   updatedAt: '2026-01-15T07:00:00Z',
 }
 
+const noRoom = { room: null, canManage: true, runnerAvailable: true, candidateHasEmail: false }
+
 const before = { interview, onPanel: true, canSubmit: true, mine: null, others: [], hiddenCount: 1, competencies }
 
 function renderPage() {
@@ -77,6 +79,7 @@ describe('InterviewFeedbackPage (INT-24…INT-26)', () => {
     const fetch = fakeFetch([
       { path: '/auth/session', body: { type: 'STAFF' } },
       { path: '/me', body: interviewer },
+      { path: '/interviews/i1/coding-room', body: noRoom },
       { path: '/interviews/i1/feedback', body: before },
       { method: 'PUT', path: '/interviews/i1/feedback', body: { ...before, mine, others: [theirs], hiddenCount: 0 } },
     ])
@@ -115,6 +118,7 @@ describe('InterviewFeedbackPage (INT-24…INT-26)', () => {
     const fetch = fakeFetch([
       { path: '/auth/session', body: { type: 'STAFF' } },
       { path: '/me', body: interviewer },
+      { path: '/interviews/i1/coding-room', body: noRoom },
       { path: '/interviews/i1/feedback', body: before },
       { method: 'PUT', path: '/interviews/i1/feedback', body: before },
     ])
@@ -141,6 +145,7 @@ describe('InterviewFeedbackPage (INT-24…INT-26)', () => {
     const fetch = fakeFetch([
       { path: '/auth/session', body: { type: 'STAFF' } },
       { path: '/me', body: interviewer },
+      { path: '/interviews/i1/coding-room', body: noRoom },
       { path: '/interviews/i1/feedback', body: before },
       { method: 'PUT', path: '/interviews/i1/feedback', body: { ...before, mine: draftMine } },
     ])

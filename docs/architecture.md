@@ -118,6 +118,14 @@ and the feedback competencies. The result is stored as JSON in `interview_kit`
 shows as out of date. `InterviewFeedbackService` adds the kit's must-haves to
 the feedback form.
 
+Live coding rooms (ADR-0020): `CodingRoomService` keeps one `coding_room` per
+interview with a private token, the current problem (a `CodingBank` problem or
+one the interviewer typed, as a `CodingSpec`), the candidate's latest code,
+the last run and earlier problems. The candidate page saves code with PUT and
+runs it through `CodeRunService.runOnSamples` (Judge0); the staff panel polls
+the room every two seconds. The candidate endpoints resolve the room by token
+and answer 404 unless the signed-in candidate's email is the application's.
+
 View as (ADR-0013): a session attribute makes the `Current*Service`
 resolvers return a candidate, client contact or role-limited copy of the
 admin; `ViewAsReadOnlyFilter` refuses API writes while it is set.

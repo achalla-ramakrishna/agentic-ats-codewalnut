@@ -81,6 +81,16 @@ public class CodeRunService {
         return result(cases, ticket.runsLeft());
     }
 
+    /** A live coding room's Run: code against a problem's sample tests (INT-37). */
+    public RunCodeResult runOnSamples(CodingSpec spec, String language, String source, int runsLeft) {
+        requireRunner();
+        if (!spec.languages().contains(language)) {
+            throw new IllegalArgumentException("language: choose one of " + String.join(", ", spec.languages()));
+        }
+        List<TestCase> samples = spec.samples();
+        return result(run(spec, language, source, samples, samples.size(), true), runsLeft);
+    }
+
     /** Staff checking a question: a solution against every test, with inputs and expected outputs shown. */
     public RunCodeResult tryQuestion(AppUser actor, UUID assessmentId, UUID questionId, RunCodeRequest request) {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);

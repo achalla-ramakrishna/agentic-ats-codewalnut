@@ -20,6 +20,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
 import { NoAccessPage } from './pages/NoAccessPage'
 import { PublicJobPage, RETURN_TO_KEY } from './pages/PublicJobPage'
+import { CodingRoomPage } from './pages/CodingRoomPage'
 import { TakeTestPage } from './pages/TakeTestPage'
 import { TestsPage } from './pages/TestsPage'
 import { ViewAsPage } from './pages/ViewAsPage'
@@ -58,7 +59,7 @@ function useReturnAfterSignIn(ready: boolean) {
     } catch {
       target = null
     }
-    if (target && (target.startsWith('/apply/') || target.startsWith('/tests/'))) navigate(target, { replace: true })
+    if (target && (target.startsWith('/apply/') || target.startsWith('/tests/') || target.startsWith('/coding/'))) navigate(target, { replace: true })
   }, [ready, navigate])
 }
 
@@ -104,6 +105,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/apply/:slug" element={<PublicJobPage />} />
         <Route path="/tests/:id" element={<TakeTestPage />} />
+        <Route path="/coding/:token" element={<CodingRoomPage />} />
         <Route path="*" element={<CandidateHomePage candidate={state.candidate} />} />
       </Routes>
     )
@@ -116,6 +118,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/apply/:slug" element={<PublicJobPage />} />
         <Route path="/tests/:id" element={<LoginForTest />} />
+        <Route path="/coding/:token" element={<LoginForTest />} />
         <Route path="*" element={<LoginPage />} />
       </Routes>
     )

@@ -16,6 +16,20 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-04-coding-room',
+    date: '2026-10-04',
+    title: 'Live coding rooms in interviews',
+    summary: 'Give a candidate a coding problem during the interview and watch their code as they type. They write and run it in their browser (Java, Python, JavaScript or C++); you see each change, their run results and can switch to the next problem. Your notes stay private.',
+    steps: [
+      'Open the interview’s feedback page (Interviews → Feedback or Give feedback).',
+      'Under Coding room, pick a problem from the interview kit or the built-in list, or type your own, then Open coding room.',
+      'Copy the link and paste it in the Meet chat. The candidate signs in with their email; ask them to share their screen too.',
+      'Watch their code, Run it, go to the Next problem, and End room when you’re done.',
+    ],
+    link: { to: '/interviews', label: 'Open Interviews' },
+    capability: 'VIEW_INTERVIEWS',
+  },
+  {
     id: '2026-10-04-reschedule',
     date: '2026-10-04',
     title: 'Reschedule interviews',

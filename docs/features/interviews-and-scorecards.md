@@ -78,6 +78,10 @@ A simpler first cut of INT-01 and INT-03, decided in ADR-0005.
 | INT-33 | **Log an interview held elsewhere** (recruiters and admins), from the candidate's panel: a Meet or call set up outside the app, already held or happening now (last 90 days). No calendar event or email; it adds the interview (the logger is organiser, plus listed interviewers) so the panel can give feedback. History notes it as logged. | Done |
 | INT-34 | **Recent interviews and feedback** on the Interviews page: every interview that started in the last 30 days (hiring staff see all; interviewers only theirs), with how many have given feedback, whether yours is due, and a **Give feedback** / **View feedback** button. The candidate's panel always shows the feedback link, or says it opens when the interview starts. | Done |
 | INT-35 | **Fill the form during the interview**: it's available any time for an interview that isn't cancelled, because interviews happen early or late (if the scheduled time is still ahead, the page says so and suggests cancelling or rescheduling the invite). Until submitted, it saves itself as a **private draft** a couple of seconds after each change (or with Save draft); a draft needs nothing filled in, isn't visible to anyone else, doesn't count as feedback in progress counts or "yours is due", and sends no admin update. While the interview is on, the page says so, with the Meet link and the interview kit. Submitting (recommendation required when it took place) shares it with the panel; a submitted form can be updated but not turned back into a draft. | Done |
+| INT-36 | **Live coding room**: on an interview's feedback page, the panel (or a recruiter) opens a coding room with a problem: one from the opening's interview kit, any built-in coding problem, or one they type (title, statement, optional sample). The page gives a private link to paste in the Meet chat. Not for cancelled interviews; the candidate needs an email on file. Opening and ending are audited. | Done |
+| INT-37 | **The candidate's side**: the link opens a page where the candidate, signed in with the email on their application, sees the problem, picks a language (Java, Python, JavaScript, C++), writes code and runs it on the samples in the Judge0 sandbox (up to 200 runs). Code saves itself about a second after each change. Anyone else, signed in or not, gets "not found". When the interviewer switches problem it appears within a few seconds; once ended the page is read-only. They still share their screen in Meet. | Done |
+| INT-38 | **Watching**: the panel sees the candidate's code update every couple of seconds, the language, when it last changed, whether the candidate has the room open, and the last run. They can run the current code on the samples themselves (it doesn't use up the candidate's runs), switch to the next problem (the previous one, its code and result are kept under Earlier problems) and end the room. | Done |
+| INT-39 | **Private notes** in the room for the panel, saved as they type. Candidates never see notes, earlier problems or the interviewer's view. Staff who can see the interview but aren't on the panel see the room read-only. | Done |
 
 ## Business rules
 
@@ -108,9 +112,9 @@ A simpler first cut of INT-01 and INT-03, decided in ADR-0005.
   panel see it only after giving theirs; staff who weren't on the panel see it
   all; candidates and client contacts get no access.
 
-Tests: `InterviewFlowTest`, `InterviewFeedbackFlowTest`, `InterviewKitFlowTest`, `InterviewKitServiceTest`, `GoogleCalendarClientTest`,
+Tests: `InterviewFlowTest`, `InterviewFeedbackFlowTest`, `InterviewKitFlowTest`, `InterviewKitServiceTest`, `CodingRoomFlowTest`, `GoogleCalendarClientTest`,
 `GoogleSignInConfiguredTest` (backend); `InterviewsPanel.test.tsx`,
-`InterviewFeedbackPage.test.tsx`, `InterviewKitPage.test.tsx` (frontend).
+`InterviewFeedbackPage.test.tsx`, `InterviewKitPage.test.tsx`, `CodingRoomPanel.test.tsx`, `CodingRoomPage.test.tsx` (frontend).
 
 - **INT-AC1** Given an interviewer who hasn't submitted, when they open the
   debrief, then peer feedback is hidden. (Done: INT-26.)
@@ -123,7 +127,7 @@ Tests: `InterviewFlowTest`, `InterviewFeedbackFlowTest`, `InterviewKitFlowTest`,
 
 Built: `Interview`, `InterviewFeedback` (table `interview_feedback`, V17: one
 row per interview and author email; ratings as JSON; attendance;
-recommendation). Planned: `InterviewPanelMember`, `ScorecardTemplate` (per-role
+recommendation), `CodingRoom` (table `coding_room`, V21: one per interview; private token, current problem, code, last run, earlier problems and notes as JSON). Planned: `InterviewPanelMember`, `ScorecardTemplate` (per-role
 areas instead of the six defaults).
 
 ## API
@@ -134,7 +138,10 @@ Built: `GET /google/status`, `GET /google/connect?returnTo=`,
 `GET /candidate/interviews`, `GET/PUT /interviews/{id}/feedback`,
 `GET /interviews/feedback-due`, `GET /applications/{id}/interview-feedback`,
 `GET/POST /jobs/{id}/interview-kit`, `GET /interviews/recent`,
-`POST /applications/{id}/interviews/log`.
+`POST /applications/{id}/interviews/log`, `GET /coding-problems`,
+`GET/POST /interviews/{id}/coding-room`, `POST /interviews/{id}/coding-room/end`,
+`PUT /interviews/{id}/coding-room/notes`, `POST /interviews/{id}/coding-room/run`,
+candidate: `GET/PUT /candidate/coding/{token}`, `POST /candidate/coding/{token}/run`.
 
 Planned:
 
@@ -146,6 +153,7 @@ public: `GET/POST /book/{token}`.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-04 | Live coding rooms: the candidate codes and runs in the browser while the panel watches (INT-36 to INT-39, ADR-0020) |
 | 2026-10-04 | Feedback no longer waits for the scheduled time; Feedback buttons on upcoming interviews; scheduling defaults to today |
 | 2026-10-04 | Reschedule interviews in place, keeping the Meet link (INT-20) |
 | 2026-10-04 | Interview questions grown to 645 in 23 categories (new: Spring Boot and Hibernate, HTML/CSS, microservices, security, testing, Git and practices) |
