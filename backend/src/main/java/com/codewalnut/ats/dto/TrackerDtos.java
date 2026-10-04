@@ -36,6 +36,9 @@ public final class TrackerDtos {
 
     public record CreateClientRequest(@NotBlank @Size(max = 200) String name, @Size(max = 2000) String notes) {}
 
+    /** Rename a client or change its notes; null leaves a field as it is. */
+    public record UpdateClientRequest(@Size(min = 1, max = 200) String name, @Size(max = 2000) String notes) {}
+
     public record JobResponse(
             UUID id, String title, ClientResponse client, HiringType hiringType, String hiringTypeLabel,
             Integer openings, JobStatus status, String description, String location, WorkMode workMode,
@@ -67,7 +70,9 @@ public final class TrackerDtos {
             @Size(max = 200) String location,
             WorkMode workMode,
             @Size(max = 100) String employmentType,
-            Boolean published) {}
+            Boolean published,
+            UUID clientId,
+            HiringType hiringType) {}
 
     /** What anyone with the link sees. No client name, no counts, no internal data. */
     public record PublicJobResponse(

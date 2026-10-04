@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-04-edit-opening',
+    date: '2026-10-04',
+    title: 'Rename openings and clients',
+    summary: 'Openings can now be renamed and moved to another client or hiring type, and clients can be renamed. If candidates in an opening are shared with its client, stop sharing them before moving it to another client.',
+    steps: [
+      'Open an opening and click Edit opening at the top.',
+      'Change the name, hiring type, client or people needed, then Save.',
+      'To rename a client, open Clients and click Rename next to its name.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-04-interview-kits',
     date: '2026-10-04',
     title: 'Interview kits from the job description',

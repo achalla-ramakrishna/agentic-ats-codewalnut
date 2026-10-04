@@ -27,12 +27,14 @@ import com.codewalnut.ats.dto.TrackerDtos.ImportResult;
 import com.codewalnut.ats.dto.TrackerDtos.ImportRow;
 import com.codewalnut.ats.dto.TrackerDtos.JobResponse;
 import com.codewalnut.ats.dto.TrackerDtos.MoveStageRequest;
+import com.codewalnut.ats.dto.TrackerDtos.UpdateClientRequest;
 import com.codewalnut.ats.dto.TrackerDtos.UpdateJobRequest;
 import com.codewalnut.ats.repository.ApplicationEventRepository;
 import com.codewalnut.ats.repository.ApplicationRepository;
 import com.codewalnut.ats.repository.CandidateDocumentRepository;
 import com.codewalnut.ats.repository.CandidateRepository;
 import com.codewalnut.ats.repository.ClientRepository;
+import com.codewalnut.ats.repository.ClientShareRepository;
 import com.codewalnut.ats.repository.JobOpeningRepository;
 import com.codewalnut.ats.security.AccessPolicy;
 import com.codewalnut.ats.security.Capability;
@@ -69,6 +71,7 @@ public class TrackerService {
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
     private final AdminUpdateService adminUpdates;
+    private final ClientShareRepository shareRepository;
 
     // ---- clients ----
 
@@ -76,6 +79,31 @@ public class TrackerService {
     public List<Client> listClients(AppUser actor) {
         accessPolicy.require(actor, Capability.VIEW_JOBS);
         return clientRepository.findAllByOrderByNameAsc();
+    }
+
+    /** Rename a client (or edit its notes). The name shows on its openings, shares and client logins. */
+    @Transactional
+    public Client updateClient(AppUser actor, UUID id, UpdateClientRequest request) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        Client client = clientRepository.findById(id).orElseThrow(() -> new NotFoundException("Client not found"));
+        Map<String, Object> changes = new LinkedHashMap<>();
+        if (request.name() != null && !request.name().isBlank() && !request.name().trim().equals(client.getName())) {
+            String name = request.name().trim();
+            if (!name.equalsIgnoreCase(client.getName()) && clientRepository.existsByNameIgnoreCase(name)) {
+                throw new ConflictException("A client with this name already exists");
+            }
+            changes.put("name", Map.of("from", client.getName(), "to", name));
+            client.setName(name);
+        }
+        if (request.notes() != null) {
+            client.setNotes(request.notes().isBlank() ? null : request.notes());
+            changes.put("notes", "changed");
+        }
+        if (!changes.isEmpty()) {
+            clientRepository.save(client);
+            auditService.record(actor, AuditAction.CLIENT_UPDATED, "Client", id, changes);
+        }
+        return client;
     }
 
     @Transactional
@@ -167,6 +195,7 @@ public class TrackerService {
             job.setEmploymentType(request.employmentType().isBlank() ? null : request.employmentType().trim());
             changes.put("employmentType", "changed");
         }
+        changeClient(job, request, changes);
         if (request.published() != null && request.published() != job.isPublished()) {
             if (request.published() && job.getPublicSlug() == null) {
                 job.setPublicSlug(PublicLinks.newSlug());
@@ -345,6 +374,42 @@ public class TrackerService {
         auditService.record(actor, AuditAction.CANDIDATE_ADDED_TO_OPENING, "Application", added.getId(),
                 Map.of("fromApplication", applicationId.toString(), "job", target.getId().toString()));
         return ApplicationResponse.from(added, "Added from " + describe(from.getJob()) + extra);
+    }
+
+    /**
+     * Hiring type and client changes. An internal opening has no client; a client opening needs one.
+     * Moving an opening to another client is refused while its candidates are still shared with the
+     * current one, so the old client never keeps seeing an opening that is no longer theirs.
+     */
+    private void changeClient(JobOpening job, UpdateJobRequest request, Map<String, Object> changes) {
+        HiringType type = request.hiringType() != null ? request.hiringType() : job.getHiringType();
+        Client client = job.getClient();
+        if (request.clientId() != null) {
+            client = clientRepository.findById(request.clientId()).orElseThrow(() -> new NotFoundException("Client not found"));
+        }
+        if (type == HiringType.INTERNAL) {
+            client = null;
+        } else if (client == null) {
+            throw new IllegalArgumentException("clientId: a client opening needs a client");
+        }
+        UUID before = job.getClient() == null ? null : job.getClient().getId();
+        UUID after = client == null ? null : client.getId();
+        if (!java.util.Objects.equals(before, after)) {
+            long shared = applicationRepository.findByJobIdOrderByCandidateNameAsc(job.getId()).stream()
+                    .map(a -> shareRepository.findByApplicationId(a.getId()).orElse(null))
+                    .filter(sh -> sh != null && sh.getRevokedAt() == null).count();
+            if (shared > 0) {
+                throw new ConflictException("Stop sharing " + shared + (shared == 1 ? " candidate" : " candidates") + " with "
+                        + job.getClient().getName() + " first, then change the client.");
+            }
+            changes.put("client", Map.of("from", before == null ? "none" : job.getClient().getName(),
+                    "to", client == null ? "none" : client.getName()));
+            job.setClient(client);
+        }
+        if (type != job.getHiringType()) {
+            changes.put("hiringType", Map.of("from", job.getHiringType(), "to", type));
+            job.setHiringType(type);
+        }
     }
 
     private static String describe(JobOpening job) {

@@ -22,6 +22,7 @@ import { FitBadge, InsightsPanel } from '../components/InsightsPanel'
 import { JobDetailsEditor } from '../components/JobDetailsEditor'
 import { ResumeUpload } from '../components/ResumeUpload'
 import { StageSelect } from '../components/StageSelect'
+import { EditOpeningForm } from '../components/EditOpeningForm'
 import { Button, Card, PageHeader } from '../components/ui'
 import { useOpenFromQuery } from '../components/useOpenFromQuery'
 import { useStages } from '../components/useStages'
@@ -141,7 +142,7 @@ export function JobDetailPage() {
   const [plan, setPlan] = useState<AssistantPlan | null>(null)
   const [asking, setAsking] = useState(false)
   const [askError, setAskError] = useState<string | null>(null)
-  const [panel, setPanel] = useState<'none' | 'add' | 'import' | 'resumes'>('none')
+  const [panel, setPanel] = useState<'none' | 'add' | 'import' | 'resumes' | 'edit'>('none')
   const [insights, setInsights] = useState<InsightsResponse | null>(null)
   const [sort, setSort] = useState<'name' | 'match' | 'recent'>('name')
   const [categories, setCategories] = useState<Category[]>([])
@@ -301,6 +302,9 @@ export function JobDetailPage() {
             )}
             {canEdit && (
               <>
+                <Button variant="secondary" onClick={() => setPanel(panel === 'edit' ? 'none' : 'edit')}>
+                  Edit opening
+                </Button>
                 {insights?.available && (
                   <Button variant="secondary" onClick={() => setPanel(panel === 'resumes' ? 'none' : 'resumes')}>
                     Upload résumés
@@ -355,7 +359,19 @@ export function JobDetailPage() {
           {error}
         </div>
       )}
-      {canEdit && <JobDetailsEditor job={job} onSaved={load} />}
+      {panel === 'edit' && (
+        <EditOpeningForm
+          job={job}
+          onCancel={() => setPanel('none')}
+          onSaved={(saved) => {
+            setJob(saved)
+            setPanel('none')
+            setMessage('Opening saved.')
+            load()
+          }}
+        />
+      )}
+      {canEdit && <JobDetailsEditor key={`${job.title}|${job.client?.id ?? ''}`} job={job} onSaved={load} />}
       {panel === 'add' && (
         <AddCandidateForm
           jobId={job.id}

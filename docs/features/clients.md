@@ -7,7 +7,7 @@
 | **Chunk** | 1 |
 | **Owner** | TBD |
 | **Related** | [client-submissions.md](client-submissions.md), [requisitions.md](requisitions.md), ADR-0002 |
-| **Last updated** | 2026-09-25 |
+| **Last updated** | 2026-10-04 |
 
 ## Summary
 
@@ -45,6 +45,7 @@ its contacts, defaults and (from v1) commercial terms.
 | CLI-07 | Deactivating a client blocks new requisitions; existing jobs continue. | MVP |
 | CLI-08 | Commercial terms: engagement model (deployed / direct placement / both), rate card or fee %, replacement guarantee period. | v1 |
 | CLI-09 | Per-client data rules: NDA-protected JDs, own retention period, special handling where a contract requires it. | v1 |
+| CLI-10 | **Rename a client** (recruiters and admins) on the Clients page; names stay unique. The new name shows on its openings, shared candidates and to its contacts. Audited. | Done |
 
 ## Business rules
 
@@ -87,4 +88,5 @@ Clients running their own hiring in the ATS (multi-tenant), invoicing.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-04 | CLI-10: rename a client |
 | 2026-09-25 | Created from SPEC.md |

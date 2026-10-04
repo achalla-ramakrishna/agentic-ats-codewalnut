@@ -1,16 +1,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { createClient, createJob, listClients, listJobs, type Client, type HiringType, type Job } from '../api/tracker'
+import { HIRING_TYPES, createClient, createJob, listClients, listJobs, type Client, type HiringType, type Job } from '../api/tracker'
 import { useMe } from '../auth/AuthContext'
 import { StageBar } from '../components/StageBar'
 import { Badge, Button, Card, PageHeader } from '../components/ui'
 import '../components/tracker.css'
-
-const HIRING_TYPES: { key: HiringType; label: string }[] = [
-  { key: 'CLIENT_DEPLOYED', label: 'Client – on CodeWalnut payroll' },
-  { key: 'DIRECT_PLACEMENT', label: 'Client – on client payroll' },
-  { key: 'INTERNAL', label: 'Internal (CodeWalnut)' },
-]
 
 function NewJobForm({ onCreated }: { onCreated: (job: Job) => void }) {
   const [clients, setClients] = useState<Client[]>([])

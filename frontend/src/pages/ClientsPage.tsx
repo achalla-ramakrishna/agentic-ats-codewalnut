@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { addContact, listContacts, removeContact, type ClientContact } from '../api/clients'
-import { createClient, listClients, type Client } from '../api/tracker'
+import { createClient, listClients, updateClient, type Client } from '../api/tracker'
 import { useMe } from '../auth/AuthContext'
 import { Badge, Button, Card, PageHeader } from '../components/ui'
 
@@ -87,6 +87,69 @@ function Contacts({ client, canManage }: { client: Client; canManage: boolean })
   )
 }
 
+/** The client's name, with Rename for people who manage openings (CLI-10). */
+function ClientName({ client, canEdit, onRenamed }: { client: Client; canEdit: boolean; onRenamed: () => void }) {
+  const [editing, setEditing] = useState(false)
+  const [name, setName] = useState(client.name)
+  const [error, setError] = useState<string | null>(null)
+
+  async function onSave(event: FormEvent) {
+    event.preventDefault()
+    setError(null)
+    try {
+      await updateClient(client.id, { name: name.trim() })
+      setEditing(false)
+      onRenamed()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not rename the client')
+    }
+  }
+
+  if (!editing) {
+    return (
+      <div className="row" style={{ gap: 12 }}>
+        <h2 style={{ margin: 0 }}>{client.name}</h2>
+        {canEdit && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setName(client.name)
+              setEditing(true)
+            }}
+          >
+            Rename
+          </Button>
+        )}
+      </div>
+    )
+  }
+  return (
+    <form className="stack" onSubmit={onSave} aria-label={`Rename ${client.name}`} style={{ gap: 8 }}>
+      <div className="row" style={{ alignItems: 'flex-end' }}>
+        <label className="field">
+          Client name
+          <input className="input" required maxLength={200} value={name} onChange={(e) => setName(e.target.value)} />
+        </label>
+        <Button type="submit" size="sm" disabled={!name.trim()}>
+          Save
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+          Cancel
+        </Button>
+      </div>
+      <span className="muted" style={{ fontSize: 12 }}>
+        The new name shows on its openings, on shared candidates and to its contacts when they sign in.
+      </span>
+      {error && (
+        <div role="alert" className="alert alert-error">
+          {error}
+        </div>
+      )}
+    </form>
+  )
+}
+
 export function ClientsPage() {
   const me = useMe()
   const canEdit = me.capabilities.includes('MANAGE_JOBS')
@@ -144,7 +207,7 @@ export function ClientsPage() {
       {clients?.map((c) => (
         <Card key={c.id} className="stack">
           <div className="row" style={{ justifyContent: 'space-between' }}>
-            <h2 style={{ margin: 0 }}>{c.name}</h2>
+            <ClientName client={c} canEdit={canEdit} onRenamed={load} />
             <Badge>Client</Badge>
           </div>
           <Contacts client={c} canManage={canManageContacts} />

@@ -7,7 +7,7 @@
 | **Chunk** | 1-lite |
 | **Owner** | TBD |
 | **Related** | Simplified first cut of [clients.md](clients.md), [jobs-and-careers-page.md](jobs-and-careers-page.md), [candidates.md](candidates.md), [pipeline.md](pipeline.md) |
-| **Last updated** | 2026-09-29 |
+| **Last updated** | 2026-10-04 |
 
 ## Summary
 
@@ -43,6 +43,7 @@ on the dashboard. It grows into the fuller features linked above.
 | TRK-12 | Dashboard: open openings with count per stage and progress bar; the 25 most recent activities. | Done |
 | TRK-13 | Candidates page: search by name, email or phone across openings; filter by stage. | Done |
 | TRK-14 | Per-opening stage templates, scorecards, client review links, emails — see the full feature files. | Later |
+| TRK-15 | **Edit opening** (recruiters and admins), from the opening's header: rename it, change the hiring type, move it to another client, or change how many people are needed. An internal opening has no client; a client opening needs one. Moving to another client is refused while candidates in it are still shared with the current client (stop sharing first), so a client never keeps seeing an opening that isn't theirs. Changes are audited. | Done |
 
 ## Business rules
 
@@ -69,6 +70,7 @@ on the dashboard. It grows into the fuller features linked above.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-04 | TRK-15: rename an opening, change its client or hiring type |
 | 2026-09-28 | Created and shipped: clients, openings, import, pipeline stages, notes, history, two résumés per candidate, dashboard |
 | 2026-09-29 | Staff can edit a candidate's name, email and phone (see INT-15) |
 | 2026-09-29 | First stage renamed "Applied / Sourced"; openings gain job details and a share link ([job-links.md](job-links.md)) |

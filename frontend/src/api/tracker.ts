@@ -150,6 +150,14 @@ const json = (body: unknown) => JSON.stringify(body)
 export const getStages = () => api<StageOption[]>('/stages')
 export const getDashboard = () => api<Dashboard>('/dashboard')
 export const listClients = () => api<Client[]>('/clients')
+/** How an opening is hired for, in menu order. */
+export const HIRING_TYPES: { key: HiringType; label: string }[] = [
+  { key: 'CLIENT_DEPLOYED', label: 'Client – on CodeWalnut payroll' },
+  { key: 'DIRECT_PLACEMENT', label: 'Client – on client payroll' },
+  { key: 'INTERNAL', label: 'Internal (CodeWalnut)' },
+]
+export const updateClient = (id: string, patch: { name?: string; notes?: string }) =>
+  api<Client>(`/clients/${id}`, { method: 'PATCH', body: json(patch) })
 export const createClient = (name: string, notes?: string) =>
   api<Client>('/clients', { method: 'POST', body: json({ name, notes }) })
 export const listJobs = () => api<Job[]>('/jobs')
@@ -170,6 +178,9 @@ export interface JobPatch {
   workMode?: WorkMode
   employmentType?: string
   published?: boolean
+  /** Moving to another client is refused while candidates are still shared with the current one. */
+  clientId?: string
+  hiringType?: HiringType
 }
 
 export const updateJob = (id: string, patch: JobPatch) =>

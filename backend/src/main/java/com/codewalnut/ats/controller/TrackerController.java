@@ -19,6 +19,7 @@ import com.codewalnut.ats.dto.TrackerDtos.JobResponse;
 import com.codewalnut.ats.dto.TrackerDtos.MoveStageRequest;
 import com.codewalnut.ats.dto.TrackerDtos.NoteRequest;
 import com.codewalnut.ats.dto.TrackerDtos.StageOption;
+import com.codewalnut.ats.dto.TrackerDtos.UpdateClientRequest;
 import com.codewalnut.ats.dto.TrackerDtos.UpdateJobRequest;
 import com.codewalnut.ats.security.CurrentUserService;
 import com.codewalnut.ats.service.TrackerService;
@@ -67,6 +68,11 @@ public class TrackerController {
     @ResponseStatus(HttpStatus.CREATED)
     public ClientResponse createClient(@Valid @RequestBody CreateClientRequest request) {
         return ClientResponse.from(trackerService.createClient(currentUserService.require(), request));
+    }
+
+    @PatchMapping("/clients/{id}")
+    public ClientResponse updateClient(@PathVariable UUID id, @Valid @RequestBody UpdateClientRequest request) {
+        return ClientResponse.from(trackerService.updateClient(currentUserService.require(), id, request));
     }
 
     @GetMapping("/jobs")
