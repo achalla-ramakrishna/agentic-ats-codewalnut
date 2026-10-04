@@ -23,6 +23,11 @@ export function InterviewsPage() {
       <PageHeader
         title="Interviews"
         description="Upcoming interviews. Schedule one from a candidate's panel in an opening."
+        actions={
+          <Link className="btn btn-secondary" to="/interview-questions">
+            Interview questions
+          </Link>
+        }
       />
       {error && (
         <div role="alert" className="alert alert-error">

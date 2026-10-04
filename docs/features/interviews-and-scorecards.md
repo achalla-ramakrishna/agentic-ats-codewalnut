@@ -63,6 +63,9 @@ A simpler first cut of INT-01 and INT-03, decided in ADR-0005.
 | INT-18 | Interviews page and dashboard list upcoming interviews with Meet links; Interviewers see only interviews they are on and no candidate contact details. | Done |
 | INT-19 | Candidates see their own upcoming interviews (title, time, Meet link) in their area; never the panel, organiser or notes. | Done |
 | INT-20 | Reschedule in place (move the event instead of cancel + new). | v1 |
+| INT-21 | **Interview questions** page for staff who interview (VIEW_INTERVIEWS: admin, recruiter, hiring manager, account manager, interviewer): 17 categories and 150 questions (aptitude, data structures for freshers with Java/Python/JavaScript/C++ questions, live coding, Java, Python, JavaScript, React, Angular, Node.js, SQL, system design, CS fundamentals, DevOps and cloud, QA automation, data analytics, AI/GenAI, project deep-dive). Each has a level (fresher, 1–3 years, 3+ years), what a strong answer covers and the red flags, plus how to run and score the round (1–4 scale). Content lives in `resources/interview/guide.yml`. | Done |
+| INT-22 | Filter by role (the role-test roles), level, language, category and search; pick questions for an interview (kept in the browser); hide the answer guides while sharing a screen; print. Linked from the Interviews page. | Done |
+| INT-23 | Candidates, client contacts and approvers can't read the questions (the API refuses; there is no link in their navigation). | Done |
 
 ## Business rules
 
@@ -118,6 +121,7 @@ public: `GET/POST /book/{token}`.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-04 | Interview questions page for staff, with scoring guide and freshers' data-structures questions (INT-21 to INT-23) |
 | 2026-09-25 | Created from SPEC.md |
 | 2026-09-29 | "Connect Google Calendar" became "Connect Google (Calendar & Gmail)" (`/google/status`, `/google/connect`), shared with email (ADR-0006) |
 | 2026-09-29 | First release: schedule on the organiser's Google Calendar with a Meet link, Google emails the invite (INT-12…INT-19, ADR-0005) |

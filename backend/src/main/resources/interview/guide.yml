@@ -1,0 +1,982 @@
+# CodeWalnut interview questions (staff only; never shown to candidates or clients).
+# Generated from a reviewed guide; edit freely. Levels: F = fresher, J = 1–3 years, S = 3+ years.
+howTo:
+- 'A 60-minute technical round: 5 minutes intro, 10 minutes project deep-dive, 30 minutes core questions or live coding, 10 minutes design or
+  a scenario, 5 minutes for their questions.'
+- Open the candidate's test result first. Ask about one question they got wrong and one they got right; a genuine candidate can explain both.
+- Pick 6–8 questions at the candidate's level (F = fresher, J = 1–3 years, S = 3+ years). Start one level below and move up while the answers
+  stay strong.
+- Ask "walk me through" or "what would you do if", then follow up with "why" and "what breaks". Depth shows in the second and third answer.
+- 'Score each question 1–4 straight after the answer and note one line of evidence. Hire bar: an average of 3 or more on the core questions, nothing
+  below 2 on the role''s must-haves, and a clear yes on the project deep-dive. The score guides the panel; the panel decides.'
+scale:
+- score: 4
+  label: Strong
+  evidence: Correct, explains trade-offs, gives a real example, handles the follow-up unprompted.
+- score: 3
+  label: Good
+  evidence: Correct with small gaps; gets there with one hint.
+- score: 2
+  label: Weak
+  evidence: Knows the term but not how or why; needs several hints.
+- score: 1
+  label: 'No'
+  evidence: Wrong, guesses confidently, or can't attempt it.
+roles:
+  java-backend:
+  - java
+  - sql
+  - dsa-freshers
+  - live-coding
+  - problem-solving
+  - cs-fundamentals
+  - system-design
+  - project-behaviour
+  python-backend:
+  - python
+  - sql
+  - dsa-freshers
+  - live-coding
+  - problem-solving
+  - cs-fundamentals
+  - system-design
+  - project-behaviour
+  react-frontend:
+  - react
+  - javascript
+  - dsa-freshers
+  - live-coding
+  - problem-solving
+  - cs-fundamentals
+  - system-design
+  - project-behaviour
+  angular-frontend:
+  - angular
+  - javascript
+  - dsa-freshers
+  - live-coding
+  - problem-solving
+  - cs-fundamentals
+  - system-design
+  - project-behaviour
+  fullstack-java-react:
+  - java
+  - react
+  - javascript
+  - sql
+  - dsa-freshers
+  - live-coding
+  - problem-solving
+  - cs-fundamentals
+  - system-design
+  - project-behaviour
+  fullstack-java-angular:
+  - java
+  - angular
+  - javascript
+  - sql
+  - dsa-freshers
+  - live-coding
+  - problem-solving
+  - cs-fundamentals
+  - system-design
+  - project-behaviour
+  fullstack-python-react:
+  - python
+  - react
+  - javascript
+  - sql
+  - dsa-freshers
+  - live-coding
+  - problem-solving
+  - cs-fundamentals
+  - system-design
+  - project-behaviour
+  node-backend:
+  - nodejs
+  - javascript
+  - sql
+  - dsa-freshers
+  - live-coding
+  - problem-solving
+  - cs-fundamentals
+  - system-design
+  - project-behaviour
+  fullstack-node-react:
+  - nodejs
+  - react
+  - javascript
+  - dsa-freshers
+  - live-coding
+  - problem-solving
+  - cs-fundamentals
+  - system-design
+  - project-behaviour
+  sql-developer:
+  - sql
+  - problem-solving
+  - cs-fundamentals
+  - project-behaviour
+  qa-automation:
+  - qa-automation
+  - sql
+  - problem-solving
+  - live-coding
+  - project-behaviour
+  devops-engineer:
+  - devops-cloud
+  - cs-fundamentals
+  - system-design
+  - problem-solving
+  - project-behaviour
+  data-analyst:
+  - data-analytics
+  - sql
+  - problem-solving
+  - project-behaviour
+  graduate-trainee:
+  - dsa-freshers
+  - live-coding
+  - problem-solving
+  - cs-fundamentals
+  - project-behaviour
+categories:
+- id: problem-solving
+  name: Problem solving and aptitude
+  intro: Ask these aloud, with paper allowed. You are scoring the reasoning, so ask the candidate to think out loud. Follow up with "How would
+    you check you're right?"
+  questions:
+  - level: F
+    topic: Puzzles
+    question: You have 8 identical-looking balls; one is heavier. With a balance scale, what is the fewest weighings to find it?
+    strong: '2: split 3-3-2, weigh 3 vs 3, then 1 vs 1 within the heavier group (or the 2).'
+    redFlags: Says 3 by halving; can't explain why thirds beat halves.
+  - level: F
+    topic: Estimation
+    question: Estimate how many two-wheelers are sold in India in a month.
+    strong: States assumptions (population, households, replacement cycle), does round arithmetic, sanity-checks the result (about 1.5–2 million).
+    redFlags: Guesses a number with no method, or refuses.
+  - level: F
+    topic: Arithmetic
+    question: A train covers a distance at 60 km/h and returns at 40 km/h. What is the average speed?
+    strong: 48 km/h, using total distance over total time; explains why it isn't 50.
+    redFlags: Answers 50 and doesn't reconsider when asked.
+  - level: F
+    topic: Ownership
+    question: You can't finish a task by its deadline. What do you do on the day you notice?
+    strong: Raises it early, gives options (scope cut, extra help, new date), quantifies the gap.
+    redFlags: Waits and hopes, or only raises it on the due date.
+  - level: J
+    topic: Debugging
+    question: Your login page is slow for 5% of users. List what could cause it, most likely first.
+    strong: Groups causes (network or region, a slow dependency, one big tenant, cold cache) and says what data would tell them apart.
+    redFlags: Lists random fixes without asking what's different about the 5%.
+  - level: S
+    topic: Judgement
+    question: Two teammates disagree on an approach and the release is in two days. How do you decide?
+    strong: Clarifies the goal and the constraint, compares on risk and reversibility, time-boxes, picks and records why.
+    redFlags: Avoids the decision, or decides by seniority alone.
+- id: dsa-freshers
+  name: Data structures for freshers and interns
+  intro: 'For interns and freshers, data structures are the main signal. Spend about 25 of 60 minutes here: 3–4 concept questions, 2 "know your
+    language" questions in the language on their résumé, then one live coding problem. For campus drives, run a 15-minute screen: one concept
+    question, one language question, one easy coding problem (pass = working code and one edge case named without a prompt).'
+  questions:
+  - level: F
+    topic: Big-O
+    question: What is the time complexity of searching an unsorted array, a sorted array, and a hash table? Why?
+    strong: O(n); O(log n) with binary search; O(1) average and O(n) worst for a hash table, with the reason for each.
+    redFlags: Memorised answers with no reason; calls binary search O(1).
+  - level: F
+    topic: Arrays and linked lists
+    question: When is a linked list better than an array?
+    strong: Insert or delete at a known node is O(1); arrays win on index access and cache locality; in practice arrays are the default.
+    redFlags: Says linked lists are "faster" without saying for what.
+  - level: F
+    topic: Stacks and queues
+    question: Give one real use of a stack and one of a queue.
+    strong: Undo, function calls, bracket matching; print jobs, BFS, request queues.
+    redFlags: Mixes up LIFO and FIFO.
+  - level: F
+    topic: Hashing
+    question: How does a hash map find a key, and what is a collision?
+    strong: Hash, then bucket, then compare keys; chaining or open addressing; resizing at a load factor.
+    redFlags: Thinks every key gets its own unique slot.
+  - level: F
+    topic: Recursion
+    question: Write factorial recursively. What happens for n = 100,000?
+    strong: Base case, call stack, stack overflow, and an iterative version.
+    redFlags: Forgets the base case.
+  - level: F
+    topic: Trees
+    question: Binary tree vs binary search tree; what are in-order, pre-order and post-order traversals?
+    strong: The BST ordering rule; in-order gives sorted output for a BST; can traverse a small tree on paper.
+    redFlags: Can't traverse a 5-node tree on paper.
+  - level: F
+    topic: Heaps
+    question: How would you get the 3 largest numbers out of a million numbers?
+    strong: A min-heap of size 3, O(n log k); or a partial sort.
+    redFlags: Sorts the whole list without knowing the cost.
+  - level: F
+    topic: Graphs
+    question: 'BFS vs DFS: which finds the shortest path in an unweighted graph, and why?'
+    strong: BFS, because it explores level by level; DFS for exploring and cycle detection; a visited set.
+    redFlags: Doesn't mark nodes visited and loops forever.
+  - level: F
+    topic: Sorting
+    question: Which sort would you use and why? What does your language's built-in sort use?
+    strong: O(n log n) sorts, stability; the built-in is the right default (TimSort, dual-pivot quicksort, introsort).
+    redFlags: Writes bubble sort for real code.
+  - level: F
+    topic: Choosing structures
+    question: Store students to look up by roll number and also list them sorted by name. Which structures?
+    strong: A hash map by roll number plus a sorted list or tree by name, with the trade-off explained.
+    redFlags: One list for everything with linear search.
+  - level: F
+    topic: Know your language
+    question: 'ArrayList vs LinkedList vs ArrayDeque: which for a stack, a queue and random access?'
+    strong: ArrayDeque for stack and queue, ArrayList for random access; avoids the legacy Stack class.
+    redFlags: Uses Vector or Stack by default.
+    language: Java
+  - level: F
+    topic: Know your language
+    question: Why must you override hashCode when you override equals for a HashMap key?
+    strong: Equal objects must land in the same bucket; otherwise get() misses the entry.
+    redFlags: Doesn't know the contract.
+    language: Java
+  - level: F
+    topic: Know your language
+    question: How do you make a min-heap and a max-heap in Java?
+    strong: PriorityQueue, and PriorityQueue with Comparator.reverseOrder().
+    redFlags: Writes a heap from scratch for every problem.
+    language: Java
+  - level: F
+    topic: Know your language
+    question: 'list vs deque for a queue in Python: which and why?'
+    strong: list.pop(0) is O(n); collections.deque gives O(1) at both ends.
+    redFlags: Uses list.pop(0) in a BFS.
+    language: Python
+  - level: F
+    topic: Know your language
+    question: How do you get a heap and a max-heap in Python?
+    strong: heapq is a min-heap; push negated values or tuples for a max-heap.
+    redFlags: Sorts the list after every insert.
+    language: Python
+  - level: F
+    topic: Know your language
+    question: 'dict vs set vs Counter vs defaultdict: when do you use each?'
+    strong: Key-value vs membership vs counting vs default values.
+    redFlags: Writes manual counting loops with key checks everywhere.
+    language: Python
+  - level: F
+    topic: Know your language
+    question: 'Object vs Map vs Set in JavaScript: which for a frequency count and why?'
+    strong: Map keeps insertion order and allows any key type; Set for uniqueness; objects turn keys into strings.
+    redFlags: Uses arrays with indexOf for lookups.
+    language: JavaScript
+  - level: F
+    topic: Know your language
+    question: What is the cost of array.shift() and array.includes()?
+    strong: O(n) each; use an index pointer for queues and a Set for membership.
+    redFlags: Uses shift() in a BFS over large input.
+    language: JavaScript
+  - level: F
+    topic: Know your language
+    question: Why does [10, 9, 1].sort() give [1, 10, 9]?
+    strong: The default sort compares strings; pass (a, b) => a - b.
+    redFlags: Has never noticed.
+    language: JavaScript
+  - level: F
+    topic: Know your language
+    question: vector vs list vs deque; map vs unordered_map in C++.
+    strong: Contiguous vs node-based; ordered O(log n) tree vs hashed O(1) average.
+    redFlags: Uses map everywhere without knowing it's a tree.
+    language: C++
+  - level: F
+    topic: Know your language
+    question: How do you make a min-heap with priority_queue?
+    strong: priority_queue<int, vector<int>, greater<int>>.
+    redFlags: Only knows the default max-heap.
+    language: C++
+  - level: F
+    topic: Know your language
+    question: What happens to iterators when you push_back into a vector?
+    strong: It may reallocate and invalidate iterators, pointers and references.
+    redFlags: Keeps iterators across inserts.
+    language: C++
+- id: live-coding
+  name: DSA and live coding
+  intro: 'Give one problem in 20–25 minutes in the candidate''s language. Score four things: understanding (asks about inputs and edge cases),
+    approach (states it and its complexity before coding), code (correct, readable), testing (walks through an example and an edge case unprompted).
+    Freshers: a working brute force first, then improve it. Seniors: the efficient version straight away, then follow-ups. If they took a coding
+    test, ask them to walk through their submitted code and improve it.'
+  questions:
+  - level: F
+    topic: Strings
+    question: 'Reverse the words in a sentence. Follow-ups: without split()? Multiple spaces? In place on a char array?'
+    strong: Handles spaces, explains O(n).
+    redFlags: Can't write the loop without the built-in.
+  - level: F
+    topic: Arrays
+    question: 'Find the second largest number in an array. Follow-ups: all equal? Negative numbers? One pass?'
+    strong: One pass with two variables; asks about duplicates.
+    redFlags: Sorts and returns arr[n-2] without thinking about duplicates.
+  - level: F
+    topic: Stacks
+    question: 'Check if the brackets in a string are balanced: ()[]{}. Follow-up: why a stack?'
+    strong: A stack, early exit on mismatch, an empty-stack check at the end.
+    redFlags: Only counts brackets, so "([)]" passes.
+  - level: J
+    topic: Hashing
+    question: 'Two sum: return the indices of two numbers that add up to a target. Follow-ups: O(n)? Sorted input? All pairs?'
+    strong: A hash map in one pass; mentions the same-element trap.
+    redFlags: Stays with nested loops after a hint.
+  - level: J
+    topic: Sliding window
+    question: 'Longest substring without repeating characters. Follow-up: why does the window''s left edge never move back?'
+    strong: A window with a last-seen map, O(n).
+    redFlags: Recomputes every substring (O(n³)).
+  - level: J
+    topic: Sorting
+    question: 'Merge overlapping intervals. Follow-ups: already sorted? A stream of intervals? Touching ends?'
+    strong: Sort by start, one pass, clear about [1,3] and [3,5].
+    redFlags: Compares every pair; misses nested intervals.
+  - level: S
+    topic: Graphs
+    question: 'Number of islands in a grid. Follow-ups: recursion depth on a 1000×1000 grid? Island sizes?'
+    strong: BFS or iterative DFS, marks visited, talks about stack overflow.
+    redFlags: Recursion with no thought about depth; re-visits cells.
+  - level: S
+    topic: Design
+    question: 'Design an LRU cache with O(1) get and put. Follow-ups: thread safety? TTL on entries?'
+    strong: A hash map plus a doubly linked list (or LinkedHashMap), and why both.
+    redFlags: A list scanned for the oldest entry.
+- id: java
+  name: Java and Spring
+  intro: 'Freshers: questions 1–3 and a coding problem. 1–3 years: 3–7. 3+ years: 5–10 plus system design.'
+  questions:
+  - level: F
+    topic: Core Java
+    question: What is the difference between == and equals() for Strings, and why does it matter for a HashMap key?
+    strong: Reference vs value equality, the string pool, the equals/hashCode contract for keys.
+    redFlags: Thinks == compares text "most of the time".
+  - level: F
+    topic: Exceptions
+    question: 'Checked vs unchecked exceptions: when do you use each?'
+    strong: Recoverable vs programming errors; never swallow; wrap with the cause.
+    redFlags: Catches Exception and returns null as a habit.
+  - level: F
+    topic: Collections
+    question: 'ArrayList vs LinkedList vs HashMap vs TreeMap: pick one for a given need and explain.'
+    strong: Access patterns and Big-O, ordering, memory; ArrayList is the default.
+    redFlags: Picks LinkedList for "faster inserts" without the cost of getting there.
+  - level: J
+    topic: Spring
+    question: Explain how Spring dependency injection works and why constructor injection is preferred.
+    strong: The container creates beans and wires them by type; testability, immutability, circular-dependency detection.
+    redFlags: Only knows @Autowired on fields.
+  - level: J
+    topic: Spring
+    question: A @Transactional method is called from another method in the same class and doesn't roll back. Why?
+    strong: Proxy-based AOP; self-invocation bypasses the proxy; fixes (separate bean, restructure).
+    redFlags: Blames the database.
+  - level: J
+    topic: JPA and Hibernate
+    question: What is the N+1 problem in JPA/Hibernate, and how do you find and fix it?
+    strong: Lazy loading in loops; SQL logs or metrics; JOIN FETCH, entity graphs, batch size, DTO queries.
+    redFlags: Switches everything to EAGER.
+  - level: J
+    topic: REST
+    question: How do you design error handling for a Spring Boot REST API?
+    strong: '@RestControllerAdvice, a consistent error body, the right status codes (400/404/409/422/500), no stack traces to clients.'
+    redFlags: Returns 200 with an error field.
+  - level: S
+    topic: Concurrency
+    question: Two users book the last seat at the same time and both succeed. Fix it.
+    strong: Optimistic locking (@Version) or a unique constraint, or SELECT ... FOR UPDATE; trade-offs and retries.
+    redFlags: Adds synchronized on one server.
+  - level: S
+    topic: JVM
+    question: Memory grows over days until OutOfMemoryError. How do you investigate?
+    strong: Heap dumps over time, compare dominators, GC logs; common leaks (static maps, caches, listeners, ThreadLocal).
+    redFlags: Raises -Xmx and restarts nightly.
+  - level: S
+    topic: Concurrency
+    question: When would you use CompletableFuture, virtual threads or a message queue?
+    strong: Async composition vs blocking I/O at scale vs durable decoupling; pinning, back-pressure, failure handling.
+    redFlags: Uses threads for everything, with no thought for failures.
+- id: python
+  name: Python
+  intro: Pick questions at the candidate's level; follow each with "why" and "what breaks".
+  questions:
+  - level: F
+    topic: Data types
+    question: 'List vs tuple vs set vs dict: when do you use each?'
+    strong: Mutability, hashing, lookup cost, dict ordering since 3.7.
+    redFlags: Can't say why a list can't be a dict key.
+  - level: F
+    topic: Functions
+    question: What does `def add(item, items=[])` do wrong?
+    strong: The default is evaluated once and shared between calls; fix it with None.
+    redFlags: Hasn't seen mutable defaults as a bug.
+  - level: F
+    topic: Generators
+    question: Explain generators and when they save memory.
+    strong: Lazy iteration, yield, streaming large files, one pass only.
+    redFlags: Thinks a generator is just a faster list.
+  - level: J
+    topic: Decorators
+    question: Write a decorator that retries a function 3 times on an exception.
+    strong: A closure, *args/**kwargs, functools.wraps, which exceptions to retry, backoff.
+    redFlags: Retries everything forever and loses the function's name.
+  - level: J
+    topic: Frameworks
+    question: 'Django vs Flask vs FastAPI: which for a new REST service and why?'
+    strong: Batteries included vs minimal vs async with typed validation; fit with the team and project.
+    redFlags: '"FastAPI is fastest" with no other reasoning.'
+  - level: J
+    topic: ORM
+    question: How do you avoid N+1 queries in the Django ORM?
+    strong: select_related vs prefetch_related; debug toolbar or query logging.
+    redFlags: Doesn't know the ORM runs queries lazily.
+  - level: J
+    topic: Concurrency
+    question: 'Threads, multiprocessing or asyncio for: 1,000 HTTP calls; resizing images; a web server?'
+    strong: The GIL, I/O-bound vs CPU-bound, the event loop, pools.
+    redFlags: Uses threads for CPU-bound work and expects a speed-up.
+  - level: S
+    topic: Performance
+    question: A Python service's memory keeps growing. How do you find the cause?
+    strong: tracemalloc, objgraph; caches without limits, references in globals, C-extension leaks.
+    redFlags: Calls gc.collect() and moves on.
+  - level: S
+    topic: Design
+    question: How do you structure a large Python codebase for testability?
+    strong: Layers, dependencies passed in, pytest fixtures, typing with mypy, packaging.
+    redFlags: Everything in one module with globals.
+- id: javascript
+  name: JavaScript and TypeScript
+  intro: Pick questions at the candidate's level.
+  questions:
+  - level: F
+    topic: Basics
+    question: let vs const vs var.
+    strong: Block vs function scope, hoisting and the temporal dead zone; const doesn't freeze objects.
+    redFlags: Thinks const makes objects immutable.
+  - level: F
+    topic: Basics
+    question: == vs ===, and what is truthy?
+    strong: Coercion rules, always ===, the falsy list (0, "", null, undefined, NaN, false).
+    redFlags: Uses == by habit.
+  - level: F
+    topic: Closures
+    question: 'What prints, and why: `for (var i = 0; i < 3; i++) setTimeout(() => console.log(i))`?'
+    strong: 3 3 3, because the closures share one var; let gives 0 1 2.
+    redFlags: Answers 0 1 2 and can't explain afterwards.
+  - level: J
+    topic: Event loop
+    question: 'Explain the event loop: microtasks vs macrotasks.'
+    strong: Call stack, promise jobs before timers, why a long loop freezes the UI.
+    redFlags: Says JavaScript is multi-threaded.
+  - level: J
+    topic: Async
+    question: 'Promise.all vs allSettled vs race: when do you use each?'
+    strong: Fail fast vs collect every result vs first to finish; timeouts with race.
+    redFlags: Awaits in a loop when the calls are independent.
+  - level: J
+    topic: this
+    question: How does `this` work, and how do arrow functions change it?
+    strong: Call-site binding, bind/call/apply, lexical this in arrows.
+    redFlags: Guesses from where the function is written.
+  - level: J
+    topic: TypeScript
+    question: interface vs type, unknown vs any, and generics with constraints.
+    strong: Declaration merging, unions, narrowing unknown, <T extends ...>.
+    redFlags: Uses any everywhere.
+  - level: S
+    topic: Performance
+    question: How do you find and fix a memory leak in a single-page app?
+    strong: DevTools heap snapshots, detached DOM nodes, listeners and timers not cleared, closures.
+    redFlags: Reloads the page as the fix.
+  - level: S
+    topic: Security
+    question: How do you protect a web app from XSS and CSRF?
+    strong: Escaping, CSP, avoiding innerHTML, HttpOnly and SameSite cookies, CSRF tokens.
+    redFlags: Thinks HTTPS solves both.
+- id: react
+  name: React
+  intro: Pick questions at the candidate's level.
+  questions:
+  - level: F
+    topic: Basics
+    question: Props vs state; what triggers a re-render?
+    strong: State changes or a parent re-render; immutability; lifting state up.
+    redFlags: Mutates state directly and wonders why nothing updates.
+  - level: F
+    topic: Lists
+    question: Why do list items need a key, and why not the index?
+    strong: Reconciliation identity; the index breaks on reorder or insert, losing input state.
+    redFlags: Uses Math.random() as a key.
+  - level: J
+    topic: Hooks
+    question: 'useEffect: the dependency array, cleanup, and a bug you''ve hit.'
+    strong: Stale closures, infinite loops, cleanup for subscriptions, races in fetches.
+    redFlags: Leaves out dependencies to "stop it running".
+  - level: J
+    topic: State
+    question: When do you reach for Context, Redux Toolkit, Zustand or React Query?
+    strong: Server state vs client state, the re-render cost of context, caching and refetching.
+    redFlags: Puts all server data in Redux by default.
+  - level: J
+    topic: Performance
+    question: A page re-renders too often and feels slow. How do you diagnose it?
+    strong: The Profiler; memo/useMemo/useCallback where measured; splitting state; virtualising long lists.
+    redFlags: Wraps everything in useMemo without measuring.
+  - level: S
+    topic: Architecture
+    question: 'SSR vs CSR vs static generation vs server components in Next.js: choose for a product page and a dashboard.'
+    strong: SEO and first paint vs interactivity, caching, data freshness, hydration cost.
+    redFlags: Picks one for everything.
+  - level: S
+    topic: Testing
+    question: How do you test a component that fetches data?
+    strong: React Testing Library by behaviour, mock the network (MSW), loading and error states.
+    redFlags: Tests implementation details or snapshots only.
+- id: angular
+  name: Angular
+  intro: Pick questions at the candidate's level.
+  questions:
+  - level: F
+    topic: Basics
+    question: Component vs service vs module; how does dependency injection work?
+    strong: Injectors, providedIn root, singletons vs component-level providers.
+    redFlags: Puts HTTP calls in components.
+  - level: F
+    topic: Forms
+    question: 'Template-driven vs reactive forms: which and why?'
+    strong: Reactive for complex validation and testability; FormGroup, validators.
+    redFlags: Doesn't know reactive forms.
+  - level: J
+    topic: RxJS
+    question: Observables vs Promises; switchMap vs mergeMap vs concatMap.
+    strong: Lazy, cancellable streams; switchMap for typeahead, concatMap for ordered saves.
+    redFlags: Subscribes inside subscribe.
+  - level: J
+    topic: RxJS
+    question: How do you avoid memory leaks from subscriptions?
+    strong: The async pipe, takeUntilDestroyed, unsubscribing in ngOnDestroy.
+    redFlags: Never unsubscribes.
+  - level: J
+    topic: Change detection
+    question: Default vs OnPush change detection, and where signals fit.
+    strong: What Zone.js triggers, immutable inputs, markForCheck, signals for fine-grained updates.
+    redFlags: Calls detectChanges everywhere.
+  - level: S
+    topic: State
+    question: When does NgRx earn its complexity?
+    strong: Shared state across features, effects for side effects, devtools; signal stores for simpler cases.
+    redFlags: Uses NgRx for a two-page app.
+  - level: S
+    topic: Performance
+    question: How do you make a large Angular app load fast?
+    strong: Lazy-loaded routes, standalone components, trackBy, bundle analysis, defer blocks.
+    redFlags: Only mentions minification.
+- id: nodejs
+  name: Node.js
+  intro: Pick questions at the candidate's level.
+  questions:
+  - level: F
+    topic: Runtime
+    question: Why is Node good at I/O but bad at CPU-heavy work?
+    strong: A single-threaded event loop, non-blocking I/O, the libuv thread pool, worker threads for CPU work.
+    redFlags: Thinks Node runs each request on its own thread.
+  - level: F
+    topic: Express
+    question: How does Express middleware work, and in what order does it run?
+    strong: (req, res, next), registration order, error middleware with four arguments.
+    redFlags: Doesn't know how to pass errors on.
+  - level: J
+    topic: Express
+    question: An async route throws and the request hangs. Why, and how do you fix it everywhere?
+    strong: Express 4 doesn't catch rejected promises; a wrapper or Express 5; a central error handler.
+    redFlags: Wraps every line in try/catch.
+  - level: J
+    topic: Security
+    question: How do you store passwords and issue JWTs safely?
+    strong: bcrypt or argon2, short-lived access tokens, refresh tokens, the secret in env or a vault, verifying the algorithm.
+    redFlags: Stores passwords with MD5 or inside the token.
+  - level: J
+    topic: MongoDB
+    question: When do you embed vs reference in MongoDB, and how do you index?
+    strong: Access patterns, document size, consistency; compound indexes matching the queries.
+    redFlags: Embeds unbounded arrays.
+  - level: J
+    topic: Performance
+    question: Your API's p99 latency jumped after a release. How do you find the cause?
+    strong: Metrics and traces, event-loop lag, slow queries, a sync call such as readFileSync or a huge JSON.parse.
+    redFlags: Restarts the server and hopes.
+  - level: S
+    topic: Scaling
+    question: How do you run Node across many cores and instances?
+    strong: Cluster or containers behind a load balancer, stateless services, shared state in Redis.
+    redFlags: Keeps sessions in memory across instances.
+  - level: S
+    topic: Operations
+    question: How do you shut down gracefully in Kubernetes?
+    strong: Handle SIGTERM, stop accepting, drain in-flight requests, close DB pools, a readiness probe.
+    redFlags: Calls process.exit() at once.
+- id: sql
+  name: SQL and databases
+  intro: 'Have a two-table schema ready to share: customers(id, name, city) and orders(id, customer_id, amount, created_at).'
+  questions:
+  - level: F
+    topic: Queries
+    question: Write a query for total order amount per city, highest first.
+    strong: JOIN, GROUP BY, SUM, ORDER BY; asks about customers with no orders.
+    redFlags: Puts the aggregate in WHERE.
+  - level: F
+    topic: Joins
+    question: 'INNER vs LEFT JOIN: find customers who never ordered.'
+    strong: LEFT JOIN ... WHERE o.id IS NULL, or NOT EXISTS.
+    redFlags: Uses NOT IN without thinking about NULLs.
+  - level: F
+    topic: Aggregates
+    question: WHERE vs HAVING; COUNT(*) vs COUNT(column).
+    strong: Filtering before vs after grouping; COUNT(column) skips NULLs.
+    redFlags: Thinks they're interchangeable.
+  - level: J
+    topic: Window functions
+    question: Return each customer's latest order.
+    strong: ROW_NUMBER() OVER (PARTITION BY ... ORDER BY created_at DESC), or a correlated subquery.
+    redFlags: Uses MAX(created_at), then joins back without handling ties.
+  - level: J
+    topic: Indexes
+    question: A query on orders by customer_id and date is slow. What do you check?
+    strong: EXPLAIN, composite index order (customer_id, created_at), selectivity, functions on columns blocking indexes.
+    redFlags: Adds an index on every column.
+  - level: J
+    topic: Transactions
+    question: Explain isolation levels and a lost update.
+    strong: Read committed vs repeatable read vs serializable, the anomalies, row locks, optimistic locking.
+    redFlags: Says transactions prevent all conflicts automatically.
+  - level: S
+    topic: Design
+    question: Design the tables for an e-commerce cart, orders and inventory.
+    strong: Normalisation, price snapshots on order lines, constraints, how stock is reserved.
+    redFlags: Stores the price only on the product, so old orders change.
+  - level: S
+    topic: Scaling
+    question: The orders table has 500 million rows and grows fast. What are your options?
+    strong: Archiving, partitioning by date, read replicas, caching, sharding only when needed, migrations without downtime.
+    redFlags: Jumps straight to switching databases.
+- id: system-design
+  name: System design
+  intro: 'Give one prompt for 25–30 minutes. A strong candidate drives: clarifies requirements and scale, sketches the main parts, goes deep where
+    it matters and names trade-offs. Probe with "what happens when X fails?" and "traffic grows 10×". For leads, add: "How would you roll this
+    out, and how would you know it''s working?"'
+  questions:
+  - level: J
+    topic: Design
+    question: Design a URL shortener.
+    strong: Estimates reads vs writes, generates IDs safely, caches hot links, handles collisions, adds analytics.
+    redFlags: Draws microservices before asking about scale.
+  - level: J
+    topic: Design
+    question: Design the notifications system for our app (email, SMS, WhatsApp, in-app).
+    strong: Async with a queue, retries with backoff, dedupe keys, user preferences, a dead-letter queue, provider outages.
+    redFlags: Sends synchronously inside the request.
+  - level: S
+    topic: Design
+    question: Design an online test platform with timed tests and code execution.
+    strong: Server-side deadlines, saving answers as they go, an isolated sandbox for code, a queue for grading at peak.
+    redFlags: Trusts the browser's timer and runs code on the app server.
+  - level: S
+    topic: Design
+    question: Design driver matching for a ride-hailing app.
+    strong: Frequent location updates, geo-indexing, an in-memory location store, matching latency, consistency trade-offs.
+    redFlags: Polls a SQL table every second for nearby drivers.
+  - level: S
+    topic: Design
+    question: Design a rate limiter for a public API.
+    strong: Token bucket vs sliding window, Redis counters with atomic operations, per-key limits, 429 with Retry-After.
+    redFlags: A counter in each server's memory.
+  - level: S
+    topic: Design
+    question: Design a feed (like LinkedIn's) for 10 million users.
+    strong: Fan-out on write vs read, celebrities, ranking, caching, cursor pagination.
+    redFlags: One SQL query joining everything at read time.
+- id: cs-fundamentals
+  name: CS fundamentals
+  intro: Good for freshers and as warm-ups for everyone.
+  questions:
+  - level: F
+    topic: Networks
+    question: What happens when you type a URL into the browser and press Enter?
+    strong: DNS, TCP and TLS handshakes, the HTTP request, the server, the response, rendering, caching along the way.
+    redFlags: Stops at "it goes to the server".
+  - level: F
+    topic: Operating systems
+    question: Process vs thread.
+    strong: Memory isolation vs shared memory, the cost of switching, crashes and safety.
+    redFlags: Uses the words interchangeably.
+  - level: F
+    topic: OOP
+    question: Explain the four OOP principles with an example from your own code.
+    strong: Encapsulation, inheritance, polymorphism, abstraction, each with a real example.
+    redFlags: Textbook definitions only, no example.
+  - level: F
+    topic: Networks
+    question: 'TCP vs UDP: when would you use UDP?'
+    strong: Reliability and ordering vs latency; video calls, gaming, DNS.
+    redFlags: Says UDP is "unsafe" with no trade-off.
+  - level: J
+    topic: Concurrency
+    question: What is a deadlock, and how do you prevent one?
+    strong: The four conditions, lock ordering, timeouts.
+    redFlags: Can't give an example.
+  - level: J
+    topic: Git
+    question: 'Git: merge vs rebase, and how do you undo a bad commit that is already pushed?'
+    strong: History shape, never rewriting shared history, git revert for pushed commits.
+    redFlags: Force-pushes to main.
+  - level: J
+    topic: Distributed systems
+    question: What does the CAP theorem really say, and where does it show up in practice?
+    strong: Behaviour during a network partition, consistency vs availability, tunable consistency.
+    redFlags: Thinks you pick any two at all times.
+  - level: S
+    topic: Security
+    question: How do you keep secrets out of code and logs?
+    strong: Env vars or a vault, rotation, scanning repos, redacting logs, least privilege.
+    redFlags: Keeps a shared .env file in the repo.
+- id: devops-cloud
+  name: DevOps and cloud
+  intro: Pick questions at the candidate's level.
+  questions:
+  - level: F
+    topic: Docker
+    question: Image vs container; what does each line of a simple Dockerfile do?
+    strong: Layers, cache order (dependencies before code), small base images, a non-root user.
+    redFlags: Copies the whole repo before installing dependencies.
+  - level: F
+    topic: Linux
+    question: A Linux server is slow. What commands do you run first?
+    strong: top or htop, df -h, free -m, journalctl or /var/log, finding the busiest process.
+    redFlags: Reboots first.
+  - level: F
+    topic: CI/CD
+    question: Walk me through a CI/CD pipeline you've built or used.
+    strong: Build, test, scan, artefact, deploy per environment, approvals, rollback.
+    redFlags: Only "Jenkins runs it".
+  - level: J
+    topic: Kubernetes
+    question: A pod is in CrashLoopBackOff. How do you debug it?
+    strong: kubectl describe, logs --previous, probes, resource limits (OOMKilled), config and secrets.
+    redFlags: Deletes the pod and hopes.
+  - level: J
+    topic: Deployments
+    question: 'Rolling vs blue-green vs canary: when do you use each?'
+    strong: Risk, cost, rollback speed, database migrations that work both ways.
+    redFlags: Thinks a rolling update can't break anything.
+  - level: J
+    topic: Terraform
+    question: How does Terraform state work, and what goes wrong in a team?
+    strong: Remote state with locking, drift, plan before apply, modules, never editing state by hand.
+    redFlags: Keeps state files in Git.
+  - level: J
+    topic: Cloud
+    question: On AWS, Azure or GCP, how do you give an app access to a storage bucket safely?
+    strong: IAM roles, managed identities or service accounts; least privilege; no static keys.
+    redFlags: Puts access keys in the image's environment variables.
+  - level: S
+    topic: Reliability
+    question: Define SLIs, SLOs and an error budget for an API, and how they change releases.
+    strong: Latency and availability SLIs, a target, spending the budget, pausing releases when it's gone.
+    redFlags: Alerts on CPU only.
+  - level: S
+    topic: Cost
+    question: Our cloud bill doubled this month. How do you find out why?
+    strong: Cost explorer by service and tag, untagged resources, data transfer, idle instances, rightsizing, reserved or spot.
+    redFlags: Cuts instances at random.
+- id: qa-automation
+  name: QA automation
+  intro: Pick questions at the candidate's level.
+  questions:
+  - level: F
+    topic: Test design
+    question: Write test cases for a login page.
+    strong: Positive, negative, boundary, security (SQL injection, lockout), usability, accessibility.
+    redFlags: Only "valid login works".
+  - level: F
+    topic: Defects
+    question: Severity vs priority, with an example where they differ.
+    strong: Impact vs urgency; a typo in the logo is low severity but high priority.
+    redFlags: Uses them as synonyms.
+  - level: F
+    topic: Defects
+    question: Write a good bug report for a checkout failure.
+    strong: Steps, expected vs actual, environment, evidence (logs, screenshots), how often it happens.
+    redFlags: '"Checkout broken, please fix."'
+  - level: J
+    topic: Automation
+    question: Your UI tests are flaky. What are the usual causes and fixes?
+    strong: Fixed sleeps, unstable locators, shared test data, test order; explicit waits, data-testid, isolated data.
+    redFlags: Adds retries to every test.
+  - level: J
+    topic: Tools
+    question: 'Selenium vs Playwright vs Cypress: which for a new project?'
+    strong: Auto-waiting, browser coverage, speed, language support, team skills.
+    redFlags: Picks by popularity alone.
+  - level: J
+    topic: API testing
+    question: How do you test a REST API beyond the happy path?
+    strong: Status codes, schema validation, auth, bad inputs, idempotency, contract tests.
+    redFlags: Only checks for status 200.
+  - level: J
+    topic: Frameworks
+    question: What goes into a test automation framework?
+    strong: Page objects or screenplay, config per environment, test data, reporting, CI integration.
+    redFlags: One big script per test.
+  - level: S
+    topic: Strategy
+    question: Write a test strategy for a payments feature launching in four weeks.
+    strong: Risk-based scope, the test pyramid, environments, performance and security, entry and exit criteria, go/no-go.
+    redFlags: Plans to test everything manually at the end.
+- id: data-analytics
+  name: Data analytics
+  intro: Pick questions at the candidate's level.
+  questions:
+  - level: F
+    topic: Statistics
+    question: 'Mean vs median: which do you report for salaries, and why?'
+    strong: Skew and outliers; the median for a typical value; show both when useful.
+    redFlags: Always reports the mean.
+  - level: F
+    topic: Excel
+    question: 'VLOOKUP vs XLOOKUP vs a pivot table: when do you use each?'
+    strong: Lookups vs summaries; exact match; XLOOKUP looks left and survives inserted columns.
+    redFlags: Doesn't know exact vs approximate match.
+  - level: F
+    topic: Statistics
+    question: Sales and ice-cream ads rose together. Did the ads work?
+    strong: Correlation vs causation, confounders (the season), how to test it.
+    redFlags: Says yes because the chart goes up.
+  - level: J
+    topic: Analysis
+    question: Daily active users dropped 15% yesterday. How do you investigate?
+    strong: Check the data first (pipeline, time zones), then segment by platform, region, version; compare with releases.
+    redFlags: Jumps to a business cause before checking the data.
+  - level: J
+    topic: SQL
+    question: Revenue doubled after a join in your query. What happened?
+    strong: Joining at the wrong grain duplicated rows; aggregate first or fix the join key.
+    redFlags: Hasn't hit or noticed this.
+  - level: J
+    topic: Dashboards
+    question: Design a dashboard for a sales head. What goes on it?
+    strong: A few KPIs vs target and last period, trends, drill-downs, agreed definitions, a refresh schedule.
+    redFlags: Thirty charts with no comparisons.
+  - level: J
+    topic: Experiments
+    question: How do you run and read an A/B test?
+    strong: A hypothesis, sample size before starting, no peeking, guardrail metrics, practical vs statistical significance.
+    redFlags: Stops the test the first day p < 0.05.
+  - level: S
+    topic: Metrics
+    question: Two teams report different customer counts. How do you resolve it?
+    strong: Compare definitions, filters, time zones, test accounts; agree one definition and document it.
+    redFlags: Averages the two numbers.
+- id: ai-genai
+  name: AI and GenAI engineering
+  intro: Pick questions at the candidate's level.
+  questions:
+  - level: F
+    topic: ML basics
+    question: 'Training vs test data: what is overfitting and how do you spot it?'
+    strong: Held-out data, training accuracy far above test accuracy, regularisation, more data.
+    redFlags: Evaluates on the training data.
+  - level: F
+    topic: LLM basics
+    question: What are tokens, the context window and temperature in an LLM?
+    strong: Text split into tokens, the limit on input plus output, randomness of sampling.
+    redFlags: Thinks temperature is speed.
+  - level: F
+    topic: LLM basics
+    question: Why do LLMs hallucinate, and how do you reduce it in an app?
+    strong: It predicts likely text, not facts; grounding with retrieval, citations, allowing "I don't know", evaluation.
+    redFlags: Says a better prompt fixes it completely.
+  - level: J
+    topic: RAG
+    question: Explain RAG end to end. Where does it usually fail?
+    strong: Chunking, embeddings, vector search, reranking, a prompt with sources; most failures are in chunking and retrieval.
+    redFlags: Puts whole documents into every prompt.
+  - level: J
+    topic: Integration
+    question: How do you get reliable JSON out of a model for your code?
+    strong: Structured output or tool calling, schema validation, retries, never trusting it blindly.
+    redFlags: Parses free text with regex.
+  - level: J
+    topic: Evaluation
+    question: How do you evaluate an LLM feature before and after release?
+    strong: A test set of real cases, automatic checks, LLM-as-judge with spot checks by people, tracking regressions by model and prompt version.
+    redFlags: '"We tried it and it looked fine."'
+  - level: S
+    topic: Security
+    question: What is prompt injection, and how do you defend an agent that reads emails or web pages?
+    strong: Treat untrusted content as data, least-privilege tools, confirmation for risky actions, output filtering.
+    redFlags: Thinks a system prompt saying "ignore instructions" is enough.
+  - level: S
+    topic: Architecture
+    question: 'Fine-tuning vs RAG vs better prompting: how do you choose?'
+    strong: Knowledge that changes means RAG; style or format means fine-tuning; cost, latency and data needs.
+    redFlags: Fine-tunes to add facts that change every week.
+  - level: S
+    topic: Cost
+    question: Your LLM feature costs too much and is slow. What do you do?
+    strong: Measure tokens per call, prompt caching, smaller models for easy steps, batching, shorter context, streaming.
+    redFlags: Only asks for a bigger budget.
+- id: project-behaviour
+  name: Project deep-dive and behaviour
+  intro: 'Ask every candidate. Pick one project from the résumé and stay on it for 10 minutes; padded résumés fall apart by the third follow-up.
+    Close by asking for their questions: good questions about the team, the codebase or how work is reviewed are a positive signal.'
+  questions:
+  - level: F
+    topic: Project
+    question: 'Freshers: tell me about a project or assignment you''re proud of, and one thing you''d improve.'
+    strong: Explains choices and trade-offs, knows the code line by line.
+    redFlags: Can't explain the code in their own GitHub repo.
+  - level: J
+    topic: Project
+    question: Draw the architecture of your last project. Which part did you build yourself?
+    strong: Clear boundaries, an honest "I" vs "we", can go one level deeper on their part.
+    redFlags: Only describes the team's work; vague about their own.
+  - level: J
+    topic: Debugging
+    question: What was the hardest bug you fixed, and how did you find it?
+    strong: 'A method: reproduce, narrow down, gather evidence, fix, add a test so it doesn''t return.'
+    redFlags: '"I googled it", with no detail.'
+  - level: J
+    topic: Reflection
+    question: Tell me about a decision you'd make differently now.
+    strong: Specific, owns it, says what they learned.
+    redFlags: Can't name one, or blames others.
+  - level: J
+    topic: Production
+    question: How did you know your feature worked in production?
+    strong: Metrics, logs, alerts, user feedback, a rollback plan.
+    redFlags: '"QA tested it."'
+  - level: J
+    topic: Teamwork
+    question: Tell me about a disagreement with a teammate or lead.
+    strong: Listened, used data, reached a decision, kept the relationship.
+    redFlags: Still resentful, or never disagrees.
+  - level: F
+    topic: Learning
+    question: What have you learned recently on your own?
+    strong: A concrete topic, how they learned it, something they built.
+    redFlags: '"Nothing lately."'
+  - level: F
+    topic: Motivation
+    question: Why CodeWalnut, and what do you want to be doing in two years?
+    strong: Knows what we do; realistic goals that fit the role.
+    redFlags: A generic answer that fits any company.

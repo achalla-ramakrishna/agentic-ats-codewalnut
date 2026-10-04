@@ -130,7 +130,7 @@ class UserControllerTest {
         String id = createUser(email, "[\"INTERVIEWER\"]");
 
         mockMvc.perform(get("/api/v1/me").with(user(email)))
-                .andExpect(jsonPath("$.navigation.length()").value(2));
+                .andExpect(jsonPath("$.navigation.length()").value(3));
 
         mockMvc.perform(patch("/api/v1/users/" + id).with(ADMIN).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)

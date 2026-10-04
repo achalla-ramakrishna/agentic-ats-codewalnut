@@ -498,3 +498,25 @@
   margin: 0;
   white-space: pre-wrap;
 }
+
+/* Interview questions (INT-21) */
+.interview-answers {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--color-primary-soft);
+  background: var(--color-surface-muted);
+  border-radius: 4px;
+}
+@media print {
+  .no-print,
+  .app-sidebar,
+  nav {
+    display: none !important;
+  }
+  .interview-q {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+}

@@ -85,6 +85,10 @@ small worker pool, a one-minute retry sweep in `CodeGradingSweeper`);
 `AssessmentInviteService` holds the grading state and final score. Built-in
 problems load from `resources/bank/coding/*.yml` (`bank/CodingBank`).
 
+Interview questions (INT-21): `InterviewGuideService` loads
+`resources/interview/guide.yml` once and serves it at `GET /api/v1/interview-guide`
+to staff with VIEW_INTERVIEWS only.
+
 View as (ADR-0013): a session attribute makes the `Current*Service`
 resolvers return a candidate, client contact or role-limited copy of the
 admin; `ViewAsReadOnlyFilter` refuses API writes while it is set.

@@ -16,6 +16,19 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-04-interview-questions',
+    date: '2026-10-04',
+    title: 'Interview questions for every role and level',
+    summary: '150 interview questions in 17 categories — from data structures for freshers (in Java, Python, JavaScript and C++) to system design and AI — each with what a strong answer covers and the red flags, plus how to score the round. Only CodeWalnut staff who interview can see them.',
+    steps: [
+      'Open Interview questions in the menu (or from the Interviews page).',
+      'Choose the role and level; tick Pick on the questions you’ll ask, then “Only my picks”.',
+      'Untick “Show answer guides” before sharing your screen, or Print the list.',
+    ],
+    link: { to: '/interview-questions', label: 'Open Interview questions' },
+    capability: 'VIEW_INTERVIEWS',
+  },
+  {
     id: '2026-10-04-coding-tests',
     date: '2026-10-04',
     title: 'Coding tests: candidates write and run real code',
