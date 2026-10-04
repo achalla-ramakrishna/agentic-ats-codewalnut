@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { formatWhen, listUpcomingInterviews, type Interview } from '../api/interviews'
+import { formatWhen, listFeedbackDue, listUpcomingInterviews, type Interview } from '../api/interviews'
 import { useMe } from '../auth/AuthContext'
 import { Card, PageHeader } from '../components/ui'
 import '../components/tracker.css'
@@ -10,9 +10,13 @@ export function InterviewsPage() {
   const me = useMe()
   const canOpenJobs = me.navigation.some((n) => n.key === 'jobs')
   const [interviews, setInterviews] = useState<Interview[] | null>(null)
+  const [due, setDue] = useState<Interview[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    listFeedbackDue()
+      .then(setDue)
+      .catch(() => undefined)
     listUpcomingInterviews()
       .then(setInterviews)
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load interviews'))
@@ -22,7 +26,7 @@ export function InterviewsPage() {
     <div className="stack">
       <PageHeader
         title="Interviews"
-        description="Upcoming interviews. Schedule one from a candidate's panel in an opening."
+        description="Upcoming interviews and feedback to give. Schedule one from a candidate's panel in an opening."
         actions={
           <Link className="btn btn-secondary" to="/interview-questions">
             Interview questions
@@ -33,6 +37,21 @@ export function InterviewsPage() {
         <div role="alert" className="alert alert-error">
           {error}
         </div>
+      )}
+      {due.length > 0 && (
+        <Card>
+          <h3 style={{ marginTop: 0 }}>Waiting for your feedback</h3>
+          <ul className="stack" style={{ margin: 0, paddingLeft: 18, gap: 6 }}>
+            {due.map((i) => (
+              <li key={i.id}>
+                <Link to={`/interviews/${i.id}/feedback`}>{i.candidateName}</Link>{' '}
+                <span className="muted">
+                  · {i.jobTitle} · {formatWhen(i)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
       )}
       <Card>
         {!interviews && !error && <p className="muted">Loading…</p>}

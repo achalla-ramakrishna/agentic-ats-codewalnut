@@ -89,6 +89,13 @@ Interview questions (INT-21): `InterviewGuideService` loads
 `resources/interview/guide.yml` once and serves it at `GET /api/v1/interview-guide`
 to staff with VIEW_INTERVIEWS only.
 
+Interview feedback (ADR-0017): `InterviewFeedbackService` stores one
+`interview_feedback` row per interview and author. The panel is the organiser
+plus the listed interviewers; panel members see others' feedback only after
+giving theirs; staff with VIEW_CANDIDATES see it all; interviewers without it
+get "not found" for interviews they weren't on. Endpoints live on
+`InterviewController`.
+
 View as (ADR-0013): a session attribute makes the `Current*Service`
 resolvers return a candidate, client contact or role-limited copy of the
 admin; `ViewAsReadOnlyFilter` refuses API writes while it is set.

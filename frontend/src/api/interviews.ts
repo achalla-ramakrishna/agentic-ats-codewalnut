@@ -94,3 +94,85 @@ export function formatWhen(i: { startAt: string; endAt: string; timeZone: string
   }
   return format.formatRange(new Date(i.startAt), new Date(i.endAt))
 }
+
+// ---- Feedback after the interview (INT-24…), staff only ----
+
+export type Attendance = 'HELD' | 'CANDIDATE_NO_SHOW' | 'INTERVIEWER_COULD_NOT_JOIN' | 'ENDED_EARLY'
+export type Recommendation = 'STRONG_NO' | 'NO' | 'YES' | 'STRONG_YES'
+
+export const ATTENDANCE_LABEL: Record<Attendance, string> = {
+  HELD: 'The interview happened',
+  ENDED_EARLY: 'It ended early',
+  CANDIDATE_NO_SHOW: "The candidate didn't join",
+  INTERVIEWER_COULD_NOT_JOIN: "I couldn't join",
+}
+
+export const RECOMMENDATION_LABEL: Record<Recommendation, string> = {
+  STRONG_YES: 'Strong hire',
+  YES: 'Hire',
+  NO: 'No hire',
+  STRONG_NO: 'Strong no hire',
+}
+
+/** The 1–4 scale shared with the interview questions guide. */
+export const RATING_LABEL: Record<number, string> = { 1: 'Weak', 2: 'Below the bar', 3: 'Meets the bar', 4: 'Strong' }
+
+export interface Rating {
+  competency: string
+  rating: number | null
+  note: string | null
+}
+
+export interface FeedbackInput {
+  attendance: Attendance
+  ratings: Rating[]
+  strengths: string
+  concerns: string
+  questionsAsked: string
+  recommendation: Recommendation | null
+  notes: string
+}
+
+export interface Feedback {
+  authorEmail: string
+  authorName: string | null
+  attendance: Attendance
+  ratings: Rating[]
+  averageRating: number | null
+  strengths: string | null
+  concerns: string | null
+  questionsAsked: string | null
+  recommendation: Recommendation | null
+  notes: string | null
+  submittedAt: string
+  updatedAt: string
+}
+
+export interface FeedbackPage {
+  interview: Interview
+  onPanel: boolean
+  canSubmit: boolean
+  mine: Feedback | null
+  others: Feedback[]
+  hiddenCount: number
+  competencies: { name: string; guidance: string }[]
+}
+
+export interface FeedbackSummary {
+  interviewId: string
+  submitted: number
+  panelSize: number
+  recommendations: Recommendation[]
+  mineSubmitted: boolean
+  visible: boolean
+}
+
+export const getFeedback = (interviewId: string) => api<FeedbackPage>(`/interviews/${interviewId}/feedback`)
+export const submitFeedback = (interviewId: string, input: FeedbackInput) =>
+  api<FeedbackPage>(`/interviews/${interviewId}/feedback`, { method: 'PUT', body: json(input) })
+export const listFeedbackSummaries = (applicationId: string) =>
+  api<FeedbackSummary[]>(`/applications/${applicationId}/interview-feedback`)
+export const listFeedbackDue = () => api<Interview[]>('/interviews/feedback-due')
+
+/** Feedback opens once the interview has started, unless it was cancelled. */
+export const feedbackOpen = (i: Interview) => i.status === 'SCHEDULED' && new Date(i.startAt) <= new Date()

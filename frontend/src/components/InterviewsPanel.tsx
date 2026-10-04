@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import {
   browserTimeZone,
+  RECOMMENDATION_LABEL,
   cancelInterview,
+  feedbackOpen,
   formatWhen,
   getGoogleStatus,
   listApplicationInterviews,
+  listFeedbackSummaries,
   scheduleInterview,
+  type FeedbackSummary,
   type GoogleStatus,
   type Interview,
 } from '../api/interviews'
@@ -178,7 +183,33 @@ function ScheduleForm({
   )
 }
 
-function InterviewItem({ interview, canEdit, onCancelled }: { interview: Interview; canEdit: boolean; onCancelled: () => void }) {
+function FeedbackLine({ interview, summary }: { interview: Interview; summary: FeedbackSummary | undefined }) {
+  if (!feedbackOpen(interview)) return null
+  const submitted = summary?.submitted ?? 0
+  const recommendations = summary?.visible ? summary.recommendations : []
+  return (
+    <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+      <span className="meta">
+        Feedback: {submitted} of {summary?.panelSize ?? interview.interviewers.length + 1}
+        {recommendations.length > 0 && ` · ${recommendations.map((r) => RECOMMENDATION_LABEL[r]).join(', ')}`}
+        {summary && !summary.visible && submitted > 0 && ' · give yours to see theirs'}
+      </span>
+      <Link to={`/interviews/${interview.id}/feedback`}>{summary?.mineSubmitted ? 'View feedback' : 'Feedback form'}</Link>
+    </div>
+  )
+}
+
+function InterviewItem({
+  interview,
+  summary,
+  canEdit,
+  onCancelled,
+}: {
+  interview: Interview
+  summary: FeedbackSummary | undefined
+  canEdit: boolean
+  onCancelled: () => void
+}) {
   const [cancelling, setCancelling] = useState(false)
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -221,6 +252,7 @@ function InterviewItem({ interview, canEdit, onCancelled }: { interview: Intervi
         Organiser: {interview.organizerEmail}
         {interview.cancelReason ? ` · Cancelled: ${interview.cancelReason}` : ''}
       </div>
+      <FeedbackLine interview={interview} summary={summary} />
       {error && (
         <div role="alert" className="alert alert-error">
           {error}
@@ -266,11 +298,13 @@ export function InterviewsPanel({
   onChanged: () => void
 }) {
   const [interviews, setInterviews] = useState<Interview[]>([])
+  const [summaries, setSummaries] = useState<FeedbackSummary[]>([])
   const [scheduling, setScheduling] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
 
   const load = useCallback(() => {
     listApplicationInterviews(applicationId).then(setInterviews).catch(() => undefined)
+    listFeedbackSummaries(applicationId).then(setSummaries).catch(() => undefined)
   }, [applicationId])
   useEffect(load, [load])
 
@@ -307,6 +341,7 @@ export function InterviewsPanel({
             <InterviewItem
               key={i.id}
               interview={i}
+              summary={summaries.find((f) => f.interviewId === i.id)}
               canEdit={canEdit}
               onCancelled={() => {
                 setNotice('Interview cancelled. Google has emailed everyone.')

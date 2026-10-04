@@ -16,6 +16,19 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-04-interview-feedback',
+    date: '2026-10-04',
+    title: 'Feedback form after each interview',
+    summary: 'After a Google Meet interview, everyone on the panel fills in a short form: how it went, a 1–4 rating for six areas, strengths, concerns, the questions they asked and a hire / no hire recommendation. You see the rest of the panel’s feedback only after giving yours, so opinions stay independent. Candidates and clients never see it.',
+    steps: [
+      'Open Interviews: “Waiting for your feedback” lists the interviews you still owe.',
+      'Or open the candidate in an opening; under Interviews, click “Feedback form”.',
+      'Rate the areas you covered, choose a recommendation and Submit. You can update it later.',
+    ],
+    link: { to: '/interviews', label: 'Open Interviews' },
+    capability: 'VIEW_INTERVIEWS',
+  },
+  {
     id: '2026-10-04-interview-questions',
     date: '2026-10-04',
     title: 'Interview questions for every role and level',

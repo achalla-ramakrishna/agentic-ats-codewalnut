@@ -10,6 +10,7 @@ import { JobDetailPage } from './pages/JobDetailPage'
 import { JobsPage } from './pages/JobsPage'
 import { CandidateHomePage } from './pages/CandidateHomePage'
 import { ComingSoonPage } from './pages/ComingSoonPage'
+import { InterviewFeedbackPage } from './pages/InterviewFeedbackPage'
 import { InterviewsPage } from './pages/InterviewsPage'
 import { InterviewQuestionsPage } from './pages/InterviewQuestionsPage'
 import { MessagesPage } from './pages/MessagesPage'
@@ -135,6 +136,9 @@ function StaffApp() {
           <Route key={item.key} path={item.path} element={SCREENS[item.key] ?? <NoAccessPage />} />
         ))}
         {state.me.navigation.some((item) => item.key === 'jobs') && <Route path="/jobs/:id" element={<JobDetailPage />} />}
+        {state.me.navigation.some((item) => item.key === 'interviews') && (
+          <Route path="/interviews/:id/feedback" element={<InterviewFeedbackPage />} />
+        )}
         <Route path="/whats-new" element={<WhatsNewPage />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NoAccessPage />} />

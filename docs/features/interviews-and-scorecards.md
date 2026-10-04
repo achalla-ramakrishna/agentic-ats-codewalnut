@@ -3,11 +3,11 @@
 | | |
 | --- | --- |
 | **ID prefix** | INT |
-| **Status** | In progress (scheduling shipped) |
+| **Status** | In progress (scheduling and feedback shipped) |
 | **Chunk** | 4 |
 | **Owner** | TBD |
 | **Related** | [pipeline.md](pipeline.md), [client-submissions.md](client-submissions.md), [ai-assistance.md](ai-assistance.md) |
-| **Last updated** | 2026-09-29 |
+| **Last updated** | 2026-10-04 |
 
 ## Summary
 
@@ -66,11 +66,17 @@ A simpler first cut of INT-01 and INT-03, decided in ADR-0005.
 | INT-21 | **Interview questions** page for staff who interview (VIEW_INTERVIEWS: admin, recruiter, hiring manager, account manager, interviewer): 17 categories and 150 questions (aptitude, data structures for freshers with Java/Python/JavaScript/C++ questions, live coding, Java, Python, JavaScript, React, Angular, Node.js, SQL, system design, CS fundamentals, DevOps and cloud, QA automation, data analytics, AI/GenAI, project deep-dive). Each has a level (fresher, 1–3 years, 3+ years), what a strong answer covers and the red flags, plus how to run and score the round (1–4 scale). Content lives in `resources/interview/guide.yml`. | Done |
 | INT-22 | Filter by role (the role-test roles), level, language, category and search; pick questions for an interview (kept in the browser); hide the answer guides while sharing a screen; print. Linked from the Interviews page. | Done |
 | INT-23 | Candidates, client contacts and approvers can't read the questions (the API refuses; there is no link in their navigation). | Done |
+| INT-24 | **Feedback form** after a Google Meet interview (ADR-0017), at `/interviews/{id}/feedback`. How it went (happened, ended early, candidate didn't join, I couldn't join); rate six areas on the 1–4 scale from the interview questions guide (problem solving, technical depth, coding / hands-on, communication, ownership and attitude, role fit), each with optional evidence; strengths, concerns, the questions asked, an overall recommendation (strong no hire, no hire, hire, strong hire) and notes. A recommendation and at least one rating are required when the interview took place; a no-show needs only a note. Opens when the interview starts; not for cancelled interviews. One entry per person, editable; submits and edits are audited. | Done |
+| INT-25 | Who gives it: the organiser and the listed interviewers, plus recruiters and admins (who may run an interview for someone). Hiring managers and account managers who weren't on the panel read it. The candidate's drawer shows, per interview, "Feedback: n of panel" with the recommendations and a link to the form. | Done |
+| INT-26 | Independent opinions: a panel member sees the others' feedback only after submitting their own (INT-AC1). | Done |
+| INT-27 | "Waiting for your feedback" on the Interviews page: interviews you were on that started, ended in the last 30 days and have no feedback from you. Candidates, client contacts and approvers can never read or write feedback; an interviewer can't open an interview they weren't on. | Done |
 
 ## Business rules
 
-- A scorecard can be edited by its author until the stage is left; changes after
-  submission are audited.
+- Feedback can be edited by its author; every submit and edit is audited
+  (first release: no lock when the stage moves on).
+- Feedback is a record for people to decide on. It never moves a candidate by
+  itself, and no AI writes or scores it.
 - Interviewer load limit per week is configurable (v1).
 
 ## Edge cases & failure states
@@ -90,11 +96,16 @@ A simpler first cut of INT-01 and INT-03, decided in ADR-0005.
 - **INT-AC6** Given an Interviewer not on a panel, then that interview is not
   in their list.
 
-Tests: `InterviewFlowTest`, `GoogleCalendarClientTest`,
-`GoogleSignInConfiguredTest` (backend); `InterviewsPanel.test.tsx` (frontend).
+- **INT-AC7** Given a panel member gives feedback, then the others on the
+  panel see it only after giving theirs; staff who weren't on the panel see it
+  all; candidates and client contacts get no access.
+
+Tests: `InterviewFlowTest`, `InterviewFeedbackFlowTest`, `GoogleCalendarClientTest`,
+`GoogleSignInConfiguredTest` (backend); `InterviewsPanel.test.tsx`,
+`InterviewFeedbackPage.test.tsx` (frontend).
 
 - **INT-AC1** Given an interviewer who hasn't submitted, when they open the
-  debrief, then peer feedback is hidden.
+  debrief, then peer feedback is hidden. (Done: INT-26.)
 - **INT-AC2** Given an Interviewer requests an unassigned candidate, then `403`
   and an audit entry.
 - **INT-AC3** Given an interview ended 2 h ago with no scorecard, then the
@@ -102,25 +113,30 @@ Tests: `InterviewFlowTest`, `GoogleCalendarClientTest`,
 
 ## Data
 
-`Interview`, `InterviewPanelMember`, `Scorecard`, `ScorecardTemplate`.
+Built: `Interview`, `InterviewFeedback` (table `interview_feedback`, V17: one
+row per interview and author email; ratings as JSON; attendance;
+recommendation). Planned: `InterviewPanelMember`, `ScorecardTemplate` (per-role
+areas instead of the six defaults).
 
 ## API
 
 Built: `GET /google/status`, `GET /google/connect?returnTo=`,
 `GET /interviews` (upcoming), `GET/POST /applications/{id}/interviews`,
 `POST /interviews/{id}/cancel`, `PATCH /candidates/{id}`,
-`GET /candidate/interviews`.
+`GET /candidate/interviews`, `GET/PUT /interviews/{id}/feedback`,
+`GET /interviews/feedback-due`, `GET /applications/{id}/interview-feedback`.
 
 Planned:
 
 `GET/POST /interviews`, `PATCH /interviews/{id}`, `GET /interviews/mine`,
-`POST /interviews/{id}/scorecards`, `GET /applications/{id}/debrief`,
+`GET /applications/{id}/debrief`,
 public: `GET/POST /book/{token}`.
 
 ## Change log
 
 | Date | Change |
 | --- | --- |
+| 2026-10-04 | Feedback form after interviews, independent until you submit, with a "waiting for your feedback" list (INT-24 to INT-27, ADR-0017) |
 | 2026-10-04 | Interview questions page for staff, with scoring guide and freshers' data-structures questions (INT-21 to INT-23) |
 | 2026-09-25 | Created from SPEC.md |
 | 2026-09-29 | "Connect Google Calendar" became "Connect Google (Calendar & Gmail)" (`/google/status`, `/google/connect`), shared with email (ADR-0006) |

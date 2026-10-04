@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fakeFetch } from '../test/fakeFetch'
 import { InterviewsPanel } from './InterviewsPanel'
@@ -27,14 +28,16 @@ const scheduled = {
 
 function renderPanel(email: string | null = 'asha@example.com') {
   return render(
-    <InterviewsPanel
-      applicationId="a1"
-      candidateName="Asha Rao"
-      candidateEmail={email}
-      jobTitle="React Intern"
-      canEdit
-      onChanged={() => undefined}
-    />,
+    <MemoryRouter>
+      <InterviewsPanel
+        applicationId="a1"
+        candidateName="Asha Rao"
+        candidateEmail={email}
+        jobTitle="React Intern"
+        canEdit
+        onChanged={() => undefined}
+      />
+    </MemoryRouter>,
   )
 }
 
@@ -107,5 +110,31 @@ describe('InterviewsPanel', () => {
     await waitFor(() => expect(screen.getByText(/Interview cancelled/)).toBeInTheDocument())
     const post = fetch.mock.calls.find(([url]) => String(url).includes('/cancel'))
     expect(JSON.parse(String(post?.[1]?.body))).toEqual({ reason: 'Candidate asked to move it' })
+  })
+
+  it('shows feedback progress and links to the form once the interview has started (INT-25)', async () => {
+    const past = { ...scheduled, startAt: '2026-01-15T05:30:00Z', endAt: '2026-01-15T06:15:00Z' }
+    fakeFetch([
+      { path: '/applications/a1/interviews', body: [past] },
+      {
+        path: '/applications/a1/interview-feedback',
+        body: [{ interviewId: 'i1', submitted: 1, panelSize: 2, recommendations: ['YES'], mineSubmitted: false, visible: true }],
+      },
+    ])
+    renderPanel()
+
+    expect(await screen.findByText(/Feedback: 1 of 2 · Hire/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Feedback form' })).toHaveAttribute('href', '/interviews/i1/feedback')
+  })
+
+  it('offers no feedback before the interview starts', async () => {
+    fakeFetch([
+      { path: '/applications/a1/interviews', body: [scheduled] },
+      { path: '/applications/a1/interview-feedback', body: [] },
+    ])
+    renderPanel()
+
+    expect(await screen.findByRole('link', { name: 'Join Google Meet' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Feedback form' })).not.toBeInTheDocument()
   })
 })
