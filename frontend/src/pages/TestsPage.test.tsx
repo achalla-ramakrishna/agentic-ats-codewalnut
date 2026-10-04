@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AssessmentDetail } from '../api/assessments'
 import { fakeFetch } from '../test/fakeFetch'
@@ -58,7 +59,11 @@ describe('TestsPage', () => {
       { path: '/assessments', body: [] },
     ])
     vi.spyOn(window, 'confirm').mockReturnValue(true)
-    render(<TestsPage />)
+    render(
+      <MemoryRouter>
+        <TestsPage />
+      </MemoryRouter>,
+    )
 
     await userEvent.click(await screen.findByRole('button', { name: 'New test' }))
     const form = screen.getByRole('form', { name: 'New test' })
@@ -86,7 +91,11 @@ describe('TestsPage', () => {
       { path: '/assessments', body: [{ ...summary, status: 'READY', invites: 1 }] },
     ])
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
-    render(<TestsPage />)
+    render(
+      <MemoryRouter>
+        <TestsPage />
+      </MemoryRouter>,
+    )
 
     await userEvent.click(await screen.findByRole('button', { name: 'Java basics' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Delete' }))
@@ -100,7 +109,11 @@ describe('TestsPage', () => {
       { path: '/assessments/t1', body: { ...empty, summary: { ...summary, status: 'READY', invites: 2, taken: 1 } } },
       { path: '/assessments', body: [{ ...summary, status: 'READY', invites: 2, taken: 1 }] },
     ])
-    render(<TestsPage />)
+    render(
+      <MemoryRouter>
+        <TestsPage />
+      </MemoryRouter>,
+    )
     await userEvent.click(await screen.findByRole('button', { name: 'Java basics' }))
     expect(await screen.findByText(/1 candidate has taken it/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()

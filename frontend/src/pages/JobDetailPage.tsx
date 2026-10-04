@@ -293,32 +293,39 @@ export function JobDetailPage() {
         title={job.title}
         description={`${job.client ? `${job.client.name} · ` : ''}${job.hiringTypeLabel}${job.openings ? ` · ${job.openings} needed` : ''}`}
         actions={
-          canEdit ? (
-            <>
-              {insights?.available && (
-                <Button variant="secondary" onClick={() => setPanel(panel === 'resumes' ? 'none' : 'resumes')}>
-                  Upload résumés
+          <>
+            {me.navigation.some((n) => n.key === 'interviews') && (
+              <Link className="btn btn-secondary" to={`/interview-kits/${job.id}`}>
+                Interview kit
+              </Link>
+            )}
+            {canEdit && (
+              <>
+                {insights?.available && (
+                  <Button variant="secondary" onClick={() => setPanel(panel === 'resumes' ? 'none' : 'resumes')}>
+                    Upload résumés
+                  </Button>
+                )}
+                <Button variant="secondary" onClick={() => setPanel(panel === 'import' ? 'none' : 'import')}>
+                  Import from spreadsheet
                 </Button>
-              )}
-              <Button variant="secondary" onClick={() => setPanel(panel === 'import' ? 'none' : 'import')}>
-                Import from spreadsheet
-              </Button>
-              <Button onClick={() => setPanel(panel === 'add' ? 'none' : 'add')}>Add candidate</Button>
-              <select
-                className="select"
-                aria-label="Opening status"
-                value={job.status}
-                onChange={async (e) => {
-                  await updateJob(job.id, { status: e.target.value as Job['status'] })
-                  load()
-                }}
-              >
-                <option value="OPEN">Open</option>
-                <option value="ON_HOLD">On hold</option>
-                <option value="CLOSED">Closed</option>
-              </select>
-            </>
-          ) : undefined
+                <Button onClick={() => setPanel(panel === 'add' ? 'none' : 'add')}>Add candidate</Button>
+                <select
+                  className="select"
+                  aria-label="Opening status"
+                  value={job.status}
+                  onChange={async (e) => {
+                    await updateJob(job.id, { status: e.target.value as Job['status'] })
+                    load()
+                  }}
+                >
+                  <option value="OPEN">Open</option>
+                  <option value="ON_HOLD">On hold</option>
+                  <option value="CLOSED">Closed</option>
+                </select>
+              </>
+            )}
+          </>
         }
       />
       {message && <div className="alert alert-info">{message}</div>}

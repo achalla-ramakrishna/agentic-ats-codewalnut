@@ -294,6 +294,9 @@ export function InterviewFeedbackPage() {
         description={`${i.jobTitle} · ${formatWhen(i)}`}
         actions={
           <div className="row">
+            <Link className="btn btn-secondary" to={`/interview-kits/${i.jobId}`}>
+              Interview kit
+            </Link>
             <Link className="btn btn-secondary" to="/interview-questions">
               Interview questions
             </Link>

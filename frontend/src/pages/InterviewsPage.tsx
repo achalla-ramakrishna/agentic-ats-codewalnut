@@ -70,6 +70,7 @@ export function InterviewsPage() {
                   <th>Opening</th>
                   <th>Interviewers</th>
                   <th>Meet</th>
+                  <th>Kit</th>
                 </tr>
               </thead>
               <tbody>
@@ -93,6 +94,9 @@ export function InterviewsPage() {
                       ) : (
                         '—'
                       )}
+                    </td>
+                    <td>
+                      <Link to={`/interview-kits/${i.jobId}`}>Kit</Link>
                     </td>
                   </tr>
                 ))}

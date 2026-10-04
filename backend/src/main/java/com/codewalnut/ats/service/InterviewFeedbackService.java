@@ -64,6 +64,7 @@ public class InterviewFeedbackService {
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
     private final AdminUpdateService adminUpdates;
+    private final InterviewKitService kitService;
 
     @Transactional(readOnly = true)
     public InterviewFeedbackPage page(AppUser actor, UUID interviewId) {
@@ -76,7 +77,7 @@ public class InterviewFeedbackService {
         boolean showOthers = !onPanel || mine != null;
         return new InterviewFeedbackPage(InterviewResponse.from(interview), onPanel, canSubmit(actor, interview),
                 mine == null ? null : view(mine), showOthers ? others.stream().map(this::view).toList() : List.of(),
-                showOthers ? 0 : others.size(), COMPETENCIES);
+                showOthers ? 0 : others.size(), competencies(interview));
     }
 
     @Transactional
@@ -162,6 +163,17 @@ public class InterviewFeedbackService {
         Set<UUID> done = feedbackRepository.findByInterviewIdIn(ended.stream().map(Interview::getId).toList()).stream()
                 .filter(f -> f.getAuthorEmail().equals(me)).map(InterviewFeedback::getInterviewId).collect(Collectors.toSet());
         return ended.stream().filter(i -> !done.contains(i.getId())).map(InterviewResponse::from).toList();
+    }
+
+    /** The six standard areas, then the job's must-have skills when the opening has an interview kit (INT-31). */
+    private List<Competency> competencies(Interview interview) {
+        List<Competency> extra = kitService.extraCompetencies(interview.getApplication().getJob().getId());
+        if (extra.isEmpty()) {
+            return COMPETENCIES;
+        }
+        List<Competency> all = new ArrayList<>(COMPETENCIES);
+        all.addAll(extra);
+        return all;
     }
 
     // ---- rules ----

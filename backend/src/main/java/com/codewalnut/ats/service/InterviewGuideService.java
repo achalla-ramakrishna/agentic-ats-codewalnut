@@ -45,6 +45,11 @@ public class InterviewGuideService {
         return guide;
     }
 
+    /** The guide's content, for other features that pick questions from it (e.g. interview kits). */
+    public InterviewGuide content() {
+        return guide;
+    }
+
     @SuppressWarnings("unchecked")
     static InterviewGuide load() {
         Map<String, Object> m;

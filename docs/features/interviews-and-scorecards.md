@@ -70,6 +70,11 @@ A simpler first cut of INT-01 and INT-03, decided in ADR-0005.
 | INT-25 | Who gives it: the organiser and the listed interviewers, plus recruiters and admins (who may run an interview for someone). Hiring managers and account managers who weren't on the panel read it. The candidate's drawer shows, per interview, "Feedback: n of panel" with the recommendations and a link to the form. | Done |
 | INT-26 | Independent opinions: a panel member sees the others' feedback only after submitting their own (INT-AC1). | Done |
 | INT-27 | "Waiting for your feedback" on the Interviews page: interviews you were on that started, ended in the last 30 days and have no feedback from you. Candidates, client contacts and approvers can never read or write feedback; an interviewer can't open an interview they weren't on. | Done |
+| INT-28 | **Interview kit** per opening (ADR-0019), at `/interview-kits/{jobId}`, linked from the opening, the Interviews page and the feedback form. Generated from the job description: the skills it asks for (must-have or nice to have), the level (from years of experience or words like intern, senior, lead) and the closest role test. Recruiters and admins can change the level or role and regenerate; regenerating picks fresh questions. Notes say what was assumed (no description, no years given, no clear role). Rule-based, no AI; it suggests and the panel decides. | Done |
+| INT-29 | The kit's contents: (1) the **online test**, the role test at that level, with **Create this test** (a draft to check, then send); (2) a **screening call** with questions from the job's must-haves, work mode, location and availability; (3) a **technical interview** with questions written from the must-haves plus questions from the interview guide for each skill, with strong answers and red flags; (4) **live coding**: a warm-up and a main problem at the level, with the expected approach and what to look for, plus data-structure questions to discuss (a hands-on exercise instead for SQL, DevOps and data-analyst roles); (5) **system design** from mid-level up; (6) a **project deep-dive**; then the **scorecard** and hire bar. Answer guides can be hidden before sharing a screen; the kit prints. | Done |
+| INT-30 | When the job description changes after the kit was made, the kit says so and offers to regenerate. | Done |
+| INT-31 | The feedback form adds the job's must-have skills (from the kit) to the six standard areas to rate. | Done |
+| INT-32 | Who sees kits: hiring staff (VIEW_CANDIDATES) for any opening; interviewers only for openings where they are on an interview panel. Candidates, client contacts and approvers never. Generating is audited. | Done |
 
 ## Business rules
 
@@ -100,9 +105,9 @@ A simpler first cut of INT-01 and INT-03, decided in ADR-0005.
   panel see it only after giving theirs; staff who weren't on the panel see it
   all; candidates and client contacts get no access.
 
-Tests: `InterviewFlowTest`, `InterviewFeedbackFlowTest`, `GoogleCalendarClientTest`,
+Tests: `InterviewFlowTest`, `InterviewFeedbackFlowTest`, `InterviewKitFlowTest`, `InterviewKitServiceTest`, `GoogleCalendarClientTest`,
 `GoogleSignInConfiguredTest` (backend); `InterviewsPanel.test.tsx`,
-`InterviewFeedbackPage.test.tsx` (frontend).
+`InterviewFeedbackPage.test.tsx`, `InterviewKitPage.test.tsx` (frontend).
 
 - **INT-AC1** Given an interviewer who hasn't submitted, when they open the
   debrief, then peer feedback is hidden. (Done: INT-26.)
@@ -124,7 +129,8 @@ Built: `GET /google/status`, `GET /google/connect?returnTo=`,
 `GET /interviews` (upcoming), `GET/POST /applications/{id}/interviews`,
 `POST /interviews/{id}/cancel`, `PATCH /candidates/{id}`,
 `GET /candidate/interviews`, `GET/PUT /interviews/{id}/feedback`,
-`GET /interviews/feedback-due`, `GET /applications/{id}/interview-feedback`.
+`GET /interviews/feedback-due`, `GET /applications/{id}/interview-feedback`,
+`GET/POST /jobs/{id}/interview-kit`.
 
 Planned:
 
@@ -136,6 +142,7 @@ public: `GET/POST /book/{token}`.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-04 | Interview kits generated from the job description (INT-28 to INT-32, ADR-0019) |
 | 2026-10-04 | Feedback form after interviews, independent until you submit, with a "waiting for your feedback" list (INT-24 to INT-27, ADR-0017) |
 | 2026-10-04 | Interview questions page for staff, with scoring guide and freshers' data-structures questions (INT-21 to INT-23) |
 | 2026-09-25 | Created from SPEC.md |

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   CATEGORY_LABEL,
   KIND_LABEL,
@@ -425,7 +426,16 @@ function CreateForm({ onCreated, onCancel }: { onCreated: (id: string) => void; 
 /** The test library: create tests, draft questions with AI, check them and mark them ready (ADR-0011). */
 export function TestsPage() {
   const [tests, setTests] = useState<AssessmentSummary[] | null>(null)
-  const [selected, setSelected] = useState<string | null>(null)
+  const [searchParams] = useSearchParams()
+  /** ?test=<id> opens that test, e.g. after "Create this test" in an interview kit. */
+  const [selected, setSelected] = useState<string | null>(searchParams.get('test'))
+  const editorRef = useRef<HTMLDivElement>(null)
+  // Arriving with ?test=<id>: bring the test into view once it has rendered.
+  useEffect(() => {
+    if (!searchParams.get('test')) return
+    const t = window.setTimeout(() => editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }), 300)
+    return () => window.clearTimeout(t)
+  }, [searchParams])
   const [creating, setCreating] = useState(false)
   const [building, setBuilding] = useState(false)
   const [tab, setTab] = useState<'tests' | 'bank'>('tests')
@@ -529,17 +539,19 @@ export function TestsPage() {
       </Card>
       )}
       {tab === 'tests' && selected && (
-        <Editor
-          key={selected}
-          id={selected}
-          onChanged={load}
-          onOpen={setSelected}
-          onDeleted={(message) => {
-            setSelected(null)
-            setNotice(message)
-            load()
-          }}
-        />
+        <div ref={editorRef}>
+          <Editor
+            key={selected}
+            id={selected}
+            onChanged={load}
+            onOpen={setSelected}
+            onDeleted={(message) => {
+              setSelected(null)
+              setNotice(message)
+              load()
+            }}
+          />
+        </div>
       )}
     </div>
   )

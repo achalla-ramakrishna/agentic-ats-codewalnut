@@ -11,6 +11,8 @@ public interface InterviewRepository extends JpaRepository<Interview, UUID> {
 
     List<Interview> findByApplicationIdOrderByStartAtDesc(UUID applicationId);
 
+    List<Interview> findByApplicationJobId(UUID jobId);
+
     List<Interview> findByStatusAndEndAtAfterOrderByStartAtAsc(InterviewStatus status, Instant after);
 
     List<Interview> findByApplicationCandidateIdAndStatusAndEndAtAfterOrderByStartAtAsc(

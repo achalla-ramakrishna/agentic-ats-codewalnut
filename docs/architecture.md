@@ -109,6 +109,15 @@ résumés and documents; each `Application` joins it to one `JobOpening` with it
 own stage, notes, tests and interviews. `TrackerService.addToOpening` creates a
 second application for the same candidate and notes the link on both.
 
+Interview kits (ADR-0019): `InterviewKitService` reads a job's title and
+description with keyword rules (skills, must-have vs nice-to-have, years and
+seniority words), matches a role from `bank/Roles`, and assembles the kit from
+the role test preset, `InterviewGuideService` questions, `CodingBank` problems
+and the feedback competencies. The result is stored as JSON in `interview_kit`
+(one per job) with a hash of the text it came from, so a changed description
+shows as out of date. `InterviewFeedbackService` adds the kit's must-haves to
+the feedback form.
+
 View as (ADR-0013): a session attribute makes the `Current*Service`
 resolvers return a candidate, client contact or role-limited copy of the
 admin; `ViewAsReadOnlyFilter` refuses API writes while it is set.

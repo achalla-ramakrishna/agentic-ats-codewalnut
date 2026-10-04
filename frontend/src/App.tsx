@@ -12,6 +12,7 @@ import { JobsPage } from './pages/JobsPage'
 import { CandidateHomePage } from './pages/CandidateHomePage'
 import { ComingSoonPage } from './pages/ComingSoonPage'
 import { InterviewFeedbackPage } from './pages/InterviewFeedbackPage'
+import { InterviewKitPage } from './pages/InterviewKitPage'
 import { InterviewsPage } from './pages/InterviewsPage'
 import { InterviewQuestionsPage } from './pages/InterviewQuestionsPage'
 import { MessagesPage } from './pages/MessagesPage'
@@ -140,6 +141,9 @@ function StaffApp() {
         {state.me.navigation.some((item) => item.key === 'jobs') && <Route path="/jobs/:id" element={<JobDetailPage />} />}
         {state.me.navigation.some((item) => item.key === 'interviews') && (
           <Route path="/interviews/:id/feedback" element={<InterviewFeedbackPage />} />
+        )}
+        {state.me.navigation.some((item) => item.key === 'interviews') && (
+          <Route path="/interview-kits/:jobId" element={<InterviewKitPage />} />
         )}
         <Route path="/whats-new" element={<WhatsNewPage />} />
         <Route path="/login" element={<Navigate to="/" replace />} />

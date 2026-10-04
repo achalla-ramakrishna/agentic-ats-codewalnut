@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-04-interview-kits',
+    date: '2026-10-04',
+    title: 'Interview kits from the job description',
+    summary: 'One click turns an opening’s job description into an interview kit: the skills and level it asks for, the online test to send, and a round-by-round plan (screening, technical, live coding, system design, project deep-dive) with questions, answer guides and coding problems, plus a scorecard. Interviewers follow the kit, and the feedback form rates the job’s must-have skills.',
+    steps: [
+      'Open an opening and click Interview kit, then Generate interview kit.',
+      'Check the skills, level and role; change them and Regenerate if needed.',
+      'Click Create this test to make the online test; interviewers open the kit from Interviews or the feedback form.',
+    ],
+    capability: 'VIEW_INTERVIEWS',
+  },
+  {
     id: '2026-10-04-dsa-bank',
     date: '2026-10-04',
     title: 'Data structures & algorithms tests',
