@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-04-give-feedback',
+    date: '2026-10-04',
+    title: 'Easier to find the feedback form',
+    summary: 'The Interviews page now lists every interview from the last 30 days with a Give feedback button and shows whose feedback is still due. Held an interview on a Meet set up outside the app? Log it from the candidate’s panel and the feedback form is ready.',
+    steps: [
+      'Open Interviews in the menu and click Give feedback next to the interview.',
+      'For an interview set up elsewhere: open the candidate, click “Log an interview held elsewhere”, then Feedback form.',
+    ],
+    link: { to: '/interviews', label: 'Open Interviews' },
+    capability: 'VIEW_INTERVIEWS',
+  },
+  {
     id: '2026-10-04-edit-opening',
     date: '2026-10-04',
     title: 'Rename openings and clients',

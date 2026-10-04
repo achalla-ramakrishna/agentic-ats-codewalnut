@@ -136,5 +136,25 @@ describe('InterviewsPanel', () => {
 
     expect(await screen.findByRole('link', { name: 'Join Google Meet' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Feedback form' })).not.toBeInTheDocument()
+    expect(screen.getByText('Feedback form opens when the interview starts.')).toBeInTheDocument()
+  })
+
+  it('logs an interview held elsewhere so feedback can be given (INT-33)', async () => {
+    const fetch = fakeFetch([
+      { path: '/applications/a1/interviews', body: [] },
+      { path: '/applications/a1/interview-feedback', body: [] },
+      { method: 'POST', path: '/applications/a1/interviews/log', status: 201, body: { ...scheduled, meetLink: null } },
+    ])
+    renderPanel()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Log an interview held elsewhere' }))
+    await userEvent.type(screen.getByLabelText(/Interviewers/), 'priya@codewalnut.test')
+    await userEvent.click(screen.getByRole('button', { name: 'Log interview' }))
+
+    expect(await screen.findByText(/Interview logged/)).toBeInTheDocument()
+    const post = fetch.mock.calls.find(([url, init]) => String(url).includes('/interviews/log') && init?.method === 'POST')
+    const body = JSON.parse(String(post?.[1]?.body)) as Record<string, unknown>
+    expect(body).toMatchObject({ durationMinutes: 45, interviewerEmails: ['priya@codewalnut.test'] })
+    expect(new Date(String(body.startAt)).getTime()).toBeLessThanOrEqual(Date.now())
   })
 })

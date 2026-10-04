@@ -213,4 +213,44 @@ class InterviewFeedbackFlowTest {
         mockMvc.perform(get("/api/v1/applications/" + iv[0] + "/interview-feedback").session(clientSession))
                 .andExpect(status().is4xxClientError());
     }
+
+    /** INT-33, INT-34: interviews held outside the app can be logged; recent interviews list their feedback. */
+    @Test
+    void logAnInterviewHeldElsewhereAndSeeRecentOnes() throws Exception {
+        String job = JsonPath.read(send(ADMIN, "/api/v1/jobs", "{\"title\":\"Intern " + tag + "\",\"hiringType\":\"INTERNAL\"}"), "$.id");
+        String app = JsonPath.read(send(ADMIN, "/api/v1/jobs/" + job + "/applications", "{\"name\":\"Meera Iyer\",\"stage\":\"SCREENING\"}"), "$.id");
+        Instant earlier = Instant.now().minus(Duration.ofHours(2)).truncatedTo(ChronoUnit.MINUTES);
+        String logged = "{\"startAt\":\"" + earlier + "\",\"durationMinutes\":45,\"timeZone\":\"Asia/Kolkata\","
+                + "\"interviewerEmails\":[\"interviewer@codewalnut.test\"]}";
+        // No candidate email needed, no calendar invite.
+        String id = JsonPath.read(mockMvc.perform(post("/api/v1/applications/" + app + "/interviews/log").with(RECRUITER).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(logged))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.meetLink").doesNotExist())
+                .andExpect(jsonPath("$.organizerEmail").value("recruiter@codewalnut.test"))
+                .andReturn().getResponse().getContentAsString(), "$.id");
+        mockMvc.perform(post("/api/v1/applications/" + app + "/interviews/log").with(RECRUITER).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(logged.replace(earlier.toString(),
+                                Instant.now().plus(Duration.ofDays(1)).toString())))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/v1/applications/" + app + "/interviews/log").with(INTERVIEWER).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(logged)).andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/v1/interviews/recent").with(INTERVIEWER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.interview.id == '" + id + "')].onPanel").value(Matchers.contains(true)))
+                .andExpect(jsonPath("$[?(@.interview.id == '" + id + "')].mineSubmitted").value(Matchers.contains(false)));
+        feedback(INTERVIEWER, id, HELD_YES).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/interviews/recent").with(INTERVIEWER))
+                .andExpect(jsonPath("$[?(@.interview.id == '" + id + "')].mineSubmitted").value(Matchers.contains(true)))
+                .andExpect(jsonPath("$[?(@.interview.id == '" + id + "')].submitted").value(Matchers.contains(1)));
+        // Hiring staff see every recent interview; an interviewer only theirs.
+        String notMine = interview("")[1];
+        moveToPast(notMine);
+        org.assertj.core.api.Assertions.assertThat(mockMvc.perform(get("/api/v1/interviews/recent").with(HIRING_MANAGER))
+                .andReturn().getResponse().getContentAsString()).contains(notMine, id);
+        org.assertj.core.api.Assertions.assertThat(mockMvc.perform(get("/api/v1/interviews/recent").with(INTERVIEWER))
+                .andReturn().getResponse().getContentAsString()).doesNotContain(notMine);
+        mockMvc.perform(get("/api/v1/interviews/recent").with(user("approver@codewalnut.test"))).andExpect(status().isForbidden());
+    }
 }

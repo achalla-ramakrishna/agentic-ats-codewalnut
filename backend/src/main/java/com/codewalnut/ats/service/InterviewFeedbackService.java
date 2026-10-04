@@ -11,6 +11,7 @@ import com.codewalnut.ats.dto.FeedbackDtos.FeedbackSummary;
 import com.codewalnut.ats.dto.FeedbackDtos.FeedbackView;
 import com.codewalnut.ats.dto.FeedbackDtos.InterviewFeedbackPage;
 import com.codewalnut.ats.dto.FeedbackDtos.Rating;
+import com.codewalnut.ats.dto.FeedbackDtos.RecentInterview;
 import com.codewalnut.ats.dto.InterviewDtos.InterviewResponse;
 import com.codewalnut.ats.repository.InterviewFeedbackRepository;
 import com.codewalnut.ats.repository.InterviewRepository;
@@ -147,6 +148,31 @@ public class InterviewFeedbackService {
                     mine, visible));
         }
         return out;
+    }
+
+    /**
+     * Interviews that started in the last 30 days, newest first, with their feedback status: all of
+     * them for hiring staff, only the ones they were on for interviewers.
+     */
+    @Transactional(readOnly = true)
+    public List<RecentInterview> recent(AppUser actor) {
+        accessPolicy.require(actor, Capability.VIEW_INTERVIEWS);
+        String me = email(actor);
+        Instant now = Instant.now();
+        boolean seesAll = accessPolicy.has(actor, Capability.VIEW_CANDIDATES);
+        List<Interview> started = new ArrayList<>(interviewRepository.findByStatusAndEndAtAfterOrderByStartAtAsc(InterviewStatus.SCHEDULED,
+                now.minus(DUE_WINDOW)).stream().filter(i -> !i.getStartAt().isAfter(now) && (seesAll || onPanel(i, me))).toList());
+        java.util.Collections.reverse(started);
+        if (started.isEmpty()) {
+            return List.of();
+        }
+        Map<UUID, List<InterviewFeedback>> byInterview = feedbackRepository.findByInterviewIdIn(started.stream().map(Interview::getId).toList())
+                .stream().collect(Collectors.groupingBy(InterviewFeedback::getInterviewId));
+        return started.stream().map(i -> {
+            List<InterviewFeedback> fs = byInterview.getOrDefault(i.getId(), List.of());
+            return new RecentInterview(InterviewResponse.from(i), fs.size(), panel(i).size(), onPanel(i, me),
+                    fs.stream().anyMatch(f -> f.getAuthorEmail().equals(me)), canSubmit(actor, i));
+        }).toList();
     }
 
     /** Interviews you were on that have ended (in the last 30 days) and still need your feedback. */

@@ -11,6 +11,7 @@ import com.codewalnut.ats.domain.Interview;
 import com.codewalnut.ats.domain.InterviewStatus;
 import com.codewalnut.ats.dto.InterviewDtos.CandidateInterviewResponse;
 import com.codewalnut.ats.dto.InterviewDtos.InterviewResponse;
+import com.codewalnut.ats.dto.InterviewDtos.LogInterviewRequest;
 import com.codewalnut.ats.dto.InterviewDtos.ScheduleInterviewRequest;
 import com.codewalnut.ats.repository.ApplicationEventRepository;
 import com.codewalnut.ats.repository.ApplicationRepository;
@@ -110,6 +111,53 @@ public class InterviewService {
                 .actorEmail(actor.getEmail())
                 .build());
         auditService.record(actor, AuditAction.INTERVIEW_SCHEDULED, "Interview", interview.getId(),
+                Map.of("applicationId", applicationId, "startAt", start.toString(), "interviewers", interviewers.size()));
+        return InterviewResponse.from(interview);
+    }
+
+    /**
+     * Records an interview that was held (or is happening) outside the app, e.g. a Meet someone set
+     * up by hand, so it shows in the list and the panel can give feedback. No calendar event or email.
+     */
+    @Transactional
+    public InterviewResponse log(AppUser actor, UUID applicationId, LogInterviewRequest request) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        Application application = application(applicationId);
+        ZoneId zone;
+        try {
+            zone = ZoneId.of(request.timeZone().trim());
+        } catch (DateTimeException e) {
+            throw new IllegalArgumentException("timeZone: unknown time zone");
+        }
+        Instant start = request.startAt();
+        if (start.isAfter(Instant.now().plus(Duration.ofMinutes(5)))) {
+            throw new IllegalArgumentException("startAt: this is for interviews that already happened; schedule future ones instead");
+        }
+        if (start.isBefore(Instant.now().minus(Duration.ofDays(90)))) {
+            throw new IllegalArgumentException("startAt: pick a date in the last 90 days");
+        }
+        List<String> interviewers = interviewers(request.interviewerEmails(), application.getCandidate().getEmail());
+        String title = StringUtils.hasText(request.title())
+                ? request.title().trim()
+                : "CodeWalnut interview – " + application.getJob().getTitle();
+        Interview interview = interviewRepository.save(Interview.builder()
+                .application(application)
+                .title(title)
+                .startAt(start)
+                .endAt(start.plus(Duration.ofMinutes(request.durationMinutes())))
+                .timeZone(zone.getId())
+                .interviewerEmails(interviewers.isEmpty() ? null : String.join(",", interviewers))
+                .status(InterviewStatus.SCHEDULED)
+                .organizerEmail(actor.getEmail())
+                .build());
+        application.setUpdatedAt(Instant.now());
+        eventRepository.save(ApplicationEvent.builder()
+                .application(application)
+                .type(ApplicationEventType.INTERVIEW_SCHEDULED)
+                .note("Logged (held outside the app): " + title + ", " + WHEN.format(start.atZone(zone)))
+                .actorEmail(actor.getEmail())
+                .build());
+        auditService.record(actor, AuditAction.INTERVIEW_LOGGED, "Interview", interview.getId(),
                 Map.of("applicationId", applicationId, "startAt", start.toString(), "interviewers", interviewers.size()));
         return InterviewResponse.from(interview);
     }

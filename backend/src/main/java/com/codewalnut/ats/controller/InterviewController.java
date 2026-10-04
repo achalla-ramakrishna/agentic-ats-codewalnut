@@ -3,8 +3,10 @@ package com.codewalnut.ats.controller;
 import com.codewalnut.ats.dto.FeedbackDtos.FeedbackRequest;
 import com.codewalnut.ats.dto.FeedbackDtos.FeedbackSummary;
 import com.codewalnut.ats.dto.FeedbackDtos.InterviewFeedbackPage;
+import com.codewalnut.ats.dto.FeedbackDtos.RecentInterview;
 import com.codewalnut.ats.dto.InterviewDtos.CancelInterviewRequest;
 import com.codewalnut.ats.dto.InterviewDtos.InterviewResponse;
+import com.codewalnut.ats.dto.InterviewDtos.LogInterviewRequest;
 import com.codewalnut.ats.dto.InterviewDtos.ScheduleInterviewRequest;
 import com.codewalnut.ats.security.CurrentUserService;
 import com.codewalnut.ats.service.InterviewFeedbackService;
@@ -49,6 +51,17 @@ public class InterviewController {
     @PostMapping("/api/v1/interviews/{id}/cancel")
     public InterviewResponse cancel(@PathVariable UUID id, @Valid @RequestBody(required = false) CancelInterviewRequest request) {
         return interviewService.cancel(currentUserService.require(), id, request == null ? null : request.reason());
+    }
+
+    @GetMapping("/api/v1/interviews/recent")
+    public List<RecentInterview> recent() {
+        return feedbackService.recent(currentUserService.require());
+    }
+
+    @PostMapping("/api/v1/applications/{id}/interviews/log")
+    @ResponseStatus(HttpStatus.CREATED)
+    public InterviewResponse log(@PathVariable UUID id, @Valid @RequestBody LogInterviewRequest request) {
+        return interviewService.log(currentUserService.require(), id, request);
     }
 
     @GetMapping("/api/v1/interviews/feedback-due")

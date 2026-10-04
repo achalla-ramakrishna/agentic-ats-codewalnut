@@ -23,6 +23,14 @@ public final class InterviewDtos {
             @Size(max = 10) List<@Size(max = 254) String> interviewerEmails,
             @Size(max = 5000) String message) {}
 
+    /** An interview held outside the app (a Meet or call set up elsewhere), recorded so the panel can give feedback. */
+    public record LogInterviewRequest(
+            @Size(max = 200) String title,
+            @NotNull Instant startAt,
+            @NotNull @Min(15) @Max(480) Integer durationMinutes,
+            @NotBlank @Size(max = 64) String timeZone,
+            @Size(max = 10) List<@Size(max = 254) String> interviewerEmails) {}
+
     public record CancelInterviewRequest(@Size(max = 500) String reason) {}
 
     public record InterviewResponse(

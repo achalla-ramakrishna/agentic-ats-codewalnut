@@ -176,3 +176,21 @@ export const listFeedbackDue = () => api<Interview[]>('/interviews/feedback-due'
 
 /** Feedback opens once the interview has started, unless it was cancelled. */
 export const feedbackOpen = (i: Interview) => i.status === 'SCHEDULED' && new Date(i.startAt) <= new Date()
+
+/** An interview that has started (last 30 days) and where its feedback stands (INT-34). */
+export interface RecentInterview {
+  interview: Interview
+  submitted: number
+  panelSize: number
+  onPanel: boolean
+  mineSubmitted: boolean
+  canSubmit: boolean
+}
+
+export const listRecentInterviews = () => api<RecentInterview[]>('/interviews/recent')
+
+/** Record an interview held outside the app (e.g. a Meet set up by hand) so the panel can give feedback (INT-33). */
+export const logInterview = (
+  applicationId: string,
+  input: { title: string; startAt: string; durationMinutes: number; timeZone: string; interviewerEmails: string[] },
+) => api<Interview>(`/applications/${applicationId}/interviews/log`, { method: 'POST', body: json(input) })

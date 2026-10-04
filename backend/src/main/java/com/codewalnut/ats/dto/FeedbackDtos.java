@@ -47,4 +47,8 @@ public final class FeedbackDtos {
     /** One line per interview in the candidate's panel: who has given feedback and what they recommend. */
     public record FeedbackSummary(java.util.UUID interviewId, int submitted, int panelSize, List<InterviewFeedback.Recommendation> recommendations,
             boolean mineSubmitted, boolean visible) {}
+
+    /** An interview that has started (last 30 days), with where its feedback stands. */
+    public record RecentInterview(InterviewResponse interview, int submitted, int panelSize, boolean onPanel, boolean mineSubmitted,
+            boolean canSubmit) {}
 }

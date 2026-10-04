@@ -9,6 +9,7 @@ import {
   formatWhen,
   getGoogleStatus,
   listApplicationInterviews,
+  logInterview,
   listFeedbackSummaries,
   scheduleInterview,
   type FeedbackSummary,
@@ -184,7 +185,10 @@ function ScheduleForm({
 }
 
 function FeedbackLine({ interview, summary }: { interview: Interview; summary: FeedbackSummary | undefined }) {
-  if (!feedbackOpen(interview)) return null
+  if (interview.status !== 'SCHEDULED') return null
+  if (!feedbackOpen(interview)) {
+    return <span className="meta">Feedback form opens when the interview starts.</span>
+  }
   const submitted = summary?.submitted ?? 0
   const recommendations = summary?.visible ? summary.recommendations : []
   return (
@@ -196,6 +200,103 @@ function FeedbackLine({ interview, summary }: { interview: Interview; summary: F
       </span>
       <Link to={`/interviews/${interview.id}/feedback`}>{summary?.mineSubmitted ? 'View feedback' : 'Feedback form'}</Link>
     </div>
+  )
+}
+
+/** An interview that happened outside the app (e.g. a Meet set up by hand), so the panel can give feedback (INT-33). */
+function LogInterviewForm({
+  applicationId,
+  jobTitle,
+  onLogged,
+  onCancel,
+}: {
+  applicationId: string
+  jobTitle: string
+  onLogged: (i: Interview) => void
+  onCancel: () => void
+}) {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const [date, setDate] = useState(`${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`)
+  const [time, setTime] = useState(`${pad(now.getHours())}:00`)
+  const [duration, setDuration] = useState(45)
+  const [interviewers, setInterviewers] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault()
+    setError(null)
+    const start = new Date(`${date}T${time}`)
+    if (Number.isNaN(start.getTime())) {
+      setError('Pick a date and time')
+      return
+    }
+    setBusy(true)
+    try {
+      onLogged(
+        await logInterview(applicationId, {
+          title: `CodeWalnut interview – ${jobTitle}`,
+          startAt: start.toISOString(),
+          durationMinutes: duration,
+          timeZone: browserTimeZone(),
+          interviewerEmails: interviewers
+            .split(/[,;\s]+/)
+            .map((s) => s.trim())
+            .filter(Boolean),
+        }),
+      )
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not log the interview')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form className="stack" onSubmit={onSubmit} aria-label="Log an interview held elsewhere" style={{ gap: 12 }}>
+      <span className="muted" style={{ fontSize: 13 }}>
+        For an interview that already happened (or is happening now) on a Meet or call set up outside the app. Nothing is sent to
+        anyone; it just adds the interview so the panel can fill in the feedback form.
+      </span>
+      {error && (
+        <div role="alert" className="alert alert-error">
+          {error}
+        </div>
+      )}
+      <div className="row" style={{ alignItems: 'flex-end' }}>
+        <label className="field">
+          Date
+          <input className="input" type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
+        </label>
+        <label className="field">
+          Started at
+          <input className="input" type="time" required value={time} onChange={(e) => setTime(e.target.value)} />
+        </label>
+        <label className="field">
+          Duration
+          <select className="select" value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
+            {DURATIONS.map((d) => (
+              <option key={d} value={d}>
+                {d} min
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <label className="field">
+        Interviewers (emails, comma-separated; you are added as organiser)
+        <input className="input" value={interviewers} onChange={(e) => setInterviewers(e.target.value)} placeholder="e.g. priya@codewalnut.com" />
+      </label>
+      <div className="row">
+        <Button type="submit" disabled={busy}>
+          {busy ? 'Saving…' : 'Log interview'}
+        </Button>
+        <Button variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </form>
   )
 }
 
@@ -300,6 +401,7 @@ export function InterviewsPanel({
   const [interviews, setInterviews] = useState<Interview[]>([])
   const [summaries, setSummaries] = useState<FeedbackSummary[]>([])
   const [scheduling, setScheduling] = useState(false)
+  const [logging, setLogging] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
 
   const load = useCallback(() => {
@@ -312,10 +414,15 @@ export function InterviewsPanel({
     <div className="stack" style={{ gap: 8 }}>
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <strong>Interviews</strong>
-        {canEdit && !scheduling && (
-          <Button size="sm" onClick={() => setScheduling(true)}>
-            Schedule interview
-          </Button>
+        {canEdit && !scheduling && !logging && (
+          <div className="row" style={{ gap: 8 }}>
+            <Button size="sm" variant="ghost" onClick={() => setLogging(true)}>
+              Log an interview held elsewhere
+            </Button>
+            <Button size="sm" onClick={() => setScheduling(true)}>
+              Schedule interview
+            </Button>
+          </div>
         )}
       </div>
       {notice && <div className="alert alert-info">{notice}</div>}
@@ -334,7 +441,20 @@ export function InterviewsPanel({
           }}
         />
       )}
-      {interviews.length === 0 && !scheduling && <span className="muted">No interviews yet.</span>}
+      {logging && (
+        <LogInterviewForm
+          applicationId={applicationId}
+          jobTitle={jobTitle}
+          onCancel={() => setLogging(false)}
+          onLogged={() => {
+            setLogging(false)
+            setNotice('Interview logged. Use Feedback form below to fill in feedback.')
+            load()
+            onChanged()
+          }}
+        />
+      )}
+      {interviews.length === 0 && !scheduling && !logging && <span className="muted">No interviews yet.</span>}
       {interviews.length > 0 && (
         <ul className="timeline">
           {interviews.map((i) => (
