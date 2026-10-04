@@ -1,0 +1,3685 @@
+# CodeWalnut built-in Data structures & algorithms bank (ADR-0015). Format: see TechBank.java.
+# Bands: FUNDAMENTALS = freshers and interns, PRACTICAL = 1–3 years, ADVANCED = 3+ years.
+# Code questions name their language in brackets, e.g. "(Python)", and every one was run to check its answer.
+
+@topic dsa-complexity | FUNDAMENTALS | Big-O and complexity | Time and space complexity, counting loops, logarithms, best/average/worst case, amortised cost and comparing growth rates.
+Q E What is the time complexity of reading the element at index i of an array?
++ O(1)
+- O(n)
+- O(log n)
+- O(i²)
+= Arrays store elements next to each other, so the address is computed directly.
+
+Q E What is the time complexity of finding a value in an unsorted array of n elements?
++ O(n)
+- O(1)
+- O(log n)
+- O(n log n)
+= In the worst case every element is checked once.
+
+Q E Which grows fastest as n becomes large?
++ O(2ⁿ)
+- O(n²)
+- O(n log n)
+- O(n³)
+= Exponential growth outpaces any polynomial.
+
+Q E What does Big-O describe?
++ How cost grows as the input grows
+- The exact running time in seconds
+- The number of lines in a program
+- The memory used by the compiler
+= Constants and lower-order terms are dropped: 3n² + 5n is O(n²).
+
+Q E What is the time complexity of this loop?
+| for i in range(n):
+|     total += i
++ O(n)
+- O(1)
+- O(n²)
+- O(log n)
+= The body runs n times and does constant work each time.
+
+Q E What is the complexity of two nested loops, each running n times?
++ O(n²)
+- O(2n)
+- O(n)
+- O(log n)
+= n × n iterations.
+
+Q E Binary search on a sorted array of n elements takes:
++ O(log n)
+- O(n)
+- O(1)
+- O(n log n)
+= Each step halves the range.
+
+Q E Which simplifies to O(n)?
++ 5n + 100
+- n² + n
+- n log n
+- 2ⁿ + n
+= Constants and lower-order terms are dropped.
+
+Q E What is the space complexity of creating a new array of size n?
++ O(n)
+- O(1)
+- O(log n)
+- O(n²)
+= Memory grows in proportion to n.
+
+Q E What is the complexity of adding two numbers?
++ O(1)
+- O(n)
+- O(log n)
+- O(2)
+= A fixed amount of work regardless of input size (for fixed-size integers).
+
+Q E Roughly how many times can you halve 1,000,000 before reaching 1?
++ About 20
+- About 1,000
+- About 500,000
+- About 2
+= log₂(1,000,000) ≈ 20, which is why binary search is so fast.
+
+Q E Which is usually faster for large n: O(n log n) or O(n²)?
++ O(n log n)
+- O(n²)
+- They are always equal
+- It depends only on the language
+= For n = 1,000,000, n log n ≈ 2×10⁷ while n² = 10¹².
+
+Q E What is the worst-case complexity of linear search?
++ O(n)
+- O(1)
+- O(log n)
+- O(n²)
+= The value may be last, or absent.
+
+Q E What does "worst case" mean when analysing an algorithm?
++ The most work over all inputs of size n
+- The time taken on the slowest computer
+- The case where the code has a bug
+- The average over every possible input
+= Best and average case are measured separately.
+
+Q E A loop runs while i < n and doubles i each time (i = 1, 2, 4, …). How many iterations?
++ About log₂ n
+- About n
+- About n/2
+- About n²
+= Doubling reaches n after log₂ n steps.
+
+Q E What is the space complexity of swapping two variables with a temporary one?
++ O(1)
+- O(n)
+- O(2)
+- O(log n)
+= One extra variable, whatever the input.
+
+Q E Which describes O(1) best?
++ Cost doesn't depend on input size
+- Cost is exactly one operation
+- Cost grows by one each step
+- Cost is always one second
+= O(1) can still be many operations — just a fixed number.
+
+Q M What is the time complexity of this code?
+| for i in range(n):
+|     for j in range(i):
+|         count += 1
++ O(n²)
+- O(n)
+- O(n log n)
+- O(log n)
+= The inner loop runs 0 + 1 + … + (n−1) = n(n−1)/2 times.
+
+Q M What is the time complexity of this code?
+| i = n
+| while i > 1:
+|     i //= 2
++ O(log n)
+- O(n)
+- O(√n)
+- O(1)
+= i is halved each iteration.
+
+Q M What is the complexity of this code?
+| for i in range(n):
+|     j = 1
+|     while j < n:
+|         j *= 2
++ O(n log n)
+- O(n²)
+- O(log n)
+- O(n)
+= n outer iterations, each with about log₂ n inner ones.
+
+Q M What is the complexity of sorting n items with merge sort?
++ O(n log n)
+- O(n²)
+- O(n)
+- O(log n)
+= log n levels of splitting, O(n) merging per level.
+
+Q M A dynamic array (ArrayList, Python list) occasionally copies everything when it grows. What is the cost of append on average?
++ O(1) amortised
+- O(n) every time
+- O(log n) every time
+- O(n²) in total per append
+= Doubling the capacity makes copies rare, so the average stays constant.
+
+Q M What does this print (Python)?
+| ops = 0
+| n = 16
+| i = 1
+| while i < n:
+|     i *= 2
+|     ops += 1
+| print(ops)
++ 4
+- 16
+- 8
+- 5
+= i goes 2, 4, 8, 16: four doublings.
+
+Q M What does this print (Java)?
+| int count = 0;
+| for (int i = 0; i < 5; i++)
+|     for (int j = i; j < 5; j++)
+|         count++;
+| System.out.println(count);
++ 15
+- 25
+- 10
+- 20
+= 5 + 4 + 3 + 2 + 1 = 15.
+
+Q M What is the space complexity of a recursive function that recurses n levels deep and uses constant space per call?
++ O(n)
+- O(1)
+- O(log n)
+- O(n²)
+= Each call stays on the call stack until it returns.
+
+Q M Which algorithm's complexity is O(n + m) for strings of length n and m?
++ Comparing two strings character by character, then appending them
+- Checking every substring of the first string against the second
+- Sorting both strings and then comparing every pair of characters
+- Building every permutation of the shorter string
+= Each character is touched a constant number of times.
+
+Q M What is the time complexity of checking if an element is in a Python set or Java HashSet?
++ O(1) on average
+- O(n) on average
+- O(log n) always
+- O(n log n)
+= Hashing goes straight to a bucket; collisions make the worst case O(n).
+
+Q M An algorithm takes 1 second for n = 1,000. Roughly how long for n = 2,000 if it is O(n²)?
++ About 4 seconds
+- About 2 seconds
+- About 1 second
+- About 8 seconds
+= Doubling n multiplies n² by 4.
+
+Q M What is the complexity of this code (JavaScript)?
+| for (let i = 0; i < n; i++) {}
+| for (let j = 0; j < n; j++) {}
++ O(n)
+- O(n²)
+- O(2ⁿ)
+- O(log n)
+= Two loops one after the other: n + n = 2n, which is O(n).
+
+Q M Which complexity describes generating every subset of n items?
++ O(2ⁿ)
+- O(n²)
+- O(n!)
+- O(n log n)
+= Each item is either in or out: 2ⁿ subsets.
+
+Q M Which complexity describes generating every ordering (permutation) of n items?
++ O(n!)
+- O(2ⁿ)
+- O(n²)
+- O(n³)
+= n choices for the first place, n−1 for the next, and so on.
+
+Q M Why is an O(n log n) sort usually preferred over an O(n²) sort for 1,000,000 items?
++ It does about 20 million steps instead of about a trillion
+- It always uses less memory than the O(n²) one
+- It works on any type, while O(n²) sorts only work on numbers
+- It never needs to compare two elements
+= The growth rate dominates for large n.
+
+Q M What is the best-case time complexity of insertion sort?
++ O(n), when the array is already sorted
+- O(n²), whatever the input order
+- O(log n), when the array is reversed
+- O(1), when the array is empty or not
+= Each element is compared once with its neighbour and stays put.
+
+Q H What is the time complexity of this code?
+| def f(n):
+|     if n <= 1:
+|         return 1
+|     return f(n - 1) + f(n - 1)
++ O(2ⁿ)
+- O(n)
+- O(n²)
+- O(log n)
+= Each call makes two calls: the call tree has about 2ⁿ nodes.
+
+Q H What is the time complexity of this code?
+| def f(n):
+|     if n <= 1:
+|         return 1
+|     return f(n // 2) + 1
++ O(log n)
+- O(n)
+- O(n log n)
+- O(1)
+= One call per halving.
+
+Q H What does this print (C++)?
+| #include <iostream>
+| int calls = 0;
+| int fib(int n) { calls++; return n < 2 ? n : fib(n - 1) + fib(n - 2); }
+| int main() { fib(5); std::cout << calls << std::endl; }
++ 15
+- 5
+- 8
+- 10
+= Naive Fibonacci recomputes subproblems: fib(5) makes 15 calls. Memoisation cuts it to O(n).
+
+Q H What is the complexity of naive recursive Fibonacci, and of the memoised version?
++ About O(2ⁿ) naive; O(n) memoised
+- O(n) naive; O(log n) memoised
+- O(n²) naive; O(n) memoised
+- O(2ⁿ) for both versions
+= Memoisation computes each fib(k) once.
+
+Q H What is the complexity of this code?
+| for i in range(1, n + 1):
+|     j = i
+|     while j <= n:
+|         j += i
++ O(n log n)
+- O(n²)
+- O(n)
+- O(log n)
+= The inner loop runs n/i times: n(1 + 1/2 + … + 1/n) ≈ n ln n.
+
+Q H A loop runs while i * i <= n, increasing i by 1. What is its complexity?
++ O(√n)
+- O(n)
+- O(log n)
+- O(n²)
+= It stops when i reaches √n — the usual prime-checking loop.
+
+Q H What is the recurrence for merge sort, and what does it solve to?
++ T(n) = 2T(n/2) + O(n), which is O(n log n)
+- T(n) = T(n−1) + O(n), which is O(n log n)
+- T(n) = 2T(n/2) + O(1), which is O(n²)
+- T(n) = T(n/2) + O(n), which is O(log n)
+= Two half-size subproblems plus a linear merge.
+
+Q H Quicksort is O(n log n) on average. When does it degrade to O(n²)?
++ When pivots split unevenly, e.g. sorted input
+- When the array contains negative numbers
+- When the array has fewer than 100 items
+- When it is written recursively, not in a loop
+= Random or median-of-three pivots make this unlikely.
+
+Q H A hash table has O(1) average lookup. What makes it O(n)?
++ Many keys landing in the same bucket
+- Keys that are strings rather than numbers
+- A table that has never been resized
+- Looking up a key that is present
+= A poor hash function, or crafted keys, can cause this.
+
+Q H What is the total cost of n appends to a dynamic array that doubles its capacity when full?
++ O(n) in total
+- O(n²) in total
+- O(n log n) in total
+- O(2ⁿ) in total
+= Copies cost 1 + 2 + 4 + … < 2n.
+
+Q H What does this print (JavaScript)?
+| let steps = 0;
+| function hanoi(n) {
+|   if (n === 0) return;
+|   hanoi(n - 1);
+|   steps++;
+|   hanoi(n - 1);
+| }
+| hanoi(4);
+| console.log(steps);
++ 15
+- 16
+- 8
+- 4
+= Towers of Hanoi needs 2ⁿ − 1 moves.
+
+Q H Why is O(1) not always faster than O(log n) in practice?
++ Constant factors can dominate at real sizes
+- O(1) algorithms only work on sorted data
+- O(log n) is always faster for any input
+- Big-O ignores the input size entirely
+= A hash table can lose to a small sorted array because of hashing cost and cache misses.
+
+Q H What is the space complexity of iterative binary search, and of the recursive version?
++ O(1) iterative; O(log n) recursive
+- O(n) iterative; O(n) recursive
+- O(log n) iterative; O(1) recursive
+- O(1) for both versions
+= The recursive version keeps log n frames on the stack (without tail-call optimisation).
+
+Q H An algorithm is O(n²) time and O(1) space; another is O(n) time and O(n) space. When would you pick the first?
++ When memory is very tight and n is small
+- Whenever n is larger than one million
+- Whenever the data is already sorted
+- Never; O(n) space is always free
+= Time–space trade-offs depend on the constraints.
+
+Q M What is the time complexity of this code (Java)?
+| for (int i = 0; i < n; i += 2)
+|     for (int j = 0; j < 100; j++)
+|         sum += i * j;
++ O(n)
+- O(n²)
+- O(100n²)
+- O(log n)
+= The inner loop is a constant 100 iterations; constants are dropped.
+
+Q H What is the time complexity of this code?
+| def f(a, lo, hi):
+|     if lo >= hi:
+|         return
+|     mid = (lo + hi) // 2
+|     f(a, lo, mid)
+|     f(a, mid + 1, hi)
+|     for i in range(lo, hi + 1):
+|         pass
++ O(n log n)
+- O(n²)
+- O(log n)
+- O(n)
+= The same shape as merge sort: two halves plus linear work per level.
+
+Q H What does this print (Python)?
+| def count(n):
+|     return 1 if n <= 1 else count(n // 2) + count(n // 2) + 1
+| print(count(8))
++ 15
+- 8
+- 4
+- 7
+= The call tree is a full binary tree over 8 → 4 → 2 → 1: 1 + 2 + 4 + 8 = 15 calls, so O(n).
+
+@topic dsa-arrays-strings | FUNDAMENTALS | Arrays and strings | Indexing, traversal, prefix sums, in-place updates, reversing, rotating, string building, characters and common array problems.
+Q E What is the index of the last element of an array of length n?
++ n − 1
+- n
+- n + 1
+- 1
+= Indexes start at 0 in Java, Python, JavaScript and C++.
+
+Q E What does this print (Python)?
+| a = [10, 20, 30, 40]
+| print(a[1:3])
++ [20, 30]
+- [10, 20, 30]
+- [20, 30, 40]
+- [10, 20]
+= Slices include the start index and exclude the end index.
+
+Q E What does this print (Java)?
+| int[] a = {3, 8, 1};
+| int max = a[0];
+| for (int x : a) if (x > max) max = x;
+| System.out.println(max);
++ 8
+- 3
+- 1
+- 12
+= A single pass keeps the largest value seen so far.
+
+Q E What does this print (JavaScript)?
+| const a = [1, 2, 3];
+| a.push(4);
+| console.log(a.length);
++ 4
+- 3
+- 5
+- undefined
+= push adds to the end.
+
+Q E What does this print (Python)?
+| s = "hello"
+| print(s[::-1])
++ olleh
+- hello
+- h
+- o
+= A step of -1 walks the string backwards.
+
+Q E Why are strings immutable in Java and Python?
++ Safe to share and use as hash keys
+- So they can be stored on the stack
+- Because the CPU can't change text
+- To make concatenation faster in loops
+= Every "change" creates a new string.
+
+Q E What does this print (C++)?
+| #include <iostream>
+| #include <string>
+| int main() { std::string s = "data"; std::cout << s.size() << std::endl; }
++ 4
+- 5
+- 3
+- 0
+= size() (or length()) counts the characters.
+
+Q E What is a prefix sum array?
++ p[i] = sum of the first i elements
+- The array sorted from smallest to largest
+- The first element repeated i times
+- The sum of the whole array at index 0
+= It lets you answer "sum from l to r" in O(1): p[r+1] − p[l].
+
+Q E What does this print (Python)?
+| a = [5, 3, 9]
+| a.sort()
+| print(a)
++ [3, 5, 9]
+- [9, 5, 3]
+- [5, 3, 9]
+- None
+= list.sort() sorts in place and returns None.
+
+Q E Inserting an element at the start of an array of n elements takes:
++ O(n)
+- O(1)
+- O(log n)
+- O(n²)
+= Every element shifts one place.
+
+Q E What does this print (JavaScript)?
+| console.log("abc".toUpperCase());
++ ABC
+- abc
+- Abc
+- aBC
+= Strings have their own methods; the original is unchanged.
+
+Q E What does this print (Java)?
+| String s = "racecar";
+| System.out.println(s.charAt(s.length() - 1));
++ r
+- e
+- c
+- a
+= The last character is at length − 1.
+
+Q E Which loop visits every element of an array exactly once?
++ for (i = 0; i < n; i++)
+- for (i = 0; i <= n; i++)
+- for (i = 1; i < n; i++)
+- for (i = 0; i < n - 1; i++)
+= i <= n runs past the end; the others skip an element.
+
+Q E What does this print (Python)?
+| print(len("a b c".split()))
++ 3
+- 5
+- 1
+- 2
+= split() with no argument splits on runs of whitespace.
+
+Q E What is the time complexity of reversing an array in place with two pointers?
++ O(n)
+- O(n²)
+- O(log n)
+- O(1)
+= Each swap fixes two elements; n/2 swaps.
+
+Q E What does this print (C++)?
+| #include <iostream>
+| #include <vector>
+| int main() { std::vector<int> v = {4, 5}; v.push_back(6); std::cout << v.back() << std::endl; }
++ 6
+- 4
+- 5
+- 3
+= back() returns the last element.
+
+Q E Why is building a string with + in a loop slow in Java (and similar languages)?
++ Each + copies the whole string so far
+- + can only join two characters at a time
+- The compiler runs the loop twice
+- Strings longer than 100 characters are invalid
+= Use StringBuilder (Java), "".join (Python), or array join (JavaScript).
+
+Q M What does this print (Python)?
+| a = [1, 2, 3, 4, 5]
+| k = 2
+| print(a[-k:] + a[:-k])
++ [4, 5, 1, 2, 3]
+- [3, 4, 5, 1, 2]
+- [1, 2, 3, 4, 5]
+- [2, 1, 5, 4, 3]
+= This rotates right by k.
+
+Q M What does this print (Java)?
+| int[] a = {1, 2, 3, 4};
+| int[] p = new int[a.length + 1];
+| for (int i = 0; i < a.length; i++) p[i + 1] = p[i] + a[i];
+| System.out.println(p[4] - p[1]);
++ 9
+- 10
+- 6
+- 3
+= Sum of a[1..3] = 2 + 3 + 4 = 9.
+
+Q M What does this print (JavaScript)?
+| const a = [3, 1, 2];
+| const b = a;
+| b.push(9);
+| console.log(a.length);
++ 4
+- 3
+- 1
+- undefined
+= Arrays are objects; b and a refer to the same array.
+
+Q M What does this print (Python)?
+| def move_zeros(a):
+|     w = 0
+|     for x in a:
+|         if x != 0:
+|             a[w] = x
+|             w += 1
+|     for i in range(w, len(a)):
+|         a[i] = 0
+|     return a
+| print(move_zeros([0, 1, 0, 3, 12]))
++ [1, 3, 12, 0, 0]
+- [0, 0, 1, 3, 12]
+- [1, 0, 3, 0, 12]
+- [12, 3, 1, 0, 0]
+= A write pointer keeps the non-zero values in order.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <string>
+| #include <algorithm>
+| int main() { std::string s = "level"; std::string r = s; std::reverse(r.begin(), r.end()); std::cout << (s == r ? "yes" : "no") << std::endl; }
++ yes
+- no
+- level
+- 1
+= "level" reads the same reversed.
+
+Q M Which approach finds the maximum subarray sum in O(n)?
++ Kadane's algorithm: keep the best sum ending here
+- Check every pair of start and end indexes
+- Sort the array and add the largest values
+- Use binary search on the prefix sums
+= cur = max(x, cur + x); best = max(best, cur).
+
+Q M What does this print (Python)?
+| best = cur = None
+| for x in [-2, 1, -3, 4, -1, 2, 1, -5, 4]:
+|     cur = x if cur is None or cur < 0 else cur + x
+|     best = cur if best is None else max(best, cur)
+| print(best)
++ 6
+- 7
+- 4
+- 5
+= The best subarray is [4, -1, 2, 1].
+
+Q M What does this print (JavaScript)?
+| const s = "banana";
+| const counts = {};
+| for (const c of s) counts[c] = (counts[c] || 0) + 1;
+| console.log(counts.a);
++ 3
+- 2
+- 1
+- undefined
+= "banana" has three a's.
+
+Q M What does this print (Java)?
+| StringBuilder sb = new StringBuilder();
+| for (char c : "abc".toCharArray()) sb.insert(0, c);
+| System.out.println(sb);
++ cba
+- abc
+- aabbcc
+- bac
+= Inserting at the front reverses the order.
+
+Q M How do you check if two strings are anagrams in O(n)?
++ Count characters in each and compare the counts
+- Sort both strings, then compare (that is O(n²))
+- Compare the first and last characters only
+- Check that both have the same length
+= Sorting also works, in O(n log n).
+
+Q M What does this print (Python)?
+| a = [[0] * 2] * 2
+| a[0][0] = 1
+| print(a)
++ [[1, 0], [1, 0]]
+- [[1, 0], [0, 0]]
+- [[0, 0], [0, 0]]
+- An error
+= Both rows are the same list object. Use [[0] * 2 for _ in range(2)].
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <vector>
+| int main() {
+|   std::vector<int> a = {2, 7, 1, 8};
+|   int second = -1, first = -1;
+|   for (int x : a) { if (x > first) { second = first; first = x; } else if (x > second && x != first) second = x; }
+|   std::cout << second << std::endl;
+| }
++ 7
+- 8
+- 2
+- 1
+= One pass tracking the two largest distinct values.
+
+Q M What is the most efficient way to answer many "sum of a[l..r]" queries on an array that doesn't change?
++ Build a prefix sum array once
+- Loop from l to r for each query
+- Sort the array before each query
+- Use a hash map from index to value
+= O(n) setup, O(1) per query.
+
+Q M What does this print (JavaScript)?
+| console.log([1, 2, 3, 4].filter(x => x % 2 === 0).map(x => x * 10));
++ [ 20, 40 ]
+- [ 10, 30 ]
+- [ 10, 20, 30, 40 ]
+- [ 2, 4 ]
+= filter keeps even numbers, then map multiplies.
+
+Q M What does this print (Python)?
+| print("".join(sorted("dcba")))
++ abcd
+- dcba
+- ['a', 'b', 'c', 'd']
+- d c b a
+= sorted returns a list of characters; join builds the string.
+
+Q M Rotating an array right by k in place with O(1) extra space can be done by:
++ Reversing the whole array, then each part
+- Shifting by one place, k times
+- Copying it into a new array first
+- Sorting it, then reversing it
+= Reverse all, reverse the first k, reverse the rest: O(n), O(1) space.
+
+Q H What does this print (Python)?
+| def longest_unique(s):
+|     last, start, best = {}, 0, 0
+|     for i, c in enumerate(s):
+|         if c in last and last[c] >= start:
+|             start = last[c] + 1
+|         last[c] = i
+|         best = max(best, i - start + 1)
+|     return best
+| print(longest_unique("abcabcbb"), longest_unique("pwwkew"))
++ 3 3
+- 3 4
+- 4 3
+- 8 6
+= "abc" and "wke" are the longest substrings without repeats.
+
+Q H What does this print (Java)?
+| int[] a = {1, 2, 3, 4, 5};
+| int k = 2, n = a.length;
+| int[] r = new int[n];
+| for (int i = 0; i < n; i++) r[(i + k) % n] = a[i];
+| System.out.println(java.util.Arrays.toString(r));
++ [4, 5, 1, 2, 3]
+- [3, 4, 5, 1, 2]
+- [2, 3, 4, 5, 1]
+- [1, 2, 3, 4, 5]
+= Each element moves k places right, wrapping around.
+
+Q H What does this print (JavaScript)?
+| const a = [5, 1, 4];
+| a.sort();
+| const b = [10, 9, 1];
+| b.sort();
+| console.log(a.join(","), b.join(","));
++ 1,4,5 1,10,9
+- 1,4,5 1,9,10
+- 5,4,1 10,9,1
+- 1,4,5 10,9,1
+= The default sort compares strings: "10" < "9". Use (x, y) => x - y.
+
+Q H What does this print (C++)?
+| #include <iostream>
+| #include <vector>
+| int main() {
+|   std::vector<int> h = {2, 1, 5, 6, 2, 3};
+|   int best = 0;
+|   for (size_t i = 0; i < h.size(); i++) {
+|     int m = h[i];
+|     for (size_t j = i; j < h.size(); j++) { m = std::min(m, h[j]); best = std::max(best, m * (int)(j - i + 1)); }
+|   }
+|   std::cout << best << std::endl;
+| }
++ 10
+- 12
+- 6
+- 8
+= Bars 5 and 6 give 5 × 2 = 10 (largest rectangle in a histogram).
+
+Q H What does this print (Python)?
+| s = "aaabccdddd"
+| out, i = [], 0
+| while i < len(s):
+|     j = i
+|     while j < len(s) and s[j] == s[i]:
+|         j += 1
+|     out.append(s[i] + str(j - i))
+|     i = j
+| print("".join(out))
++ a3b1c2d4
+- a3bc2d4
+- abcd
+- 3124
+= Run-length encoding: each character followed by its run length.
+
+Q H Why can the nested loops in a "longest substring without repeats" sliding window still be O(n)?
++ Each pointer only moves forward, n steps in total
+- The inner loop always runs exactly once
+- Strings are processed in parallel by the CPU
+- The window never holds more than 26 characters
+= Two-pointer windows are amortised linear.
+
+Q H What does this print (Java)?
+| String a = "hello";
+| String b = "hel" + "lo";
+| String c = new String("hello");
+| System.out.println((a == b) + " " + (a == c) + " " + a.equals(c));
++ true false true
+- true true true
+- false false true
+- false true false
+= Compile-time constants share one pooled string; new String makes a new object.
+
+Q H What does this print (Python)?
+| a = [3, 4, -1, 1]
+| n = len(a)
+| for i in range(n):
+|     while 1 <= a[i] <= n and a[a[i] - 1] != a[i]:
+|         a[a[i] - 1], a[i] = a[i], a[a[i] - 1]
+| print(next(i + 1 for i in range(n) if a[i] != i + 1))
++ 2
+- 1
+- 5
+- 3
+= This places each value v at index v−1, then finds the first missing positive in O(n), O(1) space.
+
+Q H An array has n − 1 distinct numbers from 1 to n. What is an O(n) time, O(1) space way to find the missing one?
++ n(n+1)/2 minus the sum of the array (or XOR)
+- Sort the array and scan for the gap
+- Put every number in a hash set, then scan
+- Compare every pair of numbers in the array
+= Sorting is O(n log n); a hash set is O(n) space.
+
+Q H What does this print (JavaScript)?
+| const s = "the sky is blue";
+| console.log(s.split(" ").reverse().join(" "));
++ blue is sky the
+- eulb si yks eht
+- the sky is blue
+- blue sky is the
+= Split into words, reverse the list, join back.
+
+Q H What does this print (C++)?
+| #include <iostream>
+| #include <string>
+| int main() {
+|   std::string s = "abc";
+|   std::string t = s;
+|   t[0] = 'x';
+|   std::cout << s << " " << t << std::endl;
+| }
++ abc xbc
+- xbc xbc
+- abc abc
+- xbc abc
+= std::string has value semantics: copying makes an independent string.
+
+Q H Given a sorted array, how do you square every element and keep the result sorted in O(n)?
++ Two pointers from both ends, filling the result from the back
+- Square in place, then run an O(n) bubble pass
+- Square every element, then binary search each one
+- Use a hash map from value to its square
+= Negative numbers can have large squares, so the largest square is at one of the ends.
+
+Q H What does this print (Python)?
+| def can_partition_zero(a):
+|     seen, s = {0}, 0
+|     for x in a:
+|         s += x
+|         if s in seen:
+|             return True
+|         seen.add(s)
+|     return False
+| print(can_partition_zero([4, 2, -3, 1, 6]), can_partition_zero([1, 2, 3]))
++ True False
+- False True
+- True True
+- False False
+= A repeated prefix sum means some subarray sums to 0 (here 2, -3, 1).
+
+Q M What does this print (JavaScript)?
+| const a = [1, 2, 3, 4, 5];
+| console.log(a.slice(1, 4), a.length);
++ [ 2, 3, 4 ] 5
+- [ 2, 3, 4, 5 ] 5
+- [ 1, 2, 3, 4 ] 4
+- [ 2, 3, 4 ] 3
+= slice copies without changing the original; the end index is excluded.
+
+Q H What does this print (Python)?
+| def merge(a, b):
+|     i = j = 0
+|     out = []
+|     while i < len(a) and j < len(b):
+|         if a[i] <= b[j]:
+|             out.append(a[i]); i += 1
+|         else:
+|             out.append(b[j]); j += 1
+|     return out + a[i:] + b[j:]
+| print(merge([1, 4, 9], [2, 3, 10, 11]))
++ [1, 2, 3, 4, 9, 10, 11]
+- [1, 4, 9, 2, 3, 10, 11]
+- [1, 2, 3, 4, 9]
+- [11, 10, 9, 4, 3, 2, 1]
+= Merging two sorted arrays with two pointers in O(n + m).
+
+Q H What does this print (Java)?
+| int[] a = {2, 0, 2, 1, 1, 0};
+| int lo = 0, mid = 0, hi = a.length - 1;
+| while (mid <= hi) {
+|     if (a[mid] == 0) { int t = a[lo]; a[lo++] = a[mid]; a[mid++] = t; }
+|     else if (a[mid] == 1) mid++;
+|     else { int t = a[hi]; a[hi--] = a[mid]; a[mid] = t; }
+| }
+| System.out.println(java.util.Arrays.toString(a));
++ [0, 0, 1, 1, 2, 2]
+- [2, 2, 1, 1, 0, 0]
+- [0, 1, 2, 0, 1, 2]
+- [2, 0, 2, 1, 1, 0]
+= Dutch national flag partitioning: one pass, O(1) extra space.
+
+Q H What does this print (C++)?
+| #include <iostream>
+| #include <vector>
+| int main() {
+|   std::vector<int> a = {1, 2, 3, 4};
+|   std::vector<int> out(a.size(), 1);
+|   int left = 1;
+|   for (size_t i = 0; i < a.size(); i++) { out[i] = left; left *= a[i]; }
+|   int right = 1;
+|   for (int i = a.size() - 1; i >= 0; i--) { out[i] *= right; right *= a[i]; }
+|   for (int x : out) std::cout << x << " ";
+|   std::cout << std::endl;
+| }
++ 24 12 8 6
+- 1 2 6 24
+- 24 24 24 24
+- 6 8 12 24
+= Product of every element except itself, without division, in O(n).
+
+@topic dsa-hashing | FUNDAMENTALS | Hashing, sets and maps | Hash tables, collisions, load factor, sets vs maps, counting, two-sum style problems and the hash maps of Java, Python, JavaScript and C++.
+Q E What does a hash map store?
++ Key–value pairs
+- Values in sorted order
+- Only unique numbers
+- A list of hash codes
+= Lookups by key are O(1) on average.
+
+Q E What is a hash function?
++ A function that turns a key into a bucket number
+- A function that sorts the keys of a map
+- A function that encrypts passwords only
+- A function that removes duplicate values
+= Equal keys must give equal hashes.
+
+Q E What is a collision in a hash table?
++ Two keys landing in the same bucket
+- Two maps sharing the same keys
+- A key with no value attached
+- A value stored twice under one key
+= Handled by chaining (lists per bucket) or open addressing.
+
+Q E Which structure tells you fastest whether a number has been seen before?
++ A hash set
+- An unsorted array
+- A linked list
+- A stack
+= O(1) average membership checks.
+
+Q E What does this print (Python)?
+| s = {3, 1, 3, 2, 1}
+| print(len(s))
++ 3
+- 5
+- 2
+- 1
+= Sets keep unique values.
+
+Q E What does this print (Java)?
+| java.util.Map<String, Integer> m = new java.util.HashMap<>();
+| m.put("a", 1);
+| m.put("a", 5);
+| System.out.println(m.get("a"));
++ 5
+- 1
+- 6
+- null
+= put replaces the value for an existing key.
+
+Q E What does this print (JavaScript)?
+| const m = new Map();
+| m.set("x", 1);
+| console.log(m.has("x"), m.has("y"));
++ true false
+- false true
+- true true
+- 1 undefined
+= has checks for a key.
+
+Q E What does this print (C++)?
+| #include <iostream>
+| #include <unordered_map>
+| int main() { std::unordered_map<std::string, int> m; m["k"] += 2; std::cout << m["k"] << std::endl; }
++ 2
+- 0
+- 1
+- An error
+= operator[] inserts a default 0, then += adds 2.
+
+Q E What does this print (Python)?
+| d = {"a": 1}
+| print(d.get("b", 0))
++ 0
+- None
+- KeyError
+- 1
+= get returns the default when the key is missing; d["b"] would raise KeyError.
+
+Q E Average time to insert into a hash map:
++ O(1)
+- O(n)
+- O(log n)
+- O(n²)
+= Occasional resizing is amortised.
+
+Q E Which can't be used as a key in a Python dict?
++ A list
+- A tuple of numbers
+- A string
+- An integer
+= Lists are mutable, so they aren't hashable.
+
+Q E What does a set NOT keep?
++ Duplicates
+- Strings
+- Numbers
+- Its size
+= Adding an existing value does nothing.
+
+Q E What is the load factor of a hash table?
++ Entries ÷ buckets
+- Buckets ÷ entries
+- Collisions ÷ entries
+- Keys ÷ values
+= When it passes a threshold (Java: 0.75), the table grows.
+
+Q E What does this print (JavaScript)?
+| const s = new Set([1, 2, 2, 3]);
+| console.log(s.size);
++ 3
+- 4
+- 2
+- undefined
+= Set removes duplicates; size is a property.
+
+Q E Which Java class keeps keys in insertion order?
++ LinkedHashMap
+- HashMap
+- TreeMap
+- Hashtable
+= TreeMap keeps keys sorted; HashMap has no guaranteed order.
+
+Q E What does this print (Python)?
+| from collections import Counter
+| print(Counter("hello")["l"])
++ 2
+- 1
+- 3
+- 0
+= Counter counts each element.
+
+Q E Ordered map (TreeMap, std::map) vs hash map: which gives sorted keys?
++ The ordered map
+- The hash map
+- Both, by default
+- Neither of them
+= Ordered maps are balanced trees with O(log n) operations.
+
+Q M What does this print (Python)?
+| def two_sum(a, t):
+|     seen = {}
+|     for j, x in enumerate(a):
+|         if t - x in seen:
+|             return seen[t - x], j
+|         seen[x] = j
+| print(two_sum([2, 7, 11, 15], 9))
++ (0, 1)
+- (1, 0)
+- [2, 7]
+- None
+= One pass: store each value's index and look up the complement.
+
+Q M What does this print (Java)?
+| java.util.Map<Character, Integer> c = new java.util.TreeMap<>();
+| for (char ch : "mississippi".toCharArray()) c.merge(ch, 1, Integer::sum);
+| System.out.println(c);
++ {i=4, m=1, p=2, s=4}
+- {m=1, i=4, s=4, p=2}
+- {i=4, s=4, p=2, m=1}
+- {m=1, s=4, i=4, p=2}
+= TreeMap sorts the keys.
+
+Q M What does this print (JavaScript)?
+| const o = {};
+| o[1] = "a";
+| o["1"] = "b";
+| console.log(Object.keys(o).length, o[1]);
++ 1 b
+- 2 a
+- 2 b
+- 1 a
+= Object keys are strings, so 1 and "1" are the same key. A Map would keep them apart.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <map>
+| int main() { std::map<int, char> m = {{3, 'c'}, {1, 'a'}, {2, 'b'}}; for (auto& [k, v] : m) std::cout << v; std::cout << std::endl; }
++ abc
+- cab
+- cba
+- bca
+= std::map iterates in key order.
+
+Q M What does this print (Python)?
+| from collections import defaultdict
+| g = defaultdict(list)
+| for w in ["eat", "tea", "tan", "ate"]:
+|     g["".join(sorted(w))].append(w)
+| print(len(g), max(len(v) for v in g.values()))
++ 2 3
+- 3 2
+- 4 1
+- 2 2
+= Anagrams share the same sorted key: {aet: 3 words, ant: 1}.
+
+Q M Why must a Java class used as a HashMap key override both equals and hashCode?
++ Equal keys must hash to the same bucket to be found
+- HashMap calls toString to compare the keys
+- Otherwise the map refuses to compile the class
+- hashCode is only used when printing the map
+= Overriding only equals means "equal" keys go to different buckets.
+
+Q M What does this print (JavaScript)?
+| const a = [1, 2, 3, 4], b = [3, 4, 5];
+| const s = new Set(a);
+| console.log(b.filter(x => s.has(x)));
++ [ 3, 4 ]
+- [ 5 ]
+- [ 1, 2 ]
+- [ 3, 4, 5 ]
+= The intersection of two arrays in O(n + m).
+
+Q M What does this print (Python)?
+| a = [1, 2, 3, 1, 2]
+| print([x for x, n in __import__("collections").Counter(a).items() if n == 1])
++ [3]
+- [1, 2]
+- [1, 2, 3]
+- []
+= Only 3 appears exactly once.
+
+Q M How do you find the first non-repeating character of a string in O(n)?
++ Count characters in one pass, then scan for count 1
+- Compare every character with every other one
+- Sort the string and look for single letters
+- Use a stack of characters seen so far
+= Two linear passes.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <unordered_set>
+| int main() { std::unordered_set<int> s = {1, 2}; auto r = s.insert(2); std::cout << r.second << " " << s.size() << std::endl; }
++ 0 2
+- 1 3
+- 1 2
+- 0 3
+= insert returns {iterator, false} when the value is already there.
+
+Q M What does this print (Java)?
+| java.util.Set<Integer> s = new java.util.HashSet<>(java.util.List.of(5, 1, 9));
+| System.out.println(s.contains(9) + " " + s.add(9));
++ true false
+- true true
+- false true
+- false false
+= add returns false when the set already has the value.
+
+Q M Counting subarrays with sum K (values may be negative) in O(n) uses:
++ Prefix sums with a hash map of sum counts
+- A sliding window that grows and shrinks
+- Sorting the array, then two pointers
+- A stack holding the running totals
+= Negative values break sliding windows; count[sum − K] gives the matches.
+
+Q M What does this print (Python)?
+| a, k = [1, 1, 1], 2
+| from collections import defaultdict
+| seen = defaultdict(int); seen[0] = 1
+| s = total = 0
+| for x in a:
+|     s += x
+|     total += seen[s - k]
+|     seen[s] += 1
+| print(total)
++ 2
+- 3
+- 1
+- 0
+= Subarrays [1, 1] at positions 0–1 and 1–2.
+
+Q M What does this print (JavaScript)?
+| const m = new Map([["b", 2], ["a", 1]]);
+| console.log([...m.keys()].join(""));
++ ba
+- ab
+- 21
+- 12
+= Map keeps insertion order.
+
+Q M Longest run of consecutive numbers in an unsorted array in O(n):
++ A set; count up only from run starts (x−1 absent)
+- Sort and scan; it's the only correct approach
+- Check every pair of numbers for a gap of one
+- Use a stack to hold the current run of numbers
+= Each number is visited a constant number of times.
+
+Q H What does this print (Python)?
+| def longest_consecutive(a):
+|     s, best = set(a), 0
+|     for x in s:
+|         if x - 1 not in s:
+|             y = x
+|             while y + 1 in s:
+|                 y += 1
+|             best = max(best, y - x + 1)
+|     return best
+| print(longest_consecutive([100, 4, 200, 1, 3, 2]))
++ 4
+- 3
+- 6
+- 1
+= 1, 2, 3, 4.
+
+Q H What does this print (Java)?
+| class P { int x; P(int x) { this.x = x; }
+|           public boolean equals(Object o) { return o instanceof P p && p.x == x; } }
+| java.util.Set<P> s = new java.util.HashSet<>();
+| s.add(new P(1)); s.add(new P(1));
+| System.out.println(s.size());
++ 2
+- 1
+- 0
+- Compile error
+= hashCode isn't overridden, so the two equal objects get different identity hashes and land in different buckets.
+
+Q H What does this print (JavaScript)?
+| const m = new Map();
+| m.set([1], "a");
+| console.log(m.get([1]));
++ undefined
+- a
+- [1]
+- An error
+= Map compares object keys by identity; [1] and [1] are different arrays.
+
+Q H What does this print (C++)?
+| #include <iostream>
+| #include <unordered_map>
+| int main() {
+|   std::unordered_map<int, int> m;
+|   if (m[5] == 0) std::cout << m.size();
+|   std::cout << " " << m.count(7) << " " << m.size() << std::endl;
+| }
++ 1 0 1
+- 0 0 0
+- 1 1 2
+- 0 0 1
+= m[5] inserts key 5 just by reading it; count doesn't insert.
+
+Q H Why can an attacker slow down a web server that puts user-supplied keys in a hash map?
++ Crafted keys can all collide, making operations O(n)
+- Hash maps can't store keys longer than 64 bytes
+- Each key lookup sends a request to the database
+- Hash maps lock the whole server while resizing
+= Randomised hashing and tree-based buckets (Java 8+) defend against this.
+
+Q H Java 8+ HashMap turns a long bucket into a tree. What does that change?
++ Worst-case lookup in that bucket goes from O(n) to O(log n)
+- Every lookup in the map becomes O(log n) instead of O(1)
+- The map starts keeping its keys in sorted order
+- Collisions can no longer happen in that bucket
+= Buckets with 8+ entries become red-black trees.
+
+Q H What does this print (Python)?
+| d = {}
+| d[1] = "int"
+| d[1.0] = "float"
+| d[True] = "bool"
+| print(d)
++ {1: 'bool'}
+- {1: 'int', 1.0: 'float', True: 'bool'}
+- {True: 'bool'}
+- {1: 'int'}
+= 1, 1.0 and True are equal and hash the same, so they're one key; the first key object stays.
+
+Q H Group words that are anagrams of each other in O(n·k) for n words of length k. What key?
++ A 26-letter count signature for each word
+- The word sorted alphabetically (that is O(k log k))
+- The first and last letters of each word
+- The length of each word
+= Sorting each word works too, at O(n·k log k).
+
+Q H What does this print (Java)?
+| java.util.Map<String, java.util.List<Integer>> m = new java.util.HashMap<>();
+| m.computeIfAbsent("a", k -> new java.util.ArrayList<>()).add(1);
+| m.computeIfAbsent("a", k -> new java.util.ArrayList<>()).add(2);
+| System.out.println(m);
++ {a=[1, 2]}
+- {a=[2]}
+- {a=[1]}
+- {a=1, a=2}
+= The list is created only the first time.
+
+Q H Two words are isomorphic if letters map one-to-one (egg → add, but not foo → bar). What do you need?
++ Two maps (or a map plus a set) to check both directions
+- One map from the first word's letters to the second's
+- Sorting both words and comparing them
+- Counting how many distinct letters each word has
+= "ab" → "aa" passes a one-direction check but isn't one-to-one.
+
+Q H What does this print (JavaScript)?
+| const words = ["a", "b", "a", "c", "a", "b"];
+| const freq = new Map();
+| for (const w of words) freq.set(w, (freq.get(w) || 0) + 1);
+| const top = [...freq].sort((x, y) => y[1] - x[1] || x[0].localeCompare(y[0])).slice(0, 2).map(e => e[0]);
+| console.log(top.join(","));
++ a,b
+- a,c
+- b,a
+- c,b
+= Top 2 by frequency (a: 3, b: 2), ties broken alphabetically.
+
+Q H What is the time complexity of finding all pairs that sum to a target in an array of n distinct numbers using a hash set?
++ O(n)
+- O(n²)
+- O(n log n)
+- O(log n)
+= One pass, checking each complement in O(1).
+
+Q H What does this print (C++)?
+| #include <iostream>
+| #include <map>
+| int main() {
+|   std::map<int, int> m = {{1, 10}, {5, 50}, {9, 90}};
+|   auto it = m.lower_bound(4);
+|   std::cout << it->first << " " << (--it)->first << std::endl;
+| }
++ 5 1
+- 4 1
+- 1 5
+- 5 9
+= lower_bound finds the first key ≥ 4; stepping back gives the largest key below it.
+
+Q H A cache must evict the least recently used key in O(1). Which structures?
++ A hash map plus a doubly linked list
+- A hash map alone, scanned for the oldest key
+- A sorted array of keys by access time
+- A min-heap of keys keyed by access time
+= The map finds the node; the list moves it to the front and drops the tail in O(1).
+
+Q M What does this print (Python)?
+| seen = set()
+| dupes = [x for x in [4, 1, 4, 2, 1] if x in seen or seen.add(x)]
+| print(dupes)
++ [4, 1]
+- [4, 1, 2]
+- [1, 4]
+- []
+= seen.add returns None (falsy), so only values already seen are kept.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <unordered_map>
+| int main() {
+|   std::unordered_map<char, int> c;
+|   for (char ch : std::string("aabbbc")) c[ch]++;
+|   std::cout << c['b'] << " " << c.size() << std::endl;
+| }
++ 3 3
+- 3 6
+- 2 3
+- 3 2
+= Three distinct characters; 'b' appears three times.
+
+Q H What does this print (Python)?
+| def has_dup_within(a, k):
+|     last = {}
+|     for i, x in enumerate(a):
+|         if x in last and i - last[x] <= k:
+|             return True
+|         last[x] = i
+|     return False
+| print(has_dup_within([1, 2, 3, 1], 3), has_dup_within([1, 2, 3, 1], 2))
++ True False
+- False True
+- True True
+- False False
+= The two 1s are 3 positions apart.
+
+Q H What does this print (JavaScript)?
+| const nums = [3, 3, 4, 2, 4, 4, 2, 4, 4];
+| let cand = null, count = 0;
+| for (const x of nums) {
+|   if (count === 0) cand = x;
+|   count += x === cand ? 1 : -1;
+| }
+| console.log(cand);
++ 4
+- 3
+- 2
+- null
+= Boyer–Moore majority vote finds the value that appears more than n/2 times, in O(1) space.
+
+@topic dsa-linked-lists | FUNDAMENTALS | Linked lists | Singly and doubly linked lists, traversal, insertion and deletion, reversing, slow and fast pointers, cycles, merging and the linked lists in each language.
+Q E What does each node of a singly linked list hold?
++ A value and a pointer to the next node
+- A value and its index in the list
+- A value and pointers to every node
+- Only a value, with no pointers
+= The last node's next is null.
+
+Q E Accessing the k-th element of a linked list takes:
++ O(k)
+- O(1)
+- O(log k)
+- O(k²)
+= You walk from the head; there are no indexes.
+
+Q E Inserting a new node at the head of a singly linked list takes:
++ O(1)
+- O(n)
+- O(log n)
+- O(n²)
+= Point the new node at the old head and update head.
+
+Q E How do you know you've reached the end of a singly linked list?
++ The node's next pointer is null
+- The node's value is zero
+- The node's index equals the size
+- The node points back to the head
+= A circular list is the exception: the tail points to the head.
+
+Q E What does a doubly linked list add?
++ A pointer to the previous node
+- A second copy of every value
+- An index stored in every node
+- A pointer from the head to the middle
+= You can walk both ways and delete a known node in O(1).
+
+Q E Which is an advantage of a linked list over an array?
++ O(1) insert or delete at a known node
+- O(1) access to any element by index
+- Better use of CPU cache when scanning
+- Less memory per stored element
+= Arrays win on index access and cache locality.
+
+Q E What does this print (Python)?
+| class Node:
+|     def __init__(self, v, nxt=None):
+|         self.v, self.next = v, nxt
+| head = Node(1, Node(2, Node(3)))
+| n = 0
+| while head:
+|     n += 1
+|     head = head.next
+| print(n)
++ 3
+- 2
+- 1
+- 0
+= Walking until None counts the nodes.
+
+Q E What does this print (Java)?
+| java.util.LinkedList<Integer> l = new java.util.LinkedList<>(java.util.List.of(1, 2, 3));
+| l.addFirst(0);
+| System.out.println(l);
++ [0, 1, 2, 3]
+- [1, 2, 3, 0]
+- [0]
+- [1, 2, 3]
+= Java's LinkedList is doubly linked.
+
+Q E Which C++ container is a doubly linked list?
++ std::list
+- std::vector
+- std::array
+- std::map
+= std::forward_list is singly linked.
+
+Q E What is the "head" of a linked list?
++ The first node
+- The last node
+- The middle node
+- The largest value
+= The tail is the last node.
+
+Q E Deleting the head node of a singly linked list takes:
++ O(1)
+- O(n)
+- O(log n)
+- O(n²)
+= head = head.next.
+
+Q E Deleting the last node of a singly linked list (with only a head pointer) takes:
++ O(n)
+- O(1)
+- O(log n)
+- O(2)
+= You must find the node before the tail.
+
+Q E What does this print (JavaScript)?
+| const list = { v: 1, next: { v: 2, next: null } };
+| console.log(list.next.v);
++ 2
+- 1
+- null
+- undefined
+= Objects with a next property form a simple linked list.
+
+Q E Why does a linked list use more memory per element than an array?
++ Each node also stores a pointer
+- Each node stores the list's size
+- Values are copied into two places
+- Arrays compress their values
+= Plus overhead per allocated node.
+
+Q E Searching a linked list for a value takes:
++ O(n)
+- O(1)
+- O(log n)
+- O(n log n)
+= Even if the list is sorted, you can't binary search without random access.
+
+Q E What does this print (C++)?
+| #include <iostream>
+| #include <list>
+| int main() { std::list<int> l = {2, 3}; l.push_front(1); l.push_back(4); std::cout << l.front() << l.back() << std::endl; }
++ 14
+- 23
+- 12
+- 41
+= push_front and push_back are O(1) on std::list.
+
+Q E What is a sentinel (dummy) head node used for?
++ Removing special cases at the head
+- Storing the length of the list
+- Marking nodes that have been deleted
+- Making the list circular
+= Code no longer needs special cases for an empty list.
+
+Q M What does this print (Python)?
+| class Node:
+|     def __init__(self, v, nxt=None):
+|         self.v, self.next = v, nxt
+| def reverse(h):
+|     prev = None
+|     while h:
+|         h.next, prev, h = prev, h, h.next
+|     return prev
+| h = reverse(Node(1, Node(2, Node(3))))
+| print(h.v, h.next.v, h.next.next.v)
++ 3 2 1
+- 1 2 3
+- 3 1 2
+- 2 3 1
+= Iterative reversal flips each next pointer: O(n) time, O(1) space.
+
+Q M How do you find the middle node of a linked list in one pass?
++ Slow pointer 1 step, fast pointer 2 steps
+- Count the nodes, which needs no second pass
+- Jump to index size / 2 directly
+- Reverse the list, then walk half of it
+= When fast reaches the end, slow is in the middle.
+
+Q M What does this print (Java)?
+| class N { int v; N next; N(int v, N n) { this.v = v; next = n; } }
+| N h = new N(1, new N(2, new N(3, new N(4, new N(5, null)))));
+| N slow = h, fast = h;
+| while (fast != null && fast.next != null) { slow = slow.next; fast = fast.next.next; }
+| System.out.println(slow.v);
++ 3
+- 2
+- 4
+- 5
+= The middle of 5 nodes is the 3rd.
+
+Q M How do you detect a cycle in a linked list in O(1) extra space?
++ Floyd's slow and fast pointers meet if there's a cycle
+- Mark visited nodes in a hash set as you go
+- Count to a million and give up if not ended
+- Compare each node's value with the head's value
+= A hash set works too, but uses O(n) space.
+
+Q M What does this print (JavaScript)?
+| function merge(a, b) {
+|   const dummy = { next: null }; let t = dummy;
+|   while (a && b) {
+|     if (a.v <= b.v) { t.next = a; a = a.next; } else { t.next = b; b = b.next; }
+|     t = t.next;
+|   }
+|   t.next = a || b;
+|   return dummy.next;
+| }
+| const L = (...xs) => xs.reduceRight((n, v) => ({ v, next: n }), null);
+| let r = merge(L(1, 3, 5), L(2, 4)), out = [];
+| while (r) { out.push(r.v); r = r.next; }
+| console.log(out.join(" "));
++ 1 2 3 4 5
+- 1 3 5 2 4
+- 5 4 3 2 1
+- 1 2 3 4
+= Merging two sorted lists by relinking nodes, with a dummy head.
+
+Q M To delete a node in the middle of a singly linked list you need:
++ The node before it
+- Only the node itself
+- The tail of the list
+- The size of the list
+= (A trick copies the next node's value into it, but fails for the tail.)
+
+Q M What does this print (Python)?
+| class Node:
+|     def __init__(self, v, nxt=None):
+|         self.v, self.next = v, nxt
+| def remove(h, target):
+|     dummy = Node(0, h)
+|     cur = dummy
+|     while cur.next:
+|         if cur.next.v == target:
+|             cur.next = cur.next.next
+|         else:
+|             cur = cur.next
+|     return dummy.next
+| h = remove(Node(7, Node(1, Node(7, Node(2)))), 7)
+| out = []
+| while h:
+|     out.append(h.v); h = h.next
+| print(out)
++ [1, 2]
+- [7, 1, 2]
+- [1, 7, 2]
+- []
+= A dummy head handles removing the first node without a special case.
+
+Q M Java's ArrayList vs LinkedList: which is faster for get(i) in a big list?
++ ArrayList
+- LinkedList
+- They are the same
+- It depends on the values
+= LinkedList.get(i) walks from the nearer end: O(n).
+
+Q M How do you find the k-th node from the end in one pass?
++ Lead one pointer by k, then move both
+- Reverse it and take the k-th node
+- Map every node by index in a hash map
+- Walk to the end, then step back k nodes
+= When the lead pointer hits null, the trailing one is k from the end.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <list>
+| int main() {
+|   std::list<int> l = {1, 2, 3, 4};
+|   for (auto it = l.begin(); it != l.end(); ) { if (*it % 2 == 0) it = l.erase(it); else ++it; }
+|   for (int x : l) std::cout << x;
+|   std::cout << std::endl;
+| }
++ 13
+- 24
+- 1234
+- 1
+= erase returns the next valid iterator, so removal while looping is safe.
+
+Q M What does this print (Python)?
+| from collections import deque
+| d = deque([1, 2, 3])
+| d.appendleft(0)
+| d.pop()
+| print(list(d))
++ [0, 1, 2]
+- [1, 2, 3]
+- [0, 1, 2, 3]
+- [2, 3]
+= deque supports O(1) adds and removes at both ends.
+
+Q M Which problem is naturally solved with a doubly linked list plus a hash map?
++ An LRU cache
+- Binary search
+- Counting sort
+- Matrix multiplication
+= The map finds nodes; the list keeps recency order with O(1) moves.
+
+Q M Reversing a linked list recursively uses how much extra space?
++ O(n) for the call stack
+- O(1), like the loop version
+- O(log n) for the call stack
+- O(n²) for copies of nodes
+= The iterative version is O(1) space.
+
+Q M What does this print (Java)?
+| java.util.LinkedList<String> q = new java.util.LinkedList<>();
+| q.offer("a"); q.offer("b"); q.push("z");
+| System.out.println(q.poll() + q.poll());
++ za
+- ab
+- az
+- zb
+= push adds to the front; poll removes from the front.
+
+Q M In Floyd's cycle detection, why does the fast pointer move exactly 2 steps?
++ The gap grows by 1 each step, so it can't skip over slow
+- Moving 3 steps would always overflow the list
+- 2 is the only value that works for even lengths
+- The slow pointer moves backwards one step
+= Inside the cycle the distance shrinks by one each step until they meet.
+
+Q M What does this print (JavaScript)?
+| let node = { v: 1, next: null };
+| node.next = node;
+| let slow = node, fast = node, cyc = false;
+| for (let i = 0; i < 5 && fast && fast.next; i++) {
+|   slow = slow.next; fast = fast.next.next;
+|   if (slow === fast) { cyc = true; break; }
+| }
+| console.log(cyc);
++ true
+- false
+- undefined
+- An error
+= A node pointing to itself is a cycle of length 1.
+
+Q H What does this print (Python)?
+| class Node:
+|     def __init__(self, v, nxt=None):
+|         self.v, self.next = v, nxt
+| def is_palindrome(h):
+|     slow = fast = h
+|     prev = None
+|     while fast and fast.next:
+|         fast = fast.next.next
+|         slow.next, prev, slow = prev, slow, slow.next
+|     if fast:
+|         slow = slow.next
+|     while prev and prev.v == slow.v:
+|         prev, slow = prev.next, slow.next
+|     return prev is None
+| print(is_palindrome(Node(1, Node(2, Node(2, Node(1))))), is_palindrome(Node(1, Node(2))))
++ True False
+- False True
+- True True
+- False False
+= Reverse the first half while finding the middle, then compare: O(n) time, O(1) space.
+
+Q H After Floyd's pointers meet inside a cycle, how do you find where the cycle starts?
++ Restart one at the head; step both until they meet
+- The meeting point is always where it starts
+- Count the cycle, then binary search for it
+- Move fast back to the head and then stop
+= The distances from the head and from the meeting point to the start are equal (mod the cycle length).
+
+Q H What does this print (Java)?
+| class N { int v; N next; N(int v, N n) { this.v = v; next = n; } }
+| N a = new N(9, new N(9, null));
+| N b = new N(1, null);
+| N dummy = new N(0, null), t = dummy; int carry = 0;
+| while (a != null || b != null || carry > 0) {
+|     int s = carry + (a != null ? a.v : 0) + (b != null ? b.v : 0);
+|     carry = s / 10; t.next = new N(s % 10, null); t = t.next;
+|     if (a != null) a = a.next; if (b != null) b = b.next;
+| }
+| StringBuilder sb = new StringBuilder();
+| for (N n = dummy.next; n != null; n = n.next) sb.append(n.v);
+| System.out.println(sb);
++ 001
+- 100
+- 991
+- 10
+= The lists hold digits in reverse (99 + 1); the result 100 is stored reversed as 0 → 0 → 1.
+
+Q H Merging k sorted linked lists with n nodes in total is best done in:
++ O(n log k) with a min-heap of list heads
+- O(nk) by merging lists one after another
+- O(n²) by sorting all values at the end
+- O(log n) with binary search across lists
+= Pairwise divide-and-conquer merging also gives O(n log k).
+
+Q H What does this print (C++)?
+| #include <iostream>
+| struct N { int v; N* next; };
+| N* reverseK(N* h, int k) {
+|   N* cur = h; int c = 0;
+|   while (cur && c < k) { cur = cur->next; c++; }
+|   if (c < k) return h;
+|   N* prev = reverseK(cur, k);
+|   while (c-- > 0) { N* nx = h->next; h->next = prev; prev = h; h = nx; }
+|   return prev;
+| }
+| int main() {
+|   N e{5, nullptr}, d{4, &e}, c{3, &d}, b{2, &c}, a{1, &b};
+|   for (N* p = reverseK(&a, 2); p; p = p->next) std::cout << p->v;
+|   std::cout << std::endl;
+| }
++ 21435
+- 54321
+- 12345
+- 21345
+= Reverse in groups of k; a short last group stays as it is.
+
+Q H Two singly linked lists merge into one tail (a Y shape). How do you find the meeting node in O(1) space?
++ Walk both, switching lists at the end
+- Reverse one list and compare the heads
+- Put one list's nodes in a hash set
+- Compare the lists' values from the start
+= Both pointers travel a + b + c nodes and meet at the junction (or both reach null).
+
+Q H What does this print (Python)?
+| class Node:
+|     def __init__(self, v, nxt=None):
+|         self.v, self.next = v, nxt
+| def odd_even(h):
+|     if not h: return h
+|     odd, even = h, h.next
+|     even_head = even
+|     while even and even.next:
+|         odd.next = even.next; odd = odd.next
+|         even.next = odd.next; even = even.next
+|     odd.next = even_head
+|     return h
+| h = odd_even(Node(1, Node(2, Node(3, Node(4, Node(5))))))
+| out = []
+| while h:
+|     out.append(h.v); h = h.next
+| print(out)
++ [1, 3, 5, 2, 4]
+- [2, 4, 1, 3, 5]
+- [1, 2, 3, 4, 5]
+- [5, 3, 1, 4, 2]
+= Odd positions first, then even, relinked in place.
+
+Q H Why is sorting a linked list usually done with merge sort rather than quicksort?
++ It needs no random access to elements
+- Quicksort can't sort integers in nodes
+- Merge sort is O(n) on linked lists
+- Linked lists are always nearly sorted
+= Finding the middle with slow/fast pointers and merging by relinking gives O(n log n) with O(log n) stack.
+
+Q H What does this print (JavaScript)?
+| class Node { constructor(v) { this.v = v; this.prev = this.next = null; } }
+| const a = new Node(1), b = new Node(2), c = new Node(3);
+| a.next = b; b.prev = a; b.next = c; c.prev = b;
+| b.prev.next = b.next; b.next.prev = b.prev;
+| console.log(a.next.v, c.prev.v);
++ 3 1
+- 2 2
+- 3 2
+- 2 1
+= Unlinking a node from a doubly linked list is O(1).
+
+Q H Copying a linked list where each node also has a random pointer, in O(1) extra space, uses:
++ Interleave copies, then split the lists
+- A hash map from originals to copies
+- Copy the values into an array first
+- Recurse on both next and random
+= The map approach is simpler but uses O(n) space.
+
+Q H What does this print (Java)?
+| java.util.Iterator<Integer> it;
+| java.util.List<Integer> l = new java.util.LinkedList<>(java.util.List.of(1, 2, 3, 4));
+| it = l.iterator();
+| while (it.hasNext()) if (it.next() % 2 == 1) it.remove();
+| System.out.println(l);
++ [2, 4]
+- [1, 3]
+- [1, 2, 3, 4]
+- ConcurrentModificationException
+= Removing through the iterator is safe; removing through the list while iterating isn't.
+
+Q H Why can linked lists be slower than arrays for scanning, even though both are O(n)?
++ Nodes are scattered in memory, causing cache misses
+- Linked lists check every node twice
+- The CPU can't follow pointers in a loop
+- Linked lists always store values as strings
+= Arrays are contiguous, so the CPU prefetches them.
+
+Q H What does this print (Python)?
+| class Node:
+|     def __init__(self, v, nxt=None):
+|         self.v, self.next = v, nxt
+| def rotate(h, k):
+|     if not h: return h
+|     n, tail = 1, h
+|     while tail.next:
+|         tail, n = tail.next, n + 1
+|     k %= n
+|     if k == 0: return h
+|     tail.next = h
+|     for _ in range(n - k):
+|         tail = tail.next
+|     h, tail.next = tail.next, None
+|     return h
+| h = rotate(Node(1, Node(2, Node(3, Node(4, Node(5))))), 2)
+| out = []
+| while h:
+|     out.append(h.v); h = h.next
+| print(out)
++ [4, 5, 1, 2, 3]
+- [3, 4, 5, 1, 2]
+- [2, 3, 4, 5, 1]
+- [5, 4, 3, 2, 1]
+= Close the ring, then cut it n − k nodes after the old tail.
+
+Q H A singly linked list has a cycle. What does a plain "count nodes until null" loop do?
++ Never ends
+- Counts the cycle twice and stops
+- Throws a null pointer error
+- Returns the cycle's length
+= Always guard traversals of untrusted lists, or detect cycles first.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <forward_list>
+| int main() { std::forward_list<int> f = {3, 2, 1}; f.push_front(4); f.reverse(); for (int x : f) std::cout << x; std::cout << std::endl; }
++ 1234
+- 4321
+- 3214
+- 4123
+= std::forward_list is singly linked; reverse() relinks it in place.
+
+Q H What does this print (Python)?
+| class Node:
+|     def __init__(self, v, nxt=None):
+|         self.v, self.next = v, nxt
+| def dedupe_sorted(h):
+|     cur = h
+|     while cur and cur.next:
+|         if cur.v == cur.next.v:
+|             cur.next = cur.next.next
+|         else:
+|             cur = cur.next
+|     return h
+| h = dedupe_sorted(Node(1, Node(1, Node(2, Node(3, Node(3))))))
+| out = []
+| while h:
+|     out.append(h.v); h = h.next
+| print(out)
++ [1, 2, 3]
+- [1, 1, 2, 3, 3]
+- [2]
+- [1, 3]
+= In a sorted list duplicates are adjacent, so one pass removes them.
+
+Q H What does this print (JavaScript)?
+| function len(n) { return n ? 1 + len(n.next) : 0; }
+| const L = (...xs) => xs.reduceRight((n, v) => ({ v, next: n }), null);
+| console.log(len(L(4, 5, 6, 7)));
++ 4
+- 3
+- 7
+- 0
+= Recursive length: O(n) time and O(n) stack.
+
+@topic dsa-stacks-queues | FUNDAMENTALS | Stacks and queues | LIFO and FIFO, push/pop and enqueue/dequeue, bracket matching, monotonic stacks, queues for BFS, deques and the stack and queue types of each language.
+Q E A stack is:
++ Last in, first out
+- First in, first out
+- Sorted by value
+- Random access by index
+= Like a stack of plates.
+
+Q E A queue is:
++ First in, first out
+- Last in, first out
+- Sorted by value
+- Random access by index
+= Like a line at a counter.
+
+Q E What does this print (Python)?
+| st = []
+| st.append(1); st.append(2); st.append(3)
+| print(st.pop())
++ 3
+- 1
+- 2
+- [1, 2]
+= A Python list works as a stack: append and pop at the end.
+
+Q E What does this print (Java)?
+| java.util.Deque<Integer> st = new java.util.ArrayDeque<>();
+| st.push(1); st.push(2);
+| System.out.println(st.peek());
++ 2
+- 1
+- [2, 1]
+- null
+= peek looks at the top without removing it.
+
+Q E What does this print (JavaScript)?
+| const q = [];
+| q.push("a"); q.push("b");
+| console.log(q.shift());
++ a
+- b
+- [ 'a', 'b' ]
+- undefined
+= shift removes from the front (but is O(n) on large arrays).
+
+Q E What does this print (C++)?
+| #include <iostream>
+| #include <queue>
+| int main() { std::queue<int> q; q.push(1); q.push(2); q.pop(); std::cout << q.front() << std::endl; }
++ 2
+- 1
+- 0
+- An error
+= pop removes the front; front reads the next one.
+
+Q E Which uses a stack behind the scenes?
++ Function calls
+- Printer jobs
+- Breadth-first search
+- Round-robin scheduling
+= Each call pushes a frame; returning pops it.
+
+Q E Which uses a queue?
++ Breadth-first search
+- Undo in an editor
+- Matching brackets
+- Evaluating postfix expressions
+= BFS visits nodes in the order they were discovered.
+
+Q E Push and pop on a stack take:
++ O(1)
+- O(n)
+- O(log n)
+- O(n²)
+= Both happen at the top.
+
+Q E What happens if you pop from an empty stack?
++ An error (or undefined behaviour in C++)
+- It returns the bottom element instead
+- It sorts the stack and returns the top
+- It pushes a zero and then returns it
+= Python raises IndexError; Java's ArrayDeque.pop throws; C++ is undefined behaviour.
+
+Q E Which Java type is recommended for both stacks and queues?
++ ArrayDeque
+- Stack
+- Vector
+- Hashtable
+= The old Stack class is synchronized and extends Vector.
+
+Q E Which Python type gives O(1) adds and removes at both ends?
++ collections.deque
+- list
+- tuple
+- set
+= list.pop(0) is O(n).
+
+Q E What does "peek" do?
++ Reads the top without removing it
+- Removes the top element of the stack
+- Empties the whole stack at once
+- Counts the elements in the stack
+= Also called top (C++) or front for queues.
+
+Q E Undo in a text editor is usually a:
++ Stack of actions
+- Queue of actions
+- Sorted list of actions
+- Hash set of actions
+= The most recent action is undone first.
+
+Q E What does this print (Python)?
+| from collections import deque
+| q = deque()
+| q.append(1); q.append(2); q.append(3)
+| print(q.popleft(), len(q))
++ 1 2
+- 3 2
+- 1 3
+- 3 3
+= popleft removes from the front in O(1).
+
+Q E What does this print (C++)?
+| #include <iostream>
+| #include <stack>
+| int main() { std::stack<char> s; s.push('a'); s.push('b'); std::cout << s.top() << s.size() << std::endl; }
++ b2
+- a2
+- b1
+- a1
+= top reads the most recent element.
+
+Q E A deque is:
++ A double-ended queue
+- A queue that is sorted
+- A stack with a fixed size
+- A queue of queues
+= Add and remove at both ends.
+
+Q M What does this print (Python)?
+| def balanced(s):
+|     pair = {")": "(", "]": "[", "}": "{"}
+|     st = []
+|     for c in s:
+|         if c in "([{":
+|             st.append(c)
+|         elif not st or st.pop() != pair[c]:
+|             return False
+|     return not st
+| print(balanced("{[()]}"), balanced("([)]"), balanced("(("))
++ True False False
+- True True False
+- False False False
+- True False True
+= Each closing bracket must match the latest unmatched opening one, and none may be left over.
+
+Q M What does this print (Java)?
+| String[] tokens = {"2", "1", "+", "3", "*"};
+| java.util.Deque<Integer> st = new java.util.ArrayDeque<>();
+| for (String t : tokens) {
+|     switch (t) {
+|         case "+" -> st.push(st.pop() + st.pop());
+|         case "*" -> st.push(st.pop() * st.pop());
+|         default -> st.push(Integer.parseInt(t));
+|     }
+| }
+| System.out.println(st.pop());
++ 9
+- 5
+- 6
+- 7
+= Reverse Polish notation: (2 + 1) × 3.
+
+Q M What does this print (JavaScript)?
+| const a = [4, 5, 2, 25];
+| const res = Array(a.length).fill(-1), st = [];
+| a.forEach((x, i) => {
+|   while (st.length && a[st[st.length - 1]] < x) res[st.pop()] = x;
+|   st.push(i);
+| });
+| console.log(res.join(" "));
++ 5 25 25 -1
+- 5 -1 25 -1
+- 25 25 25 -1
+- -1 5 2 25
+= A monotonic stack finds the next greater element in O(n).
+
+Q M How do you build a queue from two stacks?
++ Push to "in"; pop from "out", refilling it when empty
+- Push to both and pop from whichever is larger
+- Use one stack for even and one for odd values
+- Reverse the single stack after every push
+= Each element moves at most twice, so operations are O(1) amortised.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <deque>
+| int main() { std::deque<int> d = {2, 3}; d.push_front(1); d.push_back(4); d.pop_front(); std::cout << d.front() << d.back() << std::endl; }
++ 24
+- 14
+- 23
+- 34
+= deque supports both ends in O(1).
+
+Q M Why is JavaScript's array.shift() a poor choice for a queue holding a million items?
++ It's O(n): every remaining element moves down
+- It can only remove strings, not numbers
+- It throws an error on arrays over 65,535 items
+- It removes the last element, not the first
+= Use a head index, or a linked list or deque implementation.
+
+Q M What does this print (Python)?
+| prices = [100, 80, 60, 70, 60, 75, 85]
+| st, out = [], []
+| for i, p in enumerate(prices):
+|     while st and prices[st[-1]] <= p:
+|         st.pop()
+|     out.append(i + 1 if not st else i - st[-1])
+|     st.append(i)
+| print(out)
++ [1, 1, 1, 2, 1, 4, 6]
+- [1, 2, 3, 4, 5, 6, 7]
+- [1, 1, 1, 1, 1, 1, 1]
+- [0, 0, 0, 1, 0, 3, 5]
+= The stock span problem with a monotonic stack.
+
+Q M Which structure gives the minimum of a stack in O(1) at any time?
++ A second stack holding the minimum at each level
+- A hash set of all the values pushed
+- A queue that stores values in sorted order
+- Sorting the stack after each push
+= Push min(x, current min) alongside each value.
+
+Q M What does this print (Java)?
+| java.util.Queue<String> q = new java.util.ArrayDeque<>();
+| q.offer("x"); q.offer("y");
+| System.out.println(q.peek() + q.size());
++ x2
+- y2
+- x1
+- y1
+= peek reads the front without removing it.
+
+Q M A circular buffer (ring buffer) queue of capacity n stores items in:
++ An array with head and tail indexes that wrap
+- A linked list that is joined end to end
+- Two stacks that swap roles when full
+- A hash map keyed by arrival time
+= Used for streams, logs and producer–consumer queues.
+
+Q M What does this print (JavaScript)?
+| const st = [];
+| for (const c of "abc") st.push(c);
+| let r = "";
+| while (st.length) r += st.pop();
+| console.log(r);
++ cba
+- abc
+- a
+- c
+= A stack reverses order.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <queue>
+| int main() { std::priority_queue<int> pq; for (int x : {3, 9, 1}) pq.push(x); std::cout << pq.top() << std::endl; }
++ 9
+- 1
+- 3
+- 13
+= priority_queue is a max-heap by default — not a FIFO queue.
+
+Q M What does this print (Python)?
+| def simplify(path):
+|     st = []
+|     for part in path.split("/"):
+|         if part == "..":
+|             if st: st.pop()
+|         elif part and part != ".":
+|             st.append(part)
+|     return "/" + "/".join(st)
+| print(simplify("/a/./b/../../c/"))
++ /c
+- /a/b/c
+- /a/c
+- /
+= A stack handles ".." by popping the last folder.
+
+Q M A queue built from two stacks: what is the worst case for one dequeue?
++ O(n), when the out-stack must be refilled
+- O(1), every time without exception
+- O(log n), from rebalancing the stacks
+- O(n²), from copying twice
+= But amortised over many operations it's O(1).
+
+Q M What does this print (Java)?
+| java.util.Deque<Integer> d = new java.util.ArrayDeque<>();
+| d.offerFirst(1); d.offerLast(2); d.offerFirst(0);
+| System.out.println(d.pollLast() + " " + d.peekFirst());
++ 2 0
+- 0 2
+- 1 0
+- 2 1
+= offerFirst/offerLast and pollLast/peekFirst work at each end.
+
+Q H What does this print (Python)?
+| from collections import deque
+| def window_max(a, k):
+|     dq, out = deque(), []
+|     for i, x in enumerate(a):
+|         while dq and a[dq[-1]] <= x:
+|             dq.pop()
+|         dq.append(i)
+|         if dq[0] <= i - k:
+|             dq.popleft()
+|         if i >= k - 1:
+|             out.append(a[dq[0]])
+|     return out
+| print(window_max([1, 3, -1, -3, 5, 3, 6, 7], 3))
++ [3, 3, 5, 5, 6, 7]
+- [1, 3, 5, 5, 6, 7]
+- [3, 3, 3, 5, 6, 7]
+- [7, 7, 7, 7, 7, 7]
+= A monotonic deque gives each window's maximum in O(n) overall.
+
+Q H What does this print (Java)?
+| int[] h = {2, 1, 5, 6, 2, 3};
+| java.util.Deque<Integer> st = new java.util.ArrayDeque<>();
+| int best = 0;
+| for (int i = 0; i <= h.length; i++) {
+|     int cur = i == h.length ? 0 : h[i];
+|     while (!st.isEmpty() && h[st.peek()] >= cur) {
+|         int height = h[st.pop()];
+|         int width = st.isEmpty() ? i : i - st.peek() - 1;
+|         best = Math.max(best, height * width);
+|     }
+|     st.push(i);
+| }
+| System.out.println(best);
++ 10
+- 12
+- 6
+- 8
+= Largest rectangle in a histogram with a stack, O(n).
+
+Q H What does this print (JavaScript)?
+| function decode(s) {
+|   const counts = [], strs = []; let cur = "", k = 0;
+|   for (const c of s) {
+|     if (c >= "0" && c <= "9") k = k * 10 + Number(c);
+|     else if (c === "[") { counts.push(k); strs.push(cur); cur = ""; k = 0; }
+|     else if (c === "]") { cur = strs.pop() + cur.repeat(counts.pop()); }
+|     else cur += c;
+|   }
+|   return cur;
+| }
+| console.log(decode("3[a2[c]]"));
++ accaccacc
+- acacac
+- aaacc
+- 3a2c
+= Two stacks hold the repeat counts and the text built so far.
+
+Q H What does this print (C++)?
+| #include <iostream>
+| #include <stack>
+| #include <string>
+| int main() {
+|   std::string s = "(()())())";
+|   std::stack<int> st; st.push(-1); int best = 0;
+|   for (int i = 0; i < (int)s.size(); i++) {
+|     if (s[i] == '(') st.push(i);
+|     else { st.pop(); if (st.empty()) st.push(i); else best = std::max(best, i - st.top()); }
+|   }
+|   std::cout << best << std::endl;
+| }
++ 8
+- 6
+- 9
+- 4
+= The longest valid parentheses substring is "(()())()".
+
+Q H Evaluating "3 + 4 * 2" correctly with a stack-based parser relies on:
++ Operator precedence: * is applied before +
+- Evaluating strictly from left to right
+- Evaluating strictly from right to left
+- Always pushing numbers before operators
+= The shunting-yard algorithm converts infix to postfix using precedence.
+
+Q H What does this print (Python)?
+| def daily_temps(t):
+|     res, st = [0] * len(t), []
+|     for i, x in enumerate(t):
+|         while st and t[st[-1]] < x:
+|             j = st.pop()
+|             res[j] = i - j
+|         st.append(i)
+|     return res
+| print(daily_temps([73, 74, 75, 71, 69, 72, 76, 73]))
++ [1, 1, 4, 2, 1, 1, 0, 0]
+- [1, 1, 1, 1, 1, 1, 0, 0]
+- [0, 0, 4, 2, 1, 1, 0, 0]
+- [1, 2, 4, 2, 1, 1, 1, 0]
+= Days until a warmer temperature, with a monotonic stack.
+
+Q H What does this print (Java)?
+| class MinStack {
+|     java.util.Deque<int[]> st = new java.util.ArrayDeque<>();
+|     void push(int x) { st.push(new int[] {x, st.isEmpty() ? x : Math.min(x, st.peek()[1])}); }
+|     void pop() { st.pop(); }
+|     int min() { return st.peek()[1]; }
+| }
+| MinStack m = new MinStack();
+| m.push(5); m.push(2); m.push(7); m.pop(); m.push(1); m.pop();
+| System.out.println(m.min());
++ 2
+- 1
+- 5
+- 7
+= After the pops, the stack holds 5 and 2.
+
+Q H Why does BFS with a queue find shortest paths in an unweighted graph, while DFS with a stack doesn't?
++ A queue explores nodes in order of distance from the start
+- A queue visits each node twice, checking both paths
+- A stack can't store more than one path at a time
+- DFS only works on trees, never on graphs
+= BFS finishes all nodes at distance d before any at d + 1.
+
+Q H What does this print (JavaScript)?
+| const asteroids = [5, 10, -5, 8, -8, -20];
+| const st = [];
+| for (const a of asteroids) {
+|   let alive = true;
+|   while (alive && a < 0 && st.length && st[st.length - 1] > 0) {
+|     const top = st[st.length - 1];
+|     if (top < -a) { st.pop(); continue; }
+|     if (top === -a) st.pop();
+|     alive = false;
+|   }
+|   if (alive) st.push(a);
+| }
+| console.log(st.join(","));
++ -20
+- 5,10
+- 5,10,-20
+- -5,-8,-20
+= Collisions resolved with a stack: -20 destroys 10 and 5 after 8 and -8 cancel.
+
+Q H A queue is shared by producer and consumer threads. What should Java code use?
++ A BlockingQueue such as ArrayBlockingQueue
+- A plain ArrayDeque with no locking
+- A LinkedList used from both threads
+- A Stack, since it is synchronized
+= BlockingQueue handles waiting when the queue is empty or full.
+
+Q H What does this print (C++)?
+| #include <iostream>
+| #include <stack>
+| #include <vector>
+| int main() {
+|   std::vector<int> pushed = {1, 2, 3, 4, 5}, popped = {4, 5, 3, 2, 1};
+|   std::stack<int> s; size_t j = 0;
+|   for (int x : pushed) { s.push(x); while (!s.empty() && s.top() == popped[j]) { s.pop(); j++; } }
+|   std::cout << (j == popped.size() ? "valid" : "invalid") << std::endl;
+| }
++ valid
+- invalid
+- 4
+- 0
+= Simulating the stack checks whether a pop order is possible.
+
+Q H What does this print (Python)?
+| def remove_k_digits(num, k):
+|     st = []
+|     for d in num:
+|         while k and st and st[-1] > d:
+|             st.pop(); k -= 1
+|         st.append(d)
+|     st = st[:len(st) - k] if k else st
+|     return "".join(st).lstrip("0") or "0"
+| print(remove_k_digits("1432219", 3))
++ 1219
+- 1432
+- 2219
+- 1229
+= A monotonic stack removes the digits that make the number larger.
+
+Q M What does this print (Python)?
+| from collections import deque
+| def hot_potato(names, k):
+|     q = deque(names)
+|     while len(q) > 1:
+|         q.rotate(-(k - 1))
+|         q.popleft()
+|     return q[0]
+| print(hot_potato(["A", "B", "C", "D", "E"], 2))
++ C
+- A
+- E
+- B
+= The Josephus problem with a queue: every second person leaves.
+
+Q M What does this print (JavaScript)?
+| const q = { items: {}, head: 0, tail: 0 };
+| const enq = x => q.items[q.tail++] = x;
+| const deq = () => { const x = q.items[q.head]; delete q.items[q.head++]; return x; };
+| enq("a"); enq("b"); enq("c");
+| console.log(deq() + deq(), q.tail - q.head);
++ ab 1
+- bc 1
+- ab 3
+- cb 1
+= A head index gives O(1) dequeue without shifting.
+
+Q H What does this print (Java)?
+| String s = "abbaca";
+| StringBuilder st = new StringBuilder();
+| for (char c : s.toCharArray()) {
+|     if (st.length() > 0 && st.charAt(st.length() - 1) == c) st.deleteCharAt(st.length() - 1);
+|     else st.append(c);
+| }
+| System.out.println(st);
++ ca
+- abbaca
+- aca
+- c
+= A StringBuilder used as a stack removes adjacent duplicate pairs.
+
+Q H What does this print (C++)?
+| #include <iostream>
+| #include <stack>
+| #include <string>
+| int main() {
+|   std::string s = "3+5*2-4";
+|   std::stack<int> st; int num = 0; char op = '+';
+|   for (size_t i = 0; i <= s.size(); i++) {
+|     char c = i < s.size() ? s[i] : '+';
+|     if (isdigit(c)) { num = num * 10 + (c - '0'); continue; }
+|     if (op == '+') st.push(num); else if (op == '-') st.push(-num);
+|     else if (op == '*') { int t = st.top(); st.pop(); st.push(t * num); }
+|     op = c; num = 0;
+|   }
+|   int sum = 0; while (!st.empty()) { sum += st.top(); st.pop(); }
+|   std::cout << sum << std::endl;
+| }
++ 9
+- 12
+- 16
+- 2
+= Multiplication is applied immediately; additions wait on the stack: 3 + 10 − 4.
+
+Q H Why is recursion depth a risk for DFS on a graph with a million nodes in a line?
++ The call stack can overflow; an explicit stack avoids it
+- Recursion visits every node a million times
+- The graph must be sorted before recursion
+- Recursion can't handle more than one edge per node
+= Default stacks hold thousands, not millions, of frames.
+
+Q H What does this print (Python)?
+| def can_finish(n, prereq):
+|     from collections import deque
+|     indeg = [0] * n
+|     adj = [[] for _ in range(n)]
+|     for a, b in prereq:
+|         adj[b].append(a); indeg[a] += 1
+|     q = deque(i for i in range(n) if indeg[i] == 0)
+|     seen = 0
+|     while q:
+|         x = q.popleft(); seen += 1
+|         for y in adj[x]:
+|             indeg[y] -= 1
+|             if indeg[y] == 0: q.append(y)
+|     return seen == n
+| print(can_finish(2, [[1, 0]]), can_finish(2, [[1, 0], [0, 1]]))
++ True False
+- False True
+- True True
+- False False
+= Kahn's algorithm with a queue: a cycle leaves some courses never ready.
+
+@topic dsa-recursion | FUNDAMENTALS | Recursion and backtracking | Base cases, the call stack, tracing recursive calls, memoisation, subsets, permutations, combinations and backtracking search.
+Q E What must every recursive function have to stop?
++ A base case
+- A loop
+- A global variable
+- A return type of int
+= Without one, it recurses until the stack overflows.
+
+Q E What does this print (Python)?
+| def fact(n):
+|     return 1 if n <= 1 else n * fact(n - 1)
+| print(fact(5))
++ 120
+- 24
+- 15
+- 5
+= 5 × 4 × 3 × 2 × 1.
+
+Q E What does this print (Java)?
+| static int sum(int n) { return n == 0 ? 0 : n + sum(n - 1); }
+| System.out.println(sum(4));
++ 10
+- 4
+- 24
+- 9
+= 4 + 3 + 2 + 1 + 0.
+
+Q E What happens when a recursive function never reaches its base case?
++ Stack overflow
+- It returns zero
+- It runs forever without using memory
+- The compiler fixes it
+= Each call adds a frame to the call stack.
+
+Q E What does this print (JavaScript)?
+| function countdown(n) { return n === 0 ? "go" : n + " " + countdown(n - 1); }
+| console.log(countdown(3));
++ 3 2 1 go
+- go 1 2 3
+- 3 2 1
+- 1 2 3 go
+= Each call adds its number before the result of the smaller call.
+
+Q E What does this print (C++)?
+| #include <iostream>
+| int power(int b, int e) { return e == 0 ? 1 : b * power(b, e - 1); }
+| int main() { std::cout << power(2, 5) << std::endl; }
++ 32
+- 10
+- 25
+- 16
+= 2⁵.
+
+Q E What is the call stack?
++ Memory holding each active call's frame
+- A list of every function in a program
+- A queue of functions waiting to run
+- The order functions are written in
+= Frames hold parameters, locals and the return address.
+
+Q E Which problem is naturally recursive?
++ Traversing a tree
+- Adding two numbers
+- Reading one line of input
+- Swapping two variables
+= A tree is a node plus smaller trees.
+
+Q E What does this print (Python)?
+| def rev(s):
+|     return s if len(s) <= 1 else rev(s[1:]) + s[0]
+| print(rev("abc"))
++ cba
+- abc
+- bca
+- cab
+= Reverse the rest, then put the first character last.
+
+Q E Any recursive function can be rewritten:
++ As a loop, maybe with an explicit stack
+- Only if it has exactly one recursive call
+- Only in languages that support goto
+- Never; recursion is always required
+= Iteration avoids stack overflow on deep inputs.
+
+Q E What does this print (Java)?
+| static int fib(int n) { return n < 2 ? n : fib(n - 1) + fib(n - 2); }
+| System.out.println(fib(7));
++ 13
+- 8
+- 21
+- 7
+= 0, 1, 1, 2, 3, 5, 8, 13.
+
+Q E What is memoisation?
++ Caching results so each input is computed once
+- Writing comments to remember what code does
+- Storing the call stack on disk between runs
+- Running the recursive calls in parallel
+= It turns naive recursive Fibonacci from exponential to linear.
+
+Q E What does this print (JavaScript)?
+| const digits = n => n < 10 ? 1 : 1 + digits(Math.floor(n / 10));
+| console.log(digits(12345));
++ 5
+- 4
+- 6
+- 15
+= Remove a digit each call until one is left.
+
+Q E What is backtracking?
++ Trying choices step by step and undoing failures
+- Running a program backwards to find its bugs
+- Sorting the data before searching through it
+- Jumping back to the start of the current loop
+= Used for subsets, permutations, Sudoku and N-queens.
+
+Q E What does this print (Python)?
+| def gcd(a, b):
+|     return a if b == 0 else gcd(b, a % b)
+| print(gcd(48, 18))
++ 6
+- 3
+- 18
+- 2
+= Euclid's algorithm: gcd(48, 18) → gcd(18, 12) → gcd(12, 6) → gcd(6, 0).
+
+Q E What does this print (C++)?
+| #include <iostream>
+| void show(int n) { if (n == 0) return; show(n - 1); std::cout << n; }
+| int main() { show(3); std::cout << std::endl; }
++ 123
+- 321
+- 3
+- 0123
+= The print happens after the recursive call returns, so smaller numbers print first.
+
+Q E How many subsets does a set of 4 items have?
++ 16
+- 8
+- 4
+- 24
+= 2⁴, counting the empty set.
+
+Q M What does this print (Python)?
+| def subsets(a):
+|     if not a:
+|         return [[]]
+|     rest = subsets(a[1:])
+|     return rest + [[a[0]] + s for s in rest]
+| print(len(subsets([1, 2, 3])), subsets([1, 2])[-1])
++ 8 [1, 2]
+- 6 [2, 1]
+- 8 [2]
+- 4 [1, 2]
+= Every subset either includes the first item or doesn't.
+
+Q M How many permutations do 4 distinct items have?
++ 24
+- 16
+- 12
+- 4
+= 4! = 4 × 3 × 2 × 1.
+
+Q M What does this print (Java)?
+| static java.util.List<String> out = new java.util.ArrayList<>();
+| static void perm(String done, String left) {
+|     if (left.isEmpty()) { out.add(done); return; }
+|     for (int i = 0; i < left.length(); i++)
+|         perm(done + left.charAt(i), left.substring(0, i) + left.substring(i + 1));
+| }
+| perm("", "abc");
+| System.out.println(out.size() + " " + out.get(0) + " " + out.get(5));
++ 6 abc cba
+- 6 abc bac
+- 3 abc cab
+- 9 abc cba
+= Choose each remaining letter in turn, then recurse.
+
+Q M What does this print (JavaScript)?
+| const memo = new Map();
+| function fib(n) {
+|   if (n < 2) return n;
+|   if (memo.has(n)) return memo.get(n);
+|   const v = fib(n - 1) + fib(n - 2);
+|   memo.set(n, v);
+|   return v;
+| }
+| console.log(fib(50));
++ 12586269025
+- 7778742049
+- 20365011074
+- 1134903170
+= With memoisation, fib(50) is instant (51 distinct calls).
+
+Q M What does this print (Python)?
+| def gen(n, s="", o=0, c=0, out=None):
+|     out = [] if out is None else out
+|     if len(s) == 2 * n:
+|         out.append(s); return out
+|     if o < n: gen(n, s + "(", o + 1, c, out)
+|     if c < o: gen(n, s + ")", o, c + 1, out)
+|     return out
+| print(gen(3))
++ ['((()))', '(()())', '(())()', '()(())', '()()()']
+- ['()()()', '(())()', '()(())', '(()())', '((()))']
+- ['((()))', '()()()']
+- ['()', '(())', '((()))']
+= Add "(" while some remain, ")" only when it keeps the string valid.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| int calls = 0;
+| int binsearch(int* a, int lo, int hi, int x) {
+|   calls++;
+|   if (lo > hi) return -1;
+|   int mid = (lo + hi) / 2;
+|   if (a[mid] == x) return mid;
+|   return a[mid] < x ? binsearch(a, mid + 1, hi, x) : binsearch(a, lo, mid - 1, x);
+| }
+| int main() { int a[] = {1, 3, 5, 7, 9, 11, 13}; std::cout << binsearch(a, 0, 6, 11) << " " << calls << std::endl; }
++ 5 2
+- 5 3
+- 4 2
+- 6 1
+= mid = 3 (7 < 11), then mid = 5 finds 11.
+
+Q M Why can recursive Python code fail for n = 100,000 when the loop version works?
++ Python's default recursion limit is about 1,000
+- Python can't multiply numbers that large
+- Recursion is disabled in Python by default
+- The loop version uses a faster algorithm
+= sys.setrecursionlimit raises it, but deep recursion still risks crashing; prefer iteration.
+
+Q M What does this print (Python)?
+| def combos(n, k, start=1, cur=None, out=None):
+|     cur = [] if cur is None else cur
+|     out = [] if out is None else out
+|     if len(cur) == k:
+|         out.append(cur[:]); return out
+|     for i in range(start, n + 1):
+|         cur.append(i)
+|         combos(n, k, i + 1, cur, out)
+|         cur.pop()
+|     return out
+| print(combos(4, 2))
++ [[1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]]
+- [[1, 2], [2, 3], [3, 4]]
+- [[1, 2], [1, 3], [1, 4], [2, 1], [3, 1], [4, 1]]
+- [[1, 2, 3, 4]]
+= Starting each level after the last choice avoids repeats: C(4, 2) = 6.
+
+Q M What does this print (Java)?
+| static int ways(int n) { return n <= 1 ? 1 : ways(n - 1) + ways(n - 2); }
+| System.out.println(ways(5));
++ 8
+- 5
+- 13
+- 10
+= Ways to climb 5 stairs taking 1 or 2 steps: a Fibonacci sequence.
+
+Q M In backtracking, why do we undo a choice (e.g. cur.pop()) after the recursive call?
++ So the next choice starts from the same state
+- To free memory used by the call stack
+- Because Python lists can only hold one item
+- To make the recursion run in reverse order
+= The shared list must look the same before trying the next option.
+
+Q M What does this print (JavaScript)?
+| function flatten(a) {
+|   return a.reduce((acc, x) => Array.isArray(x) ? acc.concat(flatten(x)) : acc.concat(x), []);
+| }
+| console.log(flatten([1, [2, [3, [4]]], 5]).join(","));
++ 1,2,3,4,5
+- 1,2,5
+- 1,[2,[3,[4]]],5
+- 5,4,3,2,1
+= Recursion handles any depth of nesting.
+
+Q M What does this print (Python)?
+| def hanoi(n, a="A", b="B", c="C", moves=None):
+|     moves = [] if moves is None else moves
+|     if n:
+|         hanoi(n - 1, a, c, b, moves)
+|         moves.append(a + c)
+|         hanoi(n - 1, b, a, c, moves)
+|     return moves
+| m = hanoi(3)
+| print(len(m), m[0], m[-1])
++ 7 AC AC
+- 8 AB BC
+- 7 AB AC
+- 3 AC AC
+= 2³ − 1 = 7 moves; the first and last both move a disk from A to C.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <string>
+| bool pal(const std::string& s, int i, int j) { return i >= j || (s[i] == s[j] && pal(s, i + 1, j - 1)); }
+| int main() { std::cout << pal("racecar", 0, 6) << pal("ab", 0, 1) << std::endl; }
++ 10
+- 01
+- 11
+- 00
+= Recursive palindrome check from both ends.
+
+Q M What is the time complexity of generating all permutations of n items?
++ O(n · n!)
+- O(2ⁿ)
+- O(n²)
+- O(n log n)
+= n! permutations, each taking O(n) to build or copy.
+
+Q M What does this print (Python)?
+| from functools import lru_cache
+| @lru_cache(maxsize=None)
+| def paths(r, c):
+|     if r == 0 or c == 0:
+|         return 1
+|     return paths(r - 1, c) + paths(r, c - 1)
+| print(paths(2, 2))
++ 6
+- 4
+- 9
+- 2
+= Paths through a grid moving right or down: C(4, 2) = 6.
+
+Q M Mutual recursion means:
++ Two functions that call each other
+- A function that calls itself twice
+- Recursion running on two threads
+- Recursion with two base cases
+= E.g. is_even(n) calls is_odd(n − 1) and vice versa.
+
+Q H What does this print (Python)?
+| def solve(n):
+|     count = 0
+|     cols, d1, d2 = set(), set(), set()
+|     def place(r):
+|         nonlocal count
+|         if r == n:
+|             count += 1; return
+|         for c in range(n):
+|             if c in cols or r - c in d1 or r + c in d2:
+|                 continue
+|             cols.add(c); d1.add(r - c); d2.add(r + c)
+|             place(r + 1)
+|             cols.remove(c); d1.remove(r - c); d2.remove(r + c)
+|     place(0)
+|     return count
+| print(solve(4), solve(6))
++ 2 4
+- 4 6
+- 2 6
+- 1 4
+= N-queens with sets for columns and both diagonals.
+
+Q H What does this print (Java)?
+| static int count = 0;
+| static void comb(int[] c, int i, int left) {
+|     if (left == 0) { count++; return; }
+|     if (i == c.length || left < 0) return;
+|     comb(c, i, left - c[i]);
+|     comb(c, i + 1, left);
+| }
+| comb(new int[] {2, 3, 6, 7}, 0, 7);
+| System.out.println(count);
++ 2
+- 3
+- 4
+- 1
+= Combinations summing to 7 with reuse: [7] and [2, 2, 3].
+
+Q H What does this print (JavaScript)?
+| function permsUnique(a) {
+|   a.sort((x, y) => x - y);
+|   const out = [], used = Array(a.length).fill(false), cur = [];
+|   (function go() {
+|     if (cur.length === a.length) { out.push(cur.join("")); return; }
+|     for (let i = 0; i < a.length; i++) {
+|       if (used[i] || (i > 0 && a[i] === a[i - 1] && !used[i - 1])) continue;
+|       used[i] = true; cur.push(a[i]); go(); cur.pop(); used[i] = false;
+|     }
+|   })();
+|   return out;
+| }
+| console.log(permsUnique([1, 1, 2]).join(" "));
++ 112 121 211
+- 112 112 121 121 211 211
+- 121 211
+- 112 211
+= Skipping a duplicate unless its twin is in use removes repeated permutations.
+
+Q H What does this print (C++)?
+| #include <iostream>
+| #include <vector>
+| #include <string>
+| int words = 0;
+| bool exist(std::vector<std::string>& b, const std::string& w, int r, int c, size_t k) {
+|   if (k == w.size()) return true;
+|   if (r < 0 || c < 0 || r >= (int)b.size() || c >= (int)b[0].size() || b[r][c] != w[k]) return false;
+|   char t = b[r][c]; b[r][c] = '#';
+|   bool ok = exist(b, w, r + 1, c, k + 1) || exist(b, w, r - 1, c, k + 1) || exist(b, w, r, c + 1, k + 1) || exist(b, w, r, c - 1, k + 1);
+|   b[r][c] = t;
+|   return ok;
+| }
+| int main() {
+|   std::vector<std::string> b = {"ABCE", "SFCS", "ADEE"};
+|   for (std::string w : {"ABCCED", "SEE", "ABCB"}) {
+|     bool f = false;
+|     for (int r = 0; r < 3 && !f; r++) for (int c = 0; c < 4 && !f; c++) f = exist(b, w, r, c, 0);
+|     words += f;
+|   }
+|   std::cout << words << std::endl;
+| }
++ 2
+- 3
+- 1
+- 0
+= Word search: ABCCED and SEE are found; ABCB would reuse a cell.
+
+Q H Why does memoising a recursive function only help when subproblems overlap?
++ Without repeats, every call is new and the cache never hits
+- The cache only works for functions with one argument
+- Overlapping subproblems make recursion skip the base case
+- Memoisation only works for numbers below 1,000
+= Merge sort's halves don't overlap, so memoising it gains nothing; Fibonacci's do.
+
+Q H What does this print (Python)?
+| def letter_combos(digits):
+|     m = {"2": "abc", "3": "def"}
+|     out = []
+|     def go(i, cur):
+|         if i == len(digits):
+|             out.append(cur); return
+|         for ch in m[digits[i]]:
+|             go(i + 1, cur + ch)
+|     if digits: go(0, "")
+|     return out
+| r = letter_combos("23")
+| print(len(r), r[0], r[-1])
++ 9 ad cf
+- 6 ad cf
+- 9 ab ef
+- 3 ad cf
+= 3 × 3 combinations, generated in order.
+
+Q H What is the space complexity of the subsets backtracking (one shared list, not counting the output)?
++ O(n): the depth plus the current list
+- O(2ⁿ) for the call stack alone
+- O(1), since nothing is stored
+- O(n²) for copies at every level
+= The depth is n; the output itself is O(n · 2ⁿ).
+
+Q H What does this print (Java)?
+| static boolean canPartition(int[] a, int i, int target) {
+|     if (target == 0) return true;
+|     if (i == a.length || target < 0) return false;
+|     return canPartition(a, i + 1, target - a[i]) || canPartition(a, i + 1, target);
+| }
+| int[] a = {1, 5, 11, 5};
+| System.out.println(canPartition(a, 0, 11) + " " + canPartition(new int[] {1, 2, 5}, 0, 4));
++ true false
+- false true
+- true true
+- false false
+= {1, 5, 5} and {11} both sum to 11; no subset of {1, 2, 5} sums to 4.
+
+Q H Pruning in backtracking means:
++ Abandoning branches that can't succeed
+- Deleting solutions after they are found
+- Sorting the input before recursion
+- Limiting recursion to a fixed depth
+= E.g. stop when the running sum exceeds the target (with sorted positive numbers).
+
+Q H What does this print (JavaScript)?
+| function ip(s) {
+|   const out = [];
+|   (function go(i, parts) {
+|     if (parts.length === 4) { if (i === s.length) out.push(parts.join(".")); return; }
+|     for (let len = 1; len <= 3 && i + len <= s.length; len++) {
+|       const p = s.slice(i, i + len);
+|       if ((p.length > 1 && p[0] === "0") || Number(p) > 255) continue;
+|       go(i + len, [...parts, p]);
+|     }
+|   })(0, []);
+|   return out;
+| }
+| console.log(ip("25525511135").join(" "));
++ 255.255.11.135 255.255.111.35
+- 255.255.111.35 255.255.11.13
+- 255.255.11.135 (and no others)
+- 25.52.55.111 255.255.1.1135
+= Restore IP addresses by trying 1–3 digits per part with validity checks.
+
+Q H What does this print (C++)?
+| #include <iostream>
+| long long memo[100];
+| long long tri(int n) { if (n < 3) return n == 0 ? 0 : 1; if (memo[n]) return memo[n]; return memo[n] = tri(n - 1) + tri(n - 2) + tri(n - 3); }
+| int main() { std::cout << tri(10) << std::endl; }
++ 149
+- 81
+- 274
+- 44
+= Tribonacci with memoisation: 0, 1, 1, 2, 4, 7, 13, 24, 44, 81, 149.
+
+Q H Sudoku solvers usually pick the empty cell with the fewest options first. Why?
++ It prunes the search tree the most
+- It's the only order that finds a solution
+- It makes the recursion use less memory
+- Cells with fewer options are always correct
+= Fewer branches near the top means far fewer nodes overall.
+
+Q H What does this print (Python)?
+| def partitions(s):
+|     out = []
+|     def go(i, cur):
+|         if i == len(s):
+|             out.append(cur[:]); return
+|         for j in range(i + 1, len(s) + 1):
+|             p = s[i:j]
+|             if p == p[::-1]:
+|                 cur.append(p); go(j, cur); cur.pop()
+|     go(0, [])
+|     return out
+| print(partitions("aab"))
++ [['a', 'a', 'b'], ['aa', 'b']]
+- [['aab']]
+- [['a', 'ab'], ['aa', 'b']]
+- [['a', 'a', 'b']]
+= Split the string into parts that are all palindromes.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| int sumDigits(int n) { return n < 10 ? n : n % 10 + sumDigits(n / 10); }
+| int main() { std::cout << sumDigits(9875) << std::endl; }
++ 29
+- 9875
+- 20
+- 32
+= 5 + 7 + 8 + 9.
+
+Q H What does this print (Python)?
+| def count_change(amount, coins):
+|     if amount == 0: return 1
+|     if amount < 0 or not coins: return 0
+|     return count_change(amount - coins[0], coins) + count_change(amount, coins[1:])
+| print(count_change(10, [1, 5, 10]))
++ 4
+- 3
+- 5
+- 10
+= 10; 5+5; 5+1×5; 1×10 — counted by "use the first coin" or "skip it".
+
+Q H What does this print (JavaScript)?
+| function ackermann(m, n) {
+|   if (m === 0) return n + 1;
+|   if (n === 0) return ackermann(m - 1, 1);
+|   return ackermann(m - 1, ackermann(m, n - 1));
+| }
+| console.log(ackermann(2, 3));
++ 9
+- 7
+- 6
+- 11
+= A(2, n) = 2n + 3. The Ackermann function grows faster than any loop-based (primitive recursive) function.
+
+Q H What does this print (Java)?
+| static String binary(int n) { return n < 2 ? String.valueOf(n) : binary(n / 2) + (n % 2); }
+| System.out.println(binary(13));
++ 1101
+- 1011
+- 13
+- 0110
+= Recurse on n / 2, then append the last bit.
+
+@topic dsa-sorting-searching | FUNDAMENTALS | Sorting and searching | Binary search and its variants, bubble/selection/insertion sort, merge sort, quicksort, counting sort, stability and the built-in sorts of each language.
+Q E Binary search needs the data to be:
++ Sorted
+- Unique
+- Positive
+- Small
+= Otherwise you can't discard half the range.
+
+Q E What does this print (Python)?
+| a = [3, 1, 2]
+| print(sorted(a), a)
++ [1, 2, 3] [3, 1, 2]
+- [1, 2, 3] [1, 2, 3]
+- [3, 1, 2] [1, 2, 3]
+- None [1, 2, 3]
+= sorted returns a new list; list.sort() sorts in place.
+
+Q E What does this print (Java)?
+| int[] a = {5, 2, 9, 1};
+| java.util.Arrays.sort(a);
+| System.out.println(java.util.Arrays.toString(a));
++ [1, 2, 5, 9]
+- [9, 5, 2, 1]
+- [5, 2, 9, 1]
+- [1, 5, 2, 9]
+= Arrays.sort sorts in place.
+
+Q E What does this print (JavaScript)?
+| console.log([3, 20, 100].sort().join(","));
++ 100,20,3
+- 3,20,100
+- 100,3,20
+- 20,3,100
+= Without a comparator, sort compares strings.
+
+Q E What does this print (C++)?
+| #include <iostream>
+| #include <algorithm>
+| #include <vector>
+| int main() { std::vector<int> v = {4, 1, 3}; std::sort(v.begin(), v.end()); for (int x : v) std::cout << x; std::cout << std::endl; }
++ 134
+- 413
+- 431
+- 143
+= std::sort sorts ascending by default.
+
+Q E Which simple sort repeatedly swaps adjacent elements that are out of order?
++ Bubble sort
+- Merge sort
+- Quicksort
+- Counting sort
+= O(n²); used for teaching, not for real data.
+
+Q E What is a stable sort?
++ Equal items keep their original order
+- It never crashes on large inputs
+- It always runs in O(n log n) time
+- It uses no extra memory at all
+= Matters when sorting by one field after another.
+
+Q E Which sort is O(n log n) in the worst case?
++ Merge sort
+- Quicksort
+- Bubble sort
+- Insertion sort
+= Quicksort is O(n log n) on average but O(n²) in the worst case.
+
+Q E How many comparisons does binary search need, at most, for 1,000 sorted items?
++ About 10
+- About 500
+- About 100
+- About 1,000
+= log₂(1000) ≈ 10.
+
+Q E Which sort is fast for small or nearly sorted arrays?
++ Insertion sort
+- Selection sort
+- Bubble sort
+- Heap sort
+= O(n) on sorted input; library sorts use it for small runs.
+
+Q E What does this print (Python)?
+| words = ["pear", "fig", "banana"]
+| print(sorted(words, key=len))
++ ['fig', 'pear', 'banana']
+- ['banana', 'fig', 'pear']
+- ['banana', 'pear', 'fig']
+- ['fig', 'banana', 'pear']
+= key=len sorts by length.
+
+Q E Linear search vs binary search on 1 million sorted items, worst case:
++ About 1,000,000 vs about 20 checks
+- About 20 vs about 1,000,000 checks
+- Both need about 1,000 checks
+- Both need about 20 checks
+= That's the power of O(log n).
+
+Q E What does this print (Java)?
+| int[] a = {1, 3, 5, 7};
+| System.out.println(java.util.Arrays.binarySearch(a, 5));
++ 2
+- 3
+- 5
+- -1
+= It returns the index when found.
+
+Q E Merge sort works by:
++ Splitting in halves, sorting each, then merging
+- Picking a pivot and partitioning around it
+- Swapping adjacent elements repeatedly
+- Counting how often each value appears
+= Divide and conquer.
+
+Q E What does this print (JavaScript)?
+| console.log([3, 20, 100].sort((a, b) => a - b).join(","));
++ 3,20,100
+- 100,20,3
+- 100,3,20
+- 20,3,100
+= A numeric comparator gives numeric order.
+
+Q E What does this print (C++)?
+| #include <iostream>
+| #include <algorithm>
+| #include <vector>
+| int main() { std::vector<int> v = {1, 3, 5, 7}; std::cout << std::binary_search(v.begin(), v.end(), 4) << std::endl; }
++ 0
+- 1
+- 2
+- -1
+= binary_search returns true or false; 4 isn't there.
+
+Q E Which sort is used by Python's sorted() and Java's sort for objects?
++ TimSort (merge + insertion)
+- Bubble sort, run in C code
+- Selection sort with caching
+- Bogosort, retried until sorted
+= Stable, O(n log n), and fast on partly sorted data.
+
+Q M What does this print (Python)?
+| import bisect
+| a = [1, 2, 2, 2, 5]
+| print(bisect.bisect_left(a, 2), bisect.bisect_right(a, 2))
++ 1 4
+- 1 3
+- 2 4
+- 0 5
+= bisect_left gives the first position of 2; bisect_right the position after the last.
+
+Q M What does this print (Java)?
+| int[] a = {1, 3, 5, 7};
+| System.out.println(java.util.Arrays.binarySearch(a, 4));
++ -3
+- -1
+- 2
+- -2
+= When missing it returns -(insertion point) - 1; 4 would go at index 2.
+
+Q M Why write mid = lo + (hi - lo) / 2 instead of (lo + hi) / 2 in Java or C++?
++ lo + hi can overflow int for large indexes
+- It's faster on most processors
+- It rounds up instead of down
+- It avoids checking the middle element
+= A famous bug in Java's own binarySearch until 2006.
+
+Q M What does this print (JavaScript)?
+| function firstAtLeast(a, x) {
+|   let lo = 0, hi = a.length;
+|   while (lo < hi) { const mid = (lo + hi) >> 1; if (a[mid] < x) lo = mid + 1; else hi = mid; }
+|   return lo;
+| }
+| console.log(firstAtLeast([1, 3, 3, 8], 3), firstAtLeast([1, 3, 3, 8], 9));
++ 1 4
+- 2 4
+- 1 3
+- 0 4
+= The lower-bound pattern: the first index with a[i] ≥ x (or the length).
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <algorithm>
+| #include <vector>
+| int main() { std::vector<int> v = {1, 2, 2, 4}; auto p = std::equal_range(v.begin(), v.end(), 2); std::cout << (p.first - v.begin()) << (p.second - v.begin()) << std::endl; }
++ 13
+- 12
+- 23
+- 14
+= equal_range gives the range of 2s: indexes 1 to 3 (exclusive).
+
+Q M What does this print (Python)?
+| people = [("ann", 30), ("bob", 25), ("cat", 30)]
+| print([n for n, _ in sorted(people, key=lambda p: -p[1])])
++ ['ann', 'cat', 'bob']
+- ['cat', 'ann', 'bob']
+- ['bob', 'ann', 'cat']
+- ['ann', 'bob', 'cat']
+= Sorting is stable, so ann stays before cat among the 30-year-olds.
+
+Q M Quicksort's partition step:
++ Puts smaller items before the pivot, larger after
+- Splits the array into two equal halves by index
+- Merges two sorted halves into one sorted array
+- Counts how many times each value appears
+= The pivot ends in its final position.
+
+Q M Counting sort runs in O(n + k). When is it a good choice?
++ When values are small integers in a known range
+- When values are long strings of any length
+- When the data is already nearly sorted
+- When memory is extremely limited
+= k is the range of values; sorting exam marks 0–100 is ideal.
+
+Q M What does this print (Java)?
+| String[] s = {"b", "A", "c"};
+| java.util.Arrays.sort(s);
+| System.out.println(String.join(",", s));
++ A,b,c
+- b,A,c
+- A,c,b
+- c,b,A
+= Uppercase letters sort before lowercase ones (by character code).
+
+Q M What does this print (JavaScript)?
+| const people = [{ n: "b", a: 2 }, { n: "a", a: 2 }, { n: "c", a: 1 }];
+| people.sort((x, y) => x.a - y.a || x.n.localeCompare(y.n));
+| console.log(people.map(p => p.n).join(""));
++ cab
+- abc
+- bac
+- cba
+= Sort by age, then name: c (1), a (2), b (2).
+
+Q M Which search works on a sorted array rotated at an unknown point, in O(log n)?
++ A modified binary search that checks which half is sorted
+- Linear search, which is the only correct option
+- Hashing every element first
+- Sorting the array again, then binary search
+= At each step one half is sorted; check whether the target lies in it.
+
+Q M What does this print (Python)?
+| def search_rotated(a, x):
+|     lo, hi = 0, len(a) - 1
+|     while lo <= hi:
+|         mid = (lo + hi) // 2
+|         if a[mid] == x: return mid
+|         if a[lo] <= a[mid]:
+|             if a[lo] <= x < a[mid]: hi = mid - 1
+|             else: lo = mid + 1
+|         else:
+|             if a[mid] < x <= a[hi]: lo = mid + 1
+|             else: hi = mid - 1
+|     return -1
+| print(search_rotated([4, 5, 6, 7, 0, 1, 2], 0), search_rotated([4, 5, 6, 7, 0, 1, 2], 3))
++ 4 -1
+- 0 -1
+- 4 3
+- -1 4
+= One half is always sorted; search the half that could hold x.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <algorithm>
+| #include <vector>
+| int main() {
+|   std::vector<std::pair<int, char>> v = {{2, 'a'}, {1, 'b'}, {2, 'c'}, {1, 'd'}};
+|   std::stable_sort(v.begin(), v.end(), [](auto& x, auto& y) { return x.first < y.first; });
+|   for (auto& p : v) std::cout << p.second;
+|   std::cout << std::endl;
+| }
++ bdac
+- dbca
+- abcd
+- bdca
+= stable_sort keeps b before d and a before c.
+
+Q M Selection sort always does how many comparisons for n items?
++ About n²/2, whatever the input
+- About n, if the input is sorted
+- About n log n, on average
+- About 2n, in the best case
+= It scans the unsorted part for the minimum every time.
+
+Q M What does this print (Python)?
+| def merge_sort(a):
+|     if len(a) <= 1: return a
+|     m = len(a) // 2
+|     l, r = merge_sort(a[:m]), merge_sort(a[m:])
+|     out, i, j = [], 0, 0
+|     while i < len(l) and j < len(r):
+|         if l[i] <= r[j]: out.append(l[i]); i += 1
+|         else: out.append(r[j]); j += 1
+|     return out + l[i:] + r[j:]
+| print(merge_sort([5, 2, 4, 6, 1, 3]))
++ [1, 2, 3, 4, 5, 6]
+- [6, 5, 4, 3, 2, 1]
+- [2, 5, 4, 6, 1, 3]
+- [1, 3, 2, 4, 6, 5]
+= Split, sort halves, merge.
+
+Q M Why is "binary search on the answer" useful?
++ When guesses are cheap to check and monotonic
+- When the input array is unsorted and small
+- When you need every possible answer listed
+- When the answer is always a string value
+= E.g. the smallest capacity that ships packages in D days.
+
+Q H What does this print (Java)?
+| int[] a = {3, 6, 1, 8, 4};
+| int lo = 0, hi = a.length - 1, p = a[hi], i = lo;
+| for (int j = lo; j < hi; j++) if (a[j] < p) { int t = a[i]; a[i] = a[j]; a[j] = t; i++; }
+| int t = a[i]; a[i] = a[hi]; a[hi] = t;
+| System.out.println(i + " " + java.util.Arrays.toString(a));
++ 2 [3, 1, 4, 8, 6]
+- 3 [3, 1, 4, 6, 8]
+- 2 [1, 3, 4, 6, 8]
+- 1 [3, 4, 1, 8, 6]
+= Lomuto partition: the pivot 4 lands at index 2 with smaller values before it.
+
+Q H What does this print (Python)?
+| def min_capacity(weights, days):
+|     def ok(cap):
+|         need, cur = 1, 0
+|         for w in weights:
+|             if cur + w > cap:
+|                 need, cur = need + 1, 0
+|             cur += w
+|         return need <= days
+|     lo, hi = max(weights), sum(weights)
+|     while lo < hi:
+|         mid = (lo + hi) // 2
+|         if ok(mid): hi = mid
+|         else: lo = mid + 1
+|     return lo
+| print(min_capacity([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 5))
++ 15
+- 11
+- 10
+- 55
+= Binary search on the answer between the heaviest item and the total.
+
+Q H What does this print (JavaScript)?
+| function findPeak(a) {
+|   let lo = 0, hi = a.length - 1;
+|   while (lo < hi) { const m = (lo + hi) >> 1; if (a[m] < a[m + 1]) lo = m + 1; else hi = m; }
+|   return lo;
+| }
+| console.log(findPeak([1, 3, 20, 4, 1, 0]));
++ 2
+- 1
+- 3
+- 0
+= Move towards the higher neighbour; a peak is found in O(log n).
+
+Q H What does this print (C++)?
+| #include <iostream>
+| #include <vector>
+| long long inv = 0;
+| void ms(std::vector<int>& a, int l, int r) {
+|   if (r - l < 2) return;
+|   int m = (l + r) / 2; ms(a, l, m); ms(a, m, r);
+|   std::vector<int> t; int i = l, j = m;
+|   while (i < m && j < r) { if (a[i] <= a[j]) t.push_back(a[i++]); else { inv += m - i; t.push_back(a[j++]); } }
+|   while (i < m) t.push_back(a[i++]); while (j < r) t.push_back(a[j++]);
+|   for (int k = l; k < r; k++) a[k] = t[k - l];
+| }
+| int main() { std::vector<int> a = {2, 4, 1, 3, 5}; ms(a, 0, 5); std::cout << inv << std::endl; }
++ 3
+- 2
+- 4
+- 5
+= Counting inversions during merge sort: (2,1), (4,1), (4,3).
+
+Q H Why isn't quicksort stable?
++ Partitioning swaps elements over long distances
+- It sorts in descending order by default
+- It only works on arrays without duplicates
+- It recurses on the larger half first
+= Equal elements can swap order; merge sort keeps them in place.
+
+Q H What does this print (Python)?
+| def kth_smallest(a, k):
+|     import random
+|     random.seed(1)
+|     pivot = random.choice(a)
+|     lo = [x for x in a if x < pivot]
+|     eq = [x for x in a if x == pivot]
+|     hi = [x for x in a if x > pivot]
+|     if k <= len(lo): return kth_smallest(lo, k)
+|     if k <= len(lo) + len(eq): return pivot
+|     return kth_smallest(hi, k - len(lo) - len(eq))
+| print(kth_smallest([7, 10, 4, 3, 20, 15], 3))
++ 7
+- 4
+- 10
+- 3
+= Quickselect: average O(n) to find the k-th smallest.
+
+Q H What does this print (Java)?
+| int[][] m = {{1, 4, 7}, {2, 5, 8}, {3, 6, 9}};
+| int r = 0, c = m[0].length - 1, target = 6, steps = 0;
+| boolean found = false;
+| while (r < m.length && c >= 0) {
+|     steps++;
+|     if (m[r][c] == target) { found = true; break; }
+|     if (m[r][c] > target) c--; else r++;
+| }
+| System.out.println(found + " " + steps);
++ true 4
+- true 3
+- false 5
+- true 6
+= Start top-right: 7 > 6 go left, 4 < 6 go down, 5 < 6 go down, 6 found. O(rows + cols).
+
+Q H What does this print (JavaScript)?
+| function sqrtFloor(x) {
+|   let lo = 0, hi = x;
+|   while (lo < hi) { const m = Math.floor((lo + hi + 1) / 2); if (m * m <= x) lo = m; else hi = m - 1; }
+|   return lo;
+| }
+| console.log(sqrtFloor(8), sqrtFloor(16));
++ 2 4
+- 3 4
+- 2 3
+- 3 5
+= Binary search for the largest m with m² ≤ x (the +1 avoids an infinite loop).
+
+Q H Which sort can't run in better than O(n log n) in the worst case, and why?
++ Any comparison sort; there are n! orderings to tell apart
+- Counting sort; it compares every pair of values
+- Radix sort; it sorts one digit at a time
+- Any sort that uses extra memory
+= A decision tree needs log₂(n!) ≈ n log n comparisons.
+
+Q H What does this print (C++)?
+| #include <iostream>
+| #include <algorithm>
+| #include <vector>
+| int main() { std::vector<int> v = {9, 4, 7, 1, 8}; std::nth_element(v.begin(), v.begin() + 2, v.end()); std::cout << v[2] << std::endl; }
++ 7
+- 4
+- 8
+- 1
+= nth_element puts the element that would be at index 2 in sorted order there, in O(n) average.
+
+Q H What does this print (Python)?
+| def search_range(a, x):
+|     import bisect
+|     l = bisect.bisect_left(a, x)
+|     if l == len(a) or a[l] != x:
+|         return [-1, -1]
+|     return [l, bisect.bisect_right(a, x) - 1]
+| print(search_range([5, 7, 7, 8, 8, 10], 8), search_range([5, 7, 7, 8, 8, 10], 6))
++ [3, 4] [-1, -1]
+- [3, 5] [-1, -1]
+- [4, 4] [1, 2]
+- [3, 4] [0, 0]
+= Two binary searches give the first and last positions in O(log n).
+
+Q M What does this print (JavaScript)?
+| function bubble(a) {
+|   let passes = 0;
+|   for (let i = 0; i < a.length; i++) {
+|     let swapped = false; passes++;
+|     for (let j = 0; j < a.length - 1 - i; j++) if (a[j] > a[j + 1]) { [a[j], a[j + 1]] = [a[j + 1], a[j]]; swapped = true; }
+|     if (!swapped) break;
+|   }
+|   return passes;
+| }
+| console.log(bubble([1, 2, 3, 5, 4]), bubble([1, 2, 3, 4, 5]));
++ 2 1
+- 5 5
+- 1 1
+- 2 2
+= With an early exit, bubble sort stops once a pass makes no swaps.
+
+Q H What does this print (Python)?
+| def merge_intervals(iv):
+|     out = []
+|     for s, e in sorted(iv):
+|         if out and s <= out[-1][1]:
+|             out[-1][1] = max(out[-1][1], e)
+|         else:
+|             out.append([s, e])
+|     return out
+| print(merge_intervals([[8, 10], [1, 3], [2, 6], [15, 18]]))
++ [[1, 6], [8, 10], [15, 18]]
+- [[1, 3], [2, 6], [8, 10], [15, 18]]
+- [[1, 10], [15, 18]]
+- [[1, 18]]
+= Sort by start, then merge overlaps in one pass.
+
+Q H What does this print (Java)?
+| int[] a = {170, 45, 75, 90, 802, 24, 2, 66};
+| for (int exp = 1; 802 / exp > 0; exp *= 10) {
+|     int[] out = new int[a.length]; int[] cnt = new int[10];
+|     for (int x : a) cnt[(x / exp) % 10]++;
+|     for (int i = 1; i < 10; i++) cnt[i] += cnt[i - 1];
+|     for (int i = a.length - 1; i >= 0; i--) out[--cnt[(a[i] / exp) % 10]] = a[i];
+|     a = out;
+| }
+| System.out.println(java.util.Arrays.toString(a));
++ [2, 24, 45, 66, 75, 90, 170, 802]
+- [802, 170, 90, 75, 66, 45, 24, 2]
+- [170, 90, 802, 2, 24, 45, 75, 66]
+- [2, 24, 45, 66, 75, 90, 802, 170]
+= LSD radix sort: a stable counting sort on each digit, O(d·(n + 10)).
+
+Q H What does this print (C++)?
+| #include <iostream>
+| #include <vector>
+| #include <algorithm>
+| int main() {
+|   std::vector<int> a = {1, 2}, b = {3, 4};
+|   std::vector<int> m(a.size() + b.size());
+|   std::merge(a.begin(), a.end(), b.begin(), b.end(), m.begin());
+|   int n = m.size();
+|   double med = n % 2 ? m[n / 2] : (m[n / 2 - 1] + m[n / 2]) / 2.0;
+|   std::cout << med << std::endl;
+| }
++ 2.5
+- 2
+- 3
+- 5
+= The median of two sorted arrays (an O(log n) method also exists).
+
+Q H What does this print (Python)?
+| def first_bad(n, bad):
+|     lo, hi = 1, n
+|     while lo < hi:
+|         mid = (lo + hi) // 2
+|         if mid >= bad: hi = mid
+|         else: lo = mid + 1
+|     return lo
+| print(first_bad(100, 37))
++ 37
+- 36
+- 38
+- 50
+= Binary search for the first version where a check fails.
+
+Q H What does this print (JavaScript)?
+| const a = [1, 1, 2, 3, 3, 4, 4, 8, 8];
+| let lo = 0, hi = a.length - 1;
+| while (lo < hi) {
+|   let m = (lo + hi) >> 1;
+|   if (m % 2 === 1) m--;
+|   if (a[m] === a[m + 1]) lo = m + 2; else hi = m;
+| }
+| console.log(a[lo]);
++ 2
+- 1
+- 8
+- 4
+= In a sorted array where every value appears twice except one, pairs shift after the single value: O(log n).
