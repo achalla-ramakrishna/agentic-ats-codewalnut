@@ -23,6 +23,9 @@ public interface AssessmentInviteRepository extends JpaRepository<AssessmentInvi
     /** Submitted results nobody has looked at yet, newest first. */
     List<AssessmentInvite> findByStatusAndReviewedAtIsNullOrderBySubmittedAtDesc(AssessmentInvite.Status status);
 
+    /** Submitted tests whose code is waiting to be graded (ADR-0016). */
+    List<AssessmentInvite> findByGrading(AssessmentInvite.Grading grading);
+
     /** Invites someone has started or submitted: the test has been taken. */
     long countByAssessmentIdAndStatusIn(UUID assessmentId, Collection<AssessmentInvite.Status> statuses);
 }

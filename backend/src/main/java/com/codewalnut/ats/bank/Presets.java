@@ -37,7 +37,17 @@ public final class Presets {
             java.util.Map.entry(Category.ANGULAR, "Angular"), java.util.Map.entry(Category.SQL, "SQL"),
             java.util.Map.entry(Category.CS_FUNDAMENTALS, "CS fundamentals"), java.util.Map.entry(Category.SYSTEM_DESIGN, "System design"),
             java.util.Map.entry(Category.NODEJS, "Node.js"), java.util.Map.entry(Category.QA_AUTOMATION, "Testing & QA automation"),
-            java.util.Map.entry(Category.DEVOPS, "DevOps & cloud"), java.util.Map.entry(Category.DATA_ANALYTICS, "Data analytics"));
+            java.util.Map.entry(Category.DEVOPS, "DevOps & cloud"), java.util.Map.entry(Category.DATA_ANALYTICS, "Data analytics"),
+            java.util.Map.entry(Category.CODING, "Coding"));
+
+    /** Coding papers: a few problems, with time to think, write and test (ADR-0016). */
+    private static final List<Preset> CODING = List.of(
+            new Preset("coding-fresher", "Coding — freshers", "2 easy problems in 45 minutes: basics, strings and arrays.", 45, 50,
+                    List.of(new SectionPlan(Section.FUNDAMENTALS, 2, 0, 0))),
+            new Preset("coding-mid", "Coding — 1 to 3 years", "2 problems in 60 minutes: one easy, one medium on core data structures.", 60, 50,
+                    List.of(new SectionPlan(Section.FUNDAMENTALS, 0, 1, 0), new SectionPlan(Section.PRACTICAL, 0, 1, 0))),
+            new Preset("coding-senior", "Coding — 3+ years", "3 problems in 90 minutes: data structures, then a harder algorithm problem.", 90, 50,
+                    List.of(new SectionPlan(Section.PRACTICAL, 0, 1, 0), new SectionPlan(Section.ADVANCED, 0, 1, 1))));
 
     /** The display name of an area, e.g. "Java", "CS fundamentals". */
     public static String areaName(Category area) {
@@ -48,6 +58,9 @@ public final class Presets {
     public static List<Preset> forArea(Category area) {
         if (area == Category.APTITUDE) {
             return APTITUDE;
+        }
+        if (area == Category.CODING) {
+            return CODING;
         }
         String name = areaName(area);
         String id = area.name().toLowerCase();

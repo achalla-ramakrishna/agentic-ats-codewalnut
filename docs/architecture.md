@@ -77,6 +77,14 @@ analytics) into the same seeds; `bank/Roles` turns a role and level into a
 cross-area paper, banded FUNDAMENTALS / PRACTICAL / ADVANCED, with
 keys hashed from content so edited questions replace old ones on load.
 
+Coding questions (ADR-0016): `client/CodeRunner` sends candidate code to a
+self-hosted Judge0 (`Judge0CodeRunner`; `DisabledCodeRunner` when
+`ATS_CODE_RUNNER_URL` is unset). `CodeRunService` runs samples while a test is
+open and grades submitted code after commit (a `CodeGradingRequested` event, a
+small worker pool, a one-minute retry sweep in `CodeGradingSweeper`);
+`AssessmentInviteService` holds the grading state and final score. Built-in
+problems load from `resources/bank/coding/*.yml` (`bank/CodingBank`).
+
 View as (ADR-0013): a session attribute makes the `Current*Service`
 resolvers return a candidate, client contact or role-limited copy of the
 admin; `ViewAsReadOnlyFilter` refuses API writes while it is set.

@@ -41,6 +41,7 @@ const drafted: AssessmentDetail = {
       section: null,
       topic: null,
       difficulty: null,
+      coding: null,
     },
   ],
 }

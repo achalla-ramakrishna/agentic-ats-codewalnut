@@ -18,6 +18,7 @@ class RolesTest {
     void everyRoleAndLevelFitsInTheBuiltInBank() {
         List<Seed> all = new ArrayList<>(AptitudeBank.all());
         all.addAll(TechBank.all());
+        all.addAll(CodingBank.all());
         Map<String, Long> available = all.stream()
                 .collect(Collectors.groupingBy(s -> s.area() + "/" + s.section() + "/" + s.difficulty(), Collectors.counting()));
         for (Roles.Role role : Roles.ROLES) {
@@ -49,5 +50,17 @@ class RolesTest {
                 .anyMatch(s -> s.area() == com.codewalnut.ats.domain.Assessment.Category.SYSTEM_DESIGN)
                 .noneMatch(s -> s.section() == Section.FUNDAMENTALS);
         assertThat(Roles.preset(java, Roles.Level.MID).description()).contains("Java", "SQL", "System design");
+    }
+
+    /** ASMT-36: developer role tests include one coding problem (harder as the level rises) and more time for it. */
+    @Test
+    void developerRolesIncludeACodingProblem() {
+        var coding = com.codewalnut.ats.domain.Assessment.Category.CODING;
+        Roles.Role java = Roles.role("java-backend");
+        assertThat(Roles.preset(java, Roles.Level.FRESHER).sections()).anyMatch(s -> s.area() == coding && s.section() == Section.FUNDAMENTALS && s.easy() == 1);
+        assertThat(Roles.preset(java, Roles.Level.LEAD).sections()).anyMatch(s -> s.area() == coding && s.hard() == 1);
+        assertThat(Roles.preset(java, Roles.Level.MID).durationMinutes()).isEqualTo(Roles.Level.MID.minutes + 25);
+        assertThat(Roles.preset(Roles.role("sql-developer"), Roles.Level.MID).sections()).noneMatch(s -> s.area() == coding);
+        assertThat(Roles.preset(Roles.role("data-analyst"), Roles.Level.JUNIOR).sections()).noneMatch(s -> s.area() == coding);
     }
 }

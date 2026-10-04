@@ -10,3 +10,7 @@ spring:
 ats:
   ai:
     async: false
+  # Coding questions run on a fake sandbox that echoes the input (FakeCodeRunner).
+  coding:
+    runner-url: fake
+    async: false

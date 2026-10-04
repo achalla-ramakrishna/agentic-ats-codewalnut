@@ -58,6 +58,12 @@ ats:
   ai:
     async: true
     workers: ${ATS_AI_WORKERS:3}
+  # Coding questions run in a self-hosted Judge0 sandbox (ADR-0016, docs/deploy-judge0.md).
+  # Unset: coding questions can be written but not run or graded.
+  coding:
+    runner-url: ${ATS_CODE_RUNNER_URL:}
+    runner-token: ${ATS_CODE_RUNNER_TOKEN:}
+    async: true
 
 ---
 # Local development only, never on by default: same MySQL, plus fake seed users and the

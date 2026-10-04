@@ -44,6 +44,11 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.PRECONDITION_REQUIRED, ex.getMessage());
     }
 
+    @ExceptionHandler(com.codewalnut.ats.client.CodeRunner.UnavailableException.class)
+    public ResponseEntity<Map<String, String>> handleRunnerDown(com.codewalnut.ats.client.CodeRunner.UnavailableException ex) {
+        return error(HttpStatus.SERVICE_UNAVAILABLE, "The code runner is busy or unreachable right now. Try again in a minute.");
+    }
+
     @ExceptionHandler(CalendarException.class)
     public ResponseEntity<Map<String, String>> handleCalendar(CalendarException ex) {
         return error(HttpStatus.BAD_GATEWAY, ex.getMessage());

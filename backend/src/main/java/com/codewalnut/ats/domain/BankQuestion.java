@@ -117,8 +117,12 @@ public class BankQuestion {
     @Column(name = "option_figures_json", columnDefinition = "MEDIUMTEXT")
     private String optionFiguresJson;
 
-    @Column(name = "answer_json", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "answer_json", nullable = false, columnDefinition = "MEDIUMTEXT")
     private String answerJson;
+
+    /** CODING only: the public spec (languages, starter code, sample tests, limits) as JSON. */
+    @Column(name = "coding_json", columnDefinition = "MEDIUMTEXT")
+    private String codingJson;
 
     @Column(nullable = false)
     private int points;

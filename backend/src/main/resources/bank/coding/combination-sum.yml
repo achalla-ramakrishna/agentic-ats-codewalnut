@@ -1,0 +1,34 @@
+id: combination-sum
+topic: code-recursion
+difficulty: MEDIUM
+title: "Combination sum"
+statement: |
+  Given N distinct positive integers and a target T, count the combinations of these numbers (each number may be used any number of times) that add up to T. Combinations are unordered: 2+2+3 and 3+2+2 are the same.
+input: |
+  The first line has N and T. The second line has N distinct positive integers.
+output: |
+  One integer: the number of combinations.
+constraints: |
+  1 ≤ N ≤ 20; 1 ≤ T ≤ 500; values between 1 and 100. The answer is below 10^15 (fits in a 64-bit integer).
+samples:
+  - input: "4 7\n2 3 6 7\n"
+    output: "2\n"
+  - input: "1 3\n2\n"
+    output: "0\n"
+tests:
+  - input: "1 1\n1\n"
+    output: "1\n"
+  - input: "3 5\n1 2 5\n"
+    output: "4\n"
+  - input: "2 10\n3 7\n"
+    output: "1\n"
+  - input: "5 100\n1 5 10 25 50\n"
+    output: "292\n"
+  - input: "20 300\n10 67 60 35 62 81 90 66 22 37 17 88 78 48 20 25 42 94 40 72\n"
+    output: "38425\n"
+  - input: "3 300\n7 11 13\n"
+    output: "50\n"
+  - input: "1 100\n1\n"
+    output: "1\n"
+  - input: "4 12\n2 4 6 8\n"
+    output: "9\n"

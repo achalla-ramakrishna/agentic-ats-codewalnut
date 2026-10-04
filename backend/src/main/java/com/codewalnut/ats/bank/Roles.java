@@ -78,6 +78,9 @@ public final class Roles {
             new Role("graduate-trainee", "Graduate / fresher trainee", "Any stack: aptitude and computer-science basics.",
                     Category.CS_FUNDAMENTALS, List.of(), List.of(Level.FRESHER)));
 
+    /** Roles whose tests don't include coding problems (ADR-0016). */
+    static final java.util.Set<String> NO_CODING = java.util.Set.of("sql-developer", "devops-engineer", "data-analyst");
+
     private Roles() {}
 
     public static Role role(String id) {
@@ -87,14 +90,36 @@ public final class Roles {
 
     /** The paper for a role at a level. */
     public static Preset preset(Role role, Level level) {
-        List<SectionPlan> plan = role.id().equals("graduate-trainee") ? graduate() : mix(role, level);
+        List<SectionPlan> plan = new ArrayList<>(role.id().equals("graduate-trainee") ? graduate() : mix(role, level));
+        SectionPlan coding = NO_CODING.contains(role.id()) ? null : coding(level);
+        int minutes = level.minutes;
+        if (coding != null) {
+            plan.add(coding);
+            minutes += codingMinutes(coding);
+        }
         int total = plan.stream().mapToInt(p -> p.easy() + p.medium() + p.hard()).sum();
         List<Category> areas = new ArrayList<>(role.areas());
         plan.stream().map(SectionPlan::area).filter(a -> !areas.contains(a)).distinct().forEach(areas::add);
         return new Preset(role.id() + "-" + level.name().toLowerCase(), role.name() + " — " + level.label,
-                total + " questions in " + level.minutes + " minutes for " + level.years + ": "
+                total + " questions in " + minutes + " minutes for " + level.years + ": "
                         + String.join(", ", areas.stream().map(Presets::areaName).toList()) + ".",
-                level.minutes, level.pass, plan);
+                minutes, level.pass, plan);
+    }
+
+    /** One coding problem, harder as the level rises. */
+    static SectionPlan coding(Level level) {
+        return switch (level) {
+            case FRESHER -> plan(Category.CODING, Section.FUNDAMENTALS, 1, 0, 0);
+            case JUNIOR -> plan(Category.CODING, Section.FUNDAMENTALS, 0, 1, 0);
+            case MID -> plan(Category.CODING, Section.PRACTICAL, 0, 1, 0);
+            case SENIOR -> plan(Category.CODING, Section.ADVANCED, 0, 1, 0);
+            case LEAD -> plan(Category.CODING, Section.ADVANCED, 0, 0, 1);
+        };
+    }
+
+    /** Time added for coding: 15 / 25 / 35 minutes per easy / medium / hard problem. */
+    static int codingMinutes(SectionPlan p) {
+        return p.easy() * 15 + p.medium() * 25 + p.hard() * 35;
     }
 
     private static List<SectionPlan> mix(Role role, Level level) {

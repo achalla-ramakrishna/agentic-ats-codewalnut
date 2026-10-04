@@ -4,6 +4,7 @@ import com.codewalnut.ats.domain.Assessment;
 import com.codewalnut.ats.domain.AssessmentInvite;
 import com.codewalnut.ats.domain.AssessmentQuestion;
 import com.codewalnut.ats.dto.MessageDtos.MessageResponse;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -33,7 +34,55 @@ public final class AssessmentDtos {
     public record QuestionView(
             UUID id, int position, AssessmentQuestion.Kind kind, String prompt, String code, List<String> options,
             List<Integer> correct, List<String> acceptedAnswers, int points, String explanation, boolean aiDrafted,
-            String figure, List<String> optionFigures, String section, String topic, String difficulty) {}
+            String figure, List<String> optionFigures, String section, String topic, String difficulty, CodingView coding) {}
+
+    // ---- coding questions (ADR-0016) ----
+
+    /** What goes to the program's stdin, and what it should print. */
+    public record TestCase(@Size(max = 200_000) String input, @Size(max = 200_000) String output) {}
+
+    /**
+     * The part of a coding question candidates see: languages they may use, starter code per
+     * language, sample tests (with expected output) and limits. Hidden tests are never in here.
+     */
+    public record CodingSpec(List<String> languages, Map<String, String> starter, List<TestCase> samples,
+            double timeLimitSeconds, int memoryMb, String inputFormat, String outputFormat, String constraints) {}
+
+    /** Writing or editing a coding question: the public spec plus the hidden tests. */
+    public record CodingRequest(
+            @Size(max = 4) List<String> languages,
+            @Size(max = 4) Map<String, @Size(max = 20_000) String> starter,
+            @Size(max = 10) List<@Valid TestCase> samples,
+            @Size(max = 60) List<@Valid TestCase> tests,
+            Double timeLimitSeconds,
+            Integer memoryMb,
+            @Size(max = 3000) String inputFormat,
+            @Size(max = 3000) String outputFormat,
+            @Size(max = 3000) String constraints) {}
+
+    /** Staff view of a coding question: the spec and the hidden tests. */
+    public record CodingView(CodingSpec spec, List<TestCase> tests) {}
+
+    /** One test case run. input and expected are filled for samples, and for hidden tests in staff views only. */
+    public record CaseResult(boolean sample, boolean passed, String status, String output, String error,
+            Double timeSeconds, Integer memoryKb, String input, String expected) {}
+
+    public record RunCodeRequest(@NotBlank @Size(max = 20) String language, @NotNull @Size(max = 50_000) String source) {}
+
+    /** compileOutput: the compiler's message when the code didn't compile. */
+    public record RunCodeResult(boolean compiled, String compileOutput, List<CaseResult> cases, int passed, int total,
+            int runsLeft) {}
+
+    /** How a coding answer did: tests passed and points (points × passed ÷ total, rounded). */
+    public record CodeResult(String language, String source, int passed, int total, int earned, String compileOutput,
+            List<CaseResult> cases) {}
+
+    /** Browser signals while taking a test. Counts are totals so far, so a resend never double counts. */
+    public record ActivityRequest(@Min(0) @Max(10_000) int tabSwitches, @Min(0) @Max(10_000) int pastes,
+            @Min(0) @Max(10_000_000) int pastedChars) {}
+
+    /** Advisory integrity signals shown to staff next to a result. */
+    public record Activity(int tabSwitches, int pastes, int pastedChars, int runs) {}
 
     public record AssessmentDetail(AssessmentSummary summary, List<QuestionView> questions) {}
 
@@ -62,13 +111,19 @@ public final class AssessmentDtos {
             @Size(max = 8) List<@Size(max = 500) String> options,
             @Size(max = 8) List<Integer> correct,
             @Size(max = 10) List<@Size(max = 500) String> acceptedAnswers,
-            @Min(1) @Max(10) int points,
+            @Min(1) @Max(20) int points,
             @Size(max = 2000) String explanation,
-            @Size(max = 1_500_000) String figure) {
+            @Size(max = 1_500_000) String figure,
+            @Valid CodingRequest coding) {
+
+        public QuestionRequest(AssessmentQuestion.Kind kind, String prompt, String code, List<String> options, List<Integer> correct,
+                List<String> acceptedAnswers, int points, String explanation, String figure) {
+            this(kind, prompt, code, options, correct, acceptedAnswers, points, explanation, figure, null);
+        }
 
         public QuestionRequest(AssessmentQuestion.Kind kind, String prompt, String code, List<String> options, List<Integer> correct,
                 List<String> acceptedAnswers, int points, String explanation) {
-            this(kind, prompt, code, options, correct, acceptedAnswers, points, explanation, null);
+            this(kind, prompt, code, options, correct, acceptedAnswers, points, explanation, null, null);
         }
     }
 
@@ -92,7 +147,7 @@ public final class AssessmentDtos {
             UUID id, UUID applicationId, UUID assessmentId, String title, Assessment.Category category,
             AssessmentInvite.Status status, String sentBy, Instant sentAt, Instant dueAt, Instant startedAt,
             Instant submittedAt, Integer score, Integer maxScore, Integer percent, Boolean passed, int passPercent,
-            int reminderCount, Instant lastRemindedAt, boolean needsNudge, boolean newResult) {}
+            int reminderCount, Instant lastRemindedAt, boolean needsNudge, boolean newResult, AssessmentInvite.Grading grading) {}
 
     /** A submitted test nobody has looked at yet, with where to find the candidate. */
     public record NewResult(InviteView invite, String candidateName, UUID jobId, String jobTitle) {}
@@ -102,12 +157,13 @@ public final class AssessmentDtos {
     public record AnswerReview(
             int position, AssessmentQuestion.Kind kind, String prompt, String code, List<String> options,
             List<String> given, List<Integer> correct, List<String> acceptedAnswers, int points, int earned,
-            String figure, List<String> optionFigures, String section) {}
+            String figure, List<String> optionFigures, String section, CodeResult codeResult) {}
 
     /** Score per section, e.g. Numerical ability 14 / 20. */
     public record SectionScore(String section, String label, int score, int max, int questions) {}
 
-    public record InviteDetail(InviteView invite, List<AnswerReview> answers, List<SectionScore> sections) {}
+    /** activity: browser signals while the test was taken (advisory). */
+    public record InviteDetail(InviteView invite, List<AnswerReview> answers, List<SectionScore> sections, Activity activity) {}
 
     // ---- the candidate ----
 
@@ -118,11 +174,12 @@ public final class AssessmentDtos {
 
     public record CandidateQuestion(
             UUID id, int position, AssessmentQuestion.Kind kind, String prompt, String code, List<String> options,
-            int points, String figure, List<String> optionFigures, String section) {}
+            int points, String figure, List<String> optionFigures, String section, CodingSpec coding) {}
 
     /** answers: what the candidate has saved so far, by question id. */
     public record TakeTest(MyTest test, List<CandidateQuestion> questions, Map<UUID, List<String>> answers,
             long secondsLeft) {}
 
-    public record SaveAnswersRequest(@NotNull @Size(max = 200) Map<UUID, @Size(max = 10) List<@Size(max = 500) String>> answers) {}
+    /** Choice and short answers are capped at 500 characters each; a coding answer is [language, source]. */
+    public record SaveAnswersRequest(@NotNull @Size(max = 200) Map<UUID, @Size(max = 10) List<@Size(max = 50_000) String>> answers) {}
 }

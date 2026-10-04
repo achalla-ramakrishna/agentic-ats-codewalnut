@@ -38,6 +38,11 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.web.client.RestClient;
+import com.codewalnut.ats.client.CodeRunner;
+import com.codewalnut.ats.client.DisabledCodeRunner;
+import com.codewalnut.ats.client.FakeCodeRunner;
+import com.codewalnut.ats.client.Judge0CodeRunner;
+import org.springframework.core.env.Environment;
 
 /**
  * Real Google Calendar, Gmail, WhatsApp and Claude in production; fakes in dev and demo so nothing is
@@ -158,5 +163,28 @@ public class IntegrationsConfig {
                 .timeout(Duration.ofSeconds(120))
                 .maxRetries(2)
                 .build());
+    }
+
+    /**
+     * The coding-test sandbox (ADR-0016): a self-hosted Judge0 at ATS_CODE_RUNNER_URL. Unset means
+     * coding questions can be written but not run. "fake" (dev profile only; ignored otherwise) is for automated tests.
+     */
+    @Bean
+    public CodeRunner codeRunner(@Value("${ats.coding.runner-url:}") String url, @Value("${ats.coding.runner-token:}") String token,
+            @Value("${ats.coding.language-ids.java:62}") int javaId, @Value("${ats.coding.language-ids.python:71}") int pythonId,
+            @Value("${ats.coding.language-ids.javascript:63}") int javascriptId, @Value("${ats.coding.language-ids.cpp:54}") int cppId,
+            Environment environment, RestClient.Builder restClientBuilder) {
+        if (url == null || url.isBlank()) {
+            return new DisabledCodeRunner();
+        }
+        if (url.equals("fake")) {
+            // The fake never runs outside the dev profile; anywhere else it means "not set up".
+            return environment.matchesProfiles("dev") ? new FakeCodeRunner() : new DisabledCodeRunner();
+        }
+        RestClient.Builder http = restClientBuilder.clone().baseUrl(url.replaceAll("/+$", ""));
+        if (token != null && !token.isBlank()) {
+            http.defaultHeader("X-Auth-Token", token);
+        }
+        return new Judge0CodeRunner(http.build(), java.util.Map.of("java", javaId, "python", pythonId, "javascript", javascriptId, "cpp", cppId));
     }
 }

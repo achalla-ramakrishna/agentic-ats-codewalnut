@@ -76,4 +76,42 @@ describe('TestsSection', () => {
     expect(await screen.findByRole('form', { name: 'Send a test' })).toBeInTheDocument()
     expect(await screen.findByRole('link', { name: 'Build one from the question bank' })).toHaveAttribute('href', '/tests')
   })
+
+  it('shows graded code with its test cases and the browser signals (ASMT-29, ASMT-37)', async () => {
+    const coding = { ...invite, id: 'i9', title: 'Coding', category: 'CODING', grading: 'DONE', score: 6, maxScore: 8, percent: 75 }
+    fakeFetch([
+      {
+        path: '/tests/i9',
+        body: {
+          invite: coding,
+          sections: [],
+          activity: { tabSwitches: 2, pastes: 1, pastedChars: 300, runs: 4 },
+          answers: [
+            {
+              position: 1, kind: 'CODING', prompt: 'Two sum\n\nFind the pair.', code: null, options: [], given: ['python', 'print(1)'],
+              correct: [], acceptedAnswers: [], points: 8, earned: 6, figure: null, optionFigures: null, section: null,
+              codeResult: {
+                language: 'python', source: 'print(1)', passed: 3, total: 4, earned: 6, compileOutput: null,
+                cases: [{ sample: false, passed: false, status: 'WRONG_ANSWER', output: '1\n', error: null, timeSeconds: 0.01, memoryKb: 100, input: '5\n', expected: '2\n' }],
+              },
+            },
+          ],
+        },
+      },
+      { path: '/applications/a1/tests', body: [coding, { ...coding, id: 'i8', title: 'Coding 2', grading: 'FAILED', percent: null }] },
+      { path: '/assessments', body: [] },
+      { path: '/whatsapp/status', body: { apiEnabled: false, repliesEnabled: false } },
+    ])
+    render(
+      <MemoryRouter>
+        <TestsSection applicationId="a1" canSend hasEmail hasPhone />
+      </MemoryRouter>,
+    )
+    expect(await screen.findByText(/the code couldn’t be graded/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Grade again' })).toBeInTheDocument()
+    await userEvent.click(screen.getAllByRole('button', { name: 'Answers' })[0])
+    expect(await screen.findByText('3 of 4 tests passed')).toBeInTheDocument()
+    expect(screen.getByText(/left the test tab 2× · pasted 1× \(300 characters\) · ran code on samples 4×/)).toBeInTheDocument()
+    expect(screen.getByText('print(1)')).toBeInTheDocument()
+  })
 })

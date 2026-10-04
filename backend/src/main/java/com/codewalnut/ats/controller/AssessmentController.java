@@ -48,6 +48,7 @@ public class AssessmentController {
     private final AssessmentInviteService inviteService;
     private final CurrentUserService currentUserService;
     private final CurrentCandidateService currentCandidateService;
+    private final com.codewalnut.ats.service.CodeRunService codeRunService;
 
     // ---- library ----
 
@@ -160,6 +161,25 @@ public class AssessmentController {
         return inviteService.remind(currentUserService.require(), id, request, baseUrl());
     }
 
+    /** Coding questions (ADR-0016): whether the sandbox is connected, so the editor can say so. */
+    @GetMapping("/api/v1/coding/status")
+    public Map<String, Object> codingStatus() {
+        currentUserService.require();
+        return Map.of("available", codeRunService.available(), "languages", com.codewalnut.ats.client.CodeRunner.LANGUAGES);
+    }
+
+    /** Staff checking a coding question: run a solution against every test case. */
+    @PostMapping("/api/v1/assessments/{id}/questions/{questionId}/run")
+    public com.codewalnut.ats.dto.AssessmentDtos.RunCodeResult tryQuestion(@PathVariable UUID id, @PathVariable UUID questionId,
+            @Valid @RequestBody com.codewalnut.ats.dto.AssessmentDtos.RunCodeRequest request) {
+        return codeRunService.tryQuestion(currentUserService.require(), id, questionId, request);
+    }
+
+    @PostMapping("/api/v1/tests/{id}/regrade")
+    public InviteView regrade(@PathVariable UUID id) {
+        return inviteService.regrade(currentUserService.require(), id);
+    }
+
     @PostMapping("/api/v1/tests/{id}/cancel")
     public InviteView cancel(@PathVariable UUID id) {
         return inviteService.cancel(currentUserService.require(), id);
@@ -190,6 +210,20 @@ public class AssessmentController {
     @PostMapping("/api/v1/candidate/tests/{id}/submit")
     public MyTest submit(@PathVariable UUID id, @Valid @RequestBody SaveAnswersRequest request) {
         return inviteService.submit(currentCandidateService.require(), id, request.answers());
+    }
+
+    /** Run: the candidate's code against the sample tests of one coding question. */
+    @PostMapping("/api/v1/candidate/tests/{id}/questions/{questionId}/run")
+    public com.codewalnut.ats.dto.AssessmentDtos.RunCodeResult run(@PathVariable UUID id, @PathVariable UUID questionId,
+            @Valid @RequestBody com.codewalnut.ats.dto.AssessmentDtos.RunCodeRequest request) {
+        return codeRunService.runSamples(currentCandidateService.require(), id, questionId, request);
+    }
+
+    /** Tab switches and pastes while the test is open: advisory signals for staff. */
+    @PostMapping("/api/v1/candidate/tests/{id}/activity")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void activity(@PathVariable UUID id, @Valid @RequestBody com.codewalnut.ats.dto.AssessmentDtos.ActivityRequest request) {
+        inviteService.activity(currentCandidateService.require(), id, request);
     }
 
     private static String baseUrl() {

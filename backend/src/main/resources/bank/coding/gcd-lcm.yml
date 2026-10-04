@@ -1,0 +1,34 @@
+id: gcd-lcm
+topic: code-basics
+difficulty: MEDIUM
+title: "GCD and LCM"
+statement: |
+  Given two positive integers A and B, print their greatest common divisor and their least common multiple.
+input: |
+  One line with A and B.
+output: |
+  One line with two integers: GCD and LCM.
+constraints: |
+  1 ≤ A, B ≤ 10^6 (the LCM fits in a 64-bit integer).
+samples:
+  - input: "12 18\n"
+    output: "6 36\n"
+  - input: "7 5\n"
+    output: "1 35\n"
+tests:
+  - input: "1 1\n"
+    output: "1 1\n"
+  - input: "1000000 1000000\n"
+    output: "1000000 1000000\n"
+  - input: "999983 999979\n"
+    output: "1 999962000357\n"
+  - input: "48 180\n"
+    output: "12 720\n"
+  - input: "17 34\n"
+    output: "17 34\n"
+  - input: "1 999999\n"
+    output: "1 999999\n"
+  - input: "720720 360360\n"
+    output: "360360 720720\n"
+  - input: "462 1071\n"
+    output: "21 23562\n"

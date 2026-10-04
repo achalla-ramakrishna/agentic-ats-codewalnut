@@ -5,10 +5,13 @@ import {
   getTestResult,
   listApplicationTests,
   listAssessments,
+  regradeTest,
   remindTest,
+  LANGUAGE_LABEL,
   sendTest,
   testLink,
   testStatusLabel,
+  type Activity,
   type AnswerReview,
   type SectionScore,
   type AssessmentSummary,
@@ -17,6 +20,7 @@ import {
 } from '../api/assessments'
 import { getWhatsAppStatus } from '../api/messages'
 import { Figure } from './Figure'
+import { RunResults } from './RunResults'
 import { newResultsChanged } from './useNewResults'
 import { Link } from 'react-router-dom'
 import { Badge, Button } from './ui'
@@ -36,9 +40,53 @@ function finishWhatsApp(result: SendResult, win: Window | null) {
   }
 }
 
-function Review({ answers, sections }: { answers: AnswerReview[]; sections: SectionScore[] }) {
+/** Browser signals while the test was taken: a prompt to look closer, never a verdict. */
+function ActivityNote({ activity }: { activity: Activity | null }) {
+  if (!activity || (activity.tabSwitches === 0 && activity.pastes === 0 && activity.runs === 0)) return null
+  const parts = [
+    activity.tabSwitches > 0 && `left the test tab ${activity.tabSwitches}×`,
+    activity.pastes > 0 && `pasted ${activity.pastes}× (${activity.pastedChars} characters)`,
+    activity.runs > 0 && `ran code on samples ${activity.runs}×`,
+  ].filter(Boolean)
+  return (
+    <p className="muted" style={{ fontSize: 13, margin: '6px 0 0' }}>
+      While taking the test: {parts.join(' · ')}. These are signals to ask about, not proof of anything.
+    </p>
+  )
+}
+
+function CodeAnswer({ a }: { a: AnswerReview }) {
+  const r = a.codeResult
+  if (!r || !r.source) return <div>✗ No code submitted <span className="muted">(0/{a.points})</span></div>
+  return (
+    <div className="stack" style={{ gap: 4 }}>
+      <div>
+        {r.passed === r.total && r.total > 0 ? '✓' : r.passed > 0 ? '◐' : '✗'} {r.language ? LANGUAGE_LABEL[r.language] : 'Code'}:{' '}
+        <strong>
+          {r.passed} of {r.total} tests passed
+        </strong>{' '}
+        <span className="muted">
+          ({a.earned}/{a.points})
+        </span>
+      </div>
+      <details>
+        <summary>Code</summary>
+        <pre className="test-code">{r.source}</pre>
+      </details>
+      {r.total > 0 && (
+        <details>
+          <summary>Test cases</summary>
+          <RunResults cases={r.cases} compileOutput={r.compileOutput} passed={r.passed} total={r.total} title="Graded on" />
+        </details>
+      )}
+    </div>
+  )
+}
+
+function Review({ answers, sections, activity }: { answers: AnswerReview[]; sections: SectionScore[]; activity: Activity | null }) {
   return (
     <>
+    <ActivityNote activity={activity} />
     {sections.length > 0 && (
       <table className="bank-grid" aria-label="Score by section" style={{ fontSize: 13, marginTop: 6 }}>
         <tbody>
@@ -61,6 +109,14 @@ function Review({ answers, sections }: { answers: AnswerReview[]; sections: Sect
             ? a.given[0] || '—'
             : a.given.map((g) => a.options[Number(g)] ?? g).join(', ') || '—'
         const right = a.kind === 'SHORT_ANSWER' ? a.acceptedAnswers.join(' / ') : a.correct.map((c) => a.options[c]).join(', ')
+        if (a.kind === 'CODING') {
+          return (
+            <li key={a.position} style={{ marginBottom: 6 }}>
+              <span style={{ whiteSpace: 'pre-wrap' }}>{a.prompt.split('\n')[0]}</span>
+              <CodeAnswer a={a} />
+            </li>
+          )
+        }
         return (
           <li key={a.position} style={{ marginBottom: 4 }}>
             <span>{a.prompt}</span>
@@ -108,7 +164,7 @@ export function TestsSection({
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [waApi, setWaApi] = useState(false)
-  const [review, setReview] = useState<Record<string, { answers: AnswerReview[]; sections: SectionScore[] }>>({})
+  const [review, setReview] = useState<Record<string, { answers: AnswerReview[]; sections: SectionScore[]; activity: Activity | null }>>({})
 
   const load = useCallback(() => {
     listApplicationTests(applicationId).then(setInvites).catch(() => setInvites([]))
@@ -195,6 +251,17 @@ export function TestsSection({
     }
   }
 
+  async function onRegrade(invite: InviteView) {
+    setError(null)
+    try {
+      const updated = await regradeTest(invite.id)
+      setInvites((all) => all?.map((i) => (i.id === invite.id ? updated : i)) ?? all)
+      setMessage('Grading the code again.')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not grade again')
+    }
+  }
+
   async function toggleReview(invite: InviteView) {
     if (review[invite.id]) {
       setReview((all) => {
@@ -205,7 +272,7 @@ export function TestsSection({
       return
     }
     const r = await getTestResult(invite.id)
-    setReview((all) => ({ ...all, [invite.id]: { answers: r.answers, sections: r.sections } }))
+    setReview((all) => ({ ...all, [invite.id]: { answers: r.answers, sections: r.sections, activity: r.activity } }))
     if (invite.newResult) {
       // Opening the answers marks the result as seen on the server.
       setInvites((all) => all?.map((i) => (i.id === invite.id ? { ...i, newResult: false } : i)) ?? all)
@@ -300,6 +367,11 @@ export function TestsSection({
                   )}
                 </span>
                 <span className="row" style={{ gap: 6 }}>
+                  {canSend && i.grading === 'FAILED' && (
+                    <Button size="sm" variant="secondary" onClick={() => void onRegrade(i)}>
+                      Grade again
+                    </Button>
+                  )}
                   {i.status === 'SUBMITTED' && (
                     <Button size="sm" variant="ghost" onClick={() => void toggleReview(i)}>
                       {review[i.id] ? 'Hide answers' : 'Answers'}
@@ -325,10 +397,12 @@ export function TestsSection({
               <span className="muted" style={{ fontSize: 13 }}>
                 Sent {new Date(i.sentAt).toLocaleDateString()} · due {new Date(i.dueAt).toLocaleDateString()}
                 {i.reminderCount > 0 && ` · reminded ${i.reminderCount}×`}
-                {i.status === 'SUBMITTED' && ` · ${i.score}/${i.maxScore} points, pass mark ${i.passPercent}%`}
+                {i.status === 'SUBMITTED' && i.grading === 'PENDING' && ' · grading the code (usually under a minute)'}
+                {i.status === 'SUBMITTED' && i.grading === 'FAILED' && ' · the code couldn’t be graded — the code runner was unreachable'}
+                {i.status === 'SUBMITTED' && i.percent != null && ` · ${i.score}/${i.maxScore} points, pass mark ${i.passPercent}%`}
                 {i.needsNudge && i.status === 'SENT' && ' · not started after 2 days — send a nudge?'}
               </span>
-              {review[i.id] && <Review answers={review[i.id].answers} sections={review[i.id].sections} />}
+              {review[i.id] && <Review answers={review[i.id].answers} sections={review[i.id].sections} activity={review[i.id].activity} />}
             </li>
           ))}
         </ul>

@@ -1,0 +1,34 @@
+id: n-queens
+topic: code-recursion
+difficulty: HARD
+title: "N queens"
+statement: |
+  Count the ways to place N queens on an N×N chessboard so that no two queens attack each other (no two share a row, column or diagonal).
+input: |
+  One line with N.
+output: |
+  One integer: the number of solutions.
+constraints: |
+  1 ≤ N ≤ 11
+samples:
+  - input: "4\n"
+    output: "2\n"
+  - input: "1\n"
+    output: "1\n"
+tests:
+  - input: "2\n"
+    output: "0\n"
+  - input: "3\n"
+    output: "0\n"
+  - input: "5\n"
+    output: "10\n"
+  - input: "6\n"
+    output: "4\n"
+  - input: "8\n"
+    output: "92\n"
+  - input: "10\n"
+    output: "724\n"
+  - input: "11\n"
+    output: "2680\n"
+  - input: "7\n"
+    output: "40\n"

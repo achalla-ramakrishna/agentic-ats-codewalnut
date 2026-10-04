@@ -4,6 +4,7 @@ import {
   KIND_LABEL,
   addQuestion,
   archiveAssessment,
+  codingStatus,
   createAssessment,
   deleteAssessment,
   deleteQuestion,
@@ -23,6 +24,7 @@ import {
 import { Badge, Button, Card, PageHeader } from '../components/ui'
 import { QuestionForm } from '../components/QuestionForm'
 import { QuestionPreview } from '../components/QuestionPreview'
+import { TryCoding } from '../components/TryCoding'
 import { BuildFromBank } from '../components/BuildFromBank'
 import { NewResults } from '../components/NewResults'
 import { QuestionBankPanel } from '../components/QuestionBankPanel'
@@ -34,7 +36,19 @@ import '../components/tracker.css'
 const CATEGORIES = Object.keys(CATEGORY_LABEL) as Category[]
 const STATUS_LABEL = { DRAFT: 'Draft', READY: 'Ready to send', ARCHIVED: 'Archived' }
 
-function QuestionCard({ q, editable, onEdit, onDelete }: { q: QuestionView; editable: boolean; onEdit: () => void; onDelete: () => void }) {
+function QuestionCard({
+  q,
+  assessmentId,
+  editable,
+  onEdit,
+  onDelete,
+}: {
+  q: QuestionView
+  assessmentId: string
+  editable: boolean
+  onEdit: () => void
+  onDelete: () => void
+}) {
   return (
     <li className="stack" style={{ gap: 4, padding: '10px 0', borderTop: '1px solid var(--color-border, #e2e8f0)' }}>
       <div className="row" style={{ justifyContent: 'space-between' }}>
@@ -60,6 +74,7 @@ function QuestionCard({ q, editable, onEdit, onDelete }: { q: QuestionView; edit
         )}
       </div>
       <QuestionPreview question={q} showAnswer />
+      {q.kind === 'CODING' && q.coding && <TryCoding assessmentId={assessmentId} questionId={q.id} coding={q.coding} />}
     </li>
   )
 }
@@ -85,10 +100,16 @@ function Editor({
   const [drafting, setDrafting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [runner, setRunner] = useState<boolean | null>(null)
 
   useEffect(() => {
     getAssessment(id).then(setDetail).catch((e: unknown) => setError(e instanceof Error ? e.message : 'Not found'))
   }, [id])
+
+  const hasCoding = detail?.questions.some((q) => q.kind === 'CODING') ?? false
+  useEffect(() => {
+    if (hasCoding && runner === null) codingStatus().then((s) => setRunner(s.available)).catch(() => setRunner(null))
+  }, [hasCoding, runner])
 
   async function run(action: () => Promise<AssessmentDetail>, done?: string) {
     setError(null)
@@ -227,6 +248,12 @@ function Editor({
           </p>
         )}
         {message && <div className="alert alert-info">{message}</div>}
+        {hasCoding && runner === false && (
+          <div className="alert alert-error">
+            The code runner isn’t connected yet, so coding questions can be written but candidates can’t run their code and it won’t be graded.
+            An admin needs to set up Judge0 (see docs/deploy-judge0.md).
+          </div>
+        )}
         {error && (
           <div role="alert" className="alert alert-error">
             {error}
@@ -289,6 +316,7 @@ function Editor({
               <QuestionCard
                 key={q.id}
                 q={q}
+                assessmentId={id}
                 editable={draftMode}
                 onEdit={() => setEditing(q.id)}
                 onDelete={() => window.confirm('Delete this question?') && void run(() => deleteQuestion(id, q.id))}

@@ -83,6 +83,24 @@ public class AssessmentInvite {
     @Column(name = "last_reminded_at")
     private Instant lastRemindedAt;
 
+    /** Code grading after submit (ADR-0016): null when the test has no coding answers. */
+    public enum Grading { PENDING, DONE, FAILED }
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private Grading grading;
+
+    @Column(name = "grading_attempts", nullable = false)
+    private int gradingAttempts;
+
+    /** Per coding question: language, tests passed, per-case results. */
+    @Column(name = "code_results_json", columnDefinition = "MEDIUMTEXT")
+    private String codeResultsJson;
+
+    /** Integrity signals from the browser (tab switches, pastes) and sample-run counts. */
+    @Column(name = "activity_json", columnDefinition = "TEXT")
+    private String activityJson;
+
     /** When someone who manages tests first looked at the result; null while it is a new result. */
     @Column(name = "reviewed_at")
     private Instant reviewedAt;

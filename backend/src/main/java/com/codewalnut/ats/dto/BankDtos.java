@@ -22,7 +22,8 @@ public final class BankDtos {
             UUID id, Assessment.Category area, BankQuestion.Section section, String sectionLabel, String topic,
             BankQuestion.Difficulty difficulty, AssessmentQuestion.Kind kind, String prompt, String code, String figure,
             List<String> options, List<String> optionFigures, List<Integer> correct, List<String> acceptedAnswers, int points,
-            String explanation, BankQuestion.Source source, BankQuestion.Status status, int timesUsed) {}
+            String explanation, BankQuestion.Source source, BankQuestion.Status status, int timesUsed,
+            AssessmentDtos.CodingView coding) {}
 
     /**
      * counts: active questions per section and difficulty, for the builder. topics: per section.

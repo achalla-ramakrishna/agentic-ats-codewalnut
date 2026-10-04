@@ -7,9 +7,11 @@ import {
   startTest,
   submitTest,
   listMyTests,
+  reportActivity,
   type MyTest,
   type TakeTest,
 } from '../api/assessments'
+import { CodingQuestion } from '../components/CodingQuestion'
 import { Figure } from '../components/Figure'
 import { Button, Card } from '../components/ui'
 import { sectionTitle } from '../api/questionBank'
@@ -34,6 +36,9 @@ export function TakeTestPage() {
   const [saving, setSaving] = useState<'idle' | 'saving' | 'saved' | 'offline'>('idle')
   const dirty = useRef<Record<string, string[]>>({})
   const submitting = useRef(false)
+  // Advisory signals for staff (ADR-0016): totals only, sent with the regular save.
+  const activity = useRef({ tabSwitches: 0, pastes: 0, pastedChars: 0 })
+  const reported = useRef('')
 
   useEffect(() => {
     listMyTests()
@@ -61,6 +66,11 @@ export function TakeTestPage() {
   }
 
   const flush = useCallback(async () => {
+    const signals = JSON.stringify(activity.current)
+    if (signals !== reported.current) {
+      reported.current = signals
+      reportActivity(id, activity.current).catch(() => (reported.current = ''))
+    }
     const pending = dirty.current
     if (!Object.keys(pending).length) return
     dirty.current = {}
@@ -93,6 +103,20 @@ export function TakeTestPage() {
     return () => window.clearInterval(timer)
   }, [taking, flush])
 
+  // Leaving the tab while the test is open is noted (a signal for people, not an automatic penalty).
+  useEffect(() => {
+    if (!taking) return
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') activity.current = { ...activity.current, tabSwitches: activity.current.tabSwitches + 1 }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [taking])
+
+  function pasted(chars: number) {
+    activity.current = { ...activity.current, pastes: activity.current.pastes + 1, pastedChars: activity.current.pastedChars + chars }
+  }
+
   // The countdown; at zero the test is submitted with what's answered.
   useEffect(() => {
     if (!taking) return
@@ -117,7 +141,12 @@ export function TakeTestPage() {
     }
   }
 
-  const answered = taking ? taking.questions.filter((q) => (answers[q.id] ?? []).some((v) => v.trim() !== '')).length : 0
+  const answered = taking
+    ? taking.questions.filter((q) =>
+        q.kind === 'CODING' ? (answers[q.id]?.[1] ?? '').trim() !== '' : (answers[q.id] ?? []).some((v) => v.trim() !== ''),
+      ).length
+    : 0
+  const hasCoding = (intro?.category === 'CODING') || (taking?.questions.some((q) => q.kind === 'CODING') ?? false)
 
   return (
     <div className="candidate">
@@ -157,6 +186,12 @@ export function TakeTestPage() {
               <li>The timer starts when you click Start and keeps running if you close the page.</li>
               <li>Your answers are saved as you go. When time runs out, what you’ve answered is submitted.</li>
               <li>Please work on your own, without help or AI tools.</li>
+              {hasCoding && (
+                <li>
+                  Coding questions: write a program that reads the input and prints the answer. Use “Run on samples” to check your code (a
+                  limited number of times); after you submit it’s also checked against hidden tests.
+                </li>
+              )}
               <li>Due by {new Date(intro.dueAt).toLocaleString()}.</li>
             </ul>
             {intro.status === 'SENT' ? (
@@ -197,7 +232,17 @@ export function TakeTestPage() {
                   <div style={{ whiteSpace: 'pre-wrap' }}>{q.prompt}</div>
                   {q.figure && <Figure figure={q.figure} />}
                   {q.code && <pre className="test-code">{q.code}</pre>}
-                  {q.kind === 'SHORT_ANSWER' ? (
+                  {q.kind === 'CODING' && q.coding ? (
+                    <CodingQuestion
+                      testId={id}
+                      questionId={q.id}
+                      position={q.position}
+                      spec={q.coding}
+                      value={value}
+                      onChange={(v) => answer(q.id, v)}
+                      onPaste={pasted}
+                    />
+                  ) : q.kind === 'SHORT_ANSWER' ? (
                     <input
                       className="input"
                       aria-label={`Answer to question ${q.position}`}

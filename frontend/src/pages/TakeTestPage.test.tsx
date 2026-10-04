@@ -90,4 +90,61 @@ describe('TakeTestPage', () => {
     const submit = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/submit'))!
     expect(JSON.parse(submit[1]!.body as string)).toEqual({ answers: { p1: ['2'] } })
   })
+
+  it('writes code, runs it on the samples and submits it (ASMT-29)', async () => {
+    const coding = {
+      languages: ['python', 'java'],
+      starter: { python: 'import sys\n', java: 'public class Main {}\n' },
+      samples: [{ input: '2 3\n', output: '5\n' }],
+      timeLimitSeconds: 2,
+      memoryMb: 256,
+      inputFormat: 'Two integers.',
+      outputFormat: 'Their sum.',
+      constraints: null,
+    }
+    const fetchMock = fakeFetch([
+      { path: '/candidate/tests/i1/start', method: 'POST', body: { ...taking, questions: [
+        { id: 'c1', position: 1, kind: 'CODING', prompt: 'Add two numbers', code: null, options: [], points: 10, figure: null, optionFigures: null, section: null, coding },
+      ] } },
+      { path: '/candidate/tests/i1/questions/c1/run', method: 'POST', body: {
+        compiled: true, compileOutput: null, passed: 1, total: 1, runsLeft: 29,
+        cases: [{ sample: true, passed: true, status: 'PASSED', output: '5\n', error: null, timeSeconds: 0.02, memoryKb: 900, input: '2 3\n', expected: '5\n' }],
+      } },
+      { path: '/candidate/tests/i1/activity', method: 'POST', status: 204 },
+      { path: '/candidate/tests/i1/answers', method: 'PUT', body: taking },
+      { path: '/candidate/tests/i1/submit', method: 'POST', body: { ...test, status: 'SUBMITTED' } },
+      { path: '/candidate/tests', body: [{ ...test, category: 'CODING' }] },
+    ])
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(
+      <MemoryRouter initialEntries={['/tests/i1']}>
+        <Routes>
+          <Route path="/tests/:id" element={<TakeTestPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    expect(await screen.findByText(/Coding questions: write a program/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Start the test' }))
+    expect(await screen.findByText('Two integers.')).toBeInTheDocument()
+    const editor = screen.getByLabelText('Code for question 1')
+    expect(editor).toHaveValue('import sys\n')
+    await userEvent.type(editor, 'print(sum(map(int, input().split())))')
+    await userEvent.click(screen.getByRole('button', { name: 'Run on samples' }))
+    expect(await screen.findByText('1 of 1 passed')).toBeInTheDocument()
+    expect(screen.getByText('29 runs left')).toBeInTheDocument()
+
+    // Switching language loads that language's starter; switching back keeps the code written.
+    await userEvent.selectOptions(screen.getByLabelText('Language for question 1'), 'java')
+    expect(screen.getByLabelText('Code for question 1')).toHaveValue('public class Main {}\n')
+    await userEvent.selectOptions(screen.getByLabelText('Language for question 1'), 'python')
+    expect(screen.getByLabelText('Code for question 1')).toHaveValue('import sys\nprint(sum(map(int, input().split())))')
+    expect(screen.getByText(/1 of 1 answered/)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }))
+    expect(await screen.findByText('Thank you!')).toBeInTheDocument()
+    const submit = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/submit'))!
+    expect(JSON.parse(submit[1]!.body as string)).toEqual({ answers: { c1: ['python', 'import sys\nprint(sum(map(int, input().split())))'] } })
+    const run = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/run'))!
+    expect(JSON.parse(run[1]!.body as string)).toEqual({ language: 'python', source: 'import sys\nprint(sum(map(int, input().split())))' })
+  })
 })

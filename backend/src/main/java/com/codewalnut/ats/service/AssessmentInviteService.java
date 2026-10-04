@@ -13,7 +13,13 @@ import com.codewalnut.ats.domain.CandidateAccount;
 import com.codewalnut.ats.domain.Message;
 import com.codewalnut.ats.domain.MessageAuthorType;
 import com.codewalnut.ats.domain.MessageChannel;
+import com.codewalnut.ats.dto.AssessmentDtos.Activity;
+import com.codewalnut.ats.dto.AssessmentDtos.ActivityRequest;
 import com.codewalnut.ats.dto.AssessmentDtos.AnswerReview;
+import com.codewalnut.ats.dto.AssessmentDtos.CaseResult;
+import com.codewalnut.ats.dto.AssessmentDtos.CodeResult;
+import com.codewalnut.ats.dto.AssessmentDtos.CodingSpec;
+import com.codewalnut.ats.dto.AssessmentDtos.TestCase;
 import com.codewalnut.ats.dto.AssessmentDtos.CandidateQuestion;
 import com.codewalnut.ats.dto.AssessmentDtos.InviteDetail;
 import com.codewalnut.ats.dto.AssessmentDtos.InviteView;
@@ -52,7 +58,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
@@ -84,6 +92,14 @@ public class AssessmentInviteService {
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
+    private final CodingSpecs codingSpecs;
+    private final ApplicationEventPublisher events;
+
+    /** Sample runs a candidate may make per coding question, and per test. */
+    static final int RUNS_PER_QUESTION = 30;
+    static final int RUNS_PER_TEST = 150;
+    /** Grading attempts while the sandbox is down (about one a minute) before giving up. */
+    static final int MAX_GRADING_ATTEMPTS = 30;
 
     // ---- staff ----
 
@@ -208,16 +224,17 @@ public class AssessmentInviteService {
             seen(invite, actor);
         }
         Map<UUID, List<String>> answers = answers(invite);
+        Map<UUID, CodeResult> code = codeResults(invite);
         List<AnswerReview> review = invite.getStatus() == AssessmentInvite.Status.SUBMITTED
                 ? questionRepository.findByAssessmentIdOrderByPositionAsc(invite.getAssessment().getId()).stream()
                         .map(q -> new AnswerReview(q.getPosition(), q.getKind(), q.getPrompt(), q.getCode(),
                                 assessmentService.options(q), answers.getOrDefault(q.getId(), List.of()),
                                 assessmentService.correct(q), assessmentService.accepted(q), q.getPoints(),
-                                assessmentService.earned(q, answers.get(q.getId())), q.getFigure(),
-                                assessmentService.optionFigures(q), q.getSection()))
+                                earned(q, answers, code), q.getFigure(),
+                                assessmentService.optionFigures(q), q.getSection(), staffCode(q, answers, code)))
                         .toList()
                 : List.of();
-        return new InviteDetail(view(invite), review, sectionScores(review));
+        return new InviteDetail(view(invite), review, sectionScores(review), activity(invite));
     }
 
     /**
@@ -278,7 +295,8 @@ public class AssessmentInviteService {
         for (AssessmentInvite i : inviteRepository.findByApplicationIdInOrderBySentAtDesc(applicationIds)) {
             AssessmentInvite.Status status = effective(i);
             String line = i.getAssessment().getTitle() + " " + switch (status) {
-                case SUBMITTED -> i.getPercent() + "% (pass mark " + i.getAssessment().getPassPercent() + "%)";
+                case SUBMITTED -> i.getPercent() == null ? "submitted, code still being graded"
+                        : i.getPercent() + "% (pass mark " + i.getAssessment().getPassPercent() + "%)";
                 case SENT -> "sent, not started";
                 case STARTED -> "in progress";
                 case EXPIRED -> "not taken by the due date";
@@ -405,24 +423,270 @@ public class AssessmentInviteService {
     }
 
     private void score(AssessmentInvite invite, Instant submittedAt) {
+        List<AssessmentQuestion> questions = questionRepository.findByAssessmentIdOrderByPositionAsc(invite.getAssessment().getId());
         Map<UUID, List<String>> answers = answers(invite);
-        int score = 0;
-        int max = 0;
-        for (AssessmentQuestion q : questionRepository.findByAssessmentIdOrderByPositionAsc(invite.getAssessment().getId())) {
-            max += q.getPoints();
-            score += assessmentService.earned(q, answers.get(q.getId()));
-        }
-        invite.setScore(score);
-        invite.setMaxScore(max);
-        invite.setPercent(max == 0 ? 0 : Math.round(score * 100f / max));
         invite.setStatus(AssessmentInvite.Status.SUBMITTED);
         invite.setSubmittedAt(submittedAt);
+        boolean hasCode = questions.stream().anyMatch(q -> q.getKind() == AssessmentQuestion.Kind.CODING);
+        boolean toRun = questions.stream().anyMatch(q -> q.getKind() == AssessmentQuestion.Kind.CODING && source(answers.get(q.getId())) != null);
+        if (toRun) {
+            // Code is run against the hidden tests after this commits; the result is final once graded.
+            total(invite, questions);
+            invite.setPercent(null);
+            invite.setGrading(AssessmentInvite.Grading.PENDING);
+            invite.setGradingAttempts(0);
+            history(invite.getApplication(), ApplicationEventType.TEST_SUBMITTED, "Test submitted: " + invite.getAssessment().getTitle()
+                    + " — grading the code", invite.getApplication().getCandidate().getEmail());
+            auditService.recordAnonymous(invite.getApplication().getCandidate().getEmail(), AuditAction.ASSESSMENT_SUBMITTED,
+                    Map.of("inviteId", invite.getId(), "grading", "pending"));
+            events.publishEvent(new CodeGradingRequested(invite.getId()));
+            return;
+        }
+        if (hasCode) {
+            invite.setGrading(AssessmentInvite.Grading.DONE); // coding questions left blank score 0
+        }
+        finish(invite, questions, submittedAt);
+    }
+
+    /** Final score, history, audit and the team-chat note, once every answer (code included) is scored. */
+    private void finish(AssessmentInvite invite, List<AssessmentQuestion> questions, Instant submittedAt) {
+        total(invite, questions);
+        int score = invite.getScore();
+        int max = invite.getMaxScore();
         history(invite.getApplication(), ApplicationEventType.TEST_SUBMITTED, "Test submitted: " + invite.getAssessment().getTitle()
                 + " — " + invite.getPercent() + "% (" + score + "/" + max + "; pass mark " + invite.getAssessment().getPassPercent() + "%)",
                 invite.getApplication().getCandidate().getEmail());
         auditService.recordAnonymous(invite.getApplication().getCandidate().getEmail(), AuditAction.ASSESSMENT_SUBMITTED,
                 Map.of("inviteId", invite.getId(), "percent", invite.getPercent()));
         resultNote(invite, submittedAt);
+    }
+
+    private void total(AssessmentInvite invite, List<AssessmentQuestion> questions) {
+        Map<UUID, List<String>> answers = answers(invite);
+        Map<UUID, CodeResult> code = codeResults(invite);
+        int score = 0;
+        int max = 0;
+        for (AssessmentQuestion q : questions) {
+            max += q.getPoints();
+            score += earned(q, answers, code);
+        }
+        invite.setScore(score);
+        invite.setMaxScore(max);
+        invite.setPercent(max == 0 ? 0 : Math.round(score * 100f / max));
+    }
+
+    private int earned(AssessmentQuestion q, Map<UUID, List<String>> answers, Map<UUID, CodeResult> code) {
+        if (q.getKind() == AssessmentQuestion.Kind.CODING) {
+            CodeResult r = code.get(q.getId());
+            return r == null ? 0 : r.earned();
+        }
+        return assessmentService.earned(q, answers.get(q.getId()));
+    }
+
+    // ---- code grading (ADR-0016) ----
+
+    /** One coding answer to run: everything the grader needs, read in one transaction. */
+    public record CodeWork(UUID questionId, int points, String language, String source, CodingSpec spec, List<TestCase> tests) {}
+
+    /** The coding answers of a test waiting to be graded; empty when it isn't (any more). */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
+    public List<CodeWork> gradingWork(UUID inviteId) {
+        AssessmentInvite invite = inviteRepository.findById(inviteId).orElse(null);
+        if (invite == null || invite.getGrading() != AssessmentInvite.Grading.PENDING) {
+            return List.of();
+        }
+        Map<UUID, List<String>> answers = answers(invite);
+        List<CodeWork> work = new ArrayList<>();
+        for (AssessmentQuestion q : questionRepository.findByAssessmentIdOrderByPositionAsc(invite.getAssessment().getId())) {
+            if (q.getKind() != AssessmentQuestion.Kind.CODING) {
+                continue;
+            }
+            CodingSpec spec = codingSpecs.spec(q.getCodingJson());
+            List<String> given = answers.get(q.getId());
+            work.add(new CodeWork(q.getId(), q.getPoints(), language(given), source(given), spec, codingSpecs.allTests(spec, q.getAnswerJson())));
+        }
+        return work;
+    }
+
+    /** Stores the graded code, works out the final score and posts the result, if still pending. */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void completeGrading(UUID inviteId, Map<UUID, CodeResult> results) {
+        AssessmentInvite invite = invite(inviteId);
+        if (invite.getGrading() != AssessmentInvite.Grading.PENDING) {
+            return;
+        }
+        invite.setCodeResultsJson(write(results));
+        invite.setGrading(AssessmentInvite.Grading.DONE);
+        finish(invite, questionRepository.findByAssessmentIdOrderByPositionAsc(invite.getAssessment().getId()), invite.getSubmittedAt());
+    }
+
+    /** The sandbox was unavailable: try again later, or give up and tell the team after many attempts. */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void gradingFailed(UUID inviteId, String reason) {
+        AssessmentInvite invite = invite(inviteId);
+        if (invite.getGrading() != AssessmentInvite.Grading.PENDING) {
+            return;
+        }
+        invite.setGradingAttempts(invite.getGradingAttempts() + 1);
+        if (invite.getGradingAttempts() >= MAX_GRADING_ATTEMPTS) {
+            invite.setGrading(AssessmentInvite.Grading.FAILED);
+            teamNote(invite, "The code in " + invite.getApplication().getCandidate().getName() + "'s " + invite.getAssessment().getTitle()
+                    + " test couldn't be graded: the code runner isn't reachable (" + reason + "). Once it's back, open the test "
+                    + "under Tests and click Grade again.");
+        }
+    }
+
+    /** Ids of tests waiting for their code to be graded. */
+    @Transactional(readOnly = true)
+    public List<UUID> pendingGrading() {
+        return inviteRepository.findByGrading(AssessmentInvite.Grading.PENDING).stream().map(AssessmentInvite::getId).toList();
+    }
+
+    /** Staff: grade the code again (after the runner was down, or a test case was fixed in a copy). */
+    @Transactional
+    public InviteView regrade(AppUser actor, UUID inviteId) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        AssessmentInvite invite = invite(inviteId);
+        if (invite.getStatus() != AssessmentInvite.Status.SUBMITTED || invite.getGrading() == null) {
+            throw new IllegalArgumentException("Only a submitted test with coding questions can be graded again");
+        }
+        invite.setGrading(AssessmentInvite.Grading.PENDING);
+        invite.setGradingAttempts(0);
+        invite.setCodeResultsJson(null);
+        invite.setPercent(null);
+        auditService.record(actor, AuditAction.ASSESSMENT_REGRADED, "AssessmentInvite", inviteId, Map.of());
+        events.publishEvent(new CodeGradingRequested(inviteId));
+        return view(invite);
+    }
+
+    /** What a candidate's Run needs: the question's spec, after checking the test is open and runs are left. */
+    public record RunTicket(CodingSpec spec, int runsLeft) {}
+
+    @Transactional
+    public RunTicket startRun(CandidateAccount account, UUID inviteId, UUID questionId, String language) {
+        AssessmentInvite invite = ownInvite(account, inviteId);
+        AssessmentInvite.Status status = finalise(invite);
+        if (status != AssessmentInvite.Status.STARTED) {
+            throw new IllegalArgumentException(closedMessage(status));
+        }
+        AssessmentQuestion q = questionRepository.findById(questionId)
+                .filter(x -> x.getAssessmentId().equals(invite.getAssessment().getId()) && x.getKind() == AssessmentQuestion.Kind.CODING)
+                .orElseThrow(() -> new NotFoundException("Question not found"));
+        CodingSpec spec = codingSpecs.spec(q.getCodingJson());
+        if (!spec.languages().contains(language)) {
+            throw new IllegalArgumentException("language: choose one of " + String.join(", ", spec.languages()));
+        }
+        Map<String, Object> activity = activityMap(invite);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> runs = (Map<String, Object>) activity.computeIfAbsent("runs", k -> new LinkedHashMap<String, Object>());
+        int forQuestion = ((Number) runs.getOrDefault(questionId.toString(), 0)).intValue();
+        int total = runs.values().stream().mapToInt(v -> ((Number) v).intValue()).sum();
+        if (forQuestion >= RUNS_PER_QUESTION || total >= RUNS_PER_TEST) {
+            throw new IllegalArgumentException("You've used all your sample runs for this question. You can still edit and submit your code.");
+        }
+        runs.put(questionId.toString(), forQuestion + 1);
+        invite.setActivityJson(write(activity));
+        return new RunTicket(spec, Math.min(RUNS_PER_QUESTION - forQuestion - 1, RUNS_PER_TEST - total - 1));
+    }
+
+    /** Browser signals while the test is open; totals only ever go up, so a resend never double counts. */
+    @Transactional
+    public void activity(CandidateAccount account, UUID inviteId, ActivityRequest request) {
+        AssessmentInvite invite = ownInvite(account, inviteId);
+        if (finalise(invite) != AssessmentInvite.Status.STARTED) {
+            return;
+        }
+        Map<String, Object> activity = activityMap(invite);
+        for (Map.Entry<String, Integer> e : Map.of("tabSwitches", request.tabSwitches(), "pastes", request.pastes(),
+                "pastedChars", request.pastedChars()).entrySet()) {
+            int old = ((Number) activity.getOrDefault(e.getKey(), 0)).intValue();
+            activity.put(e.getKey(), Math.max(old, e.getValue()));
+        }
+        invite.setActivityJson(write(activity));
+    }
+
+    private Activity activity(AssessmentInvite invite) {
+        Map<String, Object> a = activityMap(invite);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> runs = (Map<String, Object>) a.getOrDefault("runs", Map.of());
+        return new Activity(((Number) a.getOrDefault("tabSwitches", 0)).intValue(), ((Number) a.getOrDefault("pastes", 0)).intValue(),
+                ((Number) a.getOrDefault("pastedChars", 0)).intValue(), runs.values().stream().mapToInt(v -> ((Number) v).intValue()).sum());
+    }
+
+    private Map<String, Object> activityMap(AssessmentInvite invite) {
+        if (invite.getActivityJson() == null) {
+            return new LinkedHashMap<>();
+        }
+        try {
+            return objectMapper.readValue(invite.getActivityJson(), new TypeReference<LinkedHashMap<String, Object>>() {});
+        } catch (JsonProcessingException e) {
+            return new LinkedHashMap<>();
+        }
+    }
+
+    private Map<UUID, CodeResult> codeResults(AssessmentInvite invite) {
+        if (invite.getCodeResultsJson() == null) {
+            return Map.of();
+        }
+        try {
+            return objectMapper.readValue(invite.getCodeResultsJson(), new TypeReference<Map<UUID, CodeResult>>() {});
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /** The graded code with each hidden test's input and expected output filled in, for staff. */
+    private CodeResult staffCode(AssessmentQuestion q, Map<UUID, List<String>> answers, Map<UUID, CodeResult> code) {
+        if (q.getKind() != AssessmentQuestion.Kind.CODING) {
+            return null;
+        }
+        List<String> given = answers.get(q.getId());
+        CodeResult r = code.get(q.getId());
+        if (r == null) {
+            return new CodeResult(language(given), source(given), 0, 0, 0, null, List.of());
+        }
+        List<TestCase> tests = codingSpecs.allTests(codingSpecs.spec(q.getCodingJson()), q.getAnswerJson());
+        List<CaseResult> cases = new ArrayList<>();
+        for (int i = 0; i < r.cases().size(); i++) {
+            CaseResult c = r.cases().get(i);
+            TestCase t = i < tests.size() ? tests.get(i) : null;
+            cases.add(new CaseResult(c.sample(), c.passed(), c.status(), c.output(), c.error(), c.timeSeconds(), c.memoryKb(),
+                    t == null ? null : clip(t.input(), 2000), t == null ? null : clip(t.output(), 2000)));
+        }
+        return new CodeResult(r.language(), r.source(), r.passed(), r.total(), r.earned(), r.compileOutput(), cases);
+    }
+
+    static String language(List<String> given) {
+        return given == null || given.isEmpty() ? null : given.get(0);
+    }
+
+    /** The submitted source, or null when the candidate left the question blank. */
+    static String source(List<String> given) {
+        return given == null || given.size() < 2 || given.get(1) == null || given.get(1).isBlank() ? null : given.get(1);
+    }
+
+    static String clip(String s, int max) {
+        return s == null || s.length() <= max ? s : s.substring(0, max) + "\n…";
+    }
+
+    private String write(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private void teamNote(AssessmentInvite invite, String body) {
+        messageRepository.save(Message.builder()
+                .application(invite.getApplication())
+                .channel(MessageChannel.TEAM)
+                .authorType(MessageAuthorType.STAFF)
+                .authorEmail(SYSTEM_AUTHOR)
+                .authorName("CodeWalnut ATS")
+                .body(body)
+                .emailed(false)
+                .build());
     }
 
     /** A note in the candidate's team chat, so the result is on record where the team talks about them. */
@@ -434,6 +698,7 @@ public class AssessmentInviteService {
                 + invite.getScore() + "/" + invite.getMaxScore() + ") on " + a.getTitle() + " — "
                 + (passed ? "passed" : "below the pass mark") + " (pass mark " + a.getPassPercent() + "%)."
                 + (timedOut ? " Time ran out, so the answers saved by then were scored." : "")
+                + codeSummary(invite)
                 + " Sent by " + invite.getSentBy() + ". See the answers under Tests.";
         messageRepository.save(Message.builder()
                 .application(invite.getApplication())
@@ -444,6 +709,18 @@ public class AssessmentInviteService {
                 .body(body)
                 .emailed(false)
                 .build());
+    }
+
+    /** e.g. " Code: 7/10 tests passed on Two sum (Python)." */
+    private String codeSummary(AssessmentInvite invite) {
+        Map<UUID, CodeResult> code = codeResults(invite);
+        if (code.isEmpty()) {
+            return "";
+        }
+        return " Code: " + code.values().stream()
+                .map(r -> r.passed() + "/" + r.total() + " tests passed"
+                        + (r.language() == null ? "" : " (" + CodingSpecs.LANGUAGE_NAMES.getOrDefault(r.language(), r.language()) + ")"))
+                .collect(Collectors.joining("; ")) + ".";
     }
 
     /** Author of notes the app writes itself. */
@@ -461,14 +738,24 @@ public class AssessmentInviteService {
         if (given == null || given.isEmpty()) {
             return;
         }
-        Set<UUID> known = questionRepository.findByAssessmentIdOrderByPositionAsc(invite.getAssessment().getId()).stream()
-                .map(AssessmentQuestion::getId).collect(Collectors.toSet());
+        Map<UUID, AssessmentQuestion.Kind> known = questionRepository.findByAssessmentIdOrderByPositionAsc(invite.getAssessment().getId())
+                .stream().collect(Collectors.toMap(AssessmentQuestion::getId, AssessmentQuestion::getKind));
         Map<UUID, List<String>> answers = new LinkedHashMap<>(answers(invite));
         given.forEach((id, values) -> {
-            if (id != null && known.contains(id)) {
-                answers.put(id, values == null ? List.of() : values.stream()
-                        .filter(v -> v != null).map(v -> v.length() > 500 ? v.substring(0, 500) : v).limit(10).toList());
+            if (id == null || !known.containsKey(id)) {
+                return;
             }
+            if (known.get(id) == AssessmentQuestion.Kind.CODING) {
+                // [language, source]
+                List<String> v = values == null ? List.of() : values;
+                String language = v.isEmpty() || v.get(0) == null ? "" : v.get(0).strip().toLowerCase(Locale.ROOT);
+                String source = v.size() < 2 || v.get(1) == null ? "" : v.get(1);
+                answers.put(id, List.of(language.length() > 20 ? language.substring(0, 20) : language,
+                        source.length() > CodingSpecs.MAX_SOURCE ? source.substring(0, CodingSpecs.MAX_SOURCE) : source));
+                return;
+            }
+            answers.put(id, values == null ? List.of() : values.stream()
+                    .filter(v -> v != null).map(v -> v.length() > 500 ? v.substring(0, 500) : v).limit(10).toList());
         });
         try {
             invite.setAnswersJson(objectMapper.writeValueAsString(answers));
@@ -492,7 +779,8 @@ public class AssessmentInviteService {
         List<CandidateQuestion> questions = questionRepository.findByAssessmentIdOrderByPositionAsc(invite.getAssessment().getId())
                 .stream()
                 .map(q -> new CandidateQuestion(q.getId(), q.getPosition(), q.getKind(), q.getPrompt(), q.getCode(),
-                        assessmentService.options(q), q.getPoints(), q.getFigure(), assessmentService.optionFigures(q), q.getSection()))
+                        assessmentService.options(q), q.getPoints(), q.getFigure(), assessmentService.optionFigures(q), q.getSection(),
+                        q.getKind() == AssessmentQuestion.Kind.CODING ? codingSpecs.spec(q.getCodingJson()) : null))
                 .toList();
         long secondsLeft = Math.max(0, Duration.between(Instant.now(), invite.getDeadlineAt()).getSeconds());
         return new TakeTest(mine(invite), questions, answers(invite), secondsLeft);
@@ -508,7 +796,7 @@ public class AssessmentInviteService {
                 i.getSubmittedAt(), i.getScore(), i.getMaxScore(), i.getPercent(),
                 i.getPercent() == null ? null : i.getPercent() >= i.getAssessment().getPassPercent(),
                 i.getAssessment().getPassPercent(), i.getReminderCount(), i.getLastRemindedAt(), nudge || status == AssessmentInvite.Status.EXPIRED,
-                status == AssessmentInvite.Status.SUBMITTED && i.getReviewedAt() == null);
+                status == AssessmentInvite.Status.SUBMITTED && i.getReviewedAt() == null, i.getGrading());
     }
 
     private MyTest mine(AssessmentInvite i) {

@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { AssessmentDetail, Category, QuestionInput, QuestionKind } from './assessments'
+import type { AssessmentDetail, Category, CodingView, QuestionInput, QuestionKind } from './assessments'
 
 /** The question bank and the test-paper builder (ADR-0014). */
 
@@ -42,7 +42,7 @@ export function sectionTitle(section: string | null | undefined, categoryLabel?:
 
 /** Areas with a question bank, in menu order. */
 export const BANK_AREAS: Category[] = ['APTITUDE', 'JAVA', 'PYTHON', 'JAVASCRIPT', 'REACT', 'ANGULAR', 'SQL', 'CS_FUNDAMENTALS', 'SYSTEM_DESIGN',
-  'NODEJS', 'QA_AUTOMATION', 'DEVOPS', 'DATA_ANALYTICS']
+  'NODEJS', 'QA_AUTOMATION', 'DEVOPS', 'DATA_ANALYTICS', 'CODING']
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = { EASY: 'Easy', MEDIUM: 'Medium', HARD: 'Hard' }
 
 export interface BankQuestion {
@@ -65,6 +65,8 @@ export interface BankQuestion {
   source: 'BUILT_IN' | 'AI' | 'MANUAL'
   status: BankStatus
   timesUsed: number
+  /** Coding problems: the spec and hidden tests. */
+  coding: CodingView | null
 }
 
 export interface SectionPlan {

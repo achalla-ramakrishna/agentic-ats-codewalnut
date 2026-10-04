@@ -72,6 +72,7 @@ public class QuestionBankService {
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
+    private final com.codewalnut.ats.service.CodingSpecs codingSpecs;
 
     // ---- the built-in bank ----
 
@@ -85,6 +86,7 @@ public class QuestionBankService {
     public void loadBuiltIn() {
         List<Seed> seeds = new ArrayList<>(AptitudeBank.all());
         seeds.addAll(TechBank.all());
+        seeds.addAll(com.codewalnut.ats.bank.CodingBank.all());
         Set<String> current = seeds.stream().map(Seed::key).collect(Collectors.toSet());
         Set<String> have = bankRepository.findBuiltinKeys();
         List<BankQuestion> fresh = new ArrayList<>();
@@ -97,7 +99,9 @@ public class QuestionBankService {
                     .kind(seed.kind()).prompt(seed.prompt()).code(seed.code()).figure(seed.figure())
                     .optionsJson(assessmentService.write(seed.options()))
                     .optionFiguresJson(seed.optionFigures() == null ? null : assessmentService.write(seed.optionFigures()))
-                    .answerJson(assessmentService.write(seed.kind() == AssessmentQuestion.Kind.SHORT_ANSWER ? seed.accepted() : seed.correct()))
+                    .answerJson(seed.kind() == AssessmentQuestion.Kind.CODING ? seed.testsJson()
+                            : assessmentService.write(seed.kind() == AssessmentQuestion.Kind.SHORT_ANSWER ? seed.accepted() : seed.correct()))
+                    .codingJson(seed.codingJson())
                     .points(seed.points()).explanation(seed.explanation())
                     .source(BankQuestion.Source.BUILT_IN).builtinKey(seed.key()).status(BankQuestion.Status.ACTIVE)
                     .createdBy("system").build());
@@ -161,7 +165,7 @@ public class QuestionBankService {
                 out.add(new TopicGuide(t.id(), t.section(), t.section().getLabel(), t.section().getLevel(), t.name(), t.covers(), t.example(), c[0], c[1], c[2]));
             }
         }
-        for (TechBank.Topic t : TechBank.topics(area)) {
+        for (TechBank.Topic t : area == Assessment.Category.CODING ? com.codewalnut.ats.bank.CodingBank.topics() : TechBank.topics(area)) {
             long[] c = levels.remove(t.section() + "/" + t.name());
             c = c == null ? new long[3] : c;
             out.add(new TopicGuide(t.id(), t.section(), t.section().getLabel(), t.section().getLevel(), t.name(), t.covers(), t.example(), c[0], c[1], c[2]));
@@ -468,7 +472,8 @@ public class QuestionBankService {
         for (BankQuestion b : questions) {
             questionRepository.save(AssessmentQuestion.builder()
                     .assessmentId(a.getId()).position(++position).kind(b.getKind()).prompt(b.getPrompt()).code(b.getCode())
-                    .optionsJson(b.getOptionsJson()).answerJson(b.getAnswerJson()).points(b.getPoints()).explanation(b.getExplanation())
+                    .optionsJson(b.getOptionsJson()).answerJson(b.getAnswerJson()).codingJson(b.getCodingJson())
+                    .points(b.getPoints()).explanation(b.getExplanation())
                     .figure(b.getFigure()).optionFiguresJson(b.getOptionFiguresJson())
                     .section(mixed ? b.getArea().name() + ":" + b.getSection().name() : b.getSection().name())
                     .topic(b.getTopic()).difficulty(b.getDifficulty().name()).bankQuestionId(b.getId())
@@ -482,8 +487,16 @@ public class QuestionBankService {
         b.setPrompt(q.prompt());
         b.setCode(q.code());
         b.setFigure(q.figure());
-        b.setOptionsJson(q.kind() == AssessmentQuestion.Kind.SHORT_ANSWER ? null : assessmentService.write(q.options()));
-        b.setAnswerJson(assessmentService.write(q.kind() == AssessmentQuestion.Kind.SHORT_ANSWER ? q.acceptedAnswers() : q.correct()));
+        if (q.kind() == AssessmentQuestion.Kind.CODING) {
+            com.codewalnut.ats.service.CodingSpecs.Stored stored = codingSpecs.normalise(q.coding());
+            b.setOptionsJson(null);
+            b.setCodingJson(stored.specJson());
+            b.setAnswerJson(stored.testsJson());
+        } else {
+            b.setCodingJson(null);
+            b.setOptionsJson(q.kind() == AssessmentQuestion.Kind.SHORT_ANSWER ? null : assessmentService.write(q.options()));
+            b.setAnswerJson(assessmentService.write(q.kind() == AssessmentQuestion.Kind.SHORT_ANSWER ? q.acceptedAnswers() : q.correct()));
+        }
         b.setPoints(q.points());
         b.setExplanation(q.explanation());
         return b;
@@ -494,11 +507,14 @@ public class QuestionBankService {
         List<String> optionFigures = b.getOptionFiguresJson() == null ? null
                 : assessmentService.readList(b.getOptionFiguresJson(), new TypeReference<List<String>>() {});
         boolean shortAnswer = b.getKind() == AssessmentQuestion.Kind.SHORT_ANSWER;
+        boolean coding = b.getKind() == AssessmentQuestion.Kind.CODING;
         return new BankQuestionView(b.getId(), b.getArea(), b.getSection(), b.getSection().getLabel(), b.getTopic(), b.getDifficulty(),
                 b.getKind(), b.getPrompt(), b.getCode(), b.getFigure(), options, optionFigures,
-                shortAnswer ? List.of() : assessmentService.readList(b.getAnswerJson(), new TypeReference<List<Integer>>() {}),
+                shortAnswer || coding ? List.of() : assessmentService.readList(b.getAnswerJson(), new TypeReference<List<Integer>>() {}),
                 shortAnswer ? assessmentService.readList(b.getAnswerJson(), new TypeReference<List<String>>() {}) : List.of(),
-                b.getPoints(), b.getExplanation(), b.getSource(), b.getStatus(), b.getTimesUsed());
+                b.getPoints(), b.getExplanation(), b.getSource(), b.getStatus(), b.getTimesUsed(),
+                coding ? new com.codewalnut.ats.dto.AssessmentDtos.CodingView(codingSpecs.spec(b.getCodingJson()), codingSpecs.tests(b.getAnswerJson()))
+                        : null);
     }
 
     private BankQuestion bank(UUID id) {

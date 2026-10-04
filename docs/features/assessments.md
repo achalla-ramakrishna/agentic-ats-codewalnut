@@ -67,7 +67,9 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | ASMT-33 | **CS fundamentals** and **System design** banks (11 topics × 12 questions each), shared by every developer role. | Done |
 | ASMT-35 | **Node.js**, **Testing & QA automation**, **DevOps & cloud** and **Data analytics** banks (11 topics × 12 questions each) and five new roles: Node.js backend, full-stack Node + React (MERN), QA automation engineer, DevOps / cloud engineer, data analyst. | Done |
 | ASMT-34 | **Role tests**: Build from bank → By role: pick a role and a level (fresher, junior, mid, senior, lead); the test mixes the right areas and bands, and results show a score per area and band. | Done |
-| ASMT-29 | Practical coding tests (write and run code in a sandbox). | Next |
+| ASMT-29 | **Coding questions**: candidates write a program (Java, Python, JavaScript or C++) in a code editor, run it on the sample tests (up to 30 times per question), and on submit it is graded in a sandbox (self-hosted Judge0, ADR-0016) against hidden tests, with points for each test passed. Staff write coding questions (samples, hidden tests, limits, starter code), try a solution against every test, and see the code with per-test results; **Grade again** if the runner was down. | Done |
+| ASMT-36 | **Built-in coding problems**: 60 problems in 12 topics (basics, strings, arrays, hashing, two pointers, stacks, sorting, recursion, graphs, dynamic programming, greedy, heaps), in Build from bank → Coding with freshers / 1–3 years / 3+ years presets; developer role tests include one coding problem per level. | Done |
+| ASMT-37 | **Integrity signals**: tab switches and pastes while the test is open, and the number of sample runs, shown to staff with the result as things to ask about (never an automatic penalty). | Done |
 | ASMT-25 | Per-section timers and optional negative marking. | v1 |
 | ASMT-17 | Automatic reminders (needs a sender that works without a staff session, e.g. WhatsApp Business API or a shared mailbox). | v1 |
 
@@ -105,6 +107,7 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
+| 2026-10-04 | Coding questions graded in a Judge0 sandbox; 60 built-in coding problems; integrity signals (ASMT-29, ASMT-36, ASMT-37) |
 | 2026-10-03 | Node.js, QA automation, DevOps and Data analytics banks; five new roles (ASMT-35) |
 | 2026-10-03 | CS fundamentals and System design banks; role tests by level (ASMT-33, ASMT-34) |
 | 2026-10-03 | New test results: menu count, list, team-chat note (ASMT-32) |

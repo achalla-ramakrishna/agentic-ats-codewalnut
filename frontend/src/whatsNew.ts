@@ -16,6 +16,19 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-04-coding-tests',
+    date: '2026-10-04',
+    title: 'Coding tests: candidates write and run real code',
+    summary: 'A new question type: the candidate writes a program in Java, Python, JavaScript or C++, runs it on sample tests, and after they submit it is graded against hidden tests, with points for each test passed. 60 ready-made problems, from basics to graphs and dynamic programming, and developer role tests now include one. You see their code, which tests passed, and whether they left the tab or pasted code.',
+    steps: [
+      'Tests → Build from bank → By pattern → Coding, pick freshers, 1–3 years or 3+ years.',
+      'Or add a “Write code” question to your own test, then “Try a solution” to check it.',
+      'After the candidate submits, open Answers in their Tests tab.',
+    ],
+    link: { to: '/tests', label: 'Open Tests' },
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-03-more-role-banks',
     date: '2026-10-03',
     title: 'Tests for Node.js, QA, DevOps and data analysts',

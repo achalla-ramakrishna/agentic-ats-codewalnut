@@ -17,8 +17,9 @@ export type Category =
   | 'QA_AUTOMATION'
   | 'DEVOPS'
   | 'DATA_ANALYTICS'
+  | 'CODING'
   | 'OTHER'
-export type QuestionKind = 'SINGLE_CHOICE' | 'MULTI_CHOICE' | 'SHORT_ANSWER'
+export type QuestionKind = 'SINGLE_CHOICE' | 'MULTI_CHOICE' | 'SHORT_ANSWER' | 'CODING'
 export type InviteStatus = 'SENT' | 'STARTED' | 'SUBMITTED' | 'EXPIRED' | 'CANCELLED'
 
 export const CATEGORY_LABEL: Record<Category, string> = {
@@ -35,6 +36,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   QA_AUTOMATION: 'Testing & QA automation',
   DEVOPS: 'DevOps & cloud',
   DATA_ANALYTICS: 'Data analytics',
+  CODING: 'Coding',
   OTHER: 'Other',
 }
 
@@ -42,6 +44,106 @@ export const KIND_LABEL: Record<QuestionKind, string> = {
   SINGLE_CHOICE: 'One right answer',
   MULTI_CHOICE: 'Several right answers',
   SHORT_ANSWER: 'Short answer',
+  CODING: 'Write code',
+}
+
+// ---- coding questions (ADR-0016) ----
+
+export type CodeLanguage = 'java' | 'python' | 'javascript' | 'cpp'
+
+export const LANGUAGE_LABEL: Record<CodeLanguage, string> = {
+  java: 'Java',
+  python: 'Python',
+  javascript: 'JavaScript',
+  cpp: 'C++',
+}
+
+/** What goes to the program's stdin, and what it should print. */
+export interface TestCase {
+  input: string
+  output: string
+}
+
+/** The part of a coding question candidates see. Hidden tests are never in here. */
+export interface CodingSpec {
+  languages: CodeLanguage[]
+  starter: Partial<Record<CodeLanguage, string>>
+  samples: TestCase[]
+  timeLimitSeconds: number
+  memoryMb: number
+  inputFormat: string | null
+  outputFormat: string | null
+  constraints: string | null
+}
+
+/** Staff view: the spec plus the hidden tests. */
+export interface CodingView {
+  spec: CodingSpec
+  tests: TestCase[]
+}
+
+export interface CodingInput {
+  languages?: CodeLanguage[]
+  starter?: Partial<Record<CodeLanguage, string>>
+  samples: TestCase[]
+  tests: TestCase[]
+  timeLimitSeconds?: number
+  inputFormat?: string
+  outputFormat?: string
+  constraints?: string
+}
+
+export type CaseStatus = 'PASSED' | 'WRONG_ANSWER' | 'COMPILE_ERROR' | 'RUNTIME_ERROR' | 'TIME_LIMIT' | 'MEMORY_LIMIT' | 'INTERNAL_ERROR'
+
+export const CASE_STATUS_LABEL: Record<CaseStatus, string> = {
+  PASSED: 'Passed',
+  WRONG_ANSWER: 'Wrong answer',
+  COMPILE_ERROR: "Didn't compile",
+  RUNTIME_ERROR: 'Crashed',
+  TIME_LIMIT: 'Too slow',
+  MEMORY_LIMIT: 'Out of memory',
+  INTERNAL_ERROR: 'Runner error',
+}
+
+/** One test case run. input/expected: shown for samples, and to staff for hidden tests. */
+export interface CaseResult {
+  sample: boolean
+  passed: boolean
+  status: CaseStatus
+  output: string | null
+  error: string | null
+  timeSeconds: number | null
+  memoryKb: number | null
+  input: string | null
+  expected: string | null
+}
+
+export interface RunCodeResult {
+  compiled: boolean
+  compileOutput: string | null
+  cases: CaseResult[]
+  passed: number
+  total: number
+  /** Sample runs left for this question (-1 for staff checks). */
+  runsLeft: number
+}
+
+export interface CodeResult {
+  language: CodeLanguage | null
+  source: string | null
+  passed: number
+  total: number
+  earned: number
+  compileOutput: string | null
+  cases: CaseResult[]
+}
+
+/** Advisory browser signals while the test was taken. */
+export interface Activity {
+  tabSwitches: number
+  pastes: number
+  pastedChars: number
+  runs: number
 }
 
 export interface AssessmentSummary {
@@ -79,6 +181,7 @@ export interface QuestionView {
   section: string | null
   topic: string | null
   difficulty: 'EASY' | 'MEDIUM' | 'HARD' | null
+  coding: CodingView | null
 }
 
 export interface AssessmentDetail {
@@ -96,6 +199,7 @@ export interface QuestionInput {
   points: number
   explanation?: string
   figure?: string | null
+  coding?: CodingInput
 }
 
 export interface InviteView {
@@ -120,6 +224,8 @@ export interface InviteView {
   needsNudge: boolean
   /** Submitted and nobody who manages tests has opened the answers or marked it seen yet. */
   newResult: boolean
+  /** Code grading after submit: null when the test has no coding questions. */
+  grading: 'PENDING' | 'DONE' | 'FAILED' | null
 }
 
 /** A submitted test nobody has looked at yet, with where to find the candidate. */
@@ -149,6 +255,7 @@ export interface AnswerReview {
   figure: string | null
   optionFigures: string[] | null
   section: string | null
+  codeResult: CodeResult | null
 }
 
 export interface SectionScore {
@@ -185,6 +292,7 @@ export interface CandidateQuestion {
   figure: string | null
   optionFigures: string[] | null
   section: string | null
+  coding: CodingSpec | null
 }
 
 export interface TakeTest {
@@ -229,7 +337,11 @@ export const listNewResults = () => api<NewResult[]>('/tests/new-results')
 export const markResultsSeen = (inviteIds: string[]) => api<{ marked: number }>('/tests/seen', json('POST', { inviteIds }))
 export const listJobTests = (jobId: string) => api<InviteView[]>(`/jobs/${jobId}/tests`)
 export const getTestResult = (inviteId: string) =>
-  api<{ invite: InviteView; answers: AnswerReview[]; sections: SectionScore[] }>(`/tests/${inviteId}`)
+  api<{ invite: InviteView; answers: AnswerReview[]; sections: SectionScore[]; activity: Activity | null }>(`/tests/${inviteId}`)
+export const regradeTest = (inviteId: string) => api<InviteView>(`/tests/${inviteId}/regrade`, { method: 'POST' })
+export const codingStatus = () => api<{ available: boolean; languages: CodeLanguage[] }>('/coding/status')
+export const tryQuestion = (assessmentId: string, questionId: string, input: { language: CodeLanguage; source: string }) =>
+  api<RunCodeResult>(`/assessments/${assessmentId}/questions/${questionId}/run`, json('POST', input))
 export const remindTest = (inviteId: string, input: { sendEmail: boolean; sendWhatsApp: boolean }) =>
   api<SendResult>(`/tests/${inviteId}/remind`, json('POST', input))
 export const cancelTest = (inviteId: string) => api<InviteView>(`/tests/${inviteId}/cancel`, { method: 'POST' })
@@ -242,6 +354,10 @@ export const saveAnswers = (id: string, answers: Record<string, string[]>) =>
   api<TakeTest>(`/candidate/tests/${id}/answers`, json('PUT', { answers }))
 export const submitTest = (id: string, answers: Record<string, string[]>) =>
   api<MyTest>(`/candidate/tests/${id}/submit`, json('POST', { answers }))
+export const runCode = (id: string, questionId: string, input: { language: CodeLanguage; source: string }) =>
+  api<RunCodeResult>(`/candidate/tests/${id}/questions/${questionId}/run`, json('POST', input))
+export const reportActivity = (id: string, input: { tabSwitches: number; pastes: number; pastedChars: number }) =>
+  api<void>(`/candidate/tests/${id}/activity`, json('POST', input))
 
 export function testStatusLabel(i: Pick<InviteView, 'status' | 'percent' | 'passed'>): string {
   switch (i.status) {
@@ -250,7 +366,7 @@ export function testStatusLabel(i: Pick<InviteView, 'status' | 'percent' | 'pass
     case 'STARTED':
       return 'In progress'
     case 'SUBMITTED':
-      return `${i.percent}%${i.passed ? ' · passed' : ''}`
+      return i.percent == null ? 'Submitted · grading code' : `${i.percent}%${i.passed ? ' · passed' : ''}`
     case 'EXPIRED':
       return 'Not taken (past due)'
     case 'CANCELLED':

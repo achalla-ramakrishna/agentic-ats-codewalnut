@@ -52,6 +52,7 @@ public class AssessmentService {
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
+    private final CodingSpecs codingSpecs;
 
     /** Everyone who sends tests sees the list; only test managers see the questions. */
     @Transactional(readOnly = true)
@@ -243,7 +244,7 @@ public class AssessmentService {
         for (AssessmentQuestion q : questionRepository.findByAssessmentIdOrderByPositionAsc(id)) {
             questionRepository.save(AssessmentQuestion.builder()
                     .assessmentId(copy.getId()).position(q.getPosition()).kind(q.getKind()).prompt(q.getPrompt())
-                    .code(q.getCode()).optionsJson(q.getOptionsJson()).answerJson(q.getAnswerJson())
+                    .code(q.getCode()).optionsJson(q.getOptionsJson()).answerJson(q.getAnswerJson()).codingJson(q.getCodingJson())
                     .points(q.getPoints()).explanation(q.getExplanation()).aiDrafted(q.isAiDrafted())
                     .figure(q.getFigure()).optionFiguresJson(q.getOptionFiguresJson()).section(q.getSection())
                     .topic(q.getTopic()).difficulty(q.getDifficulty()).bankQuestionId(q.getBankQuestionId()).build());
@@ -308,8 +309,14 @@ public class AssessmentService {
     }
 
     List<Integer> correct(AssessmentQuestion q) {
-        return q.getKind() == AssessmentQuestion.Kind.SHORT_ANSWER ? List.of()
+        return q.getKind() == AssessmentQuestion.Kind.SHORT_ANSWER || q.getKind() == AssessmentQuestion.Kind.CODING ? List.of()
                 : readList(q.getAnswerJson(), new TypeReference<List<Integer>>() {});
+    }
+
+    /** Staff view of a coding question (spec and hidden tests), or null for other kinds. */
+    com.codewalnut.ats.dto.AssessmentDtos.CodingView coding(AssessmentQuestion q) {
+        return q.getKind() != AssessmentQuestion.Kind.CODING ? null
+                : new com.codewalnut.ats.dto.AssessmentDtos.CodingView(codingSpecs.spec(q.getCodingJson()), codingSpecs.tests(q.getAnswerJson()));
     }
 
     List<String> accepted(AssessmentQuestion q) {
@@ -317,9 +324,9 @@ public class AssessmentService {
                 ? readList(q.getAnswerJson(), new TypeReference<List<String>>() {}) : List.of();
     }
 
-    /** Points earned for the given answer: all or nothing. */
+    /** Points earned for the given answer: all or nothing. Coding answers are graded by running them (CodeRunService). */
     int earned(AssessmentQuestion q, List<String> given) {
-        if (given == null || given.isEmpty()) {
+        if (given == null || given.isEmpty() || q.getKind() == AssessmentQuestion.Kind.CODING) {
             return 0;
         }
         if (q.getKind() == AssessmentQuestion.Kind.SHORT_ANSWER) {
@@ -359,7 +366,7 @@ public class AssessmentService {
         List<QuestionView> views = qs.stream()
                 .map(q -> new QuestionView(q.getId(), q.getPosition(), q.getKind(), q.getPrompt(), q.getCode(),
                         options(q), correct(q), accepted(q), q.getPoints(), q.getExplanation(), q.isAiDrafted(),
-                        q.getFigure(), optionFigures(q), q.getSection(), q.getTopic(), q.getDifficulty()))
+                        q.getFigure(), optionFigures(q), q.getSection(), q.getTopic(), q.getDifficulty(), coding(q)))
                 .toList();
         return new AssessmentDetail(summary(a, new long[] {qs.size(), qs.stream().mapToInt(AssessmentQuestion::getPoints).sum()}), views);
     }
@@ -378,6 +385,11 @@ public class AssessmentService {
             throw new IllegalArgumentException("prompt: write the question");
         }
         String code = blankToNull(r.code() == null ? null : r.code().replaceAll("^```\\w*\\n?|\\n?```$", ""));
+        if (r.kind() == AssessmentQuestion.Kind.CODING) {
+            codingSpecs.normalise(r.coding()); // checks the samples, hidden tests and limits
+            return new QuestionRequest(r.kind(), prompt, null, List.of(), List.of(), List.of(), r.points(), blankToNull(r.explanation()),
+                    null, r.coding());
+        }
         if (r.kind() == AssessmentQuestion.Kind.SHORT_ANSWER) {
             List<String> accepted = r.acceptedAnswers() == null ? List.of() : r.acceptedAnswers().stream()
                     .filter(StringUtils::hasText).map(String::strip).distinct().toList();
@@ -408,15 +420,25 @@ public class AssessmentService {
 
     void apply(AssessmentQuestion q, QuestionRequest r) {
         List<String> oldOptions = q.getOptionsJson() == null ? List.of() : options(q);
-        if (q.getOptionFiguresJson() != null && (r.kind() == AssessmentQuestion.Kind.SHORT_ANSWER || r.options().size() != oldOptions.size())) {
+        if (q.getOptionFiguresJson() != null && (r.kind() != AssessmentQuestion.Kind.SINGLE_CHOICE && r.kind() != AssessmentQuestion.Kind.MULTI_CHOICE
+                || r.options().size() != oldOptions.size())) {
             q.setOptionFiguresJson(null); // option pictures only fit the same set of options
         }
         q.setFigure(r.figure());
         q.setKind(r.kind());
         q.setPrompt(r.prompt());
         q.setCode(r.code());
-        q.setOptionsJson(r.kind() == AssessmentQuestion.Kind.SHORT_ANSWER ? null : write(r.options()));
-        q.setAnswerJson(write(r.kind() == AssessmentQuestion.Kind.SHORT_ANSWER ? r.acceptedAnswers() : r.correct()));
+        if (r.kind() == AssessmentQuestion.Kind.CODING) {
+            CodingSpecs.Stored stored = codingSpecs.normalise(r.coding());
+            q.setOptionsJson(null);
+            q.setOptionFiguresJson(null);
+            q.setCodingJson(stored.specJson());
+            q.setAnswerJson(stored.testsJson());
+        } else {
+            q.setCodingJson(null);
+            q.setOptionsJson(r.kind() == AssessmentQuestion.Kind.SHORT_ANSWER ? null : write(r.options()));
+            q.setAnswerJson(write(r.kind() == AssessmentQuestion.Kind.SHORT_ANSWER ? r.acceptedAnswers() : r.correct()));
+        }
         q.setPoints(r.points());
         q.setExplanation(r.explanation());
     }

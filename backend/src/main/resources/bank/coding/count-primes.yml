@@ -1,0 +1,34 @@
+id: count-primes
+topic: code-basics
+difficulty: MEDIUM
+title: "Count primes up to N"
+statement: |
+  Print how many prime numbers are less than or equal to N.
+input: |
+  One line with N.
+output: |
+  One integer.
+constraints: |
+  1 ≤ N ≤ 10^6. Testing each number separately is too slow for the largest N; use the Sieve of Eratosthenes.
+samples:
+  - input: "10\n"
+    output: "4\n"
+  - input: "1\n"
+    output: "0\n"
+tests:
+  - input: "2\n"
+    output: "1\n"
+  - input: "100\n"
+    output: "25\n"
+  - input: "1000\n"
+    output: "168\n"
+  - input: "999983\n"
+    output: "78498\n"
+  - input: "1000000\n"
+    output: "78498\n"
+  - input: "30\n"
+    output: "10\n"
+  - input: "3\n"
+    output: "2\n"
+  - input: "500000\n"
+    output: "41538\n"

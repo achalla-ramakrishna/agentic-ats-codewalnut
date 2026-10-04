@@ -26,8 +26,11 @@ import org.hibernate.annotations.UuidGenerator;
 @Builder
 public class AssessmentQuestion {
 
-    /** SINGLE_CHOICE: one right option. MULTI_CHOICE: pick all right options. SHORT_ANSWER: type it (e.g. the output). */
-    public enum Kind { SINGLE_CHOICE, MULTI_CHOICE, SHORT_ANSWER }
+    /**
+     * SINGLE_CHOICE: one right option. MULTI_CHOICE: pick all right options. SHORT_ANSWER: type it (e.g. the output).
+     * CODING: write a program that reads stdin and prints the answer; it runs against hidden test cases (ADR-0016).
+     */
+    public enum Kind { SINGLE_CHOICE, MULTI_CHOICE, SHORT_ANSWER, CODING }
 
     @Id
     @UuidGenerator
@@ -53,8 +56,13 @@ public class AssessmentQuestion {
     @Column(name = "options_json", columnDefinition = "TEXT")
     private String optionsJson;
 
-    @Column(name = "answer_json", nullable = false, columnDefinition = "TEXT")
+    /** Choice indexes, accepted answers, or (CODING) the hidden test cases. Never sent to candidates. */
+    @Column(name = "answer_json", nullable = false, columnDefinition = "MEDIUMTEXT")
     private String answerJson;
+
+    /** CODING only: the public spec (languages, starter code, sample tests, limits) as JSON. */
+    @Column(name = "coding_json", columnDefinition = "MEDIUMTEXT")
+    private String codingJson;
 
     @Column(nullable = false)
     private int points;
