@@ -44,3 +44,11 @@ on the panel, side by side, without one strong voice anchoring the rest.
   any late edits.
 - Sharing feedback with clients is out of scope; it would need its own
   decision and redaction.
+
+## Addendum (2026-10-04): drafts during the interview
+
+Interviewers want to rate some things, such as communication, as they happen. The
+form now opens 15 minutes before the start and saves a private draft as they type.
+Drafts are invisible to everyone else and don't count as feedback; only submitting
+shares it with the panel (and triggers the admin update), so independence is kept.
+

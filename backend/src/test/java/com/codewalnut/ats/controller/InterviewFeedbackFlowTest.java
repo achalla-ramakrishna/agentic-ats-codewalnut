@@ -253,4 +253,53 @@ class InterviewFeedbackFlowTest {
                 .andReturn().getResponse().getContentAsString()).doesNotContain(notMine);
         mockMvc.perform(get("/api/v1/interviews/recent").with(user("approver@codewalnut.test"))).andExpect(status().isForbidden());
     }
+
+    /** INT-35: notes during the interview are saved as a private draft; submitting shares them. */
+    @Test
+    void draftsDuringTheInterviewStayPrivateUntilSubmitted() throws Exception {
+        String id = interview("\"interviewer@codewalnut.test\"")[1];
+        // Starts in 10 minutes: the form is already open.
+        com.codewalnut.ats.domain.Interview i = interviewRepository.findById(UUID.fromString(id)).orElseThrow();
+        i.setStartAt(Instant.now().plus(Duration.ofMinutes(10)));
+        i.setEndAt(Instant.now().plus(Duration.ofMinutes(55)));
+        interviewRepository.save(i);
+
+        // A draft needs nothing filled in yet.
+        feedback(INTERVIEWER, id, "{\"attendance\":\"HELD\",\"draft\":true,\"ratings\":[{\"competency\":\"Communication\",\"rating\":4}],"
+                + "\"notes\":\"Clear and confident so far\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mine.draft").value(true))
+                .andExpect(jsonPath("$.mine.ratings[0].rating").value(4));
+        feedback(ADMIN, id, "{\"attendance\":\"HELD\",\"draft\":true}").andExpect(status().isOk());
+
+        // Nobody else sees drafts, and they don't count as feedback.
+        mockMvc.perform(get("/api/v1/interviews/" + id + "/feedback").with(HIRING_MANAGER))
+                .andExpect(jsonPath("$.others.length()").value(0));
+        mockMvc.perform(get("/api/v1/interviews/" + id + "/feedback").with(INTERVIEWER))
+                .andExpect(jsonPath("$.hiddenCount").value(0))
+                .andExpect(jsonPath("$.others.length()").value(0));
+        String app = JsonPath.read(mockMvc.perform(get("/api/v1/interviews/" + id + "/feedback").with(ADMIN))
+                .andReturn().getResponse().getContentAsString(), "$.interview.applicationId");
+        mockMvc.perform(get("/api/v1/applications/" + app + "/interview-feedback").with(RECRUITER))
+                .andExpect(jsonPath("$[0].submitted").value(0));
+
+        // Submitting still needs a recommendation; then it's shared.
+        feedback(INTERVIEWER, id, "{\"attendance\":\"HELD\",\"ratings\":[{\"competency\":\"Communication\",\"rating\":4}]}")
+                .andExpect(status().isBadRequest());
+        feedback(INTERVIEWER, id, HELD_YES)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mine.draft").value(false));
+        mockMvc.perform(get("/api/v1/interviews/" + id + "/feedback").with(HIRING_MANAGER))
+                .andExpect(jsonPath("$.others.length()").value(1));
+        mockMvc.perform(get("/api/v1/applications/" + app + "/interview-feedback").with(RECRUITER))
+                .andExpect(jsonPath("$[0].submitted").value(1));
+        // A submitted form can be updated, not turned back into a draft.
+        feedback(INTERVIEWER, id, "{\"attendance\":\"HELD\",\"draft\":true}").andExpect(status().isConflict());
+
+        // More than 15 minutes ahead it isn't open yet.
+        String later = interview("\"interviewer@codewalnut.test\"")[1];
+        feedback(INTERVIEWER, later, "{\"attendance\":\"HELD\",\"draft\":true}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value(Matchers.containsString("15 minutes")));
+    }
 }

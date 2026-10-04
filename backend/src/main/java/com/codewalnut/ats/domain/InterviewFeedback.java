@@ -70,6 +70,11 @@ public class InterviewFeedback {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    /** True while the author is still filling it in (during the interview); private to them until submitted. */
+    @Column(nullable = false)
+    private boolean draft;
+
+    /** When it was first saved; set again when a draft is submitted. */
     @Column(name = "submitted_at", nullable = false)
     private Instant submittedAt;
 

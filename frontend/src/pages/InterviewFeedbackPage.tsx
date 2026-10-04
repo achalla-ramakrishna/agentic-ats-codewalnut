@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   ATTENDANCE_LABEL,
@@ -6,6 +6,7 @@ import {
   RECOMMENDATION_LABEL,
   formatWhen,
   getFeedback,
+  feedbackOpen,
   submitFeedback,
   type Attendance,
   type Feedback,
@@ -44,7 +45,45 @@ function FeedbackForm({ page, onSaved }: { page: FeedbackPage; onSaved: (p: Feed
   const [notes, setNotes] = useState(mine?.notes ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const submitted = mine !== null && !mine.draft
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(mine?.draft ? mine.updatedAt : null)
   const scored = tookPlace(attendance)
+  const firstRender = useRef(true)
+
+  function input(draft: boolean) {
+    return {
+      attendance,
+      ratings: scored ? ratings : [],
+      strengths,
+      concerns,
+      questionsAsked,
+      recommendation: scored ? recommendation : null,
+      notes,
+      draft,
+    }
+  }
+
+  async function saveDraft() {
+    try {
+      const p = await submitFeedback(page.interview.id, input(true))
+      setDraftSavedAt(p.mine?.updatedAt ?? new Date().toISOString())
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save your draft')
+    }
+  }
+
+  // Until it's submitted, save a private draft a couple of seconds after each change, so notes
+  // taken during the interview are never lost.
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false
+      return
+    }
+    if (submitted) return
+    const t = window.setTimeout(() => void saveDraft(), 2000)
+    return () => window.clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attendance, ratings, strengths, concerns, questionsAsked, recommendation, notes])
 
   function setRating(competency: string, patch: Partial<Rating>) {
     setRatings((rs) => rs.map((r) => (r.competency === competency ? { ...r, ...patch } : r)))
@@ -63,17 +102,7 @@ function FeedbackForm({ page, onSaved }: { page: FeedbackPage; onSaved: (p: Feed
     }
     setBusy(true)
     try {
-      onSaved(
-        await submitFeedback(page.interview.id, {
-          attendance,
-          ratings: scored ? ratings : [],
-          strengths,
-          concerns,
-          questionsAsked,
-          recommendation: scored ? recommendation : null,
-          notes,
-        }),
-      )
+      onSaved(await submitFeedback(page.interview.id, input(false)))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save your feedback')
     } finally {
@@ -199,10 +228,22 @@ function FeedbackForm({ page, onSaved }: { page: FeedbackPage; onSaved: (p: Feed
         Only CodeWalnut staff see feedback. The candidate and client contacts never do. Other panel members see yours once
         they've given their own.
       </span>
-      <div className="row">
+      <div className="row" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
         <Button type="submit" disabled={busy}>
-          {busy ? 'Saving…' : mine ? 'Update feedback' : 'Submit feedback'}
+          {busy ? 'Saving…' : submitted ? 'Update feedback' : 'Submit feedback'}
         </Button>
+        {!submitted && (
+          <Button variant="secondary" onClick={() => void saveDraft()} disabled={busy}>
+            Save draft
+          </Button>
+        )}
+        {!submitted && (
+          <span className="muted" role="status" style={{ fontSize: 13 }}>
+            {draftSavedAt
+              ? `Draft saved at ${new Date(draftSavedAt).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })} · only you can see it`
+              : 'Your notes save automatically as a private draft while you type.'}
+          </span>
+        )}
       </div>
     </form>
   )
@@ -285,7 +326,9 @@ export function InterviewFeedbackPage() {
   }
   if (!page) return <p className="muted">Loading…</p>
   const i = page.interview
-  const started = new Date(i.startAt) <= new Date()
+  const now = Date.now()
+  const open = feedbackOpen(i)
+  const inProgress = i.status === 'SCHEDULED' && new Date(i.startAt).getTime() <= now && now < new Date(i.endAt).getTime()
 
   return (
     <div className="stack">
@@ -310,9 +353,9 @@ export function InterviewFeedbackPage() {
       />
       {saved && <div className="alert alert-info">Thanks, your feedback is saved.</div>}
       {i.status === 'CANCELLED' && <div className="alert alert-info">This interview was cancelled.</div>}
-      {i.status === 'SCHEDULED' && !started && (
+      {i.status === 'SCHEDULED' && !open && (
         <div className="alert alert-info">
-          Feedback opens when the interview starts.{' '}
+          Feedback opens 15 minutes before the interview starts.{' '}
           {i.meetLink && (
             <a href={i.meetLink} target="_blank" rel="noreferrer">
               Join Google Meet
@@ -320,10 +363,22 @@ export function InterviewFeedbackPage() {
           )}
         </div>
       )}
-      {page.canSubmit && i.status === 'SCHEDULED' && started && (
+      {open && (inProgress || new Date(i.startAt).getTime() > now) && (
+        <div className="alert alert-info">
+          <strong>{inProgress ? 'Interview in progress.' : 'Starting soon.'}</strong> Rate things as you notice them, such as
+          communication, and add notes. Your form saves itself as a private draft; submit it when the interview ends.{' '}
+          {i.meetLink && (
+            <a href={i.meetLink} target="_blank" rel="noreferrer">
+              Join Google Meet
+            </a>
+          )}{' '}
+          · <Link to={`/interview-kits/${i.jobId}`}>Interview kit</Link>
+        </div>
+      )}
+      {page.canSubmit && open && (
         <Card>
           <FeedbackForm
-            key={page.mine?.updatedAt ?? 'new'}
+            key={page.mine && !page.mine.draft ? page.mine.updatedAt : 'form'}
             page={page}
             onSaved={(p) => {
               setPage(p)

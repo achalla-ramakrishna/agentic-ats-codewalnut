@@ -59,6 +59,9 @@ public class InterviewFeedbackService {
     /** Interviews that ended this long ago no longer appear in "waiting for your feedback". */
     static final Duration DUE_WINDOW = Duration.ofDays(30);
 
+    /** The form opens this long before the interview, so interviewers can take notes from the first minute. */
+    static final Duration OPENS_BEFORE = Duration.ofMinutes(15);
+
     private final InterviewRepository interviewRepository;
     private final InterviewFeedbackRepository feedbackRepository;
     private final AccessPolicy accessPolicy;
@@ -74,8 +77,9 @@ public class InterviewFeedbackService {
         boolean onPanel = onPanel(interview, me);
         List<InterviewFeedback> all = feedbackRepository.findByInterviewIdOrderBySubmittedAtAsc(interviewId);
         InterviewFeedback mine = all.stream().filter(f -> f.getAuthorEmail().equals(me)).findFirst().orElse(null);
-        List<InterviewFeedback> others = all.stream().filter(f -> !f.getAuthorEmail().equals(me)).toList();
-        boolean showOthers = !onPanel || mine != null;
+        // Other people's drafts are private to them.
+        List<InterviewFeedback> others = all.stream().filter(f -> !f.getAuthorEmail().equals(me) && !f.isDraft()).toList();
+        boolean showOthers = !onPanel || (mine != null && !mine.isDraft());
         return new InterviewFeedbackPage(InterviewResponse.from(interview), onPanel, canSubmit(actor, interview),
                 mine == null ? null : view(mine), showOthers ? others.stream().map(this::view).toList() : List.of(),
                 showOthers ? 0 : others.size(), competencies(interview));
@@ -90,25 +94,34 @@ public class InterviewFeedbackService {
         if (interview.getStatus() == InterviewStatus.CANCELLED) {
             throw new IllegalArgumentException("This interview was cancelled");
         }
-        if (interview.getStartAt().isAfter(Instant.now())) {
-            throw new IllegalArgumentException("Feedback opens when the interview starts");
+        if (interview.getStartAt().minus(OPENS_BEFORE).isAfter(Instant.now())) {
+            throw new IllegalArgumentException("Feedback opens 15 minutes before the interview starts");
         }
+        boolean draft = Boolean.TRUE.equals(request.draft());
         // Scores count when the interview took place, even if it ended early.
         boolean held = request.attendance() == InterviewFeedback.Attendance.HELD
                 || request.attendance() == InterviewFeedback.Attendance.ENDED_EARLY;
-        if (held && request.recommendation() == null) {
+        if (!draft && held && request.recommendation() == null) {
             throw new IllegalArgumentException("recommendation: choose an overall recommendation");
         }
         List<Rating> ratings = held ? cleanRatings(request.ratings()) : List.of();
-        if (held && ratings.stream().noneMatch(r -> r.rating() != null)) {
+        if (!draft && held && ratings.stream().noneMatch(r -> r.rating() != null)) {
             throw new IllegalArgumentException("ratings: rate at least one competency");
         }
         String me = email(actor);
         InterviewFeedback f = feedbackRepository.findByInterviewIdAndAuthorEmail(interviewId, me).orElse(null);
-        boolean created = f == null;
-        if (created) {
+        if (f != null && !f.isDraft() && draft) {
+            throw new ConflictException("Your feedback is already submitted; update it instead");
+        }
+        // "Submitted now": a new submission, or a draft being submitted.
+        boolean submittedNow = !draft && (f == null || f.isDraft());
+        if (f == null) {
             f = InterviewFeedback.builder().interviewId(interviewId).authorEmail(me).build();
         }
+        if (submittedNow && f.getId() != null) {
+            f.setSubmittedAt(Instant.now());
+        }
+        f.setDraft(draft);
         f.setAuthorName(actor.getName());
         f.setAttendance(request.attendance());
         f.setRatingsJson(write(ratings));
@@ -119,12 +132,13 @@ public class InterviewFeedbackService {
         f.setNotes(blankToNull(request.notes()));
         feedbackRepository.save(f);
         feedbackRepository.flush();
-        auditService.record(actor, created ? AuditAction.INTERVIEW_FEEDBACK_SUBMITTED : AuditAction.INTERVIEW_FEEDBACK_UPDATED,
-                "Interview", interviewId, Map.of("attendance", request.attendance().name(),
-                        "recommendation", request.recommendation() == null ? "" : request.recommendation().name()));
-        if (created) {
-            adminUpdates.feedbackSubmitted(actor, interview, view(f),
-                    feedbackRepository.findByInterviewIdOrderBySubmittedAtAsc(interviewId));
+        if (!draft) {
+            auditService.record(actor, submittedNow ? AuditAction.INTERVIEW_FEEDBACK_SUBMITTED : AuditAction.INTERVIEW_FEEDBACK_UPDATED,
+                    "Interview", interviewId, Map.of("attendance", request.attendance().name(),
+                            "recommendation", request.recommendation() == null ? "" : request.recommendation().name()));
+        }
+        if (submittedNow) {
+            adminUpdates.feedbackSubmitted(actor, interview, view(f), submitted(feedbackRepository.findByInterviewIdOrderBySubmittedAtAsc(interviewId)));
         }
         return page(actor, interviewId);
     }
@@ -140,7 +154,7 @@ public class InterviewFeedbackService {
                 .collect(Collectors.groupingBy(InterviewFeedback::getInterviewId));
         List<FeedbackSummary> out = new ArrayList<>();
         for (Interview i : interviews) {
-            List<InterviewFeedback> fs = byInterview.getOrDefault(i.getId(), List.of());
+            List<InterviewFeedback> fs = submitted(byInterview.getOrDefault(i.getId(), List.of()));
             boolean mine = fs.stream().anyMatch(f -> f.getAuthorEmail().equals(me));
             boolean visible = !onPanel(i, me) || mine;
             out.add(new FeedbackSummary(i.getId(), fs.size(), panel(i).size(),
@@ -169,7 +183,7 @@ public class InterviewFeedbackService {
         Map<UUID, List<InterviewFeedback>> byInterview = feedbackRepository.findByInterviewIdIn(started.stream().map(Interview::getId).toList())
                 .stream().collect(Collectors.groupingBy(InterviewFeedback::getInterviewId));
         return started.stream().map(i -> {
-            List<InterviewFeedback> fs = byInterview.getOrDefault(i.getId(), List.of());
+            List<InterviewFeedback> fs = submitted(byInterview.getOrDefault(i.getId(), List.of()));
             return new RecentInterview(InterviewResponse.from(i), fs.size(), panel(i).size(), onPanel(i, me),
                     fs.stream().anyMatch(f -> f.getAuthorEmail().equals(me)), canSubmit(actor, i));
         }).toList();
@@ -187,8 +201,12 @@ public class InterviewFeedbackService {
             return List.of();
         }
         Set<UUID> done = feedbackRepository.findByInterviewIdIn(ended.stream().map(Interview::getId).toList()).stream()
-                .filter(f -> f.getAuthorEmail().equals(me)).map(InterviewFeedback::getInterviewId).collect(Collectors.toSet());
+                .filter(f -> f.getAuthorEmail().equals(me) && !f.isDraft()).map(InterviewFeedback::getInterviewId).collect(Collectors.toSet());
         return ended.stream().filter(i -> !done.contains(i.getId())).map(InterviewResponse::from).toList();
+    }
+
+    private static List<InterviewFeedback> submitted(List<InterviewFeedback> all) {
+        return all.stream().filter(f -> !f.isDraft()).toList();
     }
 
     /** The six standard areas, then the job's must-have skills when the opening has an interview kit (INT-31). */
@@ -234,7 +252,8 @@ public class InterviewFeedbackService {
         Double avg = ratings.stream().filter(r -> r.rating() != null).mapToInt(Rating::rating).average().stream().boxed()
                 .map(a -> Math.round(a * 10) / 10.0).findFirst().orElse(null);
         return new FeedbackView(f.getAuthorEmail(), f.getAuthorName(), f.getAttendance(), ratings, avg, f.getStrengths(),
-                f.getConcerns(), f.getQuestionsAsked(), f.getRecommendation(), f.getNotes(), f.getSubmittedAt(), f.getUpdatedAt());
+                f.getConcerns(), f.getQuestionsAsked(), f.getRecommendation(), f.getNotes(), f.getSubmittedAt(), f.getUpdatedAt(),
+                f.isDraft());
     }
 
     private List<Rating> ratings(InterviewFeedback f) {

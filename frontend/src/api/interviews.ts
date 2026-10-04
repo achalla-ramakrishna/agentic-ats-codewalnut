@@ -131,6 +131,8 @@ export interface FeedbackInput {
   questionsAsked: string
   recommendation: Recommendation | null
   notes: string
+  /** Save as a private draft (nothing required yet) instead of submitting (INT-35). */
+  draft?: boolean
 }
 
 export interface Feedback {
@@ -146,6 +148,8 @@ export interface Feedback {
   notes: string | null
   submittedAt: string
   updatedAt: string
+  /** Still being filled in; only its author sees it. */
+  draft: boolean
 }
 
 export interface FeedbackPage {
@@ -175,7 +179,10 @@ export const listFeedbackSummaries = (applicationId: string) =>
 export const listFeedbackDue = () => api<Interview[]>('/interviews/feedback-due')
 
 /** Feedback opens once the interview has started, unless it was cancelled. */
-export const feedbackOpen = (i: Interview) => i.status === 'SCHEDULED' && new Date(i.startAt) <= new Date()
+/** The form opens 15 minutes before the interview, so notes can be taken from the first minute (INT-35). */
+export const FEEDBACK_OPENS_BEFORE_MS = 15 * 60 * 1000
+export const feedbackOpen = (i: Interview) =>
+  i.status === 'SCHEDULED' && new Date(i.startAt).getTime() - FEEDBACK_OPENS_BEFORE_MS <= Date.now()
 
 /** An interview that has started (last 30 days) and where its feedback stands (INT-34). */
 export interface RecentInterview {

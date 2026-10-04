@@ -16,6 +16,19 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-04-feedback-during-interview',
+    date: '2026-10-04',
+    title: 'Fill in feedback during the interview',
+    summary: 'The feedback form now opens 15 minutes before the interview. Rate things as you notice them, such as communication, and jot notes: it saves itself as a private draft that only you can see. Submit when the interview ends to share it with the panel.',
+    steps: [
+      'Open the interview from Interviews (or the candidate’s panel) and click Feedback form.',
+      'Rate and take notes while you talk; “Draft saved” confirms it’s kept.',
+      'At the end, choose a recommendation and Submit feedback.',
+    ],
+    link: { to: '/interviews', label: 'Open Interviews' },
+    capability: 'VIEW_INTERVIEWS',
+  },
+  {
     id: '2026-10-04-give-feedback',
     date: '2026-10-04',
     title: 'Easier to find the feedback form',

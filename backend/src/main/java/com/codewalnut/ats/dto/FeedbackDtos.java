@@ -26,12 +26,14 @@ public final class FeedbackDtos {
             @Size(max = 5000) String concerns,
             @Size(max = 5000) String questionsAsked,
             InterviewFeedback.Recommendation recommendation,
-            @Size(max = 5000) String notes) {}
+            @Size(max = 5000) String notes,
+            /** true: save as a private draft (nothing required yet); false or null: submit. */
+            Boolean draft) {}
 
     public record FeedbackView(
             String authorEmail, String authorName, InterviewFeedback.Attendance attendance, List<Rating> ratings,
             Double averageRating, String strengths, String concerns, String questionsAsked,
-            InterviewFeedback.Recommendation recommendation, String notes, Instant submittedAt, Instant updatedAt) {}
+            InterviewFeedback.Recommendation recommendation, String notes, Instant submittedAt, Instant updatedAt, boolean draft) {}
 
     /** A competency to rate, with what each level looks like. */
     public record Competency(String name, String guidance) {}

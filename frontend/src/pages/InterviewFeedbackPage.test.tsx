@@ -98,7 +98,7 @@ describe('InterviewFeedbackPage (INT-24…INT-26)', () => {
 
     expect(await screen.findByText('Thanks, your feedback is saved.')).toBeInTheDocument()
     expect(screen.getByText('Clear explanations')).toBeInTheDocument()
-    const put = fetch.mock.calls.find(([, init]) => init?.method === 'PUT')
+    const put = fetch.mock.calls.find(([, init]) => init?.method === 'PUT' && JSON.parse(String(init.body)).draft === false)
     const body = JSON.parse(String(put?.[1]?.body)) as Record<string, unknown>
     expect(body).toMatchObject({
       attendance: 'HELD',
@@ -127,12 +127,41 @@ describe('InterviewFeedbackPage (INT-24…INT-26)', () => {
     await userEvent.click(within(form).getByRole('button', { name: 'Submit feedback' }))
 
     await screen.findByText('Thanks, your feedback is saved.')
-    const put = fetch.mock.calls.find(([, init]) => init?.method === 'PUT')
+    const put = fetch.mock.calls.find(([, init]) => init?.method === 'PUT' && JSON.parse(String(init.body)).draft === false)
     expect(JSON.parse(String(put?.[1]?.body))).toMatchObject({
       attendance: 'CANDIDATE_NO_SHOW',
       ratings: [],
       recommendation: null,
       notes: 'Waited 15 minutes',
     })
+  })
+
+  it('saves a private draft during the interview without a recommendation (INT-35)', async () => {
+    const draftMine = { ...theirs, authorEmail: interviewer.email, recommendation: null, draft: true, updatedAt: '2026-01-15T05:40:00Z' }
+    const fetch = fakeFetch([
+      { path: '/auth/session', body: { type: 'STAFF' } },
+      { path: '/me', body: interviewer },
+      { path: '/interviews/i1/feedback', body: before },
+      { method: 'PUT', path: '/interviews/i1/feedback', body: { ...before, mine: draftMine } },
+    ])
+    renderPage()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Communication: 4 Strong' }))
+    expect(screen.getByText(/save automatically as a private draft/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Save draft' }))
+
+    expect(await screen.findByText(/Draft saved at .* only you can see it/)).toBeInTheDocument()
+    const put = fetch.mock.calls.find(([, init]) => init?.method === 'PUT')
+    expect(JSON.parse(String(put?.[1]?.body))).toMatchObject({
+      draft: true,
+      recommendation: null,
+      ratings: [
+        { competency: 'Problem solving', rating: null },
+        { competency: 'Communication', rating: 4 },
+      ],
+    })
+    // Still editable, and nothing was shared.
+    expect(screen.getByRole('button', { name: 'Submit feedback' })).toBeInTheDocument()
+    expect(screen.queryByText('Thanks, your feedback is saved.')).not.toBeInTheDocument()
   })
 })
