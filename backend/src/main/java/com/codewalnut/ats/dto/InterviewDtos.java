@@ -31,6 +31,14 @@ public final class InterviewDtos {
             @NotBlank @Size(max = 64) String timeZone,
             @Size(max = 10) List<@Size(max = 254) String> interviewerEmails) {}
 
+    /** Move an interview: new time and length; interviewers are kept when null. */
+    public record RescheduleInterviewRequest(
+            @NotNull Instant startAt,
+            @NotNull @Min(15) @Max(480) Integer durationMinutes,
+            @NotBlank @Size(max = 64) String timeZone,
+            @Size(max = 10) List<@Size(max = 254) String> interviewerEmails,
+            @Size(max = 500) String reason) {}
+
     public record CancelInterviewRequest(@Size(max = 500) String reason) {}
 
     public record InterviewResponse(

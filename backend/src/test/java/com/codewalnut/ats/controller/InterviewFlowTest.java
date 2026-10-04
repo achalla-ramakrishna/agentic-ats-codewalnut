@@ -278,4 +278,55 @@ class InterviewFlowTest {
         }
         assertThat(GoogleConnectionController.safeReturnTo("/candidates?open=1")).isEqualTo("/candidates?open=1");
     }
+
+    /** INT-20: reschedule moves the calendar event in place (same Meet link) and records why. */
+    @Test
+    void rescheduleMovesTheEventAndKeepsTheMeetLink() throws Exception {
+        String email = "move." + tag + "@gmail.com";
+        String[] app = candidate(email);
+        String created = send(ADMIN, "POST", "/api/v1/applications/" + app[0] + "/interviews",
+                scheduleBody(tomorrow(), "\"interviewer@codewalnut.test\""));
+        String id = JsonPath.read(created, "$.id");
+        String meet = JsonPath.read(created, "$.meetLink");
+        Instant later = tomorrow().plus(Duration.ofDays(1)).plus(Duration.ofHours(3));
+        int updatesBefore = calendar.updated().size();
+
+        perform(ADMIN, "POST", "/api/v1/interviews/" + id + "/reschedule",
+                "{\"startAt\":\"" + later + "\",\"durationMinutes\":60,\"timeZone\":\"Asia/Kolkata\",\"reason\":\"Candidate missed the slot\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.startAt").value(later.toString()))
+                .andExpect(jsonPath("$.endAt").value(later.plus(Duration.ofMinutes(60)).toString()))
+                .andExpect(jsonPath("$.meetLink").value(meet))
+                .andExpect(jsonPath("$.interviewers[0]").value("interviewer@codewalnut.test"));
+        assertThat(calendar.updated()).hasSize(updatesBefore + 1);
+        Invite moved = calendar.updated().get(calendar.updated().size() - 1);
+        assertThat(moved.start()).isEqualTo(later);
+        assertThat(moved.attendees()).containsExactly(email, "interviewer@codewalnut.test");
+        mockMvc.perform(get("/api/v1/applications/" + app[0] + "/history").with(ADMIN))
+                .andExpect(jsonPath("$[0].type").value("INTERVIEW_MOVED"))
+                .andExpect(jsonPath("$[0].note").value(org.hamcrest.Matchers.containsString("Candidate missed the slot")));
+
+        // Only the organiser can move a calendar event; never into the past; not once cancelled.
+        perform(RECRUITER, "POST", "/api/v1/interviews/" + id + "/reschedule",
+                "{\"startAt\":\"" + later + "\",\"durationMinutes\":45,\"timeZone\":\"Asia/Kolkata\"}")
+                .andExpect(status().isConflict());
+        perform(ADMIN, "POST", "/api/v1/interviews/" + id + "/reschedule",
+                "{\"startAt\":\"" + Instant.now().minus(Duration.ofHours(2)) + "\",\"durationMinutes\":45,\"timeZone\":\"Asia/Kolkata\"}")
+                .andExpect(status().isBadRequest());
+        perform(INTERVIEWER, "POST", "/api/v1/interviews/" + id + "/reschedule",
+                "{\"startAt\":\"" + later + "\",\"durationMinutes\":45,\"timeZone\":\"Asia/Kolkata\"}")
+                .andExpect(status().isForbidden());
+        perform(ADMIN, "POST", "/api/v1/interviews/" + id + "/cancel", "{}").andExpect(status().isOk());
+        perform(ADMIN, "POST", "/api/v1/interviews/" + id + "/reschedule",
+                "{\"startAt\":\"" + later + "\",\"durationMinutes\":45,\"timeZone\":\"Asia/Kolkata\"}")
+                .andExpect(status().isConflict());
+
+        // Google not connected: nothing changes.
+        String other = JsonPath.read(send(ADMIN, "POST", "/api/v1/applications/" + app[0] + "/interviews",
+                scheduleBody(tomorrow(), "")), "$.id");
+        calendar.setConnected(false);
+        perform(ADMIN, "POST", "/api/v1/interviews/" + other + "/reschedule",
+                "{\"startAt\":\"" + later + "\",\"durationMinutes\":45,\"timeZone\":\"Asia/Kolkata\"}")
+                .andExpect(status().is(428));
+    }
 }

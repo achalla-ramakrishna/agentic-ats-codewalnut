@@ -16,6 +16,17 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-04-reschedule',
+    date: '2026-10-04',
+    title: 'Reschedule interviews',
+    summary: 'Move an interview to a new time, including one whose slot was missed. Google moves the calendar event and emails the candidate and interviewers; the Meet link stays the same.',
+    steps: [
+      'Open the candidate in the opening; under Interviews, click Reschedule.',
+      'Pick the new date and time (and change interviewers if needed), add a reason, then Reschedule.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-04-645-interview-questions',
     date: '2026-10-04',
     title: '645 interview questions across the stack',

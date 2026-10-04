@@ -62,7 +62,7 @@ A simpler first cut of INT-01 and INT-03, decided in ADR-0005.
 | INT-17 | Cancel (organiser only, optional internal reason) deletes the event and Google emails everyone. Scheduling and cancelling are added to the application history and the audit log. | Done |
 | INT-18 | Interviews page and dashboard list upcoming interviews with Meet links; Interviewers see only interviews they are on and no candidate contact details. | Done |
 | INT-19 | Candidates see their own upcoming interviews (title, time, Meet link) in their area; never the panel, organiser or notes. | Done |
-| INT-20 | Reschedule in place (move the event instead of cancel + new). | v1 |
+| INT-20 | **Reschedule** from the candidate's panel (recruiters and admins), for upcoming or missed interviews: new date, time, duration and interviewers, with an optional reason. A calendar interview is moved in place on the organiser's Google Calendar (only they can move it), so the **Meet link stays the same** and Google emails everyone the new time; a logged interview just changes in the app. Never into the past; not once cancelled. Feedback drafts stay. History shows "Rescheduled from … to …"; audited. | Done |
 | INT-21 | **Interview questions** page for staff who interview (VIEW_INTERVIEWS: admin, recruiter, hiring manager, account manager, interviewer): 23 categories and 645 questions, about 30 per category across levels (problem solving, data structures for freshers with Java/Python/JavaScript/C++ questions, live coding, Java, Spring Boot and Hibernate, Python, JavaScript and TypeScript, HTML/CSS and accessibility, React, Angular, Node.js, SQL, system design, microservices and messaging, CS fundamentals, web security, unit testing and code quality, Git and engineering practices, DevOps and cloud, QA automation, data analytics, AI/GenAI, project deep-dive and behaviour). Each has a level (fresher, 1–3 years, 3+ years), what a strong answer covers and the red flags, plus how to run and score the round (1–4 scale). Content lives in `resources/interview/guide.yml`. | Done |
 | INT-22 | Filter by role (the role-test roles), level, language, category and search; pick questions for an interview (kept in the browser); hide the answer guides while sharing a screen; print. Linked from the Interviews page. | Done |
 | INT-23 | Candidates, client contacts and approvers can't read the questions (the API refuses; there is no link in their navigation). | Done |
@@ -130,7 +130,7 @@ areas instead of the six defaults).
 
 Built: `GET /google/status`, `GET /google/connect?returnTo=`,
 `GET /interviews` (upcoming), `GET/POST /applications/{id}/interviews`,
-`POST /interviews/{id}/cancel`, `PATCH /candidates/{id}`,
+`POST /interviews/{id}/cancel`, `POST /interviews/{id}/reschedule`, `PATCH /candidates/{id}`,
 `GET /candidate/interviews`, `GET/PUT /interviews/{id}/feedback`,
 `GET /interviews/feedback-due`, `GET /applications/{id}/interview-feedback`,
 `GET/POST /jobs/{id}/interview-kit`, `GET /interviews/recent`,
@@ -146,6 +146,7 @@ public: `GET/POST /book/{token}`.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-04 | Reschedule interviews in place, keeping the Meet link (INT-20) |
 | 2026-10-04 | Interview questions grown to 645 in 23 categories (new: Spring Boot and Hibernate, HTML/CSS, microservices, security, testing, Git and practices) |
 | 2026-10-04 | Feedback form open during the interview, with private auto-saved drafts (INT-35) |
 | 2026-10-04 | Recent interviews with Give feedback buttons; log interviews held outside the app (INT-33, INT-34) |

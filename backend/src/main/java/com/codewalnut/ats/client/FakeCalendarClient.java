@@ -12,6 +12,7 @@ public class FakeCalendarClient implements CalendarClient {
 
     private final List<Invite> created = new ArrayList<>();
     private final List<String> cancelled = new ArrayList<>();
+    private final List<Invite> updated = new ArrayList<>();
     private volatile boolean connected = true;
     private volatile boolean failing;
 
@@ -26,6 +27,13 @@ public class FakeCalendarClient implements CalendarClient {
         created.add(invite);
         String id = "fake-" + UUID.randomUUID();
         return new Event(id, "https://example.com/fake-meet/" + id.substring(5, 13), null);
+    }
+
+    @Override
+    public synchronized Event update(String eventId, Invite invite) {
+        check();
+        updated.add(invite);
+        return new Event(eventId, "https://example.com/fake-meet/" + eventId.substring(5, Math.min(13, eventId.length())), null);
     }
 
     @Override
@@ -45,6 +53,10 @@ public class FakeCalendarClient implements CalendarClient {
 
     public synchronized List<Invite> created() {
         return List.copyOf(created);
+    }
+
+    public synchronized List<Invite> updated() {
+        return List.copyOf(updated);
     }
 
     public synchronized List<String> cancelled() {

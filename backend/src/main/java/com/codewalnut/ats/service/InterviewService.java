@@ -12,6 +12,7 @@ import com.codewalnut.ats.domain.InterviewStatus;
 import com.codewalnut.ats.dto.InterviewDtos.CandidateInterviewResponse;
 import com.codewalnut.ats.dto.InterviewDtos.InterviewResponse;
 import com.codewalnut.ats.dto.InterviewDtos.LogInterviewRequest;
+import com.codewalnut.ats.dto.InterviewDtos.RescheduleInterviewRequest;
 import com.codewalnut.ats.dto.InterviewDtos.ScheduleInterviewRequest;
 import com.codewalnut.ats.repository.ApplicationEventRepository;
 import com.codewalnut.ats.repository.ApplicationRepository;
@@ -160,6 +161,79 @@ public class InterviewService {
         auditService.record(actor, AuditAction.INTERVIEW_LOGGED, "Interview", interview.getId(),
                 Map.of("applicationId", applicationId, "startAt", start.toString(), "interviewers", interviewers.size()));
         return InterviewResponse.from(interview);
+    }
+
+    /**
+     * Moves an interview to a new time (INT-20), e.g. after a missed slot. A calendar interview is
+     * moved in place on the organiser's Google Calendar, so the Meet link stays and Google emails
+     * everyone the new time; a logged interview just changes in the app. Feedback drafts stay.
+     */
+    @Transactional
+    public InterviewResponse reschedule(AppUser actor, UUID interviewId, RescheduleInterviewRequest request) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        Interview interview = interviewRepository.findById(interviewId)
+                .orElseThrow(() -> new NotFoundException("Interview not found"));
+        if (interview.getStatus() == InterviewStatus.CANCELLED) {
+            throw new ConflictException("This interview was cancelled. Schedule a new one instead.");
+        }
+        if (interview.getCalendarEventId() != null && !interview.getOrganizerEmail().equalsIgnoreCase(actor.getEmail())) {
+            throw new ConflictException("This interview is on " + interview.getOrganizerEmail()
+                    + "'s Google Calendar. Ask them to reschedule it.");
+        }
+        ZoneId zone;
+        try {
+            zone = ZoneId.of(request.timeZone().trim());
+        } catch (DateTimeException e) {
+            throw new IllegalArgumentException("timeZone: unknown time zone");
+        }
+        Instant start = request.startAt();
+        if (start.isBefore(Instant.now().minus(Duration.ofMinutes(5)))) {
+            throw new IllegalArgumentException("startAt: pick a time in the future");
+        }
+        Instant end = start.plus(Duration.ofMinutes(request.durationMinutes()));
+        Application application = interview.getApplication();
+        String candidateEmail = application.getCandidate().getEmail();
+        List<String> interviewers = request.interviewerEmails() == null ? interview.interviewers()
+                : interviewers(request.interviewerEmails(), candidateEmail);
+        String before = WHEN.format(interview.getStartAt().atZone(zoneOf(interview)));
+        if (interview.getCalendarEventId() != null) {
+            List<String> attendees = new ArrayList<>();
+            if (StringUtils.hasText(candidateEmail)) {
+                attendees.add(candidateEmail);
+            }
+            attendees.addAll(interviewers);
+            CalendarClient.Event event = calendarClient.update(interview.getCalendarEventId(),
+                    new Invite(interview.getTitle(), description(interview.getMessage()), start, end, zone.getId(), attendees));
+            if (event.meetLink() != null) {
+                interview.setMeetLink(event.meetLink());
+            }
+            if (event.htmlLink() != null) {
+                interview.setCalendarLink(event.htmlLink());
+            }
+        }
+        interview.setStartAt(start);
+        interview.setEndAt(end);
+        interview.setTimeZone(zone.getId());
+        interview.setInterviewerEmails(interviewers.isEmpty() ? null : String.join(",", interviewers));
+        String reason = StringUtils.hasText(request.reason()) ? request.reason().trim() : null;
+        application.setUpdatedAt(Instant.now());
+        eventRepository.save(ApplicationEvent.builder()
+                .application(application)
+                .type(ApplicationEventType.INTERVIEW_MOVED)
+                .note("Rescheduled from " + before + " to " + WHEN.format(start.atZone(zone)) + (reason == null ? "" : ": " + reason))
+                .actorEmail(actor.getEmail())
+                .build());
+        auditService.record(actor, AuditAction.INTERVIEW_RESCHEDULED, "Interview", interview.getId(),
+                Map.of("startAt", start.toString(), "durationMinutes", request.durationMinutes()));
+        return InterviewResponse.from(interview);
+    }
+
+    private static ZoneId zoneOf(Interview interview) {
+        try {
+            return ZoneId.of(interview.getTimeZone());
+        } catch (DateTimeException e) {
+            return ZoneId.of("Asia/Kolkata");
+        }
     }
 
     @Transactional

@@ -201,3 +201,9 @@ export const logInterview = (
   applicationId: string,
   input: { title: string; startAt: string; durationMinutes: number; timeZone: string; interviewerEmails: string[] },
 ) => api<Interview>(`/applications/${applicationId}/interviews/log`, { method: 'POST', body: json(input) })
+
+/** Move an interview (INT-20): Google moves the calendar event and emails everyone; the Meet link stays. */
+export const rescheduleInterview = (
+  id: string,
+  input: { startAt: string; durationMinutes: number; timeZone: string; interviewerEmails: string[]; reason: string },
+) => api<Interview>(`/interviews/${id}/reschedule`, { method: 'POST', body: json(input) })

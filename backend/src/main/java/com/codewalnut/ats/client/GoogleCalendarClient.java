@@ -70,6 +70,39 @@ public class GoogleCalendarClient implements CalendarClient {
     }
 
     @Override
+    public Event update(String eventId, Invite invite) {
+        String token = requireToken();
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("summary", invite.title());
+        body.put("description", invite.description());
+        body.put("start", Map.of("dateTime", invite.start().toString(), "timeZone", invite.timeZone()));
+        body.put("end", Map.of("dateTime", invite.end().toString(), "timeZone", invite.timeZone()));
+        body.put("attendees", invite.attendees().stream().map(email -> Map.of("email", email)).toList());
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> updated = rest.patch()
+                    .uri("/calendars/primary/events/{id}?conferenceDataVersion=1&sendUpdates=all", eventId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .body(body)
+                    .retrieve()
+                    .body(Map.class);
+            if (updated == null) {
+                throw new CalendarException("Google Calendar didn't confirm the change. Nothing was changed; please try again.");
+            }
+            return new Event(eventId, meetLink(updated), (String) updated.get("htmlLink"));
+        } catch (RestClientResponseException e) {
+            HttpStatus status = HttpStatus.resolve(e.getStatusCode().value());
+            if (status == HttpStatus.NOT_FOUND || status == HttpStatus.GONE) {
+                throw new CalendarException("This event is no longer on Google Calendar. Cancel the interview and schedule a new one.");
+            }
+            throw translate(e, "update");
+        } catch (RestClientException e) {
+            log.warn("Google Calendar update failed: {}", e.getMessage());
+            throw new CalendarException("Couldn't reach Google Calendar. Nothing was changed; please try again.");
+        }
+    }
+
+    @Override
     public void cancel(String eventId) {
         String token = requireToken();
         try {

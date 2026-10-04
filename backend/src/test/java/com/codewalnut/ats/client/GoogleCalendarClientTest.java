@@ -138,6 +138,26 @@ class GoogleCalendarClientTest {
     }
 
     @Test
+    void rescheduleMovesTheEventInPlaceKeepingTheMeetLink() {
+        connect(Instant.now().plusSeconds(3600));
+        google.expect(requestTo(GoogleCalendarClient.BASE_URL + "/calendars/primary/events/ev1?conferenceDataVersion=1&sendUpdates=all"))
+                .andExpect(method(HttpMethod.PATCH))
+                .andExpect(header("Authorization", "Bearer tok-123"))
+                .andExpect(jsonPath("$.start.dateTime").value("2030-01-15T05:30:00Z"))
+                .andExpect(jsonPath("$.attendees[0].email").value("candidate@example.com"))
+                .andExpect(jsonPath("$.conferenceData").doesNotExist())
+                .andRespond(withSuccess("{\"id\":\"ev1\",\"htmlLink\":\"https://calendar.google.com/event?eid=1\","
+                        + "\"hangoutLink\":\"https://meet.google.com/abc-defg-hij\"}", MediaType.APPLICATION_JSON));
+        google.expect(requestTo(GoogleCalendarClient.BASE_URL + "/calendars/primary/events/gone?conferenceDataVersion=1&sendUpdates=all"))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        assertThat(client.update("ev1", INVITE).meetLink()).isEqualTo("https://meet.google.com/abc-defg-hij");
+        assertThatThrownBy(() -> client.update("gone", INVITE)).isInstanceOf(CalendarException.class)
+                .hasMessageContaining("no longer on Google Calendar");
+        google.verify();
+    }
+
+    @Test
     void cancelNotifiesAttendeesAndToleratesAlreadyDeletedEvents() {
         connect(Instant.now().plusSeconds(3600));
         google.expect(requestTo(GoogleCalendarClient.BASE_URL + "/calendars/primary/events/ev1?sendUpdates=all"))

@@ -157,4 +157,27 @@ describe('InterviewsPanel', () => {
     expect(body).toMatchObject({ durationMinutes: 45, interviewerEmails: ['priya@codewalnut.test'] })
     expect(new Date(String(body.startAt)).getTime()).toBeLessThanOrEqual(Date.now())
   })
+
+  it('reschedules a missed interview and keeps the Meet link (INT-20)', async () => {
+    const past = { ...scheduled, startAt: '2026-01-15T05:30:00Z', endAt: '2026-01-15T06:15:00Z' }
+    const moved = { ...scheduled, startAt: '2030-01-16T09:00:00Z', endAt: '2030-01-16T09:45:00Z' }
+    const fetch = fakeFetch([
+      { path: '/applications/a1/interviews', body: [past] },
+      { path: '/applications/a1/interview-feedback', body: [] },
+      { method: 'POST', path: '/interviews/i1/reschedule', body: moved },
+    ])
+    renderPanel()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Reschedule' }))
+    expect(screen.getByText(/The Meet link stays the same/)).toBeInTheDocument()
+    expect((screen.getByLabelText(/Interviewers/) as HTMLInputElement).value).toBe('priya@codewalnut.test')
+    await userEvent.type(screen.getByLabelText(/Reason/), 'Candidate missed the slot')
+    await userEvent.click(screen.getByRole('button', { name: 'Reschedule' }))
+
+    expect(await screen.findByText(/Rescheduled to .* the Meet link is the same/)).toBeInTheDocument()
+    const post = fetch.mock.calls.find(([url]) => String(url).includes('/reschedule'))
+    const body = JSON.parse(String(post?.[1]?.body)) as Record<string, unknown>
+    expect(body).toMatchObject({ durationMinutes: 45, interviewerEmails: ['priya@codewalnut.test'], reason: 'Candidate missed the slot' })
+    expect(new Date(String(body.startAt)).getTime()).toBeGreaterThan(Date.now())
+  })
 })

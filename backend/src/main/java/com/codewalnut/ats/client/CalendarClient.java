@@ -22,6 +22,12 @@ public interface CalendarClient {
     /** @throws CalendarNotConnectedException when the user hasn't connected (or access expired) */
     Event create(Invite invite);
 
+    /**
+     * Moves an existing event (new time, title, attendees) and notifies attendees. The video link
+     * stays the same.
+     */
+    Event update(String eventId, Invite invite);
+
     /** Cancels the event and notifies attendees. An event that no longer exists counts as cancelled. */
     void cancel(String eventId);
 }

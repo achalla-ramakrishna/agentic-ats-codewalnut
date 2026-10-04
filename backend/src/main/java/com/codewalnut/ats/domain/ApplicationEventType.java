@@ -6,6 +6,8 @@ public enum ApplicationEventType {
     NOTE,
     INTERVIEW_SCHEDULED,
     INTERVIEW_CANCELLED,
+    /** Rescheduled (kept short: the column is VARCHAR(20)). */
+    INTERVIEW_MOVED,
     EMAIL_SENT,
     DOCS_REQUESTED,
     DOC_UPLOADED,

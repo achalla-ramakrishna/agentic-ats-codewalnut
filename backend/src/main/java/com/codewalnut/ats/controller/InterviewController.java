@@ -7,6 +7,7 @@ import com.codewalnut.ats.dto.FeedbackDtos.RecentInterview;
 import com.codewalnut.ats.dto.InterviewDtos.CancelInterviewRequest;
 import com.codewalnut.ats.dto.InterviewDtos.InterviewResponse;
 import com.codewalnut.ats.dto.InterviewDtos.LogInterviewRequest;
+import com.codewalnut.ats.dto.InterviewDtos.RescheduleInterviewRequest;
 import com.codewalnut.ats.dto.InterviewDtos.ScheduleInterviewRequest;
 import com.codewalnut.ats.security.CurrentUserService;
 import com.codewalnut.ats.service.InterviewFeedbackService;
@@ -46,6 +47,11 @@ public class InterviewController {
     @ResponseStatus(HttpStatus.CREATED)
     public InterviewResponse schedule(@PathVariable UUID id, @Valid @RequestBody ScheduleInterviewRequest request) {
         return interviewService.schedule(currentUserService.require(), id, request);
+    }
+
+    @PostMapping("/api/v1/interviews/{id}/reschedule")
+    public InterviewResponse reschedule(@PathVariable UUID id, @Valid @RequestBody RescheduleInterviewRequest request) {
+        return interviewService.reschedule(currentUserService.require(), id, request);
     }
 
     @PostMapping("/api/v1/interviews/{id}/cancel")

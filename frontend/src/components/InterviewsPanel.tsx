@@ -5,11 +5,13 @@ import {
   browserTimeZone,
   RECOMMENDATION_LABEL,
   cancelInterview,
+  connectGoogleUrl,
   feedbackOpen,
   formatWhen,
   getGoogleStatus,
   listApplicationInterviews,
   logInterview,
+  rescheduleInterview,
   listFeedbackSummaries,
   scheduleInterview,
   type FeedbackSummary,
@@ -300,18 +302,125 @@ function LogInterviewForm({
   )
 }
 
+/** Move an interview to a new time, e.g. after a missed slot (INT-20). */
+function RescheduleForm({ interview, onDone, onCancel }: { interview: Interview; onDone: (i: Interview) => void; onCancel: () => void }) {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const [date, setDate] = useState(tomorrow())
+  const [time, setTime] = useState(() => {
+    const d = new Date(interview.startAt)
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+  })
+  const minutes = Math.round((new Date(interview.endAt).getTime() - new Date(interview.startAt).getTime()) / 60000)
+  const [duration, setDuration] = useState(DURATIONS.includes(minutes) ? minutes : 45)
+  const [interviewers, setInterviewers] = useState(interview.interviewers.join(', '))
+  const [reason, setReason] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [needsGoogle, setNeedsGoogle] = useState(false)
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault()
+    setError(null)
+    const start = new Date(`${date}T${time}`)
+    if (Number.isNaN(start.getTime())) {
+      setError('Pick a date and time')
+      return
+    }
+    setBusy(true)
+    try {
+      onDone(
+        await rescheduleInterview(interview.id, {
+          startAt: start.toISOString(),
+          durationMinutes: duration,
+          timeZone: browserTimeZone(),
+          interviewerEmails: interviewers
+            .split(/[,;\s]+/)
+            .map((s) => s.trim())
+            .filter(Boolean),
+          reason: reason.trim(),
+        }),
+      )
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 428) setNeedsGoogle(true)
+      setError(e instanceof Error ? e.message : 'Could not reschedule')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form className="stack" onSubmit={onSubmit} aria-label="Reschedule interview" style={{ gap: 10 }}>
+      {error && (
+        <div role="alert" className="alert alert-error">
+          {error}
+          {needsGoogle && (
+            <>
+              {' '}
+              <a href={connectGoogleUrl(`${window.location.pathname}${window.location.search}`)}>Connect Google</a>
+            </>
+          )}
+        </div>
+      )}
+      <div className="row" style={{ alignItems: 'flex-end', flexWrap: 'wrap' }}>
+        <label className="field">
+          New date
+          <input className="input" type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
+        </label>
+        <label className="field">
+          New time
+          <input className="input" type="time" required value={time} onChange={(e) => setTime(e.target.value)} />
+        </label>
+        <label className="field">
+          Duration
+          <select className="select" value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
+            {DURATIONS.map((d) => (
+              <option key={d} value={d}>
+                {d} min
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <label className="field">
+        Interviewers (emails, comma-separated)
+        <input className="input" value={interviewers} onChange={(e) => setInterviewers(e.target.value)} />
+      </label>
+      <label className="field">
+        Reason (optional, internal)
+        <input className="input" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Candidate missed the 11 am slot" />
+      </label>
+      <span className="muted" style={{ fontSize: 12 }}>
+        {interview.meetLink
+          ? 'Google moves the calendar event and emails the candidate and interviewers the new time. The Meet link stays the same.'
+          : 'This interview was logged in the app, so only the time here changes; no email is sent.'}
+      </span>
+      <div className="row">
+        <Button type="submit" size="sm" disabled={busy}>
+          {busy ? 'Moving…' : 'Reschedule'}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onCancel}>
+          Keep current time
+        </Button>
+      </div>
+    </form>
+  )
+}
+
 function InterviewItem({
   interview,
   summary,
   canEdit,
   onCancelled,
+  onRescheduled,
 }: {
   interview: Interview
   summary: FeedbackSummary | undefined
   canEdit: boolean
   onCancelled: () => void
+  onRescheduled: (i: Interview) => void
 }) {
   const [cancelling, setCancelling] = useState(false)
+  const [moving, setMoving] = useState(false)
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
   const upcoming = interview.status === 'SCHEDULED' && new Date(interview.endAt) > new Date()
@@ -359,10 +468,27 @@ function InterviewItem({
           {error}
         </div>
       )}
-      {canEdit && upcoming && !cancelling && (
-        <Button size="sm" variant="ghost" onClick={() => setCancelling(true)}>
-          Cancel interview
-        </Button>
+      {canEdit && interview.status === 'SCHEDULED' && !cancelling && !moving && (
+        <div className="row" style={{ gap: 8 }}>
+          <Button size="sm" variant="ghost" onClick={() => setMoving(true)}>
+            Reschedule
+          </Button>
+          {upcoming && (
+            <Button size="sm" variant="ghost" onClick={() => setCancelling(true)}>
+              Cancel interview
+            </Button>
+          )}
+        </div>
+      )}
+      {moving && (
+        <RescheduleForm
+          interview={interview}
+          onCancel={() => setMoving(false)}
+          onDone={(moved) => {
+            setMoving(false)
+            onRescheduled(moved)
+          }}
+        />
       )}
       {cancelling && (
         <div className="row" style={{ alignItems: 'flex-end' }}>
@@ -465,6 +591,13 @@ export function InterviewsPanel({
               canEdit={canEdit}
               onCancelled={() => {
                 setNotice('Interview cancelled. Google has emailed everyone.')
+                load()
+                onChanged()
+              }}
+              onRescheduled={(moved) => {
+                setNotice(
+                  `Rescheduled to ${formatWhen(moved)}.${moved.meetLink ? ' Google has emailed everyone; the Meet link is the same.' : ''}`,
+                )
                 load()
                 onChanged()
               }}
