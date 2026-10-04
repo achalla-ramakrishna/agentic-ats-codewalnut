@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-04-645-interview-questions',
+    date: '2026-10-04',
+    title: '645 interview questions across the stack',
+    summary: 'The interview questions have grown from 150 to 645, about 30 per topic for freshers, 1–3 years and 3+ years, each with what a strong answer covers and the red flags. New topics: Spring Boot and Hibernate, HTML/CSS and accessibility, microservices and messaging, web security, unit testing and code quality, and Git and engineering practices. Interview kits pick from them too.',
+    steps: [
+      'Open Interview questions in the menu.',
+      'Choose the role and level, or a topic, then tick Pick on the questions you’ll ask.',
+    ],
+    link: { to: '/interview-questions', label: 'Open Interview questions' },
+    capability: 'VIEW_INTERVIEWS',
+  },
+  {
     id: '2026-10-04-feedback-during-interview',
     date: '2026-10-04',
     title: 'Fill in feedback during the interview',

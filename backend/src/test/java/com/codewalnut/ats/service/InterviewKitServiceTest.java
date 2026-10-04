@@ -50,7 +50,7 @@ class InterviewKitServiceTest {
         assertThat(round(k, "Screening call").questions()).anyMatch(q -> q.question().contains("Acme (through CodeWalnut)"));
         KitRound tech = round(k, "Technical interview");
         assertThat(tech.questions()).anyMatch(q -> q.source().equals("job") && q.topic().equals("Java"));
-        assertThat(tech.questions()).anyMatch(q -> q.source().equals("Java and Spring"));
+        assertThat(tech.questions()).anyMatch(q -> q.source().equals("Java and Spring") || q.source().equals("Spring Boot and Hibernate"));
         var coding = round(k, "Live coding").coding();
         assertThat(coding).hasSize(2);
         assertThat(coding.get(0).difficulty()).isEqualTo("MEDIUM");
