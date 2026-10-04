@@ -110,6 +110,13 @@ public final class TrackerDtos {
 
     public record ImportResult(boolean dryRun, int added, int skipped, List<ImportRow> rows) {}
 
+    /** Put an existing candidate forward for another opening (PIPE-14): same candidate, new application. */
+    public record AddToOpeningRequest(@NotNull UUID jobId, Stage stage, @Size(max = 5000) String note) {}
+
+    /** One opening a candidate is in. current: the application the request was made from. */
+    public record CandidateOpening(UUID applicationId, UUID jobId, String jobTitle, String clientName, JobStatus jobStatus,
+            Stage stage, String stageLabel, boolean current, Instant addedAt) {}
+
     public record MoveStageRequest(@NotNull Stage stage, @Size(max = 5000) String note) {}
 
     public record NoteRequest(@NotBlank @Size(max = 5000) String text) {}

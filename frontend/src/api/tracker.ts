@@ -238,3 +238,22 @@ export const applyToJob = (input: {
   form.append('resume', input.resume)
   return api<MyApplication>('/candidate/applications', { method: 'POST', body: form })
 }
+
+/** One opening a candidate is in (PIPE-13). current: the application the drawer is showing. */
+export interface CandidateOpening {
+  applicationId: string
+  jobId: string
+  jobTitle: string
+  clientName: string | null
+  jobStatus: JobStatus
+  stage: Stage
+  stageLabel: string
+  current: boolean
+  addedAt: string
+}
+
+export const listCandidateOpenings = (applicationId: string) =>
+  api<CandidateOpening[]>(`/applications/${applicationId}/openings`)
+/** Put the same candidate forward for another opening (PIPE-14). */
+export const addToOpening = (applicationId: string, input: { jobId: string; stage: Stage; note: string }) =>
+  api<ApplicationRow>(`/applications/${applicationId}/openings`, { method: 'POST', body: json(input) })

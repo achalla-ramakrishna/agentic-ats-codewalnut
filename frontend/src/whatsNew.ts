@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-04-add-to-another-opening',
+    date: '2026-10-04',
+    title: 'Put a candidate forward for another client',
+    summary: 'A good candidate for one client may suit another. From the candidate’s panel, add them to any other open opening in one step: their profile, résumés and documents come along, and each opening keeps its own stage and notes. The panel also lists every opening they’re in.',
+    steps: [
+      'Open the candidate in an opening (or from Candidates).',
+      'Under Openings, click “Add to another opening”, pick the opening (grouped by client) and the starting stage.',
+      'Add a note on why they fit, then “Add to opening”.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-04-admin-updates',
     date: '2026-10-04',
     title: 'Admin updates: feedback and shortlists at a glance',

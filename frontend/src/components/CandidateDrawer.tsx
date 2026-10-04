@@ -4,6 +4,7 @@ import { useMe } from '../auth/AuthContext'
 import { Conversation } from './Conversation'
 import { DocumentsSection } from './DocumentsSection'
 import { InterviewsPanel } from './InterviewsPanel'
+import { OpeningsSection } from './OpeningsSection'
 import { CodeWalnutResumeEditor } from './CodeWalnutResumeEditor'
 import { ProfileSection } from './ProfileSection'
 import { ResumeInsightSection } from './ResumeInsightSection'
@@ -177,6 +178,13 @@ export function CandidateDrawer({
                 setContact({ name: p.name, email: p.email, phone: p.phone })
                 onChanged()
               }}
+            />
+            <OpeningsSection
+              applicationId={row.id}
+              candidateName={contact.name}
+              canEdit={canEdit}
+              canOpenJobs={me.navigation.some((n) => n.key === 'jobs')}
+              onAdded={changed}
             />
             <ResumeInsightSection applicationId={row.id} canEdit={canEdit} />
             {!canMessage && (

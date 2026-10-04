@@ -104,6 +104,11 @@ is available, emails the other active admins through `MailClient` and records
 the outcome in a new transaction. `GET /api/v1/admin-updates` needs
 VIEW_ADMIN_UPDATES (admins only).
 
+One candidate, many openings (PIPE-13, PIPE-14): a `Candidate` owns the profile,
+résumés and documents; each `Application` joins it to one `JobOpening` with its
+own stage, notes, tests and interviews. `TrackerService.addToOpening` creates a
+second application for the same candidate and notes the link on both.
+
 View as (ADR-0013): a session attribute makes the `Current*Service`
 resolvers return a candidate, client contact or role-limited copy of the
 admin; `ViewAsReadOnlyFilter` refuses API writes while it is set.

@@ -2,6 +2,8 @@ package com.codewalnut.ats.controller;
 
 import com.codewalnut.ats.domain.Stage;
 import com.codewalnut.ats.dto.TrackerDtos.AddCandidateRequest;
+import com.codewalnut.ats.dto.TrackerDtos.AddToOpeningRequest;
+import com.codewalnut.ats.dto.TrackerDtos.CandidateOpening;
 import com.codewalnut.ats.dto.TrackerDtos.ApplicationResponse;
 import com.codewalnut.ats.dto.ProfileDtos.CandidateProfile;
 import com.codewalnut.ats.dto.ProfileDtos.UpdateProfileRequest;
@@ -123,6 +125,17 @@ public class TrackerController {
     @PatchMapping("/candidates/{id}")
     public CandidateProfile updateCandidate(@PathVariable UUID id, @Valid @RequestBody UpdateProfileRequest request) {
         return candidateProfileService.update(currentUserService.require(), id, request);
+    }
+
+    @GetMapping("/applications/{id}/openings")
+    public List<CandidateOpening> openings(@PathVariable UUID id) {
+        return trackerService.openings(currentUserService.require(), id);
+    }
+
+    @PostMapping("/applications/{id}/openings")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApplicationResponse addToOpening(@PathVariable UUID id, @Valid @RequestBody AddToOpeningRequest request) {
+        return trackerService.addToOpening(currentUserService.require(), id, request);
     }
 
     @PostMapping("/applications/{id}/notes")

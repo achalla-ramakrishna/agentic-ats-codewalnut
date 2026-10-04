@@ -14,6 +14,8 @@ import com.codewalnut.ats.domain.JobOpening;
 import com.codewalnut.ats.domain.JobStatus;
 import com.codewalnut.ats.domain.Stage;
 import com.codewalnut.ats.dto.TrackerDtos.AddCandidateRequest;
+import com.codewalnut.ats.dto.TrackerDtos.AddToOpeningRequest;
+import com.codewalnut.ats.dto.TrackerDtos.CandidateOpening;
 import com.codewalnut.ats.dto.TrackerDtos.ApplicationResponse;
 import com.codewalnut.ats.dto.TrackerDtos.CreateClientRequest;
 import com.codewalnut.ats.dto.TrackerDtos.CreateJobRequest;
@@ -298,6 +300,55 @@ public class TrackerService {
                 .build());
         adminUpdates.stageChanged(actor, application, from, request.stage(), note);
         return ApplicationResponse.from(application, note != null ? note : lastNote(applicationId));
+    }
+
+    /** Every opening this application's candidate is in, newest first. */
+    @Transactional(readOnly = true)
+    public List<CandidateOpening> openings(AppUser actor, UUID applicationId) {
+        accessPolicy.require(actor, Capability.VIEW_CANDIDATES);
+        Application current = application(applicationId);
+        return applicationRepository.findByCandidateIdOrderByCreatedAtDesc(current.getCandidate().getId()).stream()
+                .map(a -> new CandidateOpening(a.getId(), a.getJob().getId(), a.getJob().getTitle(),
+                        a.getJob().getClient() == null ? null : a.getJob().getClient().getName(), a.getJob().getStatus(),
+                        a.getStage(), a.getStage().getLabel(), a.getId().equals(applicationId), a.getCreatedAt()))
+                .toList();
+    }
+
+    /**
+     * Put the same candidate forward for another opening, e.g. another client's. Their profile,
+     * résumés and documents belong to the candidate, so they carry over; stage, notes and tests
+     * stay per opening. Both openings' history records the link.
+     */
+    @Transactional
+    public ApplicationResponse addToOpening(AppUser actor, UUID applicationId, AddToOpeningRequest request) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        Application from = application(applicationId);
+        JobOpening target = openJob(request.jobId());
+        Candidate candidate = from.getCandidate();
+        if (applicationRepository.existsByJobIdAndCandidateId(target.getId(), candidate.getId())) {
+            throw new ConflictException(candidate.getName() + " is already in " + target.getTitle());
+        }
+        Stage stage = request.stage() == null ? Stage.SOURCED : request.stage();
+        if (stage.isExit()) {
+            throw new IllegalArgumentException("stage: choose an active stage for the new opening");
+        }
+        String extra = StringUtils.hasText(request.note()) ? ": " + request.note().trim() : "";
+        Application added = createApplication(actor.getEmail(), target, candidate, stage,
+                "Added from " + describe(from.getJob()) + extra, ApplicationSource.MANUAL, null);
+        from.setUpdatedAt(java.time.Instant.now());
+        eventRepository.save(ApplicationEvent.builder()
+                .application(from)
+                .type(ApplicationEventType.NOTE)
+                .note("Also put forward for " + describe(target) + extra)
+                .actorEmail(actor.getEmail())
+                .build());
+        auditService.record(actor, AuditAction.CANDIDATE_ADDED_TO_OPENING, "Application", added.getId(),
+                Map.of("fromApplication", applicationId.toString(), "job", target.getId().toString()));
+        return ApplicationResponse.from(added, "Added from " + describe(from.getJob()) + extra);
+    }
+
+    private static String describe(JobOpening job) {
+        return job.getTitle() + (job.getClient() == null ? "" : " (" + job.getClient().getName() + ")");
     }
 
     @Transactional

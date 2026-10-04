@@ -7,7 +7,7 @@
 | **Chunk** | 2 (referrals v1) |
 | **Owner** | TBD |
 | **Related** | [candidates.md](candidates.md), [interviews-and-scorecards.md](interviews-and-scorecards.md), [client-submissions.md](client-submissions.md) |
-| **Last updated** | 2026-09-25 |
+| **Last updated** | 2026-10-04 |
 
 ## Summary
 
@@ -47,6 +47,8 @@ view, and every move is recorded for reporting.
 | PIPE-10 | "My queue": candidates waiting on the signed-in user across jobs. | MVP |
 | PIPE-11 | Move an application to a different job (keeps history). | MVP |
 | PIPE-12 | Employee referrals: referrer submits a candidate, sees status, bonus eligibility tracked. | v1 |
+| PIPE-13 | The candidate panel lists every opening the candidate is in, across clients, with client and stage, linking to each. | Done |
+| PIPE-14 | **Add to another opening** (recruiters and admins): put the same candidate forward for another opening, e.g. another client's, at a chosen active stage (default Applied / Sourced) with an optional note. One candidate record, so profile, résumés and documents carry over; stage, notes, tests and interviews stay per opening. Both openings' history records the link ("Also put forward for…", "Added from…"); audited. Refused if already in that opening or it is closed. Unlike PIPE-11, the original application stays. | Done |
 
 ## Business rules
 
@@ -81,4 +83,5 @@ view, and every move is recorded for reporting.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-04 | PIPE-13, PIPE-14: see all of a candidate's openings and add them to another client's opening |
 | 2026-09-25 | Created from SPEC.md |
