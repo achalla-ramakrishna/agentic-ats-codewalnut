@@ -74,3 +74,14 @@ distractors.
   grow the bank with AI drafts (reviewed) or by editing the files.
 - Practical coding (writing and running code) is not covered; it needs a
   sandboxed runner and is a separate decision.
+
+## Addendum (2026-10-04): data structures & algorithms
+
+Data structures are the strongest signal when hiring freshers and interns, so
+DSA is its own area (`Category.DSA`, `resources/bank/tech/dsa.txt`) rather than
+part of CS fundamentals: 15 topics × 50 questions across the three bands, with
+code-reading questions in all four coding languages (each was run to check its
+answer). Developer role tests add DSA fundamentals at fresher level and applied
+DSA at junior level; roles without coding problems (SQL, DevOps, data analyst)
+don't get it.
+

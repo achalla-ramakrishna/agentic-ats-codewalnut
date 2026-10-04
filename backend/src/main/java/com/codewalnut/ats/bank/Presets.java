@@ -38,7 +38,7 @@ public final class Presets {
             java.util.Map.entry(Category.CS_FUNDAMENTALS, "CS fundamentals"), java.util.Map.entry(Category.SYSTEM_DESIGN, "System design"),
             java.util.Map.entry(Category.NODEJS, "Node.js"), java.util.Map.entry(Category.QA_AUTOMATION, "Testing & QA automation"),
             java.util.Map.entry(Category.DEVOPS, "DevOps & cloud"), java.util.Map.entry(Category.DATA_ANALYTICS, "Data analytics"),
-            java.util.Map.entry(Category.CODING, "Coding"));
+            java.util.Map.entry(Category.DSA, "Data structures & algorithms"), java.util.Map.entry(Category.CODING, "Coding"));
 
     /** Coding papers: a few problems, with time to think, write and test (ADR-0016). */
     private static final List<Preset> CODING = List.of(

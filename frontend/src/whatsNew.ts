@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-04-dsa-bank',
+    date: '2026-10-04',
+    title: 'Data structures & algorithms tests',
+    summary: '750 new questions on data structures and algorithms, from Big-O, arrays and hashing for interns to trees, graphs, dynamic programming and union-find for experienced developers. About a third ask what a short Java, Python, JavaScript or C++ program prints. Fresher and junior developer role tests now include them.',
+    steps: [
+      'Tests → Build from bank → Data structures & algorithms.',
+      'Pick freshers, 1–3 years or 3+ years, or tick topics yourself.',
+      'Or build a role test for a fresher or junior developer: DSA questions are included.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-04-add-to-another-opening',
     date: '2026-10-04',
     title: 'Put a candidate forward for another client',

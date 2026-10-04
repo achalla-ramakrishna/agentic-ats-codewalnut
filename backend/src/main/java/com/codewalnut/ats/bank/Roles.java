@@ -10,7 +10,8 @@ import java.util.List;
 /**
  * Role tests (ADR-0015): a role (e.g. Java backend developer) at a level (fresher … lead) becomes a
  * ready-made paper mixing the right areas and bands — the main stack, the stacks it works with,
- * CS fundamentals, system design for seniors and aptitude for freshers. A test checks every mix
+ * CS fundamentals, data structures for freshers and juniors, system design for seniors and aptitude
+ * for freshers. A test checks every mix
  * can be built from the built-in bank.
  */
 public final class Roles {
@@ -135,12 +136,18 @@ public final class Roles {
                 out.add(plan(p, Section.FUNDAMENTALS, 4, 3, 1));
                 others.forEach(o -> out.add(plan(o, Section.FUNDAMENTALS, 2, 1, 0)));
                 out.add(plan(Category.CS_FUNDAMENTALS, Section.FUNDAMENTALS, 2, 2, 0));
+                if (!NO_CODING.contains(role.id())) {
+                    out.add(plan(Category.DSA, Section.FUNDAMENTALS, 2, 2, 1));
+                }
             }
             case JUNIOR -> {
                 out.add(plan(p, Section.FUNDAMENTALS, 1, 2, 1));
                 out.add(plan(p, Section.PRACTICAL, 3, 4, 1));
                 others.forEach(o -> out.add(two ? plan(o, Section.PRACTICAL, 1, 1, 1) : plan(o, Section.PRACTICAL, 1, 2, 1)));
                 out.add(plan(Category.CS_FUNDAMENTALS, Section.PRACTICAL, 1, 2, 0));
+                if (!NO_CODING.contains(role.id())) {
+                    out.add(plan(Category.DSA, Section.PRACTICAL, 1, 1, 0));
+                }
             }
             case MID -> {
                 out.add(plan(p, Section.PRACTICAL, 0, 3, 2));
@@ -177,7 +184,7 @@ public final class Roles {
     private static List<SectionPlan> graduate() {
         return List.of(plan(Category.APTITUDE, Section.QUANT, 4, 3, 1), plan(Category.APTITUDE, Section.LOGICAL, 4, 3, 1),
                 plan(Category.APTITUDE, Section.VERBAL, 3, 2, 0), plan(Category.CS_FUNDAMENTALS, Section.FUNDAMENTALS, 4, 3, 1),
-                plan(Category.CS_FUNDAMENTALS, Section.PRACTICAL, 1, 1, 0));
+                plan(Category.CS_FUNDAMENTALS, Section.PRACTICAL, 1, 1, 0), plan(Category.DSA, Section.FUNDAMENTALS, 3, 2, 1));
     }
 
     private static SectionPlan plan(Category area, Section section, int easy, int medium, int hard) {

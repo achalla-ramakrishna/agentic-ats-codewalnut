@@ -17,6 +17,7 @@ export type Category =
   | 'QA_AUTOMATION'
   | 'DEVOPS'
   | 'DATA_ANALYTICS'
+  | 'DSA'
   | 'CODING'
   | 'OTHER'
 export type QuestionKind = 'SINGLE_CHOICE' | 'MULTI_CHOICE' | 'SHORT_ANSWER' | 'CODING'
@@ -36,6 +37,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   QA_AUTOMATION: 'Testing & QA automation',
   DEVOPS: 'DevOps & cloud',
   DATA_ANALYTICS: 'Data analytics',
+  DSA: 'Data structures & algorithms',
   CODING: 'Coding',
   OTHER: 'Other',
 }

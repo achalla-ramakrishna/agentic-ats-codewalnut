@@ -3683,3 +3683,3969 @@ Q H What does this print (JavaScript)?
 - 8
 - 4
 = In a sorted array where every value appears twice except one, pairs shift after the single value: O(log n).
+
+@topic dsa-language | FUNDAMENTALS | Data structures in your language | Java collections, Python built-ins, JavaScript arrays, Map and Set, the C++ STL: which type to use, what each operation costs and the common gotchas.
+Q E Which Java class is a resizable array?
++ ArrayList
+- LinkedList
+- HashSet
+- TreeMap
+= ArrayList wraps an array and grows it when full.
+
+Q E Which Python built-in is an ordered, mutable sequence?
++ list
+- tuple
+- set
+- frozenset
+= Tuples are immutable; sets are unordered.
+
+Q E What does this print (JavaScript)?
+| const m = new Map([["a", 1]]);
+| console.log(m.has("a"), m.get("b"));
++ true undefined
+- true null
+- false undefined
+- true 0
+= get returns undefined for a missing key.
+
+Q E Which C++ STL container is a dynamic array?
++ std::vector
+- std::list
+- std::set
+- std::map
+= std::list is a doubly linked list; set and map are trees.
+
+Q E What does this print (Python)?
+| s = {3, 1, 3, 2}
+| print(len(s), 2 in s)
++ 3 True
+- 4 True
+- 3 False
+- 4 False
+= A set keeps only one 3.
+
+Q E Which Java Map keeps its keys sorted?
++ TreeMap
+- HashMap
+- LinkedHashMap
+- Hashtable
+= TreeMap is a red-black tree; LinkedHashMap keeps insertion order.
+
+Q E What does this print (Java)?
+| List<Integer> a = new ArrayList<>(List.of(3, 1, 2));
+| Collections.sort(a);
+| System.out.println(a);
++ [1, 2, 3]
+- [3, 1, 2]
+- [3, 2, 1]
+- [1, 3, 2]
+= Collections.sort sorts in ascending order, in place.
+
+Q E Which Python type gives the fastest "is x in it?" check on many items?
++ set
+- list
+- tuple
+- str
+= Set membership is O(1) on average; list and tuple scan.
+
+Q E What does this print (JavaScript)?
+| const a = [1, 2, 3];
+| console.log(a.pop(), a.length);
++ 3 2
+- 1 2
+- 3 3
+- undefined 3
+= pop removes and returns the last element.
+
+Q E What does this print (C++)?
+| #include <iostream>
+| #include <stack>
+| int main() {
+|     std::stack<int> s;
+|     s.push(1); s.push(2); s.push(3);
+|     std::cout << s.top() << std::endl;
+| }
++ 3
+- 1
+- 2
+- 6
+= A stack is last in, first out.
+
+Q E What does this print (Python)?
+| from collections import Counter
+| print(Counter("banana")["a"])
++ 3
+- 2
+- 1
+- 6
+= "banana" has three a's.
+
+Q E Which interface makes Java's ArrayDeque usable as both a stack and a queue?
++ Deque
+- Map
+- Set
+- SortedMap
+= Deque offers push/pop at the front and offer/poll at either end.
+
+Q E In JavaScript, which should you use for a key-value store whose keys are objects or numbers?
++ Map
+- A plain object
+- Set
+- Array
+= A plain object turns every key into a string; Map keeps keys as they are.
+
+Q E What does this print (Python)?
+| a = [1, 2, 3]
+| b = a
+| b.append(4)
+| print(a)
++ [1, 2, 3, 4]
+- [1, 2, 3]
+- [4]
+- Error
+= b and a name the same list.
+
+Q E Which C++ container gives O(1) average lookup by key?
++ std::unordered_map
+- std::map
+- std::vector
+- std::list
+= std::map is a tree, so lookups are O(log n).
+
+Q E What does this print (Java)?
+| Map<String, Integer> m = new HashMap<>();
+| m.put("x", 1);
+| m.put("x", 2);
+| System.out.println(m.size() + " " + m.get("x"));
++ 1 2
+- 2 2
+- 2 1
+- 1 1
+= Putting an existing key replaces its value.
+
+Q E Which of these Python types is immutable?
++ tuple
+- list
+- dict
+- set
+= Tuples can't be changed after creation, so they can be dict keys.
+
+Q M Why use collections.deque instead of a list for a queue in Python?
++ popleft() is O(1); pop(0) is O(n)
+- deque keeps its items in sorted order
+- list cannot remove items from the front
+- deque allows duplicates and list doesn't
+= pop(0) shifts every remaining element left.
+
+Q M What does this print (Java)?
+| List<Integer> a = new ArrayList<>(List.of(10, 20, 30));
+| a.remove(1);
+| System.out.println(a);
++ [10, 30]
+- [20, 30]
+- [10, 20]
+- [10, 20, 30]
+= remove(int) removes by index; use remove(Integer.valueOf(1)) to remove a value.
+
+Q M What does this print (JavaScript)?
+| console.log([10, 1, 2].sort().join(","));
++ 1,10,2
+- 1,2,10
+- 10,2,1
+- 10,1,2
+= Without a comparator, sort compares values as strings.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <map>
+| #include <string>
+| int main() {
+|     std::map<std::string, int> m{{"b", 2}, {"c", 3}, {"a", 1}};
+|     for (auto& [k, v] : m) std::cout << k;
+|     std::cout << std::endl;
+| }
++ abc
+- bca
+- cba
+- bac
+= std::map iterates in key order.
+
+Q M What does this print (Python)?
+| d = {}
+| d.setdefault("k", []).append(1)
+| d.setdefault("k", []).append(2)
+| print(d)
++ {'k': [1, 2]}
+- {'k': [2]}
+- {'k': [1]}
+- {'k': [[1], [2]]}
+= setdefault returns the existing list the second time.
+
+Q M Why can calling list.contains(x) inside a loop over n items be slow for a Java ArrayList?
++ Each call scans, so the loop is O(n²)
+- ArrayList sorts itself on every call
+- contains copies the whole list first
+- It locks the list for every call
+= Use a HashSet when you need many membership checks.
+
+Q M What does this print (JavaScript)?
+| const m = new Map();
+| m.set(1, "a");
+| m.set("1", "b");
+| console.log(m.size);
++ 2
+- 1
+- 0
+- undefined
+= Map keeps the number 1 and the string "1" as different keys.
+
+Q M What does this print (Python)?
+| import heapq
+| h = [5, 1, 4]
+| heapq.heapify(h)
+| print(heapq.heappop(h), h[0])
++ 1 4
+- 5 1
+- 1 5
+- 4 1
+= After popping 1, the smallest left is 4.
+
+Q M Which is the right choice for a FIFO queue in Java?
++ ArrayDeque with offer and poll
+- Stack with push and pop
+- TreeSet with add and first
+- ArrayList with add(0, x) and remove
+= Stack is LIFO; TreeSet drops duplicates; add(0, x) is O(n).
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <vector>
+| int main() {
+|     std::vector<int> v;
+|     v.reserve(10);
+|     std::cout << v.size() << " " << (v.capacity() >= 10) << std::endl;
+| }
++ 0 1
+- 10 1
+- 10 0
+- 0 0
+= reserve allocates space but adds no elements.
+
+Q M What does this print (Python)?
+| a = [1, 2, 3]
+| b = a[:]
+| b.append(4)
+| print(len(a), len(b))
++ 3 4
+- 4 4
+- 3 3
+- 4 3
+= Slicing makes a shallow copy, so a is unchanged.
+
+Q M What does this print (JavaScript)?
+| const o = {};
+| o[{ a: 1 }] = "x";
+| o[{ b: 2 }] = "y";
+| console.log(Object.keys(o).length);
++ 1
+- 2
+- 0
+- 3
+= Both keys become the string "[object Object]".
+
+Q M A Java class used as a HashMap key overrides equals but not hashCode. What happens?
++ Equal keys may not be found
+- The code won't compile
+- It works; HashMap only uses equals
+- Keys get compared by toString()
+= Equal objects may hash to different buckets, so the lookup looks in the wrong place.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <string>
+| #include <unordered_map>
+| int main() {
+|     std::unordered_map<std::string, int> m;
+|     std::cout << m["x"] << " " << m.size() << std::endl;
+| }
++ 0 1
+- 0 0
+- Runtime error
+- 1 1
+= operator[] inserts a default value for a missing key; use find or count to only check.
+
+Q M What does this print (Python)?
+| from collections import defaultdict
+| g = defaultdict(list)
+| g["a"].append("b")
+| print(len(g), g["z"], len(g))
++ 1 [] 2
+- 1 [] 1
+- 1 None 1
+- KeyError
+= Reading a missing key of a defaultdict inserts it.
+
+Q M Why use a StringBuilder to build a long string in a Java loop?
++ += copies the string every time: O(n²)
+- StringBuilder sorts the characters
+- A String can't hold over 1000 chars
+- += is not allowed inside loops
+= Strings are immutable, so each += makes a new copy.
+
+Q M Which JavaScript array operations are O(1)?
++ push and pop
+- shift and unshift
+- indexOf and includes
+- splice at the front
+= shift and unshift move every other element.
+
+Q H What does this print (Python)?
+| a = [3, 1, 2]
+| b = sorted(a)
+| a.sort(reverse=True)
+| print(a, b)
++ [3, 2, 1] [1, 2, 3]
+- [1, 2, 3] [1, 2, 3]
+- [3, 2, 1] [3, 2, 1]
+- [3, 1, 2] [1, 2, 3]
+= sorted returns a new list; sort changes the list in place.
+
+Q H What does this print (Java)?
+| Integer a = 127, b = 127, c = 128, d = 128;
+| System.out.println((a == b) + " " + (c == d));
++ true false
+- true true
+- false false
+- false true
+= Integer caches −128 to 127; == compares references. Use equals.
+
+Q H What does this print (Java)?
+| List<Integer> a = new ArrayList<>(List.of(1, 2, 3, 4));
+| for (Integer x : a) if (x == 2) a.remove(x);
+| System.out.println(a);
++ ConcurrentModificationException
+- [1, 3, 4]
+- [1, 2, 3, 4]
+- IndexOutOfBoundsException
+= Changing a list while a for-each loop walks it fails fast; use an Iterator's remove or removeIf.
+
+Q H What does this print (JavaScript)?
+| const a = [1, 2, 3];
+| a[10] = 4;
+| console.log(a.length, a.filter(x => true).length);
++ 11 4
+- 4 4
+- 11 11
+- 4 11
+= The array becomes sparse; filter skips the holes.
+
+Q H Which of these is unsafe in C++?
++ Keeping a vector iterator across push_back
+- Keeping a std::list iterator across push_back
+- Keeping a std::map iterator across insert
+- Reading v[i] by index after v.push_back
+= push_back may reallocate the vector, invalidating its iterators; list and map iterators survive inserts.
+
+Q H What does this print (Python)?
+| d = {"b": 1, "a": 2}
+| d["c"] = 3
+| del d["b"]
+| d["b"] = 4
+| print(list(d))
++ ['a', 'c', 'b']
+- ['b', 'a', 'c']
+- ['a', 'b', 'c']
+- ['c', 'b', 'a']
+= Dicts keep insertion order; a deleted and re-added key goes to the end.
+
+Q H What does this print (Java)?
+| TreeMap<Integer, String> m = new TreeMap<>(Map.of(10, "a", 20, "b", 30, "c"));
+| System.out.println(m.floorKey(25) + " " + m.ceilingKey(25) + " " + m.headMap(20).size());
++ 20 30 1
+- 30 20 1
+- 20 30 2
+- 25 25 1
+= floor is the largest key ≤ 25, ceiling the smallest ≥ 25; headMap(20) excludes 20.
+
+Q H What does this print (C++)?
+| #include <iostream>
+| #include <iterator>
+| #include <set>
+| int main() {
+|     std::set<int> s{5, 1, 9, 3};
+|     auto it = s.lower_bound(4);
+|     std::cout << *it << " " << *std::prev(it) << std::endl;
+| }
++ 5 3
+- 3 5
+- 4 3
+- 9 5
+= lower_bound finds the first key ≥ 4; the one before it is 3.
+
+Q H In Python, what do x in d.keys() and x in list(d) cost?
++ O(1) average vs O(n)
+- Both O(n)
+- Both O(1)
+- O(n) vs O(1)
+= keys() is a set-like view; list(d) copies the keys and scans them.
+
+Q H What does this print (JavaScript)?
+| const s = new Set();
+| s.add([1]); s.add([1]); s.add("1"); s.add(1);
+| console.log(s.size);
++ 4
+- 2
+- 3
+- 1
+= Two separate arrays are different objects, and "1" and 1 differ.
+
+Q H What does System.out.println(pq) guarantee for a Java PriorityQueue?
++ Only that the first element is the smallest
+- The elements print in sorted order
+- The elements print in insertion order
+- Nothing; it prints the object's hash
+= It prints the heap array; only repeated poll() gives sorted order.
+
+Q H What does this print (Python)?
+| a = [2, 4, 6, 8]
+| for x in a:
+|     if x % 2 == 0:
+|         a.remove(x)
+| print(a)
++ [4, 8]
+- []
+- [2, 4, 6, 8]
+- RuntimeError
+= Removing shifts the list under the loop, so every other item is skipped.
+
+Q H What is wrong with for (auto x : m) when m is a large std::map<std::string, std::vector<int>>?
++ Each element is copied; use const auto&
+- It iterates the map in random order
+- It skips the last element of the map
+- It won't compile with auto in a loop
+= auto makes a copy of every pair, including each vector.
+
+Q H What does this print (Java)?
+| List<Integer> a = Arrays.asList(1, 2, 3);
+| a.add(4);
+| System.out.println(a);
++ UnsupportedOperationException
+- [1, 2, 3, 4]
+- ArrayIndexOutOfBoundsException
+- [1, 2, 3]
+= Arrays.asList is a fixed-size view of an array; wrap it in new ArrayList<>(...) to grow it.
+
+Q H What does this print (JavaScript)?
+| const m = new Map([["b", 1], ["a", 2]]);
+| m.set("b", 3);
+| console.log([...m.keys()].join(""));
++ ba
+- ab
+- bab
+- aba
+= Updating an existing key keeps its original position.
+
+Q H Which structure gives a sliding-window maximum in O(n)?
++ A deque of indices
+- A heap with no removals
+- A sorted list rebuilt each step
+- A set of the window's values
+= Keep indices with decreasing values; each index enters and leaves once.
+
+@topic dsa-trees | PRACTICAL | Trees and binary search trees | Binary trees, preorder/inorder/postorder and level-order traversal, height and depth, binary search trees (search, insert, delete, validation), balanced trees and lowest common ancestor.
+Q E How many children can a node in a binary tree have at most?
++ 2
+- 1
+- 3
+- Unlimited
+= Binary means at most a left and a right child.
+
+Q E What is a node with no children called?
++ A leaf
+- The root
+- An edge
+- A parent
+= Leaves are the ends of the tree.
+
+Q E In what order does an inorder traversal of a binary search tree visit the keys?
++ In sorted order
+- In insertion order
+- Level by level
+- In reverse sorted order
+= Left subtree, node, right subtree gives ascending keys.
+
+Q E What is the order of a preorder traversal?
++ Node, left, right
+- Left, node, right
+- Left, right, node
+- Right, node, left
+= Pre: the node comes before its subtrees.
+
+Q E What is the order of a postorder traversal?
++ Left, right, node
+- Node, left, right
+- Left, node, right
+- Node, right, left
+= Post: the node comes after its subtrees.
+
+Q E What is the binary search tree property?
++ left < node < right, for whole subtrees
+- Every node has exactly two children
+- All leaves are at the same depth
+- Keys are stored in insertion order
+= Every key in the left subtree is smaller and every key in the right subtree larger.
+
+Q E Which structure does a level-order traversal use?
++ A queue
+- A stack
+- A heap
+- A hash map
+= Level order is breadth-first search on the tree.
+
+Q E What does a search cost in a balanced binary search tree?
++ O(log n)
+- O(1)
+- O(n)
+- O(n log n)
+= Each step discards about half the remaining nodes.
+
+Q E What does this print (Python)?
+| class N:
+|     def __init__(s, v, l=None, r=None): s.v, s.l, s.r = v, l, r
+| def size(n): return 0 if n is None else 1 + size(n.l) + size(n.r)
+| print(size(N(1, N(2, N(4)), N(3))))
++ 4
+- 3
+- 7
+- 2
+= Nodes 1, 2, 4 and 3.
+
+Q E Counting edges, what is the height of a tree with a single node?
++ 0
+- 1
+- −1
+- 2
+= There are no edges from the root to a leaf below it.
+
+Q E How many edges does a tree with n nodes have?
++ n − 1
+- n
+- n + 1
+- 2n
+= Every node except the root has one edge to its parent.
+
+Q E What does this print (JavaScript)?
+| function ins(t, v) {
+|   if (!t) return { v, l: null, r: null };
+|   if (v < t.v) t.l = ins(t.l, v); else t.r = ins(t.r, v);
+|   return t;
+| }
+| function ino(t, out) { if (t) { ino(t.l, out); out.push(t.v); ino(t.r, out); } return out; }
+| let t = null;
+| for (const v of [5, 3, 8, 1]) t = ins(t, v);
+| console.log(ino(t, []).join(" "));
++ 1 3 5 8
+- 5 3 8 1
+- 5 3 1 8
+- 8 5 3 1
+= Inorder traversal of a binary search tree is sorted.
+
+Q E You insert 7, 3 and 9, in that order, into an empty (unbalanced) binary search tree. What is the root?
++ 7
+- 3
+- 9
+- 5
+= The first key inserted becomes the root.
+
+Q E What does this print (Java)?
+| record N(int v, N l, N r) {}
+| static String pre(N n) { return n == null ? "" : n.v() + pre(n.l()) + pre(n.r()); }
+| System.out.println(pre(new N(1, new N(2, null, null), new N(3, new N(4, null, null), null))));
++ 1234
+- 2143
+- 2431
+- 1324
+= Preorder visits node, then left, then right.
+
+Q E What is the depth of a node?
++ Edges from the root to it
+- Edges from it to the deepest leaf
+- The number of its children
+- The number of nodes in its subtree
+= Depth is measured from the root; height from the node down.
+
+Q E Which traversal creates each parent before its children, as when copying a tree?
++ Preorder
+- Inorder
+- Postorder
+- Leaves only
+= Preorder handles the node first.
+
+Q E What does this print (C++)?
+| #include <iostream>
+| struct N { int v; N* l; N* r; };
+| int leaves(N* n) {
+|     if (!n) return 0;
+|     if (!n->l && !n->r) return 1;
+|     return leaves(n->l) + leaves(n->r);
+| }
+| int main() {
+|     N d{4, nullptr, nullptr}, e{5, nullptr, nullptr}, b{2, &d, &e}, c{3, nullptr, nullptr}, a{1, &b, &c};
+|     std::cout << leaves(&a) << std::endl;
+| }
++ 3
+- 5
+- 2
+- 4
+= Leaves 4, 5 and 3.
+
+Q M What is the worst-case search cost in a binary search tree built by inserting keys in sorted order?
++ O(n)
+- O(log n)
+- O(1)
+- O(n log n)
+= The tree becomes a chain, like a linked list.
+
+Q M What does this print (Python)?
+| class N:
+|     def __init__(s, v, l=None, r=None): s.v, s.l, s.r = v, l, r
+| def h(n): return -1 if n is None else 1 + max(h(n.l), h(n.r))
+| print(h(N(1, N(2, N(4, N(8))), N(3))))
++ 3
+- 4
+- 2
+- 5
+= The longest root-to-leaf path is 1-2-4-8: three edges.
+
+Q M When deleting a binary search tree node that has two children, what usually replaces it?
++ The in-order successor
+- Its left child, always
+- The tree's root node
+- Any leaf in the tree
+= The successor (smallest key in the right subtree) keeps the order; the predecessor works too.
+
+Q M Why isn't checking node.left < node < node.right at every node enough to validate a binary search tree?
++ A deeper node can break an ancestor's bound
+- It is enough for every binary search tree
+- It fails only for empty trees
+- It only fails when keys repeat
+= Pass down a lower and upper bound, or check that the inorder sequence is increasing.
+
+Q M What does this print (JavaScript)?
+| const t = { v: 1, l: { v: 2, l: { v: 4 }, r: { v: 5 } }, r: { v: 3 } };
+| const q = [t], out = [];
+| while (q.length) {
+|   const n = q.shift(); out.push(n.v);
+|   if (n.l) q.push(n.l);
+|   if (n.r) q.push(n.r);
+| }
+| console.log(out.join(""));
++ 12345
+- 12453
+- 42513
+- 45231
+= Level order: 1, then 2 and 3, then 4 and 5.
+
+Q M A binary tree has preorder 1 2 4 5 3 and inorder 4 2 5 1 3. What is its postorder?
++ 4 5 2 3 1
+- 4 2 5 3 1
+- 5 4 2 3 1
+- 1 2 3 4 5
+= Root 1; left subtree 2 with children 4 and 5; right child 3.
+
+Q M A binary search tree has root 6; 6's children are 2 and 8; 2's children are 0 and 4; 4's children are 3 and 5. What is the lowest common ancestor of 3 and 5?
++ 4
+- 2
+- 6
+- 3
+= Walk down from the root until the two keys split to different sides.
+
+Q M What makes a binary tree height-balanced (as in AVL trees)?
++ Child heights differ by ≤ 1 at every node
+- Every level of the tree is completely full
+- All the leaves sit at exactly the same depth
+- Both subtrees always have equal node counts
+= That guarantees a height of O(log n).
+
+Q M Counting edges, how many nodes can a binary tree of height h have at most?
++ 2^(h+1) − 1
+- 2^h
+- 2h + 1
+- h^2
+= Level k holds up to 2^k nodes, for k = 0 to h.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| struct N { int v; N* l = nullptr; N* r = nullptr; };
+| N* ins(N* t, int v) {
+|     if (!t) return new N{v};
+|     if (v < t->v) t->l = ins(t->l, v); else t->r = ins(t->r, v);
+|     return t;
+| }
+| int main() {
+|     N* t = nullptr;
+|     for (int v : {4, 2, 6, 1, 3}) t = ins(t, v);
+|     N* m = t;
+|     while (m->l) m = m->l;
+|     std::cout << m->v << " " << t->l->r->v << std::endl;
+| }
++ 1 3
+- 4 3
+- 1 6
+- 2 3
+= The minimum is the leftmost node; 3 is the right child of 2.
+
+Q M What does this print (Python)?
+| class N:
+|     def __init__(s, v, l=None, r=None): s.v, s.l, s.r = v, l, r
+| def ok(n, lo=float('-inf'), hi=float('inf')):
+|     if n is None: return True
+|     if not lo < n.v < hi: return False
+|     return ok(n.l, lo, n.v) and ok(n.r, n.v, hi)
+| print(ok(N(5, N(3, None, N(6)), N(8))), ok(N(5, N(3, None, N(4)), N(8))))
++ False True
+- True True
+- True False
+- False False
+= 6 sits in 5's left subtree, so the first tree is not a binary search tree.
+
+Q M How much extra space does a recursive depth-first traversal of a tree of height h use?
++ O(h)
+- O(1)
+- O(n²)
+- O(log n), always
+= One stack frame per level; h is n for a chain, log n when balanced.
+
+Q M What is the diameter of a tree?
++ The longest path between any two nodes
+- The height of the root
+- The number of leaves
+- The root's distance to its farthest leaf
+= The longest path may not pass through the root.
+
+Q M What does this print (Java)?
+| record N(int v, N l, N r) {}
+| static N mirror(N n) { return n == null ? null : new N(n.v(), mirror(n.r()), mirror(n.l())); }
+| static String in(N n) { return n == null ? "" : in(n.l()) + n.v() + in(n.r()); }
+| System.out.println(in(mirror(new N(2, new N(1, null, null), new N(3, null, null)))));
++ 321
+- 123
+- 213
+- 231
+= Mirroring a binary search tree reverses its inorder sequence.
+
+Q M A complete binary tree is stored in an array from index 0. Where are the children of index i?
++ 2i + 1 and 2i + 2
+- 2i and 2i + 1
+- i + 1 and i + 2
+- i / 2 and i / 2 + 1
+= 2i and 2i + 1 is the rule when the array starts at index 1.
+
+Q M What does an iterative inorder traversal use?
++ A stack
+- A queue
+- A heap
+- A hash set
+= Push left children, pop, visit, then go right.
+
+Q M What does this print (JavaScript)?
+| function has(n, s) {
+|   if (!n) return false;
+|   if (!n.l && !n.r) return s === n.v;
+|   return has(n.l, s - n.v) || has(n.r, s - n.v);
+| }
+| const t = { v: 5, l: { v: 4, l: { v: 11, l: null, r: null }, r: null }, r: { v: 8, l: null, r: { v: 1, l: null, r: null } } };
+| console.log(has(t, 20), has(t, 14), has(t, 9));
++ true true false
+- true false false
+- false true false
+- true true true
+= Root-to-leaf sums are 5+4+11 = 20 and 5+8+1 = 14.
+
+Q H What do red-black and AVL trees guarantee for search, insert and delete?
++ O(log n) worst case
+- O(1) average case
+- O(log n) average only
+- O(n) worst case
+= Rotations keep the height O(log n) after every change.
+
+Q H What does this print (Python)?
+| class N:
+|     def __init__(s, v, l=None, r=None): s.v, s.l, s.r = v, l, r
+| def lca(n, a, b):
+|     if n is None or n.v in (a, b): return n
+|     l, r = lca(n.l, a, b), lca(n.r, a, b)
+|     return n if l and r else l or r
+| t = N(3, N(5, N(6), N(2, N(7), N(4))), N(1, N(0), N(8)))
+| print(lca(t, 7, 4).v, lca(t, 6, 4).v, lca(t, 5, 4).v)
++ 2 5 5
+- 2 3 5
+- 5 5 3
+- 2 5 3
+= A node is the answer when the two keys are found on different sides, or when it is one of them.
+
+Q H How does Morris traversal do an inorder walk?
++ O(1) extra space, via temporary links
+- O(log n) space, using a heap
+- O(n) space, but with no recursion
+- O(1) space, by sorting the nodes first
+= It threads each predecessor's right pointer back to the node, then removes the thread.
+
+Q H For a general binary tree (not a binary search tree), which serialization lets you rebuild it exactly?
++ Preorder with null markers
+- Inorder without null markers
+- Preorder without null markers
+- The leaves from left to right
+= Without markers, different shapes give the same sequence.
+
+Q H What does this print (Java)?
+| record N(int v, N l, N r) {}
+| static int kth(N root, int k) {
+|     Deque<N> st = new ArrayDeque<>();
+|     N c = root;
+|     while (true) {
+|         while (c != null) { st.push(c); c = c.l(); }
+|         c = st.pop();
+|         if (--k == 0) return c.v();
+|         c = c.r();
+|     }
+| }
+| N t = new N(5, new N(3, new N(2, new N(1, null, null), null), new N(4, null, null)), new N(6, null, null));
+| System.out.println(kth(t, 3) + " " + kth(t, 6));
++ 3 6
+- 3 5
+- 2 6
+- 4 6
+= The inorder sequence is 1 2 3 4 5 6.
+
+Q H Why choose a balanced binary search tree (TreeMap, std::map) over a hash map?
++ Ordered queries like floor and range
+- Faster lookups on average
+- Less memory per entry
+- Keys need not be comparable
+= Hash maps are faster on average but have no order.
+
+Q H A height-balance check calls height() at every node. What does it cost in the worst case?
++ O(n²)
+- O(n)
+- O(log n)
+- O(n log n)
+= Return the height together with the check to make it O(n).
+
+Q H What does this print (C++)?
+| #include <algorithm>
+| #include <iostream>
+| struct N { int v; N* l; N* r; };
+| int best = -1000000;
+| int go(N* n) {
+|     if (!n) return 0;
+|     int l = std::max(0, go(n->l)), r = std::max(0, go(n->r));
+|     best = std::max(best, n->v + l + r);
+|     return n->v + std::max(l, r);
+| }
+| int main() {
+|     N a{9, nullptr, nullptr}, b{15, nullptr, nullptr}, c{7, nullptr, nullptr}, d{20, &b, &c}, e{-10, &a, &d};
+|     go(&e);
+|     std::cout << best << std::endl;
+| }
++ 42
+- 34
+- 35
+- 41
+= The best path is 15 → 20 → 7; it skips the negative root.
+
+Q H What does this print (JavaScript)?
+| function view(t) {
+|   const out = [];
+|   (function go(n, d) {
+|     if (!n) return;
+|     if (d === out.length) out.push(n.v);
+|     go(n.r, d + 1); go(n.l, d + 1);
+|   })(t, 0);
+|   return out.join("");
+| }
+| console.log(view({ v: 1, l: { v: 2, l: null, r: { v: 5, l: null, r: null } }, r: { v: 3, l: null, r: null } }));
++ 135
+- 123
+- 125
+- 13
+= The right side view shows the first node met at each depth when visiting right first.
+
+Q H A binary search tree has root 50 with children 30 and 70; 70's children are 60 and 80; 60's left child is 55. Delete 50 using the in-order successor. What is the new root?
++ 55
+- 60
+- 70
+- 30
+= The successor is the leftmost node of the right subtree.
+
+Q H Why do databases use B-trees for indexes?
++ Wide nodes mean few disk reads per lookup
+- They never need any rebalancing
+- They use less CPU time than arrays
+- They keep keys unsorted for fast inserts
+= Each node holds many keys, so the tree is very shallow.
+
+Q H What does this print (Python)?
+| from functools import lru_cache
+| @lru_cache(None)
+| def c(n): return 1 if n <= 1 else sum(c(i) * c(n - 1 - i) for i in range(n))
+| print(c(3), c(4))
++ 5 14
+- 6 24
+- 3 4
+- 5 12
+= The number of binary search tree shapes on n keys is the Catalan number.
+
+Q H How do you build a balanced binary search tree from a sorted array?
++ Middle element as root; recurse on halves
+- Insert the elements in sorted order
+- Insert the elements in reverse order
+- First element as root, then rotate once
+= Inserting in sorted order makes a chain.
+
+Q H What does this print (Java)?
+| record N(int v, N l, N r) {}
+| static Integer prev = null;
+| static boolean ok(N n) {
+|     if (n == null) return true;
+|     if (!ok(n.l())) return false;
+|     if (prev != null && n.v() <= prev) return false;
+|     prev = n.v();
+|     return ok(n.r());
+| }
+| System.out.println(ok(new N(2, new N(1, null, null), new N(2, null, null))));
++ false
+- true
+- NullPointerException
+- 2
+= The inorder sequence 1 2 2 is not strictly increasing.
+
+Q H What is the expected cost of building a binary search tree by inserting n keys in random order?
++ O(n log n)
+- O(n)
+- O(n²)
+- O(log n)
+= The expected height is O(log n); sorted input is the O(n²) worst case.
+
+Q H During a level-order traversal of a perfect binary tree with n nodes, how large does the queue get?
++ About n/2, the last level
+- About log n
+- Exactly 1
+- Exactly n
+= The bottom level holds about half the nodes.
+
+@topic dsa-heaps | PRACTICAL | Heaps and priority queues | Binary heaps, heapify, push and pop costs, heap sort, top-k, merging sorted lists, median of a stream and the priority queues of Java, Python, JavaScript and C++.
+Q E Where is the smallest element in a min-heap?
++ At the root
+- At the last index
+- In the leftmost leaf
+- In the middle
+= The root is the minimum.
+
+Q E What does peeking at the top of a binary heap cost?
++ O(1)
+- O(log n)
+- O(n)
+- O(n log n)
+= It is the first array element.
+
+Q E What does pushing into a binary heap cost?
++ O(log n)
+- O(1)
+- O(n)
+- O(n log n)
+= The new item sifts up at most the height of the tree.
+
+Q E A heap is stored in an array from index 0. Which index holds the parent of index i?
++ (i − 1) / 2
+- i / 2 + 1
+- 2i + 1
+- i − 1
+= Integer division; 2i + 1 is the left child.
+
+Q E What does this print (Python)?
+| import heapq
+| h = []
+| for x in [5, 2, 8, 1]:
+|     heapq.heappush(h, x)
+| print(heapq.heappop(h))
++ 1
+- 5
+- 8
+- 2
+= heapq is a min-heap.
+
+Q E By default, what is Java's PriorityQueue?
++ A min-heap
+- A max-heap
+- A sorted list
+- A FIFO queue
+= Pass Comparator.reverseOrder() for a max-heap.
+
+Q E By default, what is C++'s std::priority_queue?
++ A max-heap
+- A min-heap
+- A sorted vector
+- A FIFO queue
+= Use std::greater for a min-heap.
+
+Q E What does this print (Java)?
+| PriorityQueue<Integer> pq = new PriorityQueue<>(Comparator.reverseOrder());
+| pq.addAll(List.of(3, 9, 4));
+| System.out.println(pq.poll());
++ 9
+- 3
+- 4
+- 16
+= reverseOrder turns it into a max-heap.
+
+Q E What shape is a binary heap?
++ A complete binary tree
+- A binary search tree
+- A balanced tree with sorted leaves
+- A linked list
+= Every level is full except possibly the last, filled from the left.
+
+Q E What is the max-heap property?
++ Each parent ≥ its children
+- Left child < right child
+- Inorder gives sorted order
+- All leaves are equal
+= Siblings have no order between them.
+
+Q E What does this print (C++)?
+| #include <iostream>
+| #include <queue>
+| int main() {
+|     std::priority_queue<int> pq;
+|     for (int x : {4, 7, 1}) pq.push(x);
+|     std::cout << pq.top() << std::endl;
+| }
++ 7
+- 4
+- 1
+- 12
+= The default priority_queue keeps the largest on top.
+
+Q E What is a priority queue best for?
++ Always handling the most urgent task next
+- Keeping a history of actions to undo
+- Looking up a stored value by its key
+- Keeping items in their insertion order
+= Undo is a stack; key lookup is a map.
+
+Q E Does JavaScript have a built-in priority queue?
++ No; write one or use a library
+- Yes, the PriorityQueue class
+- Yes, Array.prototype.heap
+- Yes, Map sorts by priority
+= Sorting the array after every insert is O(n log n) per operation.
+
+Q E What is Python's heapq?
++ Functions for a min-heap in a list
+- A max-heap class
+- A balanced tree
+- A sorted list
+= heapq works on a plain list.
+
+Q E What does this print (Python)?
+| import heapq
+| print(heapq.nsmallest(2, [7, 3, 9, 1]))
++ [1, 3]
+- [7, 3]
+- [9, 7]
+- [1, 7]
+= The two smallest, in order.
+
+Q E What does removing the root of a binary heap cost?
++ O(log n)
+- O(1)
+- O(n)
+- O(n²)
+= The last item moves to the root and sifts down.
+
+Q E Where is the smallest element in a max-heap?
++ In one of the leaves
+- At the root
+- At index 1
+- In the root's left child
+= Any node with a child is bigger than that child.
+
+Q M What does building a heap from n items with heapify cost?
++ O(n)
+- O(n log n)
+- O(log n)
+- O(n²)
+= Pushing items one by one costs O(n log n).
+
+Q M What is the classic way to get a max-heap from Python's heapq?
++ Push negated values
+- Pass reverse=True
+- Call heapq.maxheap()
+- Sort after every push
+= Negate on the way in and on the way out.
+
+Q M What does finding the k largest of n items with a min-heap of size k cost?
++ O(n log k)
+- O(n log n)
+- O(k log n)
+- O(nk)
+= Each item costs at most one O(log k) push and pop.
+
+Q M What does this print (Python)?
+| import heapq
+| h = [(2, "b"), (1, "z"), (1, "a")]
+| heapq.heapify(h)
+| print(heapq.heappop(h)[1], heapq.heappop(h)[1])
++ a z
+- z a
+- b a
+- a b
+= Tuples compare by the first field, then the second.
+
+Q M What does this print (Java)?
+| PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[1] - b[1]);
+| pq.add(new int[]{1, 30}); pq.add(new int[]{2, 10}); pq.add(new int[]{3, 20});
+| System.out.println(pq.poll()[0] + "" + pq.poll()[0]);
++ 23
+- 12
+- 32
+- 13
+= Ordered by the second value: 10 (id 2), then 20 (id 3).
+
+Q M What are heap sort's time and stability?
++ O(n log n), not stable
+- O(n log n), stable
+- O(n), not stable
+- O(n²), stable
+= Moving items across the heap mixes up equal keys.
+
+Q M Merging k sorted lists with N items in total using a heap costs:
++ O(N log k)
+- O(Nk)
+- O(N log N), always
+- O(k log N)
+= The heap holds one item per list.
+
+Q M What does this print (C++)?
+| #include <functional>
+| #include <iostream>
+| #include <queue>
+| #include <vector>
+| int main() {
+|     std::priority_queue<int, std::vector<int>, std::greater<int>> pq;
+|     for (int x : {5, 2, 8}) pq.push(x);
+|     pq.pop();
+|     std::cout << pq.top() << std::endl;
+| }
++ 5
+- 2
+- 8
+- 15
+= std::greater makes it a min-heap: pop removes 2.
+
+Q M How do you keep a running median of a stream?
++ Two heaps: low half and high half
+- One min-heap of every value
+- A stack of all values seen
+- A queue of the last k values
+= A max-heap for the lower half and a min-heap for the upper half, kept balanced.
+
+Q M What does this print (Python)?
+| import heapq
+| h = [1, 3, 2, 7, 4]
+| heapq.heapreplace(h, 9)
+| print(h)
++ [2, 3, 9, 7, 4]
+- [3, 9, 2, 7, 4]
+- [2, 3, 4, 7, 9]
+- [9, 3, 2, 7, 4]
+= 9 replaces the root and swaps with its smaller child, 2.
+
+Q M With an index map, what does decrease-key cost in a binary heap?
++ O(log n)
+- O(1)
+- O(n)
+- O(n log n)
+= Find the item in O(1), then sift it up.
+
+Q M Why is heapify O(n), not O(n log n)?
++ Most nodes sit low and sift down only a bit
+- It never looks at the leaves or their parents
+- It sorts the array first, then links nodes
+- It moves each element at most one level
+= Half the nodes are leaves and do no work; the sum of heights is O(n).
+
+Q M What does this print (JavaScript)?
+| function push(h, x) {
+|   h.push(x);
+|   let i = h.length - 1;
+|   while (i > 0) {
+|     const p = (i - 1) >> 1;
+|     if (h[p] <= h[i]) break;
+|     [h[p], h[i]] = [h[i], h[p]];
+|     i = p;
+|   }
+| }
+| const h = [];
+| for (const x of [5, 3, 8, 1]) push(h, x);
+| console.log(h.join(","));
++ 1,3,8,5
+- 1,3,5,8
+- 1,5,8,3
+- 5,3,8,1
+= 1 sifts up past 5 and then 3; the array is a heap, not sorted.
+
+Q M What does this print (Java)?
+| static int kth(int[] a, int k) {
+|     PriorityQueue<Integer> pq = new PriorityQueue<>();
+|     for (int x : a) { pq.add(x); if (pq.size() > k) pq.poll(); }
+|     return pq.peek();
+| }
+| System.out.println(kth(new int[]{3, 2, 1, 5, 6, 4}, 2));
++ 5
+- 2
+- 6
+- 4
+= A min-heap of the k largest has the kth largest on top.
+
+Q M Why does Dijkstra's algorithm use a priority queue?
++ To pick the closest unvisited node next
+- To keep the edges in input order
+- To detect cycles in the graph
+- To count the connected components
+= The heap gives the smallest tentative distance quickly.
+
+Q M What does searching a binary heap for an arbitrary value cost?
++ O(n)
+- O(log n)
+- O(1)
+- O(n log n)
+= A heap only orders parents against children.
+
+Q M Why not use a Java TreeSet<Integer> as a priority queue?
++ It drops duplicate values
+- It can't remove the minimum
+- Its items aren't sorted
+- It only stores strings
+= Store (priority, id) pairs if you need a TreeSet.
+
+Q H What does this print (Python)?
+| import heapq
+| pts = [(1, 3), (-2, 2), (5, 8), (0, 1)]
+| print(heapq.nsmallest(2, pts, key=lambda p: p[0] ** 2 + p[1] ** 2))
++ [(0, 1), (-2, 2)]
+- [(-2, 2), (0, 1)]
+- [(0, 1), (1, 3)]
+- [(1, 3), (-2, 2)]
+= Squared distances are 10, 8, 89 and 1.
+
+Q H What does this print (Python)?
+| import heapq
+| lo, hi, out = [], [], []
+| for x in [5, 15, 1, 3]:
+|     heapq.heappush(lo, -x)
+|     heapq.heappush(hi, -heapq.heappop(lo))
+|     if len(hi) > len(lo): heapq.heappush(lo, -heapq.heappop(hi))
+|     out.append(-lo[0] if len(lo) > len(hi) else (-lo[0] + hi[0]) / 2)
+| print(out)
++ [5, 10.0, 5, 4.0]
+- [5, 10.0, 5, 3]
+- [5, 15, 5, 4.0]
+- [5, 10.0, 1, 4.0]
+= The medians of 5; 5, 15; 1, 5, 15; and 1, 3, 5, 15.
+
+Q H What is lazy deletion in a heap?
++ Skip removed items when they reach the top
+- Delete items only once the heap is full
+- Rebuild the whole heap after every delete
+- Never remove anything; let the heap grow
+= Mark items as removed and discard them when popped.
+
+Q H What does this print (Java)?
+| int[][] a = {{1, 4, 7}, {2, 5}, {3, 6, 9}};
+| PriorityQueue<int[]> pq = new PriorityQueue<>((x, y) -> a[x[0]][x[1]] - a[y[0]][y[1]]);
+| for (int i = 0; i < a.length; i++) pq.add(new int[]{i, 0});
+| StringBuilder sb = new StringBuilder();
+| while (!pq.isEmpty()) { int[] t = pq.poll(); sb.append(a[t[0]][t[1]]); if (t[1] + 1 < a[t[0]].length) pq.add(new int[]{t[0], t[1] + 1}); }
+| System.out.println(sb);
++ 12345679
+- 14725369
+- 12345769
+- 123456789
+= A k-way merge of three sorted arrays.
+
+Q H What is the main advantage of an indexed priority queue?
++ Changing an item's priority in O(log n)
+- Peeking at the top in O(1)
+- Iterating the items in sorted order
+- Using less memory per item
+= Dijkstra and Prim use it for decrease-key.
+
+Q H How does a d-ary heap with a larger d compare to a binary heap?
++ Faster push, slower pop
+- Faster pop, slower push
+- Both are faster
+- Both are slower
+= It is shallower, but each sift-down compares d children.
+
+Q H What is the amortised cost of decrease-key in a Fibonacci heap?
++ O(1)
+- O(log n)
+- O(n)
+- O(log log n)
+= This makes Dijkstra O(E + V log V) in theory.
+
+Q H What does this print (C++)?
+| #include <iostream>
+| #include <map>
+| #include <queue>
+| #include <vector>
+| int main() {
+|     std::vector<int> a{1, 1, 1, 2, 2, 3, 3, 3, 3, 4};
+|     std::map<int, int> c;
+|     for (int x : a) c[x]++;
+|     std::priority_queue<std::pair<int, int>> pq;
+|     for (auto& [k, v] : c) pq.push({v, k});
+|     std::cout << pq.top().second; pq.pop();
+|     std::cout << pq.top().second << std::endl;
+| }
++ 31
+- 13
+- 32
+- 34
+= The most frequent values are 3 (four times) and 1 (three times).
+
+Q H Every item in an array is at most k places from its sorted position. What does sorting it with a heap cost?
++ O(n log k)
+- O(n log n)
+- O(nk)
+- O(n)
+= Keep a heap of k + 1 items and pop the smallest each step.
+
+Q H Why push (priority, counter, item) tuples into Python's heapq?
++ So ties never compare the items themselves
+- To turn the heap into a max-heap
+- To keep the heap stable in memory
+- Because heapq needs exactly three fields
+= Items such as dicts can't be compared; the counter also keeps ties in insertion order.
+
+Q H What does this print (JavaScript)?
+| function pop(h) {
+|   const top = h[0], last = h.pop();
+|   if (h.length) {
+|     h[0] = last;
+|     let i = 0;
+|     for (;;) {
+|       const l = 2 * i + 1, r = l + 1;
+|       let m = i;
+|       if (l < h.length && h[l] < h[m]) m = l;
+|       if (r < h.length && h[r] < h[m]) m = r;
+|       if (m === i) break;
+|       [h[i], h[m]] = [h[m], h[i]];
+|       i = m;
+|     }
+|   }
+|   return top;
+| }
+| const h = [1, 3, 2, 7, 4];
+| const out = [];
+| while (h.length) out.push(pop(h));
+| console.log(out.join(""));
++ 12347
+- 13274
+- 12374
+- 74321
+= Popping a min-heap until it is empty gives sorted order.
+
+Q H Is the array [9, 5, 8, 6, 1] a valid max-heap?
++ No: 5 has a child 6
+- Yes
+- No: 8 is bigger than 5
+- No: 1 is the last element
+= Index 1 (5) has children at indexes 3 (6) and 4 (1).
+
+Q H What does Dijkstra's algorithm with a binary heap cost?
++ O((V + E) log V)
+- O(V²)
+- O(E)
+- O(V · E)
+= Each edge may push into the heap.
+
+Q H What does this print (Java)?
+| PriorityQueue<Integer> pq = new PriorityQueue<>(Collections.reverseOrder());
+| for (int s : new int[]{2, 7, 4, 1, 8, 1}) pq.add(s);
+| while (pq.size() > 1) { int a = pq.poll(), b = pq.poll(); if (a != b) pq.add(a - b); }
+| System.out.println(pq.isEmpty() ? 0 : pq.peek());
++ 1
+- 0
+- 2
+- 3
+= Smash the two heaviest stones each time: 8 and 7, 4 and 2, 2 and 1, then 1 and 1.
+
+Q H How many leaves does a binary heap with n elements have?
++ ⌈n/2⌉
+- ⌊log n⌋
+- n − 1
+- n/4
+= Indexes from n/2 to n − 1 have no children.
+
+Q H For a priority queue with many inserts, how does a heap compare to a sorted array?
++ Heap: O(log n) insert vs O(n)
+- Sorted array: O(1) insert
+- The same cost for both
+- Heap: O(1) insert vs O(log n)
+= Inserting into a sorted array shifts elements.
+
+@topic dsa-two-pointers | PRACTICAL | Two pointers and sliding window | Pointers from both ends of a sorted array, fast and slow pointers, fixed and variable sliding windows, in-place partitioning and prefix sums.
+Q E Two pointers from both ends find a pair with a given sum when the array is:
++ Sorted
+- Unsorted
+- Of even length
+- Free of negatives
+= Sorting tells you which pointer to move.
+
+Q E What does this print (Python)?
+| a = [1, 2, 4, 7, 11]
+| i, j = 0, len(a) - 1
+| while a[i] + a[j] != 15:
+|     if a[i] + a[j] < 15: i += 1
+|     else: j -= 1
+| print(a[i], a[j])
++ 4 11
+- 1 11
+- 7 11
+- 4 7
+= Too small moves i right; too big moves j left.
+
+Q E What does a fixed-size sliding window of size k over n items cost in total?
++ O(n)
+- O(nk)
+- O(n log n)
+- O(k)
+= Each step adds one item and removes one.
+
+Q E How much extra space does reversing an array in place with two pointers use?
++ O(1)
+- O(n)
+- O(log n)
+- O(n²)
+= Swap the ends and move inwards.
+
+Q E What does this print (JavaScript)?
+| function pal(s) {
+|   let i = 0, j = s.length - 1;
+|   while (i < j) { if (s[i] !== s[j]) return false; i++; j--; }
+|   return true;
+| }
+| console.log(pal("level"), pal("lever"));
++ true false
+- true true
+- false false
+- false true
+= "lever" differs at its first and last characters.
+
+Q E What can fast and slow pointers find in one pass?
++ The middle of a linked list
+- The largest element
+- The sorted order
+- Duplicate keys in a map
+= When the fast pointer reaches the end, the slow one is halfway.
+
+Q E What does this print (Java)?
+| int[] a = {2, 1, 5, 1, 3, 2};
+| int s = 0, best = 0;
+| for (int i = 0; i < a.length; i++) { s += a[i]; if (i >= 3) s -= a[i - 3]; if (i >= 2) best = Math.max(best, s); }
+| System.out.println(best);
++ 9
+- 8
+- 14
+- 6
+= Window sums of size 3 are 8, 7, 9 and 6.
+
+Q E How does a sliding window move one step?
++ Add the new item, drop the oldest
+- Recompute the whole window
+- Sort the window again
+- Double the window's size
+= That makes each step O(1).
+
+Q E With prefix sums, what does the sum of a[l..r] cost?
++ O(1), after O(n) setup
+- O(r − l), each query
+- O(log n), each query
+- O(n), with no setup
+= sum = prefix[r + 1] − prefix[l].
+
+Q E What does this print (C++)?
+| #include <iostream>
+| #include <vector>
+| int main() {
+|     std::vector<int> a{1, 1, 2, 3, 3, 3, 4};
+|     int w = 1;
+|     for (int r = 1; r < (int)a.size(); r++) if (a[r] != a[w - 1]) a[w++] = a[r];
+|     std::cout << w << std::endl;
+| }
++ 4
+- 7
+- 3
+- 5
+= The distinct values 1, 2, 3 and 4 are written to the front.
+
+Q E What does this print (Python)?
+| a = [3, 1, 4, 1, 5]
+| p = [0]
+| for x in a: p.append(p[-1] + x)
+| print(p[4] - p[1])
++ 6
+- 9
+- 5
+- 10
+= That is a[1] + a[2] + a[3] = 1 + 4 + 1.
+
+Q E Which problem suits a variable-size sliding window?
++ Longest substring without repeating characters
+- Sorting an array of numbers
+- The median of two sorted arrays
+- Building a heap from an array
+= Grow the window on the right and shrink it on the left when a character repeats.
+
+Q E How do you move all zeros to the end of an array while keeping the other items in order?
++ One read pointer, one write pointer
+- Sort the array in descending order
+- Use a hash map of the zeros
+- Recurse on both halves
+= Copy non-zeros forward, then fill the rest with zeros.
+
+Q E What does this print (JavaScript)?
+| const a = [1, 4, 6], b = [2, 3, 7];
+| const out = [];
+| let i = 0, j = 0;
+| while (i < a.length && j < b.length) out.push(a[i] < b[j] ? a[i++] : b[j++]);
+| console.log(out.join(""), i, j);
++ 12346 3 2
+- 123467 3 3
+- 12346 2 3
+- 1234 2 2
+= The loop stops when a runs out; 7 is still waiting in b.
+
+Q E What does finding a pair with a given sum cost with two pointers on a sorted array?
++ O(n)
+- O(n²)
+- O(n log n)
+- O(log n)
+= Each step moves one pointer.
+
+Q E How do you swap a[i] and a[j] in Python?
++ a[i], a[j] = a[j], a[i]
+- a.swap(i, j)
+- swap(a[i], a[j])
+- a[i] <=> a[j]
+= Tuple assignment evaluates the right side first.
+
+Q E What does this print (Java)?
+| int[] a = {-4, -1, 0, 3};
+| int[] r = new int[4];
+| int i = 0, j = 3;
+| for (int k = 3; k >= 0; k--) r[k] = Math.abs(a[i]) > Math.abs(a[j]) ? a[i] * a[i++] : a[j] * a[j--];
+| System.out.println(Arrays.toString(r));
++ [0, 1, 9, 16]
+- [16, 1, 0, 9]
+- [16, 9, 1, 0]
+- [0, 1, 16, 9]
+= The largest square is at one of the ends, so fill the result from the back.
+
+Q M What does this print (Python)?
+| def f(s):
+|     seen, l, best = {}, 0, 0
+|     for r, c in enumerate(s):
+|         if c in seen and seen[c] >= l: l = seen[c] + 1
+|         seen[c] = r
+|         best = max(best, r - l + 1)
+|     return best
+| print(f("abcabcbb"), f("pwwkew"), f("bbbb"))
++ 3 3 1
+- 3 4 1
+- 4 3 1
+- 3 3 4
+= The longest substrings without repeats are "abc", "wke" and "b".
+
+Q M What does 3Sum cost with sorting and two pointers?
++ O(n²)
+- O(n³)
+- O(n log n)
+- O(n)
+= Fix one number, then scan the rest with two pointers.
+
+Q M What does this print (JavaScript)?
+| function f(a, t) {
+|   let l = 0, s = 0, best = Infinity;
+|   for (let r = 0; r < a.length; r++) {
+|     s += a[r];
+|     while (s >= t) { best = Math.min(best, r - l + 1); s -= a[l++]; }
+|   }
+|   return best === Infinity ? 0 : best;
+| }
+| console.log(f([2, 3, 1, 2, 4, 3], 7), f([1, 1, 1], 5));
++ 2 0
+- 3 0
+- 2 3
+- 1 0
+= [4, 3] is the shortest window with sum ≥ 7; [1, 1, 1] never reaches 5.
+
+Q M Why does a shrinking sliding window for "sum ≥ target" break with negative numbers?
++ Dropping an item can make the sum bigger
+- Negative numbers overflow the running sum
+- The window can never be empty with them
+- It needs the array sorted in reverse
+= Use prefix sums (with a monotonic deque) instead.
+
+Q M What does this print (Java)?
+| int[] h = {1, 8, 6, 2, 5, 4, 8, 3, 7};
+| int i = 0, j = h.length - 1, best = 0;
+| while (i < j) { best = Math.max(best, Math.min(h[i], h[j]) * (j - i)); if (h[i] < h[j]) i++; else j--; }
+| System.out.println(best);
++ 49
+- 64
+- 56
+- 40
+= Container with most water: heights 8 and 7, seven apart.
+
+Q M How do you count subarrays summing to k when the array has negative numbers?
++ Prefix sums with a hash map of counts
+- Two pointers shrinking a window
+- Sorting, then binary search
+- A stack of partial sums
+= Count earlier prefixes equal to the current prefix − k.
+
+Q M What does this print (Python)?
+| from collections import Counter
+| def count(a, k):
+|     seen, s, n = Counter({0: 1}), 0, 0
+|     for x in a:
+|         s += x
+|         n += seen[s - k]
+|         seen[s] += 1
+|     return n
+| print(count([1, 1, 1], 2), count([1, -1, 0], 0))
++ 2 3
+- 2 2
+- 3 3
+- 2 1
+= Zero-sum subarrays of [1, −1, 0] are [1, −1], [0] and [1, −1, 0].
+
+Q M How does the Dutch national flag algorithm sort an array of 0s, 1s and 2s?
++ Three pointers, in one pass
+- Two passes of bubble sort
+- A heap of size three
+- Binary search for each 1
+= Pointers for the end of the 0s, the current item and the start of the 2s.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <utility>
+| #include <vector>
+| int main() {
+|     std::vector<int> a{2, 0, 2, 1, 1, 0};
+|     int lo = 0, mid = 0, hi = 5;
+|     while (mid <= hi) {
+|         if (a[mid] == 0) std::swap(a[lo++], a[mid++]);
+|         else if (a[mid] == 1) mid++;
+|         else std::swap(a[mid], a[hi--]);
+|     }
+|     for (int x : a) std::cout << x;
+|     std::cout << " " << lo << std::endl;
+| }
++ 001122 2
+- 001122 3
+- 012012 2
+- 001122 4
+= lo ends just past the two 0s.
+
+Q M How much extra space does Floyd's fast-and-slow-pointer cycle detection use?
++ O(1)
+- O(n)
+- O(log n)
+- O(n²)
+= Two pointers only; a visited set would be O(n).
+
+Q M What does this print (JavaScript)?
+| function f(s) {
+|   const c = new Map();
+|   let l = 0, best = 0;
+|   for (let r = 0; r < s.length; r++) {
+|     c.set(s[r], (c.get(s[r]) || 0) + 1);
+|     while (c.size > 2) {
+|       c.set(s[l], c.get(s[l]) - 1);
+|       if (c.get(s[l]) === 0) c.delete(s[l]);
+|       l++;
+|     }
+|     best = Math.max(best, r - l + 1);
+|   }
+|   return best;
+| }
+| console.log(f("eceba"), f("ccaabbb"));
++ 3 5
+- 3 4
+- 4 5
+- 2 5
+= The longest windows with at most two distinct characters are "ece" and "aabbb".
+
+Q M What does trapping rain water cost with two pointers?
++ O(n) time, O(1) space
+- O(n) time, O(n) space
+- O(n²) time, O(1) space
+- O(n log n) time
+= Move the side with the lower wall; its water level is known.
+
+Q M What does this print (Java)?
+| int[] h = {0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1};
+| int l = 0, r = h.length - 1, lm = 0, rm = 0, w = 0;
+| while (l < r) { if (h[l] < h[r]) { lm = Math.max(lm, h[l]); w += lm - h[l]; l++; } else { rm = Math.max(rm, h[r]); w += rm - h[r]; r--; } }
+| System.out.println(w);
++ 6
+- 5
+- 7
+- 8
+= The classic trapping rain water example.
+
+Q M A sliding window easily counts subarrays with at most K of something. How do you count those with exactly K?
++ atMost(K) − atMost(K − 1)
+- atMost(K) / K
+- atMost(K + 1) − 1
+- A window can't do it
+= Subtracting removes the subarrays with fewer than K.
+
+Q M What does this print (Python)?
+| from collections import deque
+| def f(a, k):
+|     d, out = deque(), []
+|     for i, x in enumerate(a):
+|         while d and a[d[-1]] <= x: d.pop()
+|         d.append(i)
+|         if d[0] <= i - k: d.popleft()
+|         if i >= k - 1: out.append(a[d[0]])
+|     return out
+| print(f([1, 3, -1, -3, 5, 3, 6, 7], 3))
++ [3, 3, 5, 5, 6, 7]
+- [3, 3, 5, 5, 6, 6]
+- [1, 3, 5, 5, 6, 7]
+- [3, 5, 5, 6, 7, 7]
+= The deque keeps indices of decreasing values; the front is the window's maximum.
+
+Q M Quicksort's partition step is an example of:
++ A two-pointer pass
+- A sliding window
+- Prefix sums
+- Binary search
+= Pointers move towards each other, swapping items onto the right side of the pivot.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <string>
+| bool sub(const std::string& s, const std::string& t) {
+|     size_t i = 0;
+|     for (char c : t) if (i < s.size() && s[i] == c) i++;
+|     return i == s.size();
+| }
+| int main() { std::cout << sub("ace", "abcde") << sub("aec", "abcde") << std::endl; }
++ 10
+- 11
+- 01
+- 00
+= "ace" is a subsequence of "abcde"; "aec" is not, because c comes before e.
+
+Q H What does this print (Python)?
+| from collections import Counter
+| def mw(s, t):
+|     need, missing, l, best = Counter(t), len(t), 0, (0, float('inf'))
+|     for r, c in enumerate(s, 1):
+|         if need[c] > 0: missing -= 1
+|         need[c] -= 1
+|         if missing == 0:
+|             while need[s[l]] < 0: need[s[l]] += 1; l += 1
+|             if r - l < best[1] - best[0]: best = (l, r)
+|             need[s[l]] += 1; missing += 1; l += 1
+|     return s[best[0]:best[1]] if best[1] != float('inf') else ""
+| print(mw("ADOBECODEBANC", "ABC"))
++ BANC
+- ADOBEC
+- CODEBA
+- BECODEBA
+= Minimum window substring: the shortest window containing A, B and C.
+
+Q H What does 4Sum cost with sorting and two pointers?
++ O(n³)
+- O(n²)
+- O(n⁴)
+- O(n² log n)
+= Fix two numbers, then scan with two pointers.
+
+Q H What does this print (JavaScript)?
+| function f(s, k) {
+|   const c = {};
+|   let l = 0, mx = 0, best = 0;
+|   for (let r = 0; r < s.length; r++) {
+|     c[s[r]] = (c[s[r]] || 0) + 1;
+|     mx = Math.max(mx, c[s[r]]);
+|     while (r - l + 1 - mx > k) { c[s[l]]--; l++; }
+|     best = Math.max(best, r - l + 1);
+|   }
+|   return best;
+| }
+| console.log(f("ABAB", 2), f("AABABBA", 1));
++ 4 4
+- 4 3
+- 3 4
+- 4 5
+= Longest repeating character replacement with k changes.
+
+Q H In that character replacement solution, mx is never decreased when the window shrinks. Why is that still correct?
++ Only a bigger mx can give a longer answer
+- Character counts in the window never go down
+- The window never actually shrinks at all
+- It's a bug that the tests happen to miss
+= A stale mx only keeps the window from growing; it never reports a wrong length.
+
+Q H What does this print (Java)?
+| int[] a = {10, 5, 2, 6};
+| int k = 100, l = 0, n = 0;
+| long p = 1;
+| for (int r = 0; r < a.length; r++) { p *= a[r]; while (p >= k) p /= a[l++]; n += r - l + 1; }
+| System.out.println(n);
++ 8
+- 7
+- 10
+- 6
+= Each step adds the subarrays ending at r with product below 100.
+
+Q H What is the best time for the median of two sorted arrays of sizes m and n?
++ O(log(min(m, n)))
+- O(m + n)
+- O((m + n) log(m + n))
+- O(log m · log n)
+= Binary search the split point in the shorter array.
+
+Q H What does this print (C++)?
+| #include <algorithm>
+| #include <iostream>
+| #include <vector>
+| int main() {
+|     std::vector<int> a{-1, 0, 1, 2, -1, -4};
+|     std::sort(a.begin(), a.end());
+|     int n = a.size(), cnt = 0;
+|     for (int i = 0; i < n; i++) {
+|         if (i && a[i] == a[i - 1]) continue;
+|         int l = i + 1, r = n - 1;
+|         while (l < r) {
+|             int s = a[i] + a[l] + a[r];
+|             if (s < 0) l++;
+|             else if (s > 0) r--;
+|             else { cnt++; while (l < r && a[l] == a[l + 1]) l++; l++; r--; }
+|         }
+|     }
+|     std::cout << cnt << std::endl;
+| }
++ 2
+- 3
+- 1
+- 4
+= The unique triplets are [−1, −1, 2] and [−1, 0, 1].
+
+Q H What does this print (Python)?
+| def dup(a):
+|     s = f = a[0]
+|     while True:
+|         s, f = a[s], a[a[f]]
+|         if s == f: break
+|     s = a[0]
+|     while s != f: s, f = a[s], a[f]
+|     return s
+| print(dup([1, 3, 4, 2, 2]), dup([3, 1, 3, 4, 2]))
++ 2 3
+- 2 4
+- 3 3
+- 4 3
+= Treat values as next pointers; the duplicate is where the cycle starts.
+
+Q H How do you run a sliding window over a circular array?
++ Walk it twice, with indices mod n
+- Sort the array first
+- Reverse half of the array
+- It can't be done in O(n)
+= Index 2n positions and use i % n.
+
+Q H What does this print (JavaScript)?
+| function f(a, k) {
+|   const m = new Map(), out = [];
+|   for (let i = 0; i < a.length; i++) {
+|     m.set(a[i], (m.get(a[i]) || 0) + 1);
+|     if (i >= k) { const o = a[i - k]; m.set(o, m.get(o) - 1); if (!m.get(o)) m.delete(o); }
+|     if (i >= k - 1) out.push(m.size);
+|   }
+|   return out.join("");
+| }
+| console.log(f([1, 2, 1, 3, 4, 2, 3], 4));
++ 3443
+- 3444
+- 4443
+- 3343
+= Distinct counts in each window of 4.
+
+Q H How do you find the shortest subarray with sum ≥ K when negative numbers are allowed?
++ Prefix sums with a monotonic deque
+- A plain shrinking sliding window
+- Two pointers from both ends
+- Sorting the prefix sums
+= Keep prefix indices with increasing sums.
+
+Q H What does this print (Java)?
+| int[] a = {1, -1, 5, -2, 3};
+| int k = 3, s = 0, best = 0;
+| Map<Integer, Integer> first = new HashMap<>();
+| first.put(0, -1);
+| for (int i = 0; i < a.length; i++) { s += a[i]; if (first.containsKey(s - k)) best = Math.max(best, i - first.get(s - k)); first.putIfAbsent(s, i); }
+| System.out.println(best);
++ 4
+- 2
+- 3
+- 5
+= [1, −1, 5, −2] sums to 3; keep each prefix's first index for the longest span.
+
+Q H What does this print (Python)?
+| a = [1, 2, 3, 4, 5]
+| i, j, n = 0, 4, 0
+| while i < j:
+|     if a[i] + a[j] <= 6: n += j - i; i += 1
+|     else: j -= 1
+| print(n)
++ 6
+- 4
+- 10
+- 5
+= When a[i] + a[j] fits, every pair (i, i+1..j) fits too.
+
+Q H What does a sliding-window maximum cost with a heap instead of a deque?
++ O(n log n)
+- O(n)
+- O(nk)
+- O(k)
+= Stale items stay in the heap until they reach the top.
+
+Q H What does this print (C++)?
+| #include <algorithm>
+| #include <iostream>
+| #include <string>
+| int main() {
+|     std::string s = "ababcbacadefegdehijhklij";
+|     int last[26];
+|     for (int i = 0; i < (int)s.size(); i++) last[s[i] - 'a'] = i;
+|     int start = 0, end = 0;
+|     for (int i = 0; i < (int)s.size(); i++) {
+|         end = std::max(end, last[s[i] - 'a']);
+|         if (i == end) { std::cout << i - start + 1 << " "; start = i + 1; }
+|     }
+|     std::cout << std::endl;
+| }
++ 9 7 8
+- 9 8 7
+- 8 8 8
+- 9 15 24
+= Partition labels: cut when every letter seen so far has appeared for the last time.
+
+Q H What does this print (Python)?
+| a = [1, 1, 1, 2, 2, 3]
+| w = 0
+| for x in a:
+|     if w < 2 or x != a[w - 2]:
+|         a[w] = x; w += 1
+| print(w, a[:w])
++ 5 [1, 1, 2, 2, 3]
+- 6 [1, 1, 1, 2, 2, 3]
+- 3 [1, 2, 3]
+- 4 [1, 1, 2, 3]
+= Keep at most two copies by comparing with the item written two places back.
+
+@topic dsa-graphs | PRACTICAL | Graphs | Adjacency lists and matrices, breadth-first and depth-first search, connected components, cycle detection, topological sort, shortest paths (BFS, Dijkstra, Bellman–Ford), grids as graphs and minimum spanning trees.
+Q E How much memory does an adjacency list use?
++ O(V + E)
+- O(V²)
+- O(E²)
+- O(V)
+= One entry per vertex plus one per edge (two for undirected).
+
+Q E How much memory does an adjacency matrix use?
++ O(V²)
+- O(V + E)
+- O(E)
+- O(V log V)
+= A V × V grid, whatever the number of edges.
+
+Q E Which structure does breadth-first search use?
++ A queue
+- A stack
+- A heap
+- A sorted list
+= Nodes are visited in order of distance from the start.
+
+Q E Which structure does an iterative depth-first search use?
++ A stack
+- A queue
+- A heap
+- A sorted list
+= Recursive DFS uses the call stack instead.
+
+Q E Which algorithm finds the shortest path in an unweighted graph?
++ Breadth-first search
+- Depth-first search
+- Prim's algorithm
+- Topological sort
+= BFS reaches every node by the fewest edges first.
+
+Q E In an undirected graph, what is the sum of all degrees?
++ 2E
+- E
+- V
+- V + E
+= Each edge adds one to the degree of both ends.
+
+Q E What does this print (Python)?
+| from collections import deque
+| g = {1: [2, 3], 2: [4], 3: [4], 4: []}
+| seen, q, out = {1}, deque([1]), []
+| while q:
+|     u = q.popleft(); out.append(u)
+|     for v in g[u]:
+|         if v not in seen: seen.add(v); q.append(v)
+| print(out)
++ [1, 2, 3, 4]
+- [1, 2, 4, 3]
+- [1, 3, 4, 2]
+- [4, 3, 2, 1]
+= BFS visits 1, then its neighbours 2 and 3, then 4.
+
+Q E Why does a graph search track visited nodes?
++ So cycles don't loop forever
+- So the nodes come out sorted
+- So the edge list is saved
+- So the heaviest edge is found
+= Without it, a cycle sends the search round and round.
+
+Q E What is a DAG?
++ A directed graph with no cycles
+- An undirected graph with no cycles
+- A directed graph with one cycle
+- Any graph with weighted edges
+= Directed acyclic graph: dependencies, build steps, course prerequisites.
+
+Q E What does this print (JavaScript)?
+| const g = { A: ["B", "C"], B: ["D"], C: [], D: [] };
+| const seen = new Set(), out = [];
+| function dfs(u) { seen.add(u); out.push(u); for (const v of g[u]) if (!seen.has(v)) dfs(v); }
+| dfs("A");
+| console.log(out.join(""));
++ ABDC
+- ABCD
+- ACBD
+- DBCA
+= DFS goes deep through B to D before coming back to C.
+
+Q E A tree is a connected graph with:
++ No cycles
+- Exactly one cycle
+- Weighted edges
+- Only directed edges
+= Connected and acyclic, so there is exactly one path between any two nodes.
+
+Q E What does this print (Java)?
+| Map<Integer, List<Integer>> g = Map.of(0, List.of(1, 2), 1, List.of(0), 2, List.of(0));
+| int d = 0;
+| for (List<Integer> n : g.values()) d += n.size();
+| System.out.println(d / 2);
++ 2
+- 4
+- 3
+- 1
+= An undirected adjacency list stores each edge twice.
+
+Q E In a grid, which cells are a cell's four neighbours?
++ Up, down, left and right
+- The four diagonal cells
+- Its whole row and column
+- The four corners of the grid
+= Eight neighbours would add the diagonals.
+
+Q E What does this print (C++)?
+| #include <iostream>
+| #include <string>
+| #include <vector>
+| std::vector<std::string> g{"110", "010", "001"};
+| void sink(int r, int c) {
+|     if (r < 0 || c < 0 || r >= 3 || c >= 3 || g[r][c] != '1') return;
+|     g[r][c] = '0';
+|     sink(r + 1, c); sink(r - 1, c); sink(r, c + 1); sink(r, c - 1);
+| }
+| int main() {
+|     int n = 0;
+|     for (int r = 0; r < 3; r++) for (int c = 0; c < 3; c++) if (g[r][c] == '1') { n++; sink(r, c); }
+|     std::cout << n << std::endl;
+| }
++ 2
+- 3
+- 1
+- 4
+= Number of islands: the top-left group and the bottom-right cell.
+
+Q E A graph whose edges have costs is called:
++ Weighted
+- Directed
+- Bipartite
+- Complete
+= Weights can be distances, times or prices.
+
+Q E What is the most edges a simple undirected graph with V vertices can have?
++ V(V − 1)/2
+- V²
+- V − 1
+- 2V
+= One edge per pair of vertices.
+
+Q E What do BFS and DFS cost with an adjacency list?
++ O(V + E)
+- O(V²)
+- O(E log V)
+- O(V · E)
+= Each vertex and each edge is handled once.
+
+Q M When does a topological order exist?
++ When the graph is a DAG
+- When the graph is connected
+- When every node has an edge
+- When the edges are weighted
+= A cycle means no node in it can come first.
+
+Q M What does this print (Python)?
+| from collections import deque
+| g = {"a": ["b", "c"], "b": ["d"], "c": ["d"], "d": []}
+| indeg = {u: 0 for u in g}
+| for u in g:
+|     for v in g[u]: indeg[v] += 1
+| q = deque(u for u in g if indeg[u] == 0); out = []
+| while q:
+|     u = q.popleft(); out.append(u)
+|     for v in g[u]:
+|         indeg[v] -= 1
+|         if indeg[v] == 0: q.append(v)
+| print("".join(out))
++ abcd
+- acbd
+- abdc
+- dcba
+= Kahn's algorithm: repeatedly take a node with no remaining incoming edges.
+
+Q M How does Kahn's algorithm show that a directed graph has a cycle?
++ Fewer than V nodes get output
+- A node has an in-degree of 1
+- Two nodes share an edge
+- The graph has a leaf
+= Nodes on a cycle never reach in-degree 0.
+
+Q M When does Dijkstra's algorithm give wrong answers?
++ With negative edge weights
+- With cycles
+- With undirected edges
+- With equal weights
+= It assumes a settled node can't get any closer later.
+
+Q M What does this print (Java)?
+| Map<Integer, int[][]> g = Map.of(0, new int[][]{{1, 4}, {2, 1}}, 1, new int[][]{{3, 1}}, 2, new int[][]{{1, 2}, {3, 5}}, 3, new int[][]{});
+| int[] d = {0, 99, 99, 99};
+| PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[1] - b[1]);
+| pq.add(new int[]{0, 0});
+| while (!pq.isEmpty()) { int[] t = pq.poll(); if (t[1] > d[t[0]]) continue; for (int[] e : g.get(t[0])) if (t[1] + e[1] < d[e[0]]) { d[e[0]] = t[1] + e[1]; pq.add(new int[]{e[0], d[e[0]]}); } }
+| System.out.println(Arrays.toString(d));
++ [0, 3, 1, 4]
+- [0, 4, 1, 5]
+- [0, 3, 1, 6]
+- [0, 4, 1, 4]
+= 0 → 2 → 1 → 3 beats the direct edge 0 → 1.
+
+Q M How does a depth-first search find a cycle in an undirected graph?
++ Meeting a visited node that isn't the parent
+- Meeting any node with more than two edges
+- Finishing the DFS before visiting all
+- Meeting a node that has no edges at all
+= The edge back to the parent doesn't count.
+
+Q M How does a depth-first search find a cycle in a directed graph?
++ Three states: unvisited, in progress, done
+- One shared visited set and nothing else
+- Comparing the BFS level of each node
+- A min-heap ordered by in-degree
+= Reaching an in-progress node means a back edge, which is a cycle.
+
+Q M What does this print (JavaScript)?
+| const g = ["..#", "..#", "..."];
+| const dist = [[0, -1, -1], [-1, -1, -1], [-1, -1, -1]];
+| const q = [[0, 0]];
+| while (q.length) {
+|   const [r, c] = q.shift();
+|   for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+|     const nr = r + dr, nc = c + dc;
+|     if (nr >= 0 && nc >= 0 && nr < 3 && nc < 3 && g[nr][nc] === "." && dist[nr][nc] < 0) {
+|       dist[nr][nc] = dist[r][c] + 1; q.push([nr, nc]);
+|     }
+|   }
+| }
+| console.log(dist[2][2], dist[0][2]);
++ 4 -1
+- 4 2
+- 3 -1
+- 2 -1
+= The corner is four steps away; a wall cell is never reached.
+
+Q M How do you check whether a graph is bipartite?
++ Two-colour it; no edge may join one colour
+- Check the graph has an even number of nodes
+- Check that every node has an even degree
+- Check that no two edges have the same weight
+= BFS or DFS colouring fails exactly when there is an odd cycle.
+
+Q M What does this print (Python)?
+| g = {0: [1], 1: [0], 2: [3], 3: [2], 4: []}
+| seen = set(); n = 0
+| def dfs(u):
+|     seen.add(u)
+|     for v in g[u]:
+|         if v not in seen: dfs(v)
+| for u in g:
+|     if u not in seen: n += 1; dfs(u)
+| print(n)
++ 3
+- 2
+- 5
+- 4
+= Components {0, 1}, {2, 3} and {4}.
+
+Q M Which shortest-path algorithm handles negative edge weights?
++ Bellman–Ford
+- Dijkstra
+- Breadth-first search
+- Prim
+= It relaxes every edge V − 1 times; it also detects negative cycles.
+
+Q M How do you find shortest paths in a weighted DAG in O(V + E)?
++ Relax edges in topological order
+- BFS that ignores the weights
+- DFS that takes the first path
+- Kruskal's algorithm on the DAG
+= Each node is final once all its incoming edges are relaxed.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <utility>
+| #include <vector>
+| int main() {
+|     std::vector<std::pair<int, int>> e{{0, 1}, {0, 2}, {0, 3}, {1, 2}};
+|     std::vector<int> deg(4);
+|     for (auto [a, b] : e) { deg[a]++; deg[b]++; }
+|     std::cout << deg[0] << deg[1] << deg[2] << deg[3] << std::endl;
+| }
++ 3221
+- 3111
+- 3212
+- 2221
+= Node 0 touches three edges; nodes 1 and 2 two each.
+
+Q M For a dense graph (E close to V²), which representation fits best?
++ An adjacency matrix
+- An adjacency list
+- An edge list sorted by weight
+- A binary search tree
+= The matrix gives O(1) edge checks and wastes little space when dense.
+
+Q M How does a multi-source BFS (such as rotting oranges) start?
++ Put every source in the queue at the start
+- Run a separate BFS from each source
+- Run DFS from the source farthest away
+- Run Dijkstra from the middle node first
+= All sources are at distance 0, so one BFS gives each cell's nearest source.
+
+Q M What does this print (Java)?
+| int[][] g = {{2, 1, 1}, {1, 1, 0}, {0, 1, 1}};
+| Deque<int[]> q = new ArrayDeque<>();
+| int fresh = 0;
+| for (int r = 0; r < 3; r++) for (int c = 0; c < 3; c++) { if (g[r][c] == 2) q.add(new int[]{r, c}); if (g[r][c] == 1) fresh++; }
+| int mins = 0;
+| int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+| while (!q.isEmpty() && fresh > 0) { mins++; for (int s = q.size(); s > 0; s--) { int[] p = q.poll(); for (int[] d : dirs) { int r = p[0] + d[0], c = p[1] + d[1]; if (r >= 0 && c >= 0 && r < 3 && c < 3 && g[r][c] == 1) { g[r][c] = 2; fresh--; q.add(new int[]{r, c}); } } } }
+| System.out.println(fresh == 0 ? mins : -1);
++ 4
+- 3
+- 5
+- -1
+= The rot reaches the bottom-right corner after four minutes.
+
+Q M Many queries ask whether two nodes of an undirected graph are connected. What's best?
++ Label components once, then compare
+- Run a fresh BFS for every query
+- Run Dijkstra from both nodes each time
+- Topologically sort before every query
+= One O(V + E) pass (or union-find) makes each query O(1).
+
+Q H What does Floyd–Warshall compute, and at what cost?
++ All pairs, O(V³)
+- All pairs, O(V²)
+- One source, O(E log V)
+- All pairs, O(V + E)
+= Three nested loops over an intermediate, a source and a target.
+
+Q H What does this print (Python)?
+| def can(n, pre):
+|     g = [[] for _ in range(n)]
+|     for a, b in pre: g[b].append(a)
+|     state = [0] * n
+|     def cyc(u):
+|         state[u] = 1
+|         for v in g[u]:
+|             if state[v] == 1 or (state[v] == 0 and cyc(v)): return True
+|         state[u] = 2
+|         return False
+|     return not any(state[u] == 0 and cyc(u) for u in range(n))
+| print(can(2, [[1, 0]]), can(2, [[1, 0], [0, 1]]), can(3, [[1, 0], [2, 1], [2, 0]]))
++ True False True
+- True False False
+- False False True
+- True True True
+= Course schedule: only the second has a cycle.
+
+Q H In lazy Dijkstra, what is the check "if d > dist[u]: continue" for?
++ Skipping stale queue entries
+- Detecting negative cycles
+- Stopping early at the target
+- Breaking ties by node id
+= A node can be pushed several times; only its best entry matters.
+
+Q H Which algorithms find strongly connected components?
++ Tarjan's or Kosaraju's
+- Prim's or Kruskal's
+- Dijkstra's or Bellman–Ford
+- Kahn's or BFS
+= Both run in O(V + E).
+
+Q H Which algorithms build a minimum spanning tree?
++ Kruskal's and Prim's
+- Dijkstra's and A*
+- Kahn's and Tarjan's
+- Floyd's and Bellman–Ford
+= Kruskal sorts edges with union-find; Prim grows a tree with a heap.
+
+Q H What does this print (JavaScript)?
+| const edges = [[1, 0, 1], [4, 0, 2], [3, 1, 2], [2, 1, 3], [5, 2, 3]];
+| edges.sort((a, b) => a[0] - b[0]);
+| const p = [0, 1, 2, 3];
+| const find = x => p[x] === x ? x : (p[x] = find(p[x]));
+| let w = 0;
+| for (const [c, a, b] of edges) { const ra = find(a), rb = find(b); if (ra !== rb) { p[ra] = rb; w += c; } }
+| console.log(w);
++ 6
+- 7
+- 10
+- 8
+= Kruskal takes edges 1, 2 and 3 and skips the rest, which would make cycles.
+
+Q H How do you find the shortest word ladder (one letter changes per step)?
++ BFS over words, one change per edge
+- DFS that takes the first path found
+- Dijkstra with random edge weights
+- A topological sort of the dictionary
+= All edges cost one step, so BFS gives the fewest steps.
+
+Q H What does this print (Java)?
+| int[][] m = {{1, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}};
+| boolean[] seen = new boolean[4];
+| void dfs(int u) { seen[u] = true; for (int v = 0; v < 4; v++) if (m[u][v] == 1 && !seen[v]) dfs(v); }
+| int n = 0;
+| for (int u = 0; u < 4; u++) if (!seen[u]) { n++; dfs(u); }
+| System.out.println(n);
++ 3
+- 2
+- 4
+- 1
+= Number of provinces: {0, 1}, {2} and {3}.
+
+Q H What does this print (C++)?
+| #include <array>
+| #include <iostream>
+| #include <vector>
+| int main() {
+|     std::vector<std::array<int, 3>> e{{0, 1, 4}, {0, 2, 5}, {2, 1, -3}, {1, 3, 2}};
+|     std::vector<int> d{0, 1000, 1000, 1000};
+|     for (int i = 0; i < 3; i++) for (auto [a, b, w] : e) if (d[a] + w < d[b]) d[b] = d[a] + w;
+|     std::cout << d[1] << " " << d[3] << std::endl;
+| }
++ 2 4
+- 4 6
+- 2 6
+- 4 4
+= Bellman–Ford: 0 → 2 → 1 costs 5 − 3 = 2, then 1 → 3 adds 2.
+
+Q H How does Bellman–Ford detect a negative cycle?
++ An edge still relaxes after V − 1 rounds
+- The distance array contains a zero
+- Two nodes have equal distances
+- The source has a negative edge
+= Without negative cycles, V − 1 rounds are enough to settle everything.
+
+Q H How does A* search differ from Dijkstra's algorithm?
++ It adds a heuristic estimate to the target
+- It allows negative edge weights safely
+- It uses a stack instead of a heap
+- It visits the nodes in random order
+= With an admissible heuristic it still finds the shortest path, exploring less.
+
+Q H What does this print (Python)?
+| from collections import deque
+| g = {0: [(1, 1), (2, 0)], 1: [(3, 0)], 2: [(1, 0), (3, 1)], 3: []}
+| d = [9] * 4; d[0] = 0; q = deque([0])
+| while q:
+|     u = q.popleft()
+|     for v, w in g[u]:
+|         if d[u] + w < d[v]:
+|             d[v] = d[u] + w
+|             q.appendleft(v) if w == 0 else q.append(v)
+| print(d)
++ [0, 0, 0, 0]
+- [0, 1, 0, 1]
+- [0, 0, 0, 1]
+- [0, 1, 0, 0]
+= 0-1 BFS: zero-cost edges go to the front of the deque. 0 → 2 → 1 → 3 costs nothing.
+
+Q H How are bridges (edges whose removal disconnects the graph) found?
++ DFS with low-link values (Tarjan)
+- BFS levels from any start node
+- Kruskal's algorithm on the edges
+- A topological sort of the nodes
+= An edge u–v is a bridge when low[v] > discovery time of u.
+
+Q H What does this print (Java)?
+| Map<String, List<String>> g = new LinkedHashMap<>();
+| g.put("shirt", List.of("tie")); g.put("tie", List.of("jacket")); g.put("pants", List.of("shoes", "jacket"));
+| g.put("shoes", List.of()); g.put("jacket", List.of());
+| Set<String> seen = new HashSet<>();
+| Deque<String> out = new ArrayDeque<>();
+| void dfs(String u) { seen.add(u); for (String v : g.get(u)) if (!seen.contains(v)) dfs(v); out.push(u); }
+| for (String u : g.keySet()) if (!seen.contains(u)) dfs(u);
+| System.out.println(String.join(" ", out));
++ pants shoes shirt tie jacket
+- shirt tie jacket pants shoes
+- jacket tie shirt shoes pants
+- shirt pants tie shoes jacket
+= Pushing each node when it finishes gives a reversed postorder, which is a topological order.
+
+Q H A connected graph has V nodes and V − 1 edges. What is it?
++ A tree
+- A graph with exactly one cycle
+- A complete graph
+- Bipartite only when V is even
+= Every tree is bipartite, and V − 1 edges leave no room for a cycle.
+
+Q H With an adjacency matrix and no heap, what does Dijkstra's algorithm cost?
++ O(V²)
+- O(V + E)
+- O(E log V)
+- O(V³)
+= Pick the closest node by scanning, V times. Good for dense graphs.
+
+@topic dsa-dp | ADVANCED | Dynamic programming | Overlapping subproblems, memoisation and tabulation, 1D and 2D DP, knapsack, longest increasing subsequence, longest common subsequence, edit distance, coin change, grid paths and choosing the state.
+Q E Dynamic programming helps when a problem has:
++ Overlapping subproblems
+- No subproblems at all
+- Only sorted inputs
+- A single loop
+= Solve each subproblem once and reuse it; optimal substructure is the other ingredient.
+
+Q E Which problem gains most from memoising a recursive solution?
++ Counting paths through a grid
+- Reversing a linked list
+- Finding the maximum of a list
+- Swapping two variables
+= Many paths share the same sub-grids, so cached results get reused.
+
+Q E What is tabulation?
++ Filling a table bottom-up
+- Recursion with a cache
+- A greedy choice at each step
+- Binary search on the answer
+= Solve the smallest subproblems first, in loop order.
+
+Q E What does this print (Python)?
+| from functools import lru_cache
+| @lru_cache(None)
+| def fib(n): return n if n < 2 else fib(n - 1) + fib(n - 2)
+| print(fib(10))
++ 55
+- 89
+- 34
+- 45
+= 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55.
+
+Q E How fast is naive recursive Fibonacci?
++ Exponential
+- Linear
+- Logarithmic
+- Constant
+= It recomputes the same values again and again.
+
+Q E How fast is memoised Fibonacci?
++ O(n)
+- O(2ⁿ)
+- O(n²)
+- O(log n)
+= Each value is computed once.
+
+Q E What does this print (JavaScript)?
+| function ways(n) { let a = 1, b = 1; for (let i = 2; i <= n; i++) [a, b] = [b, a + b]; return b; }
+| console.log(ways(4), ways(5));
++ 5 8
+- 4 5
+- 5 7
+- 8 13
+= Climbing stairs one or two at a time follows the Fibonacci numbers.
+
+Q E What does this print (Java)?
+| int[][] dp = new int[3][3];
+| for (int r = 0; r < 3; r++) for (int c = 0; c < 3; c++) dp[r][c] = (r == 0 || c == 0) ? 1 : dp[r - 1][c] + dp[r][c - 1];
+| System.out.println(dp[2][2]);
++ 6
+- 9
+- 4
+- 8
+= Paths through a 3 × 3 grid moving only right or down.
+
+Q E How much space does Fibonacci need if you keep only the last two values?
++ O(1)
+- O(n)
+- O(log n)
+- O(n²)
+= Each value depends only on the two before it.
+
+Q E What is the "state" in a DP solution?
++ The values that identify a subproblem
+- The global variables of the program
+- The order the input is sorted in
+- How many times the function ran
+= For example an index, or an index and a remaining capacity.
+
+Q E What does this print (C++)?
+| #include <algorithm>
+| #include <iostream>
+| int main() {
+|     int a[] = {-2, 1, -3, 4, -1, 2, 1, -5, 4};
+|     int cur = 0, best = a[0];
+|     for (int x : a) { cur = std::max(x, cur + x); best = std::max(best, cur); }
+|     std::cout << best << std::endl;
+| }
++ 6
+- 4
+- 7
+- 5
+= Kadane's algorithm: the best subarray is [4, −1, 2, 1].
+
+Q E Which of these is a classic dynamic programming problem?
++ Longest common subsequence
+- Binary search in a sorted array
+- Reversing a string in place
+- Finding the maximum of a list
+= The others need no table of subproblems.
+
+Q E What does this print (Python)?
+| def rob(a):
+|     take, skip = 0, 0
+|     for x in a: take, skip = skip + x, max(take, skip)
+|     return max(take, skip)
+| print(rob([2, 7, 9, 3, 1]))
++ 12
+- 11
+- 10
+- 22
+= House robber: take 2, 9 and 1, never two neighbours.
+
+Q E How do top-down and bottom-up DP differ?
++ Recursion with a cache vs filling a table
+- Top-down is always faster than bottom-up
+- Bottom-up cannot solve 2D problems
+- The two give different answers
+= Same recurrence; top-down solves only the states it needs.
+
+Q E What is the fewest coins for 11 with coins 1, 2 and 5?
++ 3
+- 2
+- 4
+- 11
+= 5 + 5 + 1.
+
+Q E With coins 1, 3 and 4, how does always taking the largest coin do for 6?
++ It uses 3 coins; 2 coins (3 + 3) work
+- It uses 2 coins; 3 coins are needed
+- Neither works; 6 can't be made from them
+- It is right; it always is for coins
+= Greedy picks 4 + 1 + 1. DP tries every last coin.
+
+Q E What does this print (JavaScript)?
+| const n = 5, dp = [0];
+| for (let i = 1; i <= n; i++) dp[i] = dp[i >> 1] + (i & 1);
+| console.log(dp.join(""));
++ 011212
+- 012345
+- 011223
+- 010101
+= The number of 1 bits in i is that of i / 2, plus its last bit.
+
+Q M What does 0/1 knapsack cost with n items and capacity W?
++ O(nW)
+- O(2ⁿ)
+- O(n log n)
+- O(W)
+= Pseudo-polynomial: it grows with the size of W, not its number of digits.
+
+Q M What does this print (Python)?
+| def ks(items, W):
+|     dp = [0] * (W + 1)
+|     for w, v in items:
+|         for c in range(W, w - 1, -1): dp[c] = max(dp[c], dp[c - w] + v)
+|     return dp[W]
+| print(ks([(1, 1), (3, 4), (4, 5), (5, 7)], 7))
++ 9
+- 8
+- 12
+- 10
+= The items of weight 3 and 4 give value 9.
+
+Q M Why does a 1D 0/1 knapsack loop over capacity downward?
++ So each item is used at most once
+- To make the inner loop run faster
+- To handle items with negative weights
+- It makes no difference to the answer
+= Going upward would reuse the item just added (unbounded knapsack).
+
+Q M What does this print (Java)?
+| String a = "abcde", b = "ace";
+| int[][] dp = new int[a.length() + 1][b.length() + 1];
+| for (int i = 1; i <= a.length(); i++) for (int j = 1; j <= b.length(); j++) dp[i][j] = a.charAt(i - 1) == b.charAt(j - 1) ? dp[i - 1][j - 1] + 1 : Math.max(dp[i - 1][j], dp[i][j - 1]);
+| System.out.println(dp[a.length()][b.length()]);
++ 3
+- 2
+- 5
+- 4
+= The longest common subsequence is "ace".
+
+Q M How does the O(n log n) longest increasing subsequence work?
++ Binary search over the tails of piles
+- A max-heap holding all the values
+- A hash map from value to run length
+- Two pointers moving in from both ends
+= tails[k] is the smallest possible end of an increasing run of length k + 1.
+
+Q M What does this print (Python)?
+| from bisect import bisect_left
+| def lis(a):
+|     tails = []
+|     for x in a:
+|         i = bisect_left(tails, x)
+|         tails[i:i + 1] = [x]
+|     return len(tails)
+| print(lis([10, 9, 2, 5, 3, 7, 101, 18]), lis([7, 7, 7]))
++ 4 1
+- 4 3
+- 5 1
+- 3 1
+= For example 2, 3, 7, 18; equal values don't count as increasing.
+
+Q M What is the edit distance from "kitten" to "sitting"?
++ 3
+- 2
+- 4
+- 5
+= Replace k with s, replace e with i, and insert g.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| #include <vector>
+| int main() {
+|     std::vector<int> coins{1, 2, 5};
+|     int amt = 5;
+|     std::vector<long> dp(amt + 1);
+|     dp[0] = 1;
+|     for (int c : coins) for (int a = c; a <= amt; a++) dp[a] += dp[a - c];
+|     std::cout << dp[amt] << std::endl;
+| }
++ 4
+- 9
+- 5
+- 3
+= Coin change II: 5, 2+2+1, 2+1+1+1 and 1+1+1+1+1.
+
+Q M In that coin change code, what do you count if the loops are swapped (amount outside, coins inside)?
++ Ordered sequences (permutations)
+- The same set of combinations
+- Only the minimum number of coins
+- Nothing; the code breaks
+= 1+2+2 and 2+1+2 then count separately.
+
+Q M What does this print (JavaScript)?
+| function mc(coins, amt) {
+|   const dp = Array(amt + 1).fill(Infinity); dp[0] = 0;
+|   for (let a = 1; a <= amt; a++) for (const c of coins) if (c <= a) dp[a] = Math.min(dp[a], dp[a - c] + 1);
+|   return dp[amt] === Infinity ? -1 : dp[amt];
+| }
+| console.log(mc([1, 3, 4], 6), mc([2], 3));
++ 2 -1
+- 3 -1
+- 2 0
+- 3 1
+= 3 + 3 for 6; an odd amount can't be made from 2s.
+
+Q M Row i of a 2D DP depends only on row i − 1. How can you save space?
++ Keep two rows, or one
+- You can't save any space
+- Use recursion only
+- Store the table in a hash map
+= Space drops from O(nm) to O(m).
+
+Q M What does this print (Python)?
+| g = [[0, 0, 0], [0, 1, 0], [0, 0, 0]]
+| dp = [1] + [0] * 2
+| for row in g:
+|     for c in range(3):
+|         if row[c]: dp[c] = 0
+|         elif c: dp[c] += dp[c - 1]
+| print(dp[-1])
++ 2
+- 6
+- 3
+- 4
+= Unique paths around the obstacle in the middle: along the top or along the left.
+
+Q M In word break, what does the DP table hold?
++ Whether each prefix s[:i] can be split
+- Every possible pair of dictionary words
+- The dictionary sorted from short to long
+- Character counts of the string
+= dp[i] is true if some dp[j] is true and s[j:i] is a word.
+
+Q M What does this print (Java)?
+| String s = "applepenapple";
+| Set<String> d = Set.of("apple", "pen");
+| boolean[] dp = new boolean[s.length() + 1];
+| dp[0] = true;
+| for (int i = 1; i <= s.length(); i++) for (int j = 0; j < i; j++) if (dp[j] && d.contains(s.substring(j, i))) { dp[i] = true; break; }
+| System.out.println(dp[s.length()] + " " + dp[7]);
++ true false
+- true true
+- false false
+- false true
+= "apple pen apple" works; the 7-letter prefix "applepe" can't be split.
+
+Q M Partition into two equal-sum subsets reduces to:
++ Subset sum to total / 2
+- Sorting, then splitting in the middle
+- Longest increasing subsequence
+- A shortest path search
+= If one half sums to total / 2, so does the rest.
+
+Q M What does a typical interval DP (such as matrix chain multiplication) cost?
++ O(n³)
+- O(n)
+- O(n log n)
+- O(2ⁿ)
+= O(n²) intervals, each trying O(n) split points.
+
+Q M What does this print (Python)?
+| def ways(s):
+|     a, b = 1, 1 if s[0] != "0" else 0
+|     for i in range(1, len(s)):
+|         c = (b if s[i] != "0" else 0) + (a if 10 <= int(s[i - 1:i + 1]) <= 26 else 0)
+|         a, b = b, c
+|     return b
+| print(ways("226"), ways("06"), ways("11106"))
++ 3 0 2
+- 3 1 2
+- 2 0 2
+- 3 0 3
+= Decode ways: "226" is BZ, VF or BBF; a leading 0 can't be decoded.
+
+Q H What does this print (Python)?
+| def ed(a, b):
+|     dp = list(range(len(b) + 1))
+|     for i in range(1, len(a) + 1):
+|         prev, dp[0] = dp[0], i
+|         for j in range(1, len(b) + 1):
+|             prev, dp[j] = dp[j], prev if a[i - 1] == b[j - 1] else 1 + min(prev, dp[j], dp[j - 1])
+|     return dp[-1]
+| print(ed("horse", "ros"), ed("intention", "execution"))
++ 3 5
+- 3 4
+- 2 5
+- 4 5
+= Edit distance in one row; prev holds the diagonal cell.
+
+Q H What does bitmask DP for the travelling salesman problem cost?
++ O(2ⁿ · n²)
+- O(n!)
+- O(n²)
+- O(2ⁿ)
+= States are (set visited, last city); each tries n next cities.
+
+Q H What does this print (Java)?
+| String s = "bbbab";
+| int n = s.length();
+| int[][] dp = new int[n][n];
+| for (int i = n - 1; i >= 0; i--) { dp[i][i] = 1; for (int j = i + 1; j < n; j++) dp[i][j] = s.charAt(i) == s.charAt(j) ? dp[i + 1][j - 1] + 2 : Math.max(dp[i + 1][j], dp[i][j - 1]); }
+| System.out.println(dp[0][n - 1]);
++ 4
+- 3
+- 5
+- 2
+= The longest palindromic subsequence is "bbbb".
+
+Q H What states does "best time to buy and sell stock with cooldown" use?
++ Holding, just sold, resting
+- Just the highest price seen so far
+- The prices sorted in ascending order
+- Two pointers moving inward
+= After selling you must rest a day before buying again.
+
+Q H What does this print (C++)?
+| #include <algorithm>
+| #include <iostream>
+| int main() {
+|     int p[] = {1, 2, 3, 0, 2};
+|     int hold = -p[0], sold = 0, rest = 0;
+|     for (int i = 1; i < 5; i++) {
+|         int h = std::max(hold, rest - p[i]), s = hold + p[i], r = std::max(rest, sold);
+|         hold = h; sold = s; rest = r;
+|     }
+|     std::cout << std::max(sold, rest) << std::endl;
+| }
++ 3
+- 2
+- 4
+- 5
+= Buy at 1, sell at 2, cool down, buy at 0, sell at 2.
+
+Q H What is the key idea in burst balloons and matrix chain multiplication?
++ Choose the last action within an interval
+- Choose the first element greedily
+- Sort the array first
+- Use a monotonic stack
+= Fixing the last step splits the interval into independent halves.
+
+Q H What does this print (Python)?
+| from functools import lru_cache
+| d = [10, 30, 5, 60]
+| @lru_cache(None)
+| def mc(i, j):
+|     if j - i < 2: return 0
+|     return min(mc(i, k) + mc(k, j) + d[i] * d[k] * d[j] for k in range(i + 1, j))
+| print(mc(0, 3))
++ 4500
+- 27000
+- 9000
+- 6000
+= (AB)C costs 10·30·5 + 10·5·60 = 4500; A(BC) costs 27000.
+
+Q H What is digit DP used for?
++ Counting numbers up to N with a digit rule
+- Sorting the digits of a very large number
+- Adding two numbers with many digits
+- Hashing strings digit by digit
+= State: position, whether still tight to N, plus the rule's data.
+
+Q H What does this print (JavaScript)?
+| const m = ["10100", "10111", "11111", "10010"];
+| const R = m.length, C = m[0].length;
+| const dp = Array.from({ length: R + 1 }, () => Array(C + 1).fill(0));
+| let best = 0;
+| for (let r = 1; r <= R; r++) for (let c = 1; c <= C; c++) if (m[r - 1][c - 1] === "1") {
+|   dp[r][c] = 1 + Math.min(dp[r - 1][c], dp[r][c - 1], dp[r - 1][c - 1]);
+|   best = Math.max(best, dp[r][c]);
+| }
+| console.log(best * best);
++ 4
+- 9
+- 6
+- 1
+= The largest all-ones square is 2 × 2.
+
+Q H Knapsack capacity is up to 10⁹, but the total value is small. What works?
++ DP over value: least weight per value
+- The usual DP over every capacity
+- Greedy by value-to-weight ratio
+- Sort by weight and take the lightest
+= Then take the largest value whose least weight fits.
+
+Q H What does this print (Java)?
+| int[][] g = {{1, 3, 1}, {1, 5, 1}, {4, 2, 1}};
+| for (int r = 0; r < 3; r++) for (int c = 0; c < 3; c++) {
+|     if (r == 0 && c == 0) continue;
+|     int up = r > 0 ? g[r - 1][c] : Integer.MAX_VALUE, left = c > 0 ? g[r][c - 1] : Integer.MAX_VALUE;
+|     g[r][c] += Math.min(up, left);
+| }
+| System.out.println(g[2][2]);
++ 7
+- 8
+- 6
+- 12
+= Minimum path sum: 1 → 3 → 1 → 1 → 1.
+
+Q H What does this print (Python)?
+| def can(a):
+|     s = sum(a)
+|     if s % 2: return False
+|     bits = 1
+|     for x in a: bits |= bits << x
+|     return bool(bits >> (s // 2) & 1)
+| print(can([1, 5, 11, 5]), can([1, 2, 3, 5]))
++ True False
+- True True
+- False False
+- False True
+= Bit k of bits is set when some subset sums to k.
+
+Q H A memoised recursion in Python goes 10⁵ calls deep. What happens?
++ RecursionError; use bottom-up
+- It's fine; Python has tail calls
+- It runs out of heap memory first
+- lru_cache stops deep recursion
+= The default recursion limit is about 1000.
+
+Q H What does this print (C++)?
+| #include <algorithm>
+| #include <iostream>
+| int main() {
+|     int price[] = {0, 1, 5, 8, 9, 10, 17, 17, 20};
+|     int dp[9] = {0};
+|     for (int n = 1; n <= 8; n++) for (int k = 1; k <= n; k++) dp[n] = std::max(dp[n], price[k] + dp[n - k]);
+|     std::cout << dp[4] << " " << dp[8] << std::endl;
+| }
++ 10 22
+- 9 20
+- 10 20
+- 9 22
+= Rod cutting: 4 = 2 + 2 (5 + 5); 8 = 2 + 6 (5 + 17).
+
+Q H When is a greedy algorithm enough instead of DP?
++ When a local best choice is provably safe
+- Whenever the input is small enough to fit
+- Whenever recursion is not allowed at all
+- Whenever the answer is a single number
+= Prove it with an exchange argument; otherwise use DP.
+
+Q H What does this print (Python)?
+| def count(s):
+|     n = 0
+|     for c in range(2 * len(s) - 1):
+|         l, r = c // 2, c // 2 + c % 2
+|         while l >= 0 and r < len(s) and s[l] == s[r]: n += 1; l -= 1; r += 1
+|     return n
+| print(count("abc"), count("aaa"))
++ 3 6
+- 3 3
+- 3 5
+- 6 6
+= Expanding around each centre counts every palindromic substring.
+
+@topic dsa-greedy | ADVANCED | Greedy algorithms and intervals | Greedy choices and exchange arguments, interval scheduling and merging, meeting rooms, jump game, gas station, Huffman coding and when greedy fails.
+Q E What does a greedy algorithm do?
++ Takes the best local choice each step
+- Tries every possible combination
+- Always works backwards from the end
+- Always splits the problem in half
+= It never revisits a choice, so it must be proven correct.
+
+Q E To fit the most non-overlapping activities, pick the next activity by:
++ Earliest finish time
+- Earliest start time
+- Shortest duration
+- Latest finish time
+= Finishing early leaves the most room for the rest.
+
+Q E What is the first step when merging overlapping intervals?
++ Sort by start
+- Sort by length
+- Sort by end, descending
+- Hash by start
+= Then each interval overlaps only the last merged one.
+
+Q E What does this print (Python)?
+| iv = sorted([[1, 3], [8, 10], [2, 6], [15, 18]])
+| out = []
+| for s, e in iv:
+|     if out and s <= out[-1][1]: out[-1][1] = max(out[-1][1], e)
+|     else: out.append([s, e])
+| print(out)
++ [[1, 6], [8, 10], [15, 18]]
+- [[1, 3], [2, 6], [8, 10], [15, 18]]
+- [[1, 10], [15, 18]]
+- [[1, 6], [8, 18]]
+= [1, 3] and [2, 6] overlap and merge.
+
+Q E Does taking the largest coin first give the fewest coins for Indian coins 1, 2, 5 and 10?
++ Yes, for this coin set
+- No, never
+- Only for odd amounts
+- Only below 10
+= Standard currency systems are designed for it; arbitrary coin sets are not.
+
+Q E What does this print (JavaScript)?
+| const a = [[1, 2], [3, 4], [0, 6], [5, 7], [8, 9], [5, 9]];
+| a.sort((x, y) => x[1] - y[1]);
+| let end = -1, n = 0;
+| for (const [s, e] of a) if (s >= end) { n++; end = e; }
+| console.log(n);
++ 4
+- 3
+- 5
+- 6
+= 1–2, 3–4, 5–7 and 8–9.
+
+Q E For the fractional knapsack, which item do you take first?
++ Highest value per unit weight
+- The heaviest item available
+- The lightest item available
+- The single highest-value item
+= You may take part of the last item, so greedy is optimal here.
+
+Q E What does this print (Java)?
+| int[] g = {1, 2, 3}, s = {1, 1};
+| Arrays.sort(g); Arrays.sort(s);
+| int i = 0;
+| for (int j = 0; j < s.length && i < g.length; j++) if (s[j] >= g[i]) i++;
+| System.out.println(i);
++ 1
+- 2
+- 0
+- 3
+= Assign cookies: two size-1 cookies satisfy only the child who wants 1.
+
+Q E What does Huffman coding do?
++ Gives shorter codes to frequent symbols
+- Gives every symbol an equal-length code
+- Gives longer codes to frequent symbols
+- Sorts the codes alphabetically
+= That minimises the total encoded length.
+
+Q E What is the usual trade-off with greedy algorithms?
++ Fast, but correctness needs a proof
+- Slow, but always correct without proof
+- Exponential time on most inputs
+- They only work on graph problems
+= Many plausible greedy rules are wrong.
+
+Q E What does this print (C++)?
+| #include <iostream>
+| #include <vector>
+| bool ok(std::vector<int> bills) {
+|     int f = 0, t = 0;
+|     for (int b : bills) {
+|         if (b == 5) f++;
+|         else if (b == 10) { if (!f) return false; f--; t++; }
+|         else { if (t && f) { t--; f--; } else if (f >= 3) f -= 3; else return false; }
+|     }
+|     return true;
+| }
+| int main() { std::cout << ok({5, 5, 5, 10, 20}) << ok({5, 5, 10, 10, 20}) << std::endl; }
++ 10
+- 11
+- 01
+- 00
+= Lemonade change: in the second case there are no 5s left for the 20.
+
+Q E In "can you reach the end?" (jump game), what does the greedy solution track?
++ The farthest index reachable so far
+- The number of zeros in the array
+- The smallest jump available
+- Every possible path
+= If you ever stand beyond that index, you're stuck.
+
+Q E What does this print (Python)?
+| def can(a):
+|     far = 0
+|     for i, x in enumerate(a):
+|         if i > far: return False
+|         far = max(far, i + x)
+|     return True
+| print(can([2, 3, 1, 1, 4]), can([3, 2, 1, 0, 4]))
++ True False
+- True True
+- False True
+- False False
+= In the second array every path lands on the 0 at index 3.
+
+Q E How does an exchange argument prove a greedy algorithm correct?
++ Swapping in the greedy choice never hurts
+- Testing it on many random inputs
+- Showing it runs in linear time
+- Checking it on one small example
+= Turn any optimal solution into the greedy one without making it worse.
+
+Q E How many meeting rooms do [0, 30], [5, 10] and [15, 20] need?
++ 2
+- 1
+- 3
+- 0
+= The long meeting overlaps each of the others, which don't overlap each other.
+
+Q E Why is Dijkstra's algorithm called greedy?
++ It always settles the closest unsettled node
+- It tries every path from the source
+- It uses dynamic programming tables only
+- It sorts all the edges by weight first
+= That choice is safe only without negative edges.
+
+Q E What does this print (JavaScript)?
+| let a = 63, n = 0;
+| for (const c of [25, 10, 5, 1]) { n += Math.floor(a / c); a %= c; }
+| console.log(n);
++ 6
+- 5
+- 7
+- 63
+= 25 + 25 + 10 + 1 + 1 + 1.
+
+Q M What does this print (Python)?
+| import heapq
+| def rooms(iv):
+|     h = []
+|     for s, e in sorted(iv):
+|         if h and h[0] <= s: heapq.heapreplace(h, e)
+|         else: heapq.heappush(h, e)
+|     return len(h)
+| print(rooms([[0, 30], [5, 10], [15, 20]]), rooms([[7, 10], [2, 4]]), rooms([[1, 5], [2, 6], [3, 7], [5, 8]]))
++ 2 1 3
+- 2 1 4
+- 2 2 3
+- 3 1 3
+= The heap holds end times; reuse a room when its meeting has ended.
+
+Q M How do you choose the start in the gas station problem (when total gas ≥ total cost)?
++ Restart just after where the tank goes negative
+- Start at the station that has the most gas
+- Start at the station with the lowest cost
+- Always start at station 0 and hope
+= No station before that point can be a valid start.
+
+Q M What does this print (Java)?
+| int[] gas = {1, 2, 3, 4, 5}, cost = {3, 4, 5, 1, 2};
+| int total = 0, tank = 0, start = 0;
+| for (int i = 0; i < gas.length; i++) { total += gas[i] - cost[i]; tank += gas[i] - cost[i]; if (tank < 0) { start = i + 1; tank = 0; } }
+| System.out.println(total >= 0 ? start : -1);
++ 3
+- 4
+- 0
+- -1
+= The tank first stays non-negative from station 3.
+
+Q M To remove the fewest intervals so the rest don't overlap:
++ Sort by end; keep the earliest-ending
+- Sort by start; remove the longest
+- Sort by length; remove the shortest
+- Sort by start, descending
+= This is activity selection; remove whatever isn't kept.
+
+Q M What does this print (JavaScript)?
+| const a = [[1, 2], [2, 3], [3, 4], [1, 3]];
+| a.sort((x, y) => x[1] - y[1]);
+| let end = -Infinity, removed = 0;
+| for (const [s, e] of a) { if (s >= end) end = e; else removed++; }
+| console.log(removed);
++ 1
+- 2
+- 0
+- 3
+= Only [1, 3] has to go.
+
+Q M What does this print (Python)?
+| def jumps(a):
+|     n = end = far = 0
+|     for i in range(len(a) - 1):
+|         far = max(far, i + a[i])
+|         if i == end: n += 1; end = far
+|     return n
+| print(jumps([2, 3, 1, 1, 4]), jumps([2, 3, 0, 1, 4]))
++ 2 2
+- 2 3
+- 3 2
+- 1 2
+= Jump game II: treat each jump's reach as one BFS level.
+
+Q M How does Huffman coding build its tree?
++ Merging the two rarest nodes, again and again
+- Merging the two most common nodes each time
+- Splitting the symbols into halves by count
+- Sorting symbols alphabetically, then pairing
+= A min-heap of frequencies makes it O(n log n).
+
+Q M What does this print (C++)?
+| #include <functional>
+| #include <iostream>
+| #include <queue>
+| #include <vector>
+| int main() {
+|     std::priority_queue<int, std::vector<int>, std::greater<int>> pq;
+|     for (int f : {5, 9, 12, 13, 16, 45}) pq.push(f);
+|     int cost = 0;
+|     while (pq.size() > 1) { int a = pq.top(); pq.pop(); int b = pq.top(); pq.pop(); cost += a + b; pq.push(a + b); }
+|     std::cout << cost << std::endl;
+| }
++ 224
+- 100
+- 200
+- 124
+= The merges cost 14, 25, 30, 55 and 100: the total Huffman-encoded length.
+
+Q M Tasks A A A B B B run with a cooldown of 2 between equal tasks. What is the shortest schedule?
++ 8
+- 6
+- 7
+- 9
+= A B idle A B idle A B.
+
+Q M What does this print (Python)?
+| from collections import Counter
+| def least(tasks, n):
+|     c = Counter(tasks).values()
+|     m = max(c); k = list(c).count(m)
+|     return max(len(tasks), (m - 1) * (n + 1) + k)
+| print(least("AAABBB", 2), least("AAABBB", 0), least("AAAABBBCC", 2))
++ 8 6 10
+- 8 6 9
+- 8 8 10
+- 6 6 10
+= The most frequent task sets the frame; other tasks fill the gaps.
+
+Q M For the fewest arrows to burst balloons (intervals), sort by:
++ End, shooting at each end
+- Start, shooting at each start
+- Width
+- Height
+= An arrow at the earliest end bursts every balloon that has started by then.
+
+Q M What does this print (Java)?
+| int[][] p = {{10, 16}, {2, 8}, {1, 6}, {7, 12}};
+| Arrays.sort(p, (a, b) -> Integer.compare(a[1], b[1]));
+| int n = 0;
+| long end = Long.MIN_VALUE;
+| for (int[] q : p) if (q[0] > end) { n++; end = q[1]; }
+| System.out.println(n);
++ 2
+- 3
+- 1
+- 4
+= Arrows at 6 and at 12.
+
+Q M Why does greedy by value-to-weight ratio fail for the 0/1 knapsack?
++ You can't take part of an item
+- Some items weigh more than others
+- Two items can have equal values
+- It is far too slow for large inputs
+= A high-ratio item can waste capacity; the 0/1 version needs DP.
+
+Q M How does "candy" (more candy than higher-rated neighbours) get solved greedily?
++ Two passes, left then right
+- One pass with a max-heap
+- Sorting children by rating
+- Binary search on the total
+= Each pass fixes one side's constraint.
+
+Q M What does this print (JavaScript)?
+| function candy(r) {
+|   const c = Array(r.length).fill(1);
+|   for (let i = 1; i < r.length; i++) if (r[i] > r[i - 1]) c[i] = c[i - 1] + 1;
+|   for (let i = r.length - 2; i >= 0; i--) if (r[i] > r[i + 1]) c[i] = Math.max(c[i], c[i + 1] + 1);
+|   return c.reduce((a, b) => a + b, 0);
+| }
+| console.log(candy([1, 0, 2]), candy([1, 2, 2]));
++ 5 4
+- 5 5
+- 4 4
+- 6 4
+= Candies 2, 1, 2 and 1, 2, 1.
+
+Q M What does inserting an interval into a sorted, non-overlapping list cost?
++ O(n)
+- O(n log n)
+- O(log n)
+- O(n²)
+= Binary search finds the place, but merging and shifting are linear.
+
+Q M What does this print (Python)?
+| from functools import cmp_to_key
+| a = [3, 30, 34, 5, 9]
+| s = sorted(map(str, a), key=cmp_to_key(lambda x, y: (y + x > x + y) - (y + x < x + y)))
+| print("".join(s))
++ 9534330
+- 9534303
+- 9533430
+- 3033459
+= Largest number: put x before y when x + y > y + x as strings.
+
+Q H Why is earliest-finish-first optimal for interval scheduling?
++ Swapping in the earliest finisher never hurts
+- It holds only when all times are integers
+- Induction on the lengths of the intervals
+- It isn't optimal; it's an approximation
+= Replacing an optimal solution's first interval with it keeps the count.
+
+Q H What does weighted interval scheduling need?
++ DP with binary search
+- Greedy by finish time
+- Greedy by weight
+- Greedy by length
+= dp[i] = max(dp[i − 1], weight + dp[last compatible job]).
+
+Q H What does this print (Python)?
+| from bisect import bisect_right
+| jobs = sorted([(1, 3, 50), (2, 4, 10), (3, 5, 40), (3, 6, 70)], key=lambda j: j[1])
+| ends = [j[1] for j in jobs]; dp = [0] * (len(jobs) + 1)
+| for i, (s, e, w) in enumerate(jobs, 1):
+|     k = bisect_right(ends, s, 0, i - 1)
+|     dp[i] = max(dp[i - 1], dp[k] + w)
+| print(dp[-1])
++ 120
+- 90
+- 170
+- 110
+= Jobs (1, 3, 50) and (3, 6, 70) don't overlap.
+
+Q H What does this print (JavaScript)?
+| const p = [[7, 0], [4, 4], [7, 1], [5, 0], [6, 1], [5, 2]];
+| p.sort((a, b) => b[0] - a[0] || a[1] - b[1]);
+| const out = [];
+| for (const x of p) out.splice(x[1], 0, x);
+| console.log(out.map(x => x[0]).join(""));
++ 575647
+- 757645
+- 576547
+- 557647
+= Queue reconstruction by height: insert the tallest first, each at its count.
+
+Q H What does this print (Java)?
+| int[] p = {7, 1, 5, 3, 6, 4};
+| int s = 0;
+| for (int i = 1; i < p.length; i++) s += Math.max(0, p[i] - p[i - 1]);
+| System.out.println(s);
++ 7
+- 5
+- 4
+- 8
+= With unlimited trades, take every rise: (5 − 1) + (6 − 3).
+
+Q H Why do matroids matter for greedy algorithms?
++ Greedy is optimal on any matroid
+- They make every DP run in linear time
+- They are used to detect negative cycles
+- They let you sort in O(n) time
+= Kruskal's algorithm works because spanning forests form a matroid.
+
+Q H What does this print (C++)?
+| #include <algorithm>
+| #include <iostream>
+| #include <vector>
+| int main() {
+|     std::vector<int> w{3, 2, 2, 1};
+|     int limit = 3;
+|     std::sort(w.begin(), w.end());
+|     int i = 0, j = w.size() - 1, boats = 0;
+|     while (i <= j) { if (w[i] + w[j] <= limit) i++; j--; boats++; }
+|     std::cout << boats << std::endl;
+| }
++ 3
+- 2
+- 4
+- 1
+= Boats to save people: (1, 2), (2) and (3).
+
+Q H What does greedy set cover guarantee?
++ About ln n times the optimum
+- Always the exact optimum
+- Exactly twice the optimum
+- A random valid cover
+= Set cover is NP-hard; greedy is a good approximation.
+
+Q H What does this print (Python)?
+| def rm(num, k):
+|     st = []
+|     for d in num:
+|         while k and st and st[-1] > d: st.pop(); k -= 1
+|         st.append(d)
+|     st = st[:len(st) - k] if k else st
+|     return "".join(st).lstrip("0") or "0"
+| print(rm("1432219", 3), rm("10200", 1), rm("10", 2))
++ 1219 200 0
+- 1219 0200 0
+- 1229 200 0
+- 1219 200 10
+= Remove k digits: drop a digit whenever the next one is smaller.
+
+Q H What is the cut property of minimum spanning trees?
++ The lightest edge across a cut is safe to add
+- The heaviest edge in any cycle must be kept
+- Every cut of the graph has exactly one edge
+- A graph always has exactly one MST
+= It proves both Kruskal's and Prim's greedy choices.
+
+Q H What does this print (Java)?
+| int[] a = {3, -1, 0, 2};
+| int k = 3;
+| Arrays.sort(a);
+| for (int i = 0; i < a.length && k > 0 && a[i] < 0; i++, k--) a[i] = -a[i];
+| int sum = 0, min = Integer.MAX_VALUE;
+| for (int x : a) { sum += x; min = Math.min(min, x); }
+| System.out.println(k % 2 == 0 ? sum : sum - 2 * min);
++ 6
+- 4
+- 5
+- 2
+= Flip −1; the two flips left can go on 0 (or cancel out).
+
+Q H For two-city scheduling (send half to each city at least cost), sort people by:
++ costA − costB
+- costA
+- costA + costB
+- The larger of the two costs
+= Those who save most by going to A go to A.
+
+Q H What does this print (JavaScript)?
+| const c = [[10, 20], [30, 200], [400, 50], [30, 20]];
+| c.sort((a, b) => (a[0] - a[1]) - (b[0] - b[1]));
+| let s = 0;
+| for (let i = 0; i < c.length; i++) s += i < c.length / 2 ? c[i][0] : c[i][1];
+| console.log(s);
++ 110
+- 120
+- 140
+- 100
+= 30 + 10 to city A, 20 + 50 to city B.
+
+Q H Why is Huffman coding optimal?
++ The two rarest symbols can be sibling leaves
+- The symbols being sorted alphabetically
+- Every frequency in the input being distinct
+- All codes having exactly the same length
+= Merging them reduces the problem to a smaller one of the same kind.
+
+Q H What does this print (Python)?
+| arr = [900, 940, 950, 1100, 1500, 1800]
+| dep = [910, 1200, 1120, 1130, 1900, 2000]
+| a, d = sorted(arr), sorted(dep)
+| i = j = cur = best = 0
+| while i < len(a):
+|     if a[i] <= d[j]: cur += 1; i += 1; best = max(best, cur)
+|     else: cur -= 1; j += 1
+| print(best)
++ 3
+- 2
+- 4
+- 6
+= Minimum platforms: three trains are in the station between 11:00 and 11:20.
+
+Q H When both greedy and DP solve a problem, why prefer greedy?
++ It is simpler and faster, once proven
+- It never needs a proof of correctness
+- It uses more memory, which is safer
+- DP cannot work on whole numbers
+= Greedy is often O(n log n) with O(1) extra space.
+
+@topic dsa-advanced | ADVANCED | Tries, union-find and bits | Tries and prefix search, union-find with path compression and union by rank, bit manipulation, Fenwick and segment trees, monotonic stacks and LRU caches.
+Q E What is a trie best for?
++ Prefix searches over many words
+- Sorting a large list of numbers
+- Shortest paths in a road network
+- Multiplying two large matrices
+= Each path from the root spells a prefix.
+
+Q E What does union-find (disjoint set union) support?
++ Merging sets and asking which set
+- Sorting and binary searching
+- Finding shortest weighted paths
+- Popping the highest priority item
+= Kruskal's algorithm and connectivity questions use it.
+
+Q E What does x & 1 tell you?
++ Whether x is odd
+- Whether x is a power of two
+- The highest set bit
+- The sign of x
+= The lowest bit is 1 for odd numbers.
+
+Q E What does this print (Python)?
+| print(5 & 3, 5 | 3, 5 ^ 3)
++ 1 7 6
+- 1 7 2
+- 0 7 6
+- 1 8 6
+= 101 and 011: AND 001, OR 111, XOR 110.
+
+Q E What does x << 1 equal?
++ x × 2, barring overflow
+- x ÷ 2, rounded down
+- x + 1, always
+- x², barring overflow
+= Shifting left by k multiplies by 2^k.
+
+Q E What does this print (JavaScript)?
+| console.log(1 << 4, 20 >> 2);
++ 16 5
+- 8 5
+- 16 10
+- 4 5
+= 2⁴ = 16; 20 ÷ 4 = 5.
+
+Q E What is a number XOR itself?
++ 0
+- The number
+- 1
+- −1
+= Equal bits XOR to 0.
+
+Q E What does looking up a word of length L in a trie cost?
++ O(L)
+- O(n), n = word count
+- O(log n)
+- O(L · n)
+= One step per character, however many words are stored.
+
+Q E What does this print (Java)?
+| System.out.println(Integer.bitCount(13) + " " + Integer.toBinaryString(13));
++ 3 1101
+- 3 1011
+- 4 1101
+- 2 1101
+= 13 = 8 + 4 + 1.
+
+Q E With path compression and union by rank, what does each union-find operation cost?
++ Nearly constant (inverse Ackermann)
+- Logarithmic in the set count
+- Linear in the element count
+- Quadratic in the set count
+= α(n) is at most 4 for any practical n.
+
+Q E What does this print (C++)?
+| #include <iostream>
+| bool p2(unsigned x) { return x && !(x & (x - 1)); }
+| int main() { std::cout << p2(16) << p2(18) << p2(0) << p2(1) << std::endl; }
++ 1001
+- 1000
+- 1101
+- 1011
+= A power of two has exactly one set bit; x & (x − 1) clears it.
+
+Q E Which item does an LRU cache evict?
++ The least recently used
+- The oldest inserted
+- The largest
+- A random one
+= Evicting the oldest insert would be FIFO.
+
+Q E What does this print (Python)?
+| from functools import reduce
+| print(reduce(lambda a, b: a ^ b, [4, 1, 2, 1, 2]))
++ 4
+- 1
+- 2
+- 10
+= Pairs cancel out under XOR, leaving the single number.
+
+Q E What does each trie node typically store?
++ Child links and an end-of-word flag
+- The full list of words below it
+- A sorted array of all words
+- Only a count of words
+= The flag marks where a whole word ends, as with "app" inside "apple".
+
+Q E What does this print (JavaScript)?
+| console.log((5).toString(2), parseInt("1010", 2));
++ 101 10
+- 101 2
+- 110 10
+- 5 1010
+= Binary 101 is 5; 1010 is 10.
+
+Q E In union-find, what does find(x) return?
++ The root of x's set
+- Only x's parent
+- The size of x's set
+- The number of sets
+= Two elements are in the same set when their roots match.
+
+Q E What does this print (Java)?
+| int x = 12;
+| System.out.println((x & -x) + " " + (x & (x - 1)));
++ 4 8
+- 8 4
+- 4 11
+- 12 0
+= x & −x keeps the lowest set bit; x & (x − 1) clears it.
+
+Q M What does this print (Python)?
+| class T:
+|     def __init__(s): s.k, s.end = {}, False
+| def add(t, w):
+|     for c in w: t = t.k.setdefault(c, T())
+|     t.end = True
+| def starts(t, p):
+|     for c in p:
+|         if c not in t.k: return False
+|         t = t.k[c]
+|     return True
+| root = T()
+| for w in ["apple", "app", "bat"]: add(root, w)
+| print(starts(root, "ap"), starts(root, "ba"), starts(root, "c"))
++ True True False
+- True False False
+- False True False
+- True True True
+= No word starts with "c".
+
+Q M What is union by rank (or size) for?
++ Keeping trees shallow
+- Sorting the elements
+- Counting the edges
+- Removing cycles
+= Attach the smaller tree under the larger root.
+
+Q M What does this print (Java)?
+| int[] p = {0, 1, 2, 3, 4};
+| int find(int x) { return p[x] == x ? x : (p[x] = find(p[x])); }
+| void union(int a, int b) { p[find(a)] = find(b); }
+| union(0, 1); union(2, 3); union(1, 3);
+| System.out.println((find(0) == find(2)) + " " + (find(0) == find(4)));
++ true false
+- true true
+- false false
+- false true
+= 0–1 and 2–3 are joined through 1–3; 4 stays alone.
+
+Q M How does union-find detect a cycle in an undirected graph?
++ An edge joins two nodes in the same set
+- find() returns a negative value at last
+- A set grows larger than two elements
+- Two ranks become equal after a union
+= The two ends are already connected, so the new edge closes a cycle.
+
+Q M What does a Fenwick tree (binary indexed tree) support?
++ Point updates and prefix sums, O(log n)
+- Sorting an array in linear time, O(n)
+- Shortest paths in a weighted graph
+- Range minimum queries in O(1) with updates
+= Each index covers a range given by its lowest set bit.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| int t[9];
+| void add(int i, int v) { for (; i <= 8; i += i & -i) t[i] += v; }
+| int sum(int i) { int s = 0; for (; i > 0; i -= i & -i) s += t[i]; return s; }
+| int main() {
+|     int a[] = {0, 5, 2, 9, 1, 6, 3, 8, 4};
+|     for (int i = 1; i <= 8; i++) add(i, a[i]);
+|     std::cout << sum(4) << " " << sum(7) - sum(2) << std::endl;
+| }
++ 17 27
+- 17 34
+- 16 27
+- 17 26
+= 5 + 2 + 9 + 1 = 17; elements 3 to 7 sum to 27.
+
+Q M What does a segment tree range query cost?
++ O(log n)
+- O(1)
+- O(n)
+- O(√n)
+= The range splits into O(log n) stored segments.
+
+Q M What does this print (JavaScript)?
+| class LRU {
+|   constructor(n) { this.n = n; this.m = new Map(); }
+|   get(k) { if (!this.m.has(k)) return -1; const v = this.m.get(k); this.m.delete(k); this.m.set(k, v); return v; }
+|   put(k, v) { this.m.delete(k); this.m.set(k, v); if (this.m.size > this.n) this.m.delete(this.m.keys().next().value); }
+| }
+| const c = new LRU(2);
+| c.put(1, 1); c.put(2, 2); c.get(1); c.put(3, 3);
+| console.log(c.get(2), c.get(1), c.get(3));
++ -1 1 3
+- 1 -1 3
+- 2 1 3
+- -1 -1 3
+= Reading 1 made it recent, so putting 3 evicts 2.
+
+Q M How does an LRU cache get O(1) get and put?
++ A hash map and a doubly linked list
+- A sorted array with binary search
+- A min-heap keyed by last use time
+- A balanced BST keyed by access time
+= The map finds the node; the list moves it to the front and drops the tail.
+
+Q M What does this print (Python)?
+| def bits(x):
+|     n = 0
+|     while x: x &= x - 1; n += 1
+|     return n
+| print(bits(255), bits(1024), bits(7))
++ 8 1 3
+- 8 10 3
+- 7 1 3
+- 8 1 2
+= Brian Kernighan's trick clears one set bit per loop.
+
+Q M What does a monotonic stack find in O(n)?
++ The next greater element of each item
+- The median of a stream of numbers
+- Shortest paths in an unweighted graph
+- A sorted order of the items in O(n)
+= Each item is pushed and popped once.
+
+Q M What does this print (Java)?
+| int[] a = {2, 1, 2, 4, 3};
+| int[] r = new int[a.length];
+| Arrays.fill(r, -1);
+| Deque<Integer> st = new ArrayDeque<>();
+| for (int i = 0; i < a.length; i++) { while (!st.isEmpty() && a[st.peek()] < a[i]) r[st.pop()] = a[i]; st.push(i); }
+| System.out.println(Arrays.toString(r));
++ [4, 2, 4, -1, -1]
+- [4, 2, 4, -1, 3]
+- [2, 2, 4, -1, -1]
+- [4, 4, 4, -1, -1]
+= Next greater element; the stack keeps indices still waiting for one.
+
+Q M How many subsets does a set of n items have?
++ 2ⁿ
+- n²
+- n!
+- 2n
+= Each item is in or out: one bit per item.
+
+Q M What does this print (Python)?
+| a = ["x", "y", "z"]
+| print(["".join(a[i] for i in range(3) if m >> i & 1) for m in range(8)][5])
++ xz
+- xy
+- yz
+- zx
+= 5 is binary 101: bits 0 and 2.
+
+Q M "Does any stored word start with p?" What does each structure cost per query?
++ Trie: O(length of p)
+- Hash set: O(1) per query
+- Both need O(1) per query
+- Trie: O(number of words)
+= A hash set of words would have to scan every word.
+
+Q M What does this print (C++)?
+| #include <iostream>
+| int main() {
+|     int a = 6, b = 9;
+|     a ^= b; b ^= a; a ^= b;
+|     std::cout << a << " " << b << " " << (a ^ b) << std::endl;
+| }
++ 9 6 15
+- 6 9 15
+- 9 6 3
+- 9 6 0
+= The XOR swap; 6 ^ 9 = 15.
+
+Q M What does this print (JavaScript)?
+| const a = [3, 0, 1];
+| let x = a.length;
+| a.forEach((v, i) => { x ^= v ^ i; });
+| console.log(x);
++ 2
+- 3
+- 0
+- 1
+= Missing number: XOR every index and value; everything else cancels.
+
+Q H What does this print (Python)?
+| def add(t, w):
+|     for c in w: t = t.setdefault(c, {})
+|     t["$"] = True
+| def match(t, w):
+|     if not w: return "$" in t
+|     if w[0] == ".": return any(match(t[c], w[1:]) for c in t if c != "$")
+|     return w[0] in t and match(t[w[0]], w[1:])
+| root = {}
+| for w in ["bad", "dad", "mad"]: add(root, w)
+| print(match(root, "pad"), match(root, ".ad"), match(root, "b.."), match(root, "b."))
++ False True True False
+- False True True True
+- True True True False
+- False True False False
+= "." matches any letter, but the word must end where a stored word ends.
+
+Q H What does a segment tree with lazy propagation allow?
++ Range updates and range queries, O(log n)
+- Point updates and point queries in O(1)
+- Sorting any sub-range in O(log n) time
+- Range queries in O(1) with no extra memory
+= Pending updates are pushed down only when needed.
+
+Q H What does this print (Java)?
+| int[] p = new int[6], sz = new int[6];
+| for (int i = 0; i < 6; i++) { p[i] = i; sz[i] = 1; }
+| int find(int x) { while (p[x] != x) { p[x] = p[p[x]]; x = p[x]; } return x; }
+| int comps = 6;
+| void union(int a, int b) { a = find(a); b = find(b); if (a == b) return; if (sz[a] < sz[b]) { int t = a; a = b; b = t; } p[b] = a; sz[a] += sz[b]; comps--; }
+| int[][] e = {{0, 1}, {1, 2}, {3, 4}, {2, 0}};
+| for (int[] x : e) union(x[0], x[1]);
+| System.out.println(comps + " " + Arrays.stream(sz).max().getAsInt());
++ 3 3
+- 3 2
+- 2 3
+- 4 3
+= Sets {0, 1, 2}, {3, 4} and {5}; the edge 2–0 changes nothing.
+
+Q H What does this print (JavaScript)?
+| console.log([...Array(8).keys()].map(i => i ^ (i >> 1)).join(","));
++ 0,1,3,2,6,7,5,4
+- 0,1,2,3,4,5,6,7
+- 0,1,3,2,6,4,5,7
+- 0,2,3,1,5,7,6,4
+= Gray code: neighbours differ in exactly one bit.
+
+Q H This brute force finds the maximum XOR of two numbers; a bitwise trie does it in O(n · bits). What does it print (C++)?
+| #include <algorithm>
+| #include <iostream>
+| #include <vector>
+| int main() {
+|     std::vector<int> a{3, 10, 5, 25, 2, 8};
+|     int best = 0;
+|     for (int x : a) for (int y : a) best = std::max(best, x ^ y);
+|     std::cout << best << std::endl;
+| }
++ 28
+- 27
+- 31
+- 25
+= 5 ^ 25 = 00101 ^ 11001 = 11100.
+
+Q H What does this print (Python)?
+| def area(h):
+|     st, best = [], 0
+|     for i, x in enumerate(h + [0]):
+|         while st and h[st[-1]] >= x:
+|             top = st.pop()
+|             w = i if not st else i - st[-1] - 1
+|             best = max(best, h[top] * w)
+|         st.append(i)
+|     return best
+| print(area([2, 1, 5, 6, 2, 3]), area([2, 4]))
++ 10 4
+- 12 4
+- 10 2
+- 6 4
+= Largest rectangle in a histogram: heights 5 and 6 give 5 × 2.
+
+Q H What does a sparse table offer for range minimum queries?
++ O(1) per query, no updates
+- O(log n) per query, with updates
+- O(n) per query, no setup
+- O(1) per query, O(1) updates
+= O(n log n) setup; two overlapping power-of-two ranges cover any query.
+
+Q H What does this print (Java)?
+| int x = 0b1010;
+| System.out.println(Integer.toBinaryString(x | (1 << 0)) + " " + Integer.toBinaryString(x & ~(1 << 3)) + " " + Integer.toBinaryString(x ^ (1 << 1)));
++ 1011 10 1000
+- 1011 0010 1000
+- 1011 10 1110
+- 1010 10 1000
+= Set bit 0, clear bit 3, toggle bit 1. toBinaryString drops leading zeros.
+
+Q H Without path compression or union by rank, what can a single find cost?
++ O(n)
+- O(log n)
+- O(1)
+- O(α(n))
+= Unions can build a long chain.
+
+Q H What does this print (JavaScript)?
+| const root = {};
+| for (const w of ["car", "cart", "care", "cat", "dog"]) { let t = root; for (const c of w) { t = t[c] ?? (t[c] = { n: 0 }); t.n++; } }
+| const count = p => { let t = root; for (const c of p) { t = t[c]; if (!t) return 0; } return t.n; };
+| console.log(count("ca"), count("car"), count("d"), count("x"));
++ 4 3 1 0
+- 4 1 1 0
+- 5 3 1 0
+- 4 3 0 0
+= Each node counts the words passing through it.
+
+Q H What does this print (Python)?
+| def inv(a):
+|     n = max(a); t = [0] * (n + 1); c = 0
+|     for i, x in enumerate(a):
+|         j = x; s = 0
+|         while j: s += t[j]; j -= j & -j
+|         c += i - s
+|         j = x
+|         while j <= n: t[j] += 1; j += j & -j
+|     return c
+| print(inv([2, 4, 1, 3, 5]))
++ 3
+- 2
+- 4
+- 5
+= Inversions (2, 1), (4, 1) and (4, 3), counted with a Fenwick tree.
+
+Q H What can a Bloom filter tell you?
++ False positives possible; no false negatives
+- No false positives; false negatives possible
+- Exact answers, with the items stored inside
+- Exact answers, and deletion supported
+= "Maybe present" or "definitely absent", in very little memory.
+
+Q H What does this print (C++)?
+| #include <iostream>
+| int main() {
+|     unsigned x = 40;
+|     std::cout << __builtin_popcount(x) << " " << __builtin_ctz(x) << std::endl;
+| }
++ 2 3
+- 2 5
+- 3 2
+- 2 4
+= 40 is 101000: two set bits and three trailing zeros.
+
+Q H Why can a trie use more memory than a hash set of the same words?
++ Every character can need a node with links
+- It stores each of the words twice over
+- It keeps a sorted copy of all the words
+- It hashes every prefix of every word
+= Shared prefixes help, but each node carries child pointers.
+
+Q H What does this print (Java)?
+| Map<Integer, String> m = new LinkedHashMap<>(16, 0.75f, true) {
+|     protected boolean removeEldestEntry(Map.Entry<Integer, String> e) { return size() > 2; }
+| };
+| m.put(1, "a"); m.put(2, "b"); m.get(1); m.put(3, "c");
+| System.out.println(m.keySet());
++ [1, 3]
+- [2, 3]
+- [1, 2, 3]
+- [3, 1]
+= An access-ordered LinkedHashMap is an LRU cache; reading 1 saved it.
+
+Q H What does this print (Python)?
+| def days(t):
+|     out, st = [0] * len(t), []
+|     for i, x in enumerate(t):
+|         while st and t[st[-1]] < x:
+|             j = st.pop(); out[j] = i - j
+|         st.append(i)
+|     return out
+| print(days([73, 74, 75, 71, 69, 72, 76, 73]))
++ [1, 1, 4, 2, 1, 1, 0, 0]
+- [1, 1, 3, 2, 1, 1, 0, 0]
+- [1, 1, 4, 2, 1, 1, 1, 0]
+- [1, 2, 4, 2, 1, 1, 0, 0]
+= Daily temperatures: days until a warmer one, with a monotonic stack.

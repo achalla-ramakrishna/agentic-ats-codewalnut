@@ -63,4 +63,17 @@ class RolesTest {
         assertThat(Roles.preset(Roles.role("sql-developer"), Roles.Level.MID).sections()).noneMatch(s -> s.area() == coding);
         assertThat(Roles.preset(Roles.role("data-analyst"), Roles.Level.JUNIOR).sections()).noneMatch(s -> s.area() == coding);
     }
+
+    /** ASMT-38: freshers and juniors in developer roles get data-structures questions; graduates too. */
+    @Test
+    void freshersAndJuniorsGetDataStructures() {
+        var dsa = com.codewalnut.ats.domain.Assessment.Category.DSA;
+        Roles.Role java = Roles.role("java-backend");
+        assertThat(Roles.preset(java, Roles.Level.FRESHER).sections()).anyMatch(s -> s.area() == dsa && s.section() == Section.FUNDAMENTALS);
+        assertThat(Roles.preset(java, Roles.Level.JUNIOR).sections()).anyMatch(s -> s.area() == dsa && s.section() == Section.PRACTICAL);
+        assertThat(Roles.preset(java, Roles.Level.SENIOR).sections()).noneMatch(s -> s.area() == dsa);
+        assertThat(Roles.preset(Roles.role("graduate-trainee"), Roles.Level.FRESHER).sections()).anyMatch(s -> s.area() == dsa);
+        assertThat(Roles.preset(Roles.role("sql-developer"), Roles.Level.FRESHER).sections()).noneMatch(s -> s.area() == dsa);
+        assertThat(Presets.areaName(dsa)).isEqualTo("Data structures & algorithms");
+    }
 }
