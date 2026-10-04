@@ -353,17 +353,14 @@ export function InterviewFeedbackPage() {
       />
       {saved && <div className="alert alert-info">Thanks, your feedback is saved.</div>}
       {i.status === 'CANCELLED' && <div className="alert alert-info">This interview was cancelled.</div>}
-      {i.status === 'SCHEDULED' && !open && (
+      {open && new Date(i.startAt).getTime() - now > 30 * 60 * 1000 && (
         <div className="alert alert-info">
-          Feedback opens 15 minutes before the interview starts.{' '}
-          {i.meetLink && (
-            <a href={i.meetLink} target="_blank" rel="noreferrer">
-              Join Google Meet
-            </a>
-          )}
+          <strong>This interview is scheduled for {formatWhen(i)}.</strong> If it already happened, fill in the form anyway. Then
+          cancel or reschedule the interview from the candidate&apos;s panel, so they don&apos;t expect another call at the
+          scheduled time.
         </div>
       )}
-      {open && (inProgress || new Date(i.startAt).getTime() > now) && (
+      {open && (inProgress || (new Date(i.startAt).getTime() > now && new Date(i.startAt).getTime() - now <= 30 * 60 * 1000)) && (
         <div className="alert alert-info">
           <strong>{inProgress ? 'Interview in progress.' : 'Starting soon.'}</strong> Rate things as you notice them, such as
           communication, and add notes. Your form saves itself as a private draft; submit it when the interview ends.{' '}

@@ -59,8 +59,6 @@ public class InterviewFeedbackService {
     /** Interviews that ended this long ago no longer appear in "waiting for your feedback". */
     static final Duration DUE_WINDOW = Duration.ofDays(30);
 
-    /** The form opens this long before the interview, so interviewers can take notes from the first minute. */
-    static final Duration OPENS_BEFORE = Duration.ofMinutes(15);
 
     private final InterviewRepository interviewRepository;
     private final InterviewFeedbackRepository feedbackRepository;
@@ -93,9 +91,6 @@ public class InterviewFeedbackService {
         }
         if (interview.getStatus() == InterviewStatus.CANCELLED) {
             throw new IllegalArgumentException("This interview was cancelled");
-        }
-        if (interview.getStartAt().minus(OPENS_BEFORE).isAfter(Instant.now())) {
-            throw new IllegalArgumentException("Feedback opens 15 minutes before the interview starts");
         }
         boolean draft = Boolean.TRUE.equals(request.draft());
         // Scores count when the interview took place, even if it ended early.

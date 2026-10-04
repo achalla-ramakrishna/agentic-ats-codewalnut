@@ -77,7 +77,7 @@ A simpler first cut of INT-01 and INT-03, decided in ADR-0005.
 | INT-32 | Who sees kits: hiring staff (VIEW_CANDIDATES) for any opening; interviewers only for openings where they are on an interview panel. Candidates, client contacts and approvers never. Generating is audited. | Done |
 | INT-33 | **Log an interview held elsewhere** (recruiters and admins), from the candidate's panel: a Meet or call set up outside the app, already held or happening now (last 90 days). No calendar event or email; it adds the interview (the logger is organiser, plus listed interviewers) so the panel can give feedback. History notes it as logged. | Done |
 | INT-34 | **Recent interviews and feedback** on the Interviews page: every interview that started in the last 30 days (hiring staff see all; interviewers only theirs), with how many have given feedback, whether yours is due, and a **Give feedback** / **View feedback** button. The candidate's panel always shows the feedback link, or says it opens when the interview starts. | Done |
-| INT-35 | **Fill the form during the interview**: it opens 15 minutes before the start. Until submitted, it saves itself as a **private draft** a couple of seconds after each change (or with Save draft); a draft needs nothing filled in, isn't visible to anyone else, doesn't count as feedback in progress counts or "yours is due", and sends no admin update. While the interview is on, the page says so, with the Meet link and the interview kit. Submitting (recommendation required when it took place) shares it with the panel; a submitted form can be updated but not turned back into a draft. | Done |
+| INT-35 | **Fill the form during the interview**: it's available any time for an interview that isn't cancelled, because interviews happen early or late (if the scheduled time is still ahead, the page says so and suggests cancelling or rescheduling the invite). Until submitted, it saves itself as a **private draft** a couple of seconds after each change (or with Save draft); a draft needs nothing filled in, isn't visible to anyone else, doesn't count as feedback in progress counts or "yours is due", and sends no admin update. While the interview is on, the page says so, with the Meet link and the interview kit. Submitting (recommendation required when it took place) shares it with the panel; a submitted form can be updated but not turned back into a draft. | Done |
 
 ## Business rules
 
@@ -146,6 +146,7 @@ public: `GET/POST /book/{token}`.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-04 | Feedback no longer waits for the scheduled time; Feedback buttons on upcoming interviews; scheduling defaults to today |
 | 2026-10-04 | Reschedule interviews in place, keeping the Meet link (INT-20) |
 | 2026-10-04 | Interview questions grown to 645 in 23 categories (new: Spring Boot and Hibernate, HTML/CSS, microservices, security, testing, Git and practices) |
 | 2026-10-04 | Feedback form open during the interview, with private auto-saved drafts (INT-35) |

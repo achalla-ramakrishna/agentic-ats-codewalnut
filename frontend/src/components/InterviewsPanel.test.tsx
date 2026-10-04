@@ -127,7 +127,7 @@ describe('InterviewsPanel', () => {
     expect(screen.getByRole('link', { name: 'Feedback form' })).toHaveAttribute('href', '/interviews/i1/feedback')
   })
 
-  it('offers no feedback before the interview starts', async () => {
+  it('offers the feedback form even before the scheduled time (INT-35)', async () => {
     fakeFetch([
       { path: '/applications/a1/interviews', body: [scheduled] },
       { path: '/applications/a1/interview-feedback', body: [] },
@@ -135,8 +135,7 @@ describe('InterviewsPanel', () => {
     renderPanel()
 
     expect(await screen.findByRole('link', { name: 'Join Google Meet' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Feedback form' })).not.toBeInTheDocument()
-    expect(screen.getByText('Feedback form opens when the interview starts.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Feedback form' })).toHaveAttribute('href', '/interviews/i1/feedback')
   })
 
   it('logs an interview held elsewhere so feedback can be given (INT-33)', async () => {

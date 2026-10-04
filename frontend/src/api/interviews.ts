@@ -179,10 +179,8 @@ export const listFeedbackSummaries = (applicationId: string) =>
 export const listFeedbackDue = () => api<Interview[]>('/interviews/feedback-due')
 
 /** Feedback opens once the interview has started, unless it was cancelled. */
-/** The form opens 15 minutes before the interview, so notes can be taken from the first minute (INT-35). */
-export const FEEDBACK_OPENS_BEFORE_MS = 15 * 60 * 1000
-export const feedbackOpen = (i: Interview) =>
-  i.status === 'SCHEDULED' && new Date(i.startAt).getTime() - FEEDBACK_OPENS_BEFORE_MS <= Date.now()
+/** Feedback can be given any time for an interview that isn't cancelled: interviews happen early or late (INT-35). */
+export const feedbackOpen = (i: Interview) => i.status === 'SCHEDULED'
 
 /** An interview that has started (last 30 days) and where its feedback stands (INT-34). */
 export interface RecentInterview {

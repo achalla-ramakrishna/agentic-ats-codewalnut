@@ -125,6 +125,7 @@ export function InterviewsPage() {
                   <th>Interviewers</th>
                   <th>Meet</th>
                   <th>Kit</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -151,6 +152,11 @@ export function InterviewsPage() {
                     </td>
                     <td>
                       <Link to={`/interview-kits/${i.jobId}`}>Kit</Link>
+                    </td>
+                    <td>
+                      <Link className="btn btn-sm btn-secondary" to={`/interviews/${i.id}/feedback`}>
+                        Feedback
+                      </Link>
                     </td>
                   </tr>
                 ))}

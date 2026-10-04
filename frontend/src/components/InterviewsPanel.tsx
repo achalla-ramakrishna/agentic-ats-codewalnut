@@ -23,9 +23,8 @@ import { Badge, Button } from './ui'
 
 const DURATIONS = [30, 45, 60, 90]
 
-function tomorrow() {
+function today() {
   const d = new Date()
-  d.setDate(d.getDate() + 1)
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
@@ -56,8 +55,8 @@ function ScheduleForm({
 }) {
   const [status, setStatus] = useState<GoogleStatus | null>(null)
   const [title, setTitle] = useState(`CodeWalnut interview – ${jobTitle}`)
-  const [date, setDate] = useState(tomorrow())
-  const [time, setTime] = useState('11:00')
+  const [date, setDate] = useState(today())
+  const [time, setTime] = useState(() => `${String(Math.min(23, new Date().getHours() + 1)).padStart(2, '0')}:00`)
   const [duration, setDuration] = useState(45)
   const [interviewers, setInterviewers] = useState('')
   const [message, setMessage] = useState(defaultMessage(candidateName, jobTitle))
@@ -148,8 +147,13 @@ function ScheduleForm({
           </select>
         </label>
       </div>
-      <span className="muted" style={{ fontSize: 12 }}>
-        Time zone: {timeZone}
+      <span className="muted" style={{ fontSize: 12 }} aria-live="polite">
+        {(() => {
+          const when = new Date(`${date}T${time}`)
+          return Number.isNaN(when.getTime())
+            ? `Time zone: ${timeZone}`
+            : `${when.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })} at ${when.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })} · ${timeZone}`
+        })()}
       </span>
       <label className="field">
         Interviewers (emails, comma-separated; optional)
@@ -305,7 +309,14 @@ function LogInterviewForm({
 /** Move an interview to a new time, e.g. after a missed slot (INT-20). */
 function RescheduleForm({ interview, onDone, onCancel }: { interview: Interview; onDone: (i: Interview) => void; onCancel: () => void }) {
   const pad = (n: number) => String(n).padStart(2, '0')
-  const [date, setDate] = useState(tomorrow())
+  // The next time this slot comes round: today if it's still ahead, otherwise tomorrow.
+  const [date, setDate] = useState(() => {
+    const slot = new Date(interview.startAt)
+    const next = new Date()
+    next.setHours(slot.getHours(), slot.getMinutes(), 0, 0)
+    if (next.getTime() <= Date.now()) next.setDate(next.getDate() + 1)
+    return `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`
+  })
   const [time, setTime] = useState(() => {
     const d = new Date(interview.startAt)
     return `${pad(d.getHours())}:${pad(d.getMinutes())}`

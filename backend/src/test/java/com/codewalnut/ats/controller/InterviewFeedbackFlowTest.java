@@ -93,9 +93,9 @@ class InterviewFeedbackFlowTest {
         String[] iv = interview("\"Interviewer@CodeWalnut.test\"");
         String id = iv[1];
 
-        // Feedback opens when the interview starts.
-        feedback(ADMIN, id, HELD_YES).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value(Matchers.containsString("starts")));
+        // Interviews happen early or late, so the schedule never blocks feedback (INT-35); a draft is
+        // fine even before the scheduled time.
+        feedback(ADMIN, id, "{\"attendance\":\"HELD\",\"draft\":true}").andExpect(status().isOk());
         moveToPast(id);
 
         String due = mockMvc.perform(get("/api/v1/interviews/feedback-due").with(INTERVIEWER))
@@ -296,10 +296,8 @@ class InterviewFeedbackFlowTest {
         // A submitted form can be updated, not turned back into a draft.
         feedback(INTERVIEWER, id, "{\"attendance\":\"HELD\",\"draft\":true}").andExpect(status().isConflict());
 
-        // More than 15 minutes ahead it isn't open yet.
-        String later = interview("\"interviewer@codewalnut.test\"")[1];
-        feedback(INTERVIEWER, later, "{\"attendance\":\"HELD\",\"draft\":true}")
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value(Matchers.containsString("15 minutes")));
+        // An interview held earlier than scheduled (e.g. booked for tomorrow by mistake) can be submitted.
+        String early = interview("\"interviewer@codewalnut.test\"")[1];
+        feedback(INTERVIEWER, early, HELD_YES).andExpect(status().isOk()).andExpect(jsonPath("$.mine.draft").value(false));
     }
 }
