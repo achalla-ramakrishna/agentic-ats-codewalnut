@@ -12,7 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.codewalnut.ats.security.SignInRefusal;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -59,6 +61,25 @@ class GoogleSignInConfiguredTest {
     void aFailedGoogleSignInReturnsToOurLoginPageWithError() throws Exception {
         mockMvc.perform(get("/login/oauth2/code/google").param("error", "access_denied").param("state", "x"))
                 .andExpect(redirectedUrl("/login?error"));
+    }
+
+    @Test
+    void theLoginPageIsToldOnceWhyGoogleSignInWasRefused() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute(SignInRefusal.class.getName(), new SignInRefusal("arun.k@codewalnut.com", SignInRefusal.NOT_PROVISIONED));
+        mockMvc.perform(get("/api/v1/auth/config").session(session))
+                .andExpect(jsonPath("$.signInRefused.email").value("arun.k@codewalnut.com"))
+                .andExpect(jsonPath("$.signInRefused.reason").value("NOT_PROVISIONED"));
+        mockMvc.perform(get("/api/v1/auth/config").session(session))
+                .andExpect(jsonPath("$.signInRefused").doesNotExist());
+    }
+
+    @Test
+    void refusalMessagesMapToReasons() {
+        assertThat(SignInRefusal.reasonFor("User is not provisioned")).isEqualTo(SignInRefusal.NOT_PROVISIONED);
+        assertThat(SignInRefusal.reasonFor("User is deactivated")).isEqualTo(SignInRefusal.DEACTIVATED);
+        assertThat(SignInRefusal.reasonFor("Google account does not match the one on record")).isEqualTo(SignInRefusal.ACCOUNT_MISMATCH);
+        assertThat(SignInRefusal.reasonFor("Email domain is not allowed")).isEqualTo(SignInRefusal.OTHER);
     }
 
     @Test

@@ -79,6 +79,7 @@ permissions.
 | AUTH-19 | Candidate sessions are refused (`403`) on every staff API; staff sessions are refused on candidate APIs (`/api/v1/candidate/**`). | MVP |
 | AUTH-20 | `GET /auth/session` (public) returns the session type (staff / candidate / none) so the app shows the right area. | MVP |
 | AUTH-21 | A `demo` profile for shared previews (before Google is set up): seeded fake users and the dev login, gated by a shared access code of ≥ 12 characters; the app refuses to start in demo without it; wrong codes are refused and audited. | MVP |
+| AUTH-22 | A refused Google sign-in returns to the login page saying which email Google signed in with and why: not a user yet (ask an Admin to add exactly that email), deactivated, linked to a different Google account, or email not verified. Shown once, only in that browser; the refusal is also in the audit log. | Done |
 
 ## Business rules
 
@@ -166,6 +167,7 @@ Passwords, self-registration, staff MFA beyond what Google enforces.
 | 2026-09-25 | Created from SPEC.md; AUTH-01…16 implemented on the chunk-0 branch |
 | 2026-09-25 | AUTH-14: dev profile is never active by default (tested); UI for AUTH-07, AUTH-08 added |
 | 2026-09-25 | Google sign-in opened to any Google account: AUTH-02, AUTH-03 changed; AUTH-18…20 added (candidates with personal Gmail); ADR-0004 |
+| 2026-10-05 | AUTH-22: the login page says which email was refused and why |
 | 2026-09-25 | AUTH-21: demo profile with access code, so the Railway preview works before Google sign-in is configured |
 | 2026-09-29 | New capability `MESSAGE_CANDIDATES` for Admin, Recruiter, Hiring Manager, Account Manager (MSG-09) |
 | 2026-10-01 | Client contacts sign in with Google into a `CLIENT` session (CLA-02); new capabilities `VIEW_ID_DOCUMENTS` and `SHARE_WITH_CLIENTS` for Admin, Recruiter, Account Manager (ADR-0007) |

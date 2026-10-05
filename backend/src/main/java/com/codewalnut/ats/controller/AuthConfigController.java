@@ -6,6 +6,8 @@ import com.codewalnut.ats.domain.Role;
 import com.codewalnut.ats.dto.AuthConfigResponse;
 import com.codewalnut.ats.dto.AuthConfigResponse.DevUser;
 import com.codewalnut.ats.repository.AppUserRepository;
+import com.codewalnut.ats.security.SignInRefusal;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,7 +30,7 @@ public class AuthConfigController {
     private final AuthProperties authProperties;
 
     @GetMapping("/api/v1/auth/config")
-    public AuthConfigResponse config() {
+    public AuthConfigResponse config(HttpServletRequest request) {
         boolean devLoginEnabled = devLogin.getIfAvailable() != null;
         List<DevUser> devUsers = devLoginEnabled
                 ? userRepository.findAllByOrderByEmailAsc().stream()
@@ -46,6 +48,6 @@ public class AuthConfigController {
                 ? ServletUriComponentsBuilder.fromCurrentContextPath().path("/login/oauth2/code/google").toUriString()
                 : null;
         return new AuthConfigResponse(googleEnabled, googleRedirectUri, devLoginEnabled,
-                devLoginEnabled && !authProperties.demoAccessCode().isEmpty(), devUsers);
+                devLoginEnabled && !authProperties.demoAccessCode().isEmpty(), devUsers, SignInRefusal.take(request));
     }
 }

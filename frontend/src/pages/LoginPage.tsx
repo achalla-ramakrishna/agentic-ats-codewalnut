@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { devLogin, getAuthConfig, GOOGLE_SIGN_IN_URL } from '../api/auth'
+import { devLogin, getAuthConfig, GOOGLE_SIGN_IN_URL, refusalMessage } from '../api/auth'
 import type { AuthConfig } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import { Button, Card } from '../components/ui'
@@ -21,6 +21,7 @@ export function LoginPage() {
     getAuthConfig()
       .then((cfg) => {
         setConfig(cfg)
+        if (cfg.signInRefused) setError(refusalMessage(cfg.signInRefused))
         if (cfg.devUsers.length > 0) setDevEmail(cfg.devUsers[0].email)
       })
       .catch(() => setError('Cannot reach the ATS server.'))

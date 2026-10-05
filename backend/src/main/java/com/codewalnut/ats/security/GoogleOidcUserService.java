@@ -26,12 +26,14 @@ public class GoogleOidcUserService extends OidcUserService {
     public OidcUser loadUser(OidcUserRequest request) throws OAuth2AuthenticationException {
         OidcUser google = super.loadUser(request);
         if (!Boolean.TRUE.equals(google.getEmailVerified()) || google.getEmail() == null) {
+            SignInRefusal.remember(google.getEmail(), SignInRefusal.UNVERIFIED);
             throw reject("Google account email is not verified");
         }
         SignedIn signedIn;
         try {
             signedIn = signInService.signIn(google.getEmail(), google.getFullName(), google.getSubject());
         } catch (LoginRejectedException ex) {
+            SignInRefusal.remember(google.getEmail().trim().toLowerCase(java.util.Locale.ROOT), SignInRefusal.reasonFor(ex.getMessage()));
             throw reject(ex.getMessage());
         }
         return new DefaultOidcUser(signedIn.authorities(), google.getIdToken(), google.getUserInfo(), "email");

@@ -32,6 +32,8 @@ export interface AuthConfig {
   devLoginEnabled: boolean
   accessCodeRequired: boolean
   devUsers: { email: string; label: string }[]
+  /** Why this browser's last Google sign-in was refused (shown once). */
+  signInRefused?: { email: string | null; reason: 'NOT_PROVISIONED' | 'DEACTIVATED' | 'ACCOUNT_MISMATCH' | 'UNVERIFIED' | 'OTHER' } | null
 }
 
 export interface User {
