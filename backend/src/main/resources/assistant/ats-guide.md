@@ -1,6 +1,6 @@
 # How to do things in the CodeWalnut ATS
 
-Menu (left side; people see only what their role allows): Dashboard, Ask ATS, Openings, Candidates,
+Menu (left side; people see only what their role allows): Dashboard, Ask ATS, Openings, Candidates, Workflow,
 Messages, Clients, Interviews, Interview questions, Tests, Admin updates, Users, View as, Audit log,
 What's new.
 
@@ -29,6 +29,14 @@ Withdrawn.
 - Put a candidate forward for another client: open the candidate → Openings → Add to another opening.
 - Search inside an opening: the search box above the stage buttons (press /). Questions like "who
   knows React?" → ✨ Ask AI.
+
+## Workflow (who was contacted, what's next)
+- Workflow in the menu: every candidate with their last contact (when, how, by whom), whether they
+  wrote and are waiting for a reply, test, interview and client status, and a suggested next step.
+  Tabs: Needs action, Waiting for our reply, Never contacted, No contact for 7+ days, Closed. Pick
+  one opening at the top, or all open ones.
+- Click a row to see everything that happened (messages, tests, interviews, stage moves, notes).
+- Called or messaged someone outside the app? Click the row → Log a call or message.
 
 ## Clients
 - Add a client: Clients → New client. Rename: Clients → Rename.

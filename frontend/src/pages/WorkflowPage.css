@@ -1,0 +1,78 @@
+/* Workflow view (WF-01…). */
+.wf-filters {
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.wf-count {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--color-surface-muted);
+  font-size: 12px;
+  text-align: center;
+}
+.chip-on .wf-count {
+  background: transparent;
+}
+.wf-table td {
+  vertical-align: top;
+}
+.wf-sub {
+  font-size: 12px;
+  margin-top: 2px;
+}
+.wf-waiting td:first-child {
+  box-shadow: inset 3px 0 0 var(--color-danger);
+}
+.wf-step {
+  font-weight: 600;
+}
+.wf-step.urgent {
+  color: var(--color-danger);
+}
+.wf-expanded > td {
+  background: var(--color-surface-muted);
+}
+.wf-log {
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.wf-events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+.wf-event {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 12px;
+  padding: 4px 0 4px 10px;
+  border-left: 3px solid var(--color-border);
+}
+.wf-event.wf-contact {
+  border-left-color: var(--color-primary);
+}
+.wf-event.wf-message_in {
+  border-left-color: var(--color-danger);
+}
+.wf-when {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.wf-detail {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .wf-event {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}

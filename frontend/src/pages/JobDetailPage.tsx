@@ -295,6 +295,11 @@ export function JobDetailPage() {
         description={`${job.client ? `${job.client.name} · ` : ''}${job.hiringTypeLabel}${job.openings ? ` · ${job.openings} needed` : ''}`}
         actions={
           <>
+            {me.navigation.some((n) => n.key === 'workflow') && (
+              <Link className="btn btn-secondary" to={`/workflow?job=${job.id}`}>
+                Workflow
+              </Link>
+            )}
             {me.navigation.some((n) => n.key === 'interviews') && (
               <Link className="btn btn-secondary" to={`/interview-kits/${job.id}`}>
                 Interview kit

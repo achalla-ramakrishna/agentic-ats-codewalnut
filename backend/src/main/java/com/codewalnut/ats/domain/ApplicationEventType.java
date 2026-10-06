@@ -14,5 +14,7 @@ public enum ApplicationEventType {
     SHARED_WITH_CLIENT,
     WHATSAPP_SENT,
     TEST_SENT,
-    TEST_SUBMITTED
+    TEST_SUBMITTED,
+    /** A call, WhatsApp or meeting outside the app, logged by a recruiter. */
+    CONTACT_LOGGED
 }

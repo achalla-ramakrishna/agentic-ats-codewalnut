@@ -33,4 +33,8 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
             "UPDATE message SET whatsapp_status = :status WHERE whatsapp_message_id = :id AND author_type = 'STAFF'")
     int updateWhatsappStatus(@org.springframework.data.repository.query.Param("id") String whatsappMessageId,
             @org.springframework.data.repository.query.Param("status") String status);
+
+    List<Message> findByApplicationIdInAndChannel(java.util.Collection<UUID> applicationIds, MessageChannel channel);
+
+    List<Message> findByApplicationIdOrderByCreatedAtAsc(UUID applicationId);
 }

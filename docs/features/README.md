@@ -44,5 +44,6 @@ here holds the detailed, testable requirements for one feature.
 | PRIV | [Privacy, consent & retention](privacy-and-retention.md) | 8 (+ throughout) | Ready |
 | ADM | [Admin & settings](admin-and-settings.md) | 0–8 | Ready |
 | AI | [AI assistance](ai-assistance.md) | 2, v1 | Draft |
+| WF | [Workflow: contacts, history, next steps](workflow.md) | v1 | Done |
 | PORTAL | [Candidate portal](candidate-portal.md) | v1 | Draft |
 | RPT | [Reports](reports.md) | v1 | Draft |

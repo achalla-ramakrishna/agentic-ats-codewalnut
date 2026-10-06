@@ -31,4 +31,7 @@ public interface ApplicationRepository extends JpaRepository<Application, UUID> 
             order by a.updatedAt desc
             """)
     List<Application> search(String q, Stage stage);
+
+    /** Everyone in openings that aren't closed (the workflow view's default). */
+    List<Application> findByJobStatusNot(com.codewalnut.ats.domain.JobStatus status);
 }

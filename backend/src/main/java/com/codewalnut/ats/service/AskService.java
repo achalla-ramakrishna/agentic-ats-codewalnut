@@ -71,6 +71,7 @@ public class AskService {
     private final InterviewFeedbackService feedback;
     private final AssessmentInviteService tests;
     private final ResumeIntelligenceService insights;
+    private final WorkflowService workflow;
     private final AccessPolicy accessPolicy;
     private final ObjectMapper objectMapper;
     private final String guide = resource("assistant/ats-guide.md");
@@ -172,6 +173,14 @@ public class AskService {
                             + "Without: submitted results nobody has looked at yet.",
                     Map.of("jobId", str("The opening's id (optional)")),
                     List.of()),
+            new ToolSpec("follow_ups",
+                    "The workflow view: for each candidate, the last contact (when, how, by whom), whether they wrote and are "
+                            + "waiting for our reply, test, interview and client status, and the suggested next step. "
+                            + "Use it for 'who haven't we contacted', 'who is waiting on us', 'what should I do next'.",
+                    Map.of("filter", oneOf("Which candidates; default active",
+                                    List.of("active", "urgent", "reply", "never", "quiet", "closed")),
+                            "jobId", str("Only this opening (optional)")),
+                    List.of()),
             new ToolSpec("recent_activity",
                     "The latest changes across all openings: stage moves, notes, candidates added (newest first, up to 25).",
                     Map.of(),
@@ -185,6 +194,7 @@ public class AskService {
             case "opening_profiles" -> openingProfiles(actor, uuid(input, "jobId"));
             case "list_interviews" -> listInterviews(actor, Objects.requireNonNullElse(text(input, "when"), "upcoming"));
             case "test_results" -> testResults(actor, text(input, "jobId"));
+            case "follow_ups" -> followUps(actor, Objects.requireNonNullElse(text(input, "filter"), "active"), text(input, "jobId"));
             case "recent_activity" -> recentActivity(actor);
             default -> throw new IllegalArgumentException("Unknown lookup " + name);
         };
@@ -410,6 +420,31 @@ public class AskService {
             m.put("submittedAt", t.submittedAt());
             return m;
         }).toList()));
+    }
+
+    private String followUps(AppUser actor, String filter, String jobId) {
+        allow(actor, Capability.VIEW_CANDIDATES, "candidates");
+        var board = workflow.board(actor, jobId == null ? null : UUID.fromString(jobId));
+        var predicate = WorkflowService.FILTERS.getOrDefault(filter, WorkflowService.FILTERS.get("active"));
+        List<Map<String, Object>> rows = board.rows().stream().filter(predicate).limit(MAX_LIST).map(r -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("applicationId", r.applicationId());
+            m.put("jobId", r.jobId());
+            m.put("name", r.candidateName());
+            m.put("opening", r.jobTitle());
+            m.put("stage", r.stageLabel());
+            m.put("inStageSince", r.inStageSince());
+            m.put("lastContact", r.lastContact() == null ? "never contacted" : r.lastContact());
+            m.put("contacts", r.contacts());
+            m.put("waitingForOurReply", r.awaitingReply());
+            m.put("test", r.test());
+            m.put("interview", r.interview());
+            m.put("sharedWithClient", r.client());
+            m.put("documentsPending", r.documentsPending());
+            m.put("nextStep", r.nextStep());
+            return m;
+        }).toList();
+        return json(Map.of("filter", filter, "counts", board.counts(), "candidates", rows));
     }
 
     private String recentActivity(AppUser actor) {

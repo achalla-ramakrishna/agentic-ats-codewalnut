@@ -10,4 +10,6 @@ public interface DocumentRequestRepository extends JpaRepository<DocumentRequest
     List<DocumentRequest> findByCandidateIdOrderByRequestedAtDesc(UUID candidateId);
 
     List<DocumentRequest> findByCandidateIdAndFulfilledAtIsNull(UUID candidateId);
+
+    List<DocumentRequest> findByCandidateIdIn(java.util.Collection<UUID> candidateIds);
 }

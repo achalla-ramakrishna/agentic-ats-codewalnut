@@ -40,6 +40,13 @@ also email a candidate message through `client/GmailClient` (scope
 `gmail.send`, same Google connection as the calendar, ADR-0006); dev and demo
 use `FakeMailClient`.
 
+Workflow view (ADR-0022): `WorkflowService` builds one row per application from
+`application_event`, `message`, `assessment_invite`, `interview`,
+`interview_feedback`, `client_share` and `document_request` (batched by
+application ids), works out the last contact, unanswered candidate messages and
+a rule-based next step, and merges events and messages into a per-candidate
+timeline. Calls outside the app are `CONTACT_LOGGED` events.
+
 Ask ATS (ADR-0021): `AskService` exposes read-only tools (openings, candidates,
 one candidate in full, opening profiles, interviews, tests, recent activity) that
 call `TrackerService`, `InterviewService`, `InterviewFeedbackService`,

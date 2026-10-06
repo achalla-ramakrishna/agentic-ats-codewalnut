@@ -120,6 +120,7 @@ templates, rules and SLAs are in [pipeline.md](features/pipeline.md).
 | PRIV | [Privacy, consent & retention](features/privacy-and-retention.md) | 8 (+ throughout) | Ready |
 | ADM | [Admin & settings](features/admin-and-settings.md) | 0–8 | Ready |
 | AI | [AI assistance](features/ai-assistance.md) | 2, v1 | Draft |
+| WF | [Workflow: contacts, history, next steps](features/workflow.md) | v1 | Done |
 | PORTAL | [Candidate portal](features/candidate-portal.md) | v1 | Draft |
 | RPT | [Reports](features/reports.md) | v1 | Draft |
 

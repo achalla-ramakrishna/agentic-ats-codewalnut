@@ -23,6 +23,7 @@ import { PublicJobPage, RETURN_TO_KEY } from './pages/PublicJobPage'
 import { CodingRoomPage } from './pages/CodingRoomPage'
 import { TakeTestPage } from './pages/TakeTestPage'
 import { AskPage } from './pages/AskPage'
+import { WorkflowPage } from './pages/WorkflowPage'
 import { TestsPage } from './pages/TestsPage'
 import { ViewAsPage } from './pages/ViewAsPage'
 import { ViewAsBanner } from './components/ViewAsBanner'
@@ -34,6 +35,7 @@ import { WhatsNewPage } from './pages/WhatsNewPage'
 const SCREENS: Record<string, ReactElement> = {
   dashboard: <DashboardPage />,
   ask: <AskPage />,
+  workflow: <WorkflowPage />,
   jobs: <JobsPage />,
   candidates: <CandidatesPage />,
   clients: <ClientsPage />,

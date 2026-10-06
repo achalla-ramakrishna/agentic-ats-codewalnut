@@ -11,4 +11,6 @@ public interface ClientShareRepository extends JpaRepository<ClientShare, UUID> 
     Optional<ClientShare> findByApplicationId(UUID applicationId);
 
     List<ClientShare> findByClientIdAndRevokedAtIsNullOrderBySharedAtDesc(UUID clientId);
+
+    List<ClientShare> findByApplicationIdIn(java.util.Collection<UUID> applicationIds);
 }

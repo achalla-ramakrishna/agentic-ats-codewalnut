@@ -14,4 +14,6 @@ public interface ApplicationEventRepository extends Repository<ApplicationEvent,
     List<ApplicationEvent> findByApplicationIdOrderByCreatedAtDesc(UUID applicationId);
 
     List<ApplicationEvent> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    List<ApplicationEvent> findByApplicationIdIn(java.util.Collection<UUID> applicationIds);
 }
