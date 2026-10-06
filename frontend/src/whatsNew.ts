@@ -16,6 +16,19 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-06-ask-ats-actions',
+    date: '2026-10-06',
+    title: 'Ask ATS can now do things, after you confirm',
+    summary: 'Ask it to move candidates, add notes, log a call, remind about a test, message candidates (email, WhatsApp or their candidate page) or share someone with the client. It shows each change as a card; nothing happens until you click Do it. You can edit messages before they go.',
+    steps: [
+      'Open Ask ATS and type, e.g. “Move Asha and Ravi to shortlisted” or “Remind everyone who hasn’t started the Java test”.',
+      'Check the cards. Edit any message, then click Do it on each, or Do all.',
+      'Skip anything you don’t want. Every change shows in the candidate’s history.',
+    ],
+    link: { to: '/ask', label: 'Open Ask ATS' },
+    capability: 'VIEW_DASHBOARD',
+  },
+  {
     id: '2026-10-06-workflow',
     date: '2026-10-06',
     title: 'Workflow: who you’ve contacted and what’s next',

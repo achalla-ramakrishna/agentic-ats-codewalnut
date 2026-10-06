@@ -10,6 +10,8 @@ import {
   type ChatMessage,
   type ConversationSummary,
 } from '../api/ask'
+import { getWhatsAppStatus } from '../api/messages'
+import { ActionCards } from '../components/ActionCards'
 import { Markdown } from '../components/Markdown'
 import { Button } from '../components/ui'
 import './AskPage.css'
@@ -39,6 +41,13 @@ export function AskPage() {
   const box = useRef<HTMLTextAreaElement>(null)
   /** The chat just created by asking: its messages are already here. */
   const justAsked = useRef<string | null>(null)
+
+  const [waApi, setWaApi] = useState(false)
+  useEffect(() => {
+    getWhatsAppStatus()
+      .then((s) => setWaApi(s.apiEnabled))
+      .catch(() => setWaApi(false))
+  }, [])
 
   useEffect(() => {
     getAskStatus()
@@ -174,6 +183,9 @@ export function AskPage() {
             ) : (
               <div key={i} className="ask-msg ask-msg-assistant">
                 <Markdown text={m.text} />
+                {m.actions && m.actions.length > 0 && chatId && (
+                  <ActionCards conversationId={chatId} actions={m.actions} waApi={waApi} onChange={(c) => setMessages(c.messages)} />
+                )}
               </div>
             ),
           )}

@@ -30,6 +30,11 @@ Withdrawn.
 - Search inside an opening: the search box above the stage buttons (press /). Questions like "who
   knows React?" → ✨ Ask AI.
 
+## Ask ATS
+- Ask questions in plain words. It can also prepare changes: move stages, add notes, log a call,
+  remind about a test, message candidates (email, WhatsApp, candidate page) and share with a client.
+  They appear as cards; nothing happens until you click Do it (or Do all). Messages can be edited first.
+
 ## Workflow (who was contacted, what's next)
 - Workflow in the menu: every candidate with their last contact (when, how, by whom), whether they
   wrote and are waiting for a reply, test, interview and client status, and a suggested next step.

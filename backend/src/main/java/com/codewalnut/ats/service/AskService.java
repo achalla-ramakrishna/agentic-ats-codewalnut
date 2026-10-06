@@ -8,7 +8,9 @@ import com.codewalnut.ats.domain.Application;
 import com.codewalnut.ats.domain.AskConversation;
 import com.codewalnut.ats.domain.JobStatus;
 import com.codewalnut.ats.domain.Stage;
+import com.codewalnut.ats.dto.AskDtos.ActionOutcome;
 import com.codewalnut.ats.dto.AskDtos.AskStatus;
+import com.codewalnut.ats.dto.AskDtos.ProposedAction;
 import com.codewalnut.ats.dto.AskDtos.ChatMessage;
 import com.codewalnut.ats.dto.AskDtos.Conversation;
 import com.codewalnut.ats.dto.AskDtos.ConversationSummary;
@@ -61,6 +63,7 @@ public class AskService {
             "What interviews are coming up this week?",
             "Whose interview feedback is still pending?",
             "Any new test results?",
+            "Remind everyone who hasn't started their test",
             "How do I share a candidate with a client?");
 
     private final AskClient askClient;
@@ -72,6 +75,7 @@ public class AskService {
     private final AssessmentInviteService tests;
     private final ResumeIntelligenceService insights;
     private final WorkflowService workflow;
+    private final AskActionService actions;
     private final AccessPolicy accessPolicy;
     private final ObjectMapper objectMapper;
     private final String guide = resource("assistant/ats-guide.md");
@@ -112,20 +116,79 @@ public class AskService {
         List<ChatMessage> messages = chat == null ? new ArrayList<>() : new ArrayList<>(read(chat));
         List<Turn> history = new ArrayList<>();
         messages.stream().skip(Math.max(0, messages.size() - MAX_TURNS_SENT))
-                .forEach(m -> history.add(new Turn("user".equals(m.role()), m.text())));
-        history.add(new Turn(true, q));
+                .forEach(m -> history.add(new Turn("user".equals(m.role()), withActions(m))));
+        // Who is asking (for signing messages); sent to the model, not stored in the chat.
+        history.add(new Turn(true, "[Asked by " + Objects.requireNonNullElse(actor.getName(), actor.getEmail()) + "]\n" + q));
 
-        AskClient.Answer answer = askClient.answer(history, guide, TOOLS, (name, input) -> tool(actor, name, input));
+        List<ProposedAction> proposed = new ArrayList<>();
+        AskClient.Answer answer = askClient.answer(history, guide, ALL_TOOLS, (name, input) -> "propose_actions".equals(name)
+                ? json(actions.propose(actor, input, proposed))
+                : tool(actor, name, input));
 
         Instant now = Instant.now();
         messages.add(new ChatMessage("user", q, now));
-        messages.add(new ChatMessage("assistant", answer.text(), Instant.now()));
+        messages.add(new ChatMessage("assistant", answer.text(), Instant.now(), proposed.isEmpty() ? null : proposed));
         if (chat == null) {
             chat = AskConversation.builder().ownerEmail(actor.getEmail()).title(title(q)).createdAt(now).build();
         }
         chat.setMessagesJson(write(messages));
         chat.setUpdatedAt(Instant.now());
         return view(conversations.save(chat));
+    }
+
+    /** Does or skips one proposed action (ASK-07). Each runs at most once, as the person clicking. */
+    @Transactional
+    public ActionOutcome decide(AppUser actor, UUID conversationId, String actionId, String decision, String subject, String body,
+            String portalUrl) {
+        accessPolicy.require(actor, Capability.VIEW_DASHBOARD);
+        AskConversation chat = own(actor, conversationId);
+        List<ChatMessage> messages = new ArrayList<>(read(chat));
+        for (int i = 0; i < messages.size(); i++) {
+            ChatMessage m = messages.get(i);
+            if (m.actions() == null) {
+                continue;
+            }
+            List<ProposedAction> list = new ArrayList<>(m.actions());
+            for (int j = 0; j < list.size(); j++) {
+                ProposedAction action = list.get(j);
+                if (!action.id().equals(actionId)) {
+                    continue;
+                }
+                if (!"PENDING".equals(action.status())) {
+                    throw new ConflictException("This action was already " + action.status().toLowerCase(Locale.ROOT));
+                }
+                String link = null;
+                if ("skip".equalsIgnoreCase(decision)) {
+                    list.set(j, action.finish("SKIPPED", "Skipped", actor.getEmail()));
+                } else if ("do".equalsIgnoreCase(decision)) {
+                    try {
+                        AskActionService.Done done = actions.execute(actor, action, subject, body, portalUrl);
+                        link = done.whatsappLink();
+                        list.set(j, action.finish("DONE", done.result(), actor.getEmail()));
+                    } catch (RuntimeException e) {
+                        list.set(j, action.finish("FAILED", e.getMessage() == null ? "It didn't work" : e.getMessage(), actor.getEmail()));
+                    }
+                } else {
+                    throw new IllegalArgumentException("decision: do or skip");
+                }
+                messages.set(i, m.withActions(list));
+                chat.setMessagesJson(write(messages));
+                chat.setUpdatedAt(Instant.now());
+                return new ActionOutcome(view(conversations.save(chat)), link);
+            }
+        }
+        throw new NotFoundException("Action not found");
+    }
+
+    /** What the assistant said, plus what became of its proposals, so follow-ups know. */
+    private static String withActions(ChatMessage m) {
+        if (m.actions() == null || m.actions().isEmpty()) {
+            return m.text();
+        }
+        StringBuilder out = new StringBuilder(m.text()).append("\n\n[Proposed actions and what the person did with them:");
+        m.actions().forEach(a -> out.append("\n- ").append(a.summary()).append(": ").append(a.status())
+                .append(a.result() == null ? "" : " (" + a.result() + ")"));
+        return out.append("]").toString();
     }
 
     // ---- tools ----
@@ -185,6 +248,8 @@ public class AskService {
                     "The latest changes across all openings: stage moves, notes, candidates added (newest first, up to 25).",
                     Map.of(),
                     List.of()));
+
+    static final List<ToolSpec> ALL_TOOLS = java.util.stream.Stream.concat(TOOLS.stream(), java.util.stream.Stream.of(AskActionService.TOOL)).toList();
 
     String tool(AppUser actor, String name, Map<String, Object> input) {
         return switch (name) {

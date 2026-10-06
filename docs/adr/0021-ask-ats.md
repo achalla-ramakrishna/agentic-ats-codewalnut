@@ -23,7 +23,7 @@ one opening and is built for moving candidates.
 - **Permissions are the screens' own**: every tool calls the existing services
   as the asking user. A lookup they can't do returns "not allowed" to the model
   (not an audited denial), and the answer says they don't have access.
-- **Read-only**: there are no tools that change data. Moving stages, messaging
+- **Read-only** (superseded by ADR-0023: actions are now proposed as cards and done only when a person confirms): there are no tools that change data. Moving stages, messaging
   and scheduling stay on the screens (the opening assistant can still propose
   stage moves for review).
 - **Data minimisation**: email and phone are never sent to the model, as for the

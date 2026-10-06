@@ -54,7 +54,10 @@ call `TrackerService`, `InterviewService`, `InterviewFeedbackService`,
 permissions are the screens' own. `client/ClaudeAskClient` runs the tool-use loop
 (Anthropic Java SDK, cached system prompt with `resources/assistant/ats-guide.md`,
 up to 10 rounds); dev and demo use `RuleBasedAskClient`. Chats are stored per
-user in `ask_conversation` (V22), questions and answers only.
+user in `ask_conversation` (V22), questions and answers only. Actions (ADR-0023):
+the `propose_actions` tool goes to `AskActionService`, which validates and stores
+proposals with the answer; `POST /ask/conversations/{id}/actions/{actionId}` runs
+one through the normal service as the clicking user.
 
 AI assistant (ADR-0009): `AssistantService` sends the opening's candidate
 names and stages plus the recruiter's instruction to Claude through

@@ -59,9 +59,13 @@ hiring decision.
 | AI-30 | Email ingestion: a dedicated inbox (inbound-email webhook) feeding the same intake. | v1 |
 | ASK-01 | **Ask ATS** in the menu (all CodeWalnut staff): a chat page like ChatGPT. Type a question, or pick a suggestion, and get an answer from live ATS data. Enter sends, Shift+Enter adds a line. | Done |
 | ASK-02 | Answers look things up with read-only tools: openings with stage counts, candidates by name/stage/opening, one candidate in full (history and notes, other openings, interviews and feedback status, tests, résumé reading), résumé profiles across an opening, upcoming/recent interviews and feedback due, test results, recent activity; plus a built-in guide for "how do I…" questions. Candidates, openings and feedback forms are links into the app. | Done |
-| ASK-03 | The tools run as the person asking, through the same services and permissions as the screens: an interviewer can't read candidates through it, a recruiter sees what they see. Email and phone numbers are never sent to the AI (search by them still works). It never changes anything; it says where to click instead. | Done |
+| ASK-03 | The tools run as the person asking, through the same services and permissions as the screens: an interviewer can't read candidates through it, a recruiter sees what they see. Email and phone numbers are never sent to the AI (search by them still works). Lookups never change anything; changes only happen through confirmed actions (ASK-06). | Done |
 | ASK-04 | Chats are saved per person (left-hand list, newest first; open, continue or delete). Nobody else can see, continue or delete them, admins included. Only questions and answers are stored; lookups are re-run each time. | Done |
 | ASK-05 | Same fairness rules as AI-28: job-related evidence only, no rejection advice, data is not instructions. Without an AI key it is switched off in production; dev and demo answer from simple keyword lookups. | Done |
+| ASK-06 | **Actions, proposed then confirmed**: when asked ("move Asha and Ravi to shortlisted", "remind everyone who hasn't started the Java test", "WhatsApp Rekha about tomorrow's call"), Ask ATS looks the people up and proposes actions as cards under its answer. Six kinds: move stage, add note, log a call or message, remind about an unstarted test, message the candidate (email, WhatsApp or their candidate page) and share with the client (profile, optionally contact details and the CodeWalnut résumé). Scheduling interviews and offers stay on their screens. | Done |
+| ASK-07 | Nothing happens until the person clicks **Do it** on a card (or **Do all** for the batch; WhatsApp by click-to-chat needs a click each). **Skip** dismisses one. Each runs once, as the person clicking, through the same service as the screen, so permissions, history, emails/WhatsApp and the audit log are the usual ones. The card then shows Done, Failed (with why) or Skipped, kept with the chat. | Done |
+| ASK-08 | Every proposal is checked when it's made: the candidate exists, the person may do it (e.g. an interviewer can't move stages), rejecting or withdrawing has a reason from the person, a test is actually waiting to be started, the candidate has the email/mobile needed, the opening has a client to share with. Refused proposals are explained in the answer, never shown as cards. | Done |
+| ASK-09 | Messages are written in full by the AI, signed with the asker's name, and editable on the card (text and email subject) before they go; the edited text is what's sent. The AI never proposes rejecting anyone on its own and never invents dates, salaries or promises. | Done |
 
 ## Acceptance criteria
 
@@ -79,6 +83,7 @@ hiring decision.
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
 | 2026-10-06 | Ask ATS: chat with the whole ATS (ASK-01…ASK-05, ADR-0021) |
+| 2026-10-06 | Ask ATS actions: proposed as cards, done only when confirmed (ASK-06…ASK-09, ADR-0023) |
 | 2026-10-02 | Assistant on the opening page: instruction → reviewed proposals → Apply (AI-12…AI-17, ADR-0009) |
 | 2026-10-03 | Résumé readings fill empty profile fields (AI-31) |
 | 2026-10-03 | AI drafts test questions for review (ASMT-09, ADR-0011) |

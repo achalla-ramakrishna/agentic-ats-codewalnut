@@ -42,8 +42,13 @@ public class RuleBasedAskClient implements AskClient {
 
     @Override
     public Answer answer(List<Turn> history, String guide, List<ToolSpec> tools, ToolBox toolBox) {
-        String q = history.get(history.size() - 1).text().toLowerCase(Locale.ROOT);
+        // Drop the "[Asked by …]" line the service adds for the AI.
+        String q = history.get(history.size() - 1).text().replaceFirst("^\\[Asked by [^\\]]*\\]\\n", "").toLowerCase(Locale.ROOT);
         try {
+            java.util.regex.Matcher move = MOVE.matcher(q);
+            if (move.matches()) {
+                return new Answer(proposeMoves(move.group(1), move.group(2), toolBox), List.of("search_candidates", "propose_actions"));
+            }
             if (q.startsWith("how do i") || q.startsWith("how to") || q.startsWith("how can i")) {
                 return new Answer(howTo(q, guide), List.of());
             }
@@ -76,6 +81,44 @@ public class RuleBasedAskClient implements AskClient {
         } catch (IllegalArgumentException e) {
             return new Answer(e.getMessage(), List.of());
         }
+    }
+
+    private static final Pattern MOVE = Pattern.compile("move (.+?) to (.+?)[.!]?");
+
+    /** "move asha and ravi to shortlisted": find each person, then propose the moves as cards. */
+    private String proposeMoves(String who, String where, ToolBox toolBox) {
+        String stage = STAGES.entrySet().stream().filter(e -> where.contains(e.getKey())).map(Map.Entry::getValue)
+                .findFirst().orElse(null);
+        if (stage == null) {
+            return "Which stage? For example: move Asha to shortlisted.";
+        }
+        List<Map<String, Object>> actions = new ArrayList<>();
+        List<String> notFound = new ArrayList<>();
+        for (String name : who.split("\\s*(,|\\band\\b|&)\\s*")) {
+            if (name.isBlank()) {
+                continue;
+            }
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> found = (List<Map<String, Object>>) read(toolBox.call("search_candidates",
+                    Map.of("query", name.strip()))).getOrDefault("candidates", List.of());
+            if (found.isEmpty()) {
+                notFound.add(name.strip());
+            } else {
+                actions.add(Map.of("type", "MOVE_STAGE", "applicationId", String.valueOf(found.get(0).get("applicationId")), "stage", stage));
+            }
+        }
+        List<String> out = new ArrayList<>();
+        if (!actions.isEmpty()) {
+            Map<String, Object> result = read(toolBox.call("propose_actions", Map.of("actions", actions)));
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> refused = (List<Map<String, Object>>) result.getOrDefault("refused", List.of());
+            out.add("Here's what I can do. Check each card and click **Do it**.");
+            refused.forEach(r -> out.add("- Not possible: " + r.get("reason")));
+        }
+        notFound.forEach(n -> out.add("- I couldn't find " + n + "."));
+        out.add("");
+        out.add("_Answered without AI (dev mode)._");
+        return String.join("\n", out);
     }
 
     private String candidates(String json) {
@@ -119,6 +162,9 @@ public class RuleBasedAskClient implements AskClient {
                 if (word.length() > 3 && l.contains(word)) {
                     score++;
                 }
+            }
+            if (score > 0 && line.contains("→")) {
+                score++; // a line with click steps answers "how do I…" best
             }
             if (score > bestScore) {
                 bestScore = score;

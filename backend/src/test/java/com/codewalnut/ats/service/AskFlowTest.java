@@ -132,4 +132,75 @@ class AskFlowTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> askService.tool(admin, "get_candidate", Map.of("applicationId", "nope")))
                 .hasMessageContaining("applicationId");
     }
+
+    @Autowired
+    private AskActionService askActions;
+
+    @Test
+    void proposesActionsThatOnlyHappenWhenConfirmed() throws Exception {
+        String job = opening();
+        String chat = send(RECRUITER, "/api/v1/ask", "{\"question\":\"move Zara " + tag + " and Yusuf " + tag + " to interviewed\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.messages[1].actions.length()").value(2))
+                .andExpect(jsonPath("$.messages[1].actions[0].status").value("PENDING"))
+                .andExpect(jsonPath("$.messages[1].actions[0].summary").value(Matchers.containsString("Shortlisted → Interviewed")))
+                .andReturn().getResponse().getContentAsString();
+        String id = JsonPath.read(chat, "$.id");
+        String zara = JsonPath.read(chat, "$.messages[1].actions[0].id");
+        String yusuf = JsonPath.read(chat, "$.messages[1].actions[1].id");
+        String zaraApp = JsonPath.read(chat, "$.messages[1].actions[0].applicationId");
+
+        // Proposing changed nothing.
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/applications").with(RECRUITER))
+                .andExpect(jsonPath("$[?(@.id == '" + zaraApp + "')].stage").value(Matchers.hasItem("SHORTLISTED")));
+
+        // Someone else can't act on my chat.
+        send(ADMIN, "/api/v1/ask/conversations/" + id + "/actions/" + zara, "{\"decision\":\"do\"}").andExpect(status().isNotFound());
+
+        send(RECRUITER, "/api/v1/ask/conversations/" + id + "/actions/" + zara, "{\"decision\":\"do\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conversation.messages[1].actions[0].status").value("DONE"))
+                .andExpect(jsonPath("$.conversation.messages[1].actions[0].doneBy").value("recruiter@codewalnut.test"));
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/applications").with(RECRUITER))
+                .andExpect(jsonPath("$[?(@.id == '" + zaraApp + "')].stage").value(Matchers.hasItem("INTERVIEWED")));
+        // Once only.
+        send(RECRUITER, "/api/v1/ask/conversations/" + id + "/actions/" + zara, "{\"decision\":\"do\"}").andExpect(status().isConflict());
+
+        send(RECRUITER, "/api/v1/ask/conversations/" + id + "/actions/" + yusuf, "{\"decision\":\"skip\"}")
+                .andExpect(jsonPath("$.conversation.messages[1].actions[1].status").value("SKIPPED"));
+    }
+
+    @Test
+    void checksEachProposalAndRunsMessagesAsThePerson() throws Exception {
+        String job = opening();
+        var recruiter = users.findByEmail("recruiter@codewalnut.test").orElseThrow();
+        var interviewer = users.findByEmail("interviewer@codewalnut.test").orElseThrow();
+        String found = askService.tool(recruiter, "search_candidates", Map.of("query", "Yusuf " + tag, "jobId", job));
+        String yusuf = JsonPath.read(found, "$.candidates[0].applicationId");
+
+        java.util.List<com.codewalnut.ats.dto.AskDtos.ProposedAction> proposed = new java.util.ArrayList<>();
+        Map<String, Object> reply = askActions.propose(recruiter, Map.of("actions", java.util.List.of(
+                Map.of("type", "MOVE_STAGE", "applicationId", yusuf, "stage", "REJECTED"),
+                Map.of("type", "MESSAGE", "applicationId", yusuf, "body", "Hi", "sendEmail", true),
+                Map.of("type", "SHARE_WITH_CLIENT", "applicationId", yusuf),
+                Map.of("type", "REMIND_TEST", "applicationId", yusuf),
+                Map.of("type", "MESSAGE", "applicationId", yusuf, "body", "Hi Yusuf, are you free for a call today? Priya, CodeWalnut"),
+                Map.of("type", "ADD_NOTE", "applicationId", yusuf, "note", "Prefers mornings"))), proposed);
+        assertThat(objectMapper.writeValueAsString(reply)).contains("needs a reason", "no email address", "internal opening",
+                "no test waiting");
+        assertThat(proposed).extracting(com.codewalnut.ats.dto.AskDtos.ProposedAction::type).containsExactly("MESSAGE", "ADD_NOTE");
+
+        // An interviewer can't even propose a stage move.
+        java.util.List<com.codewalnut.ats.dto.AskDtos.ProposedAction> none = new java.util.ArrayList<>();
+        assertThat(objectMapper.writeValueAsString(askActions.propose(interviewer,
+                Map.of("actions", java.util.List.of(Map.of("type", "MOVE_STAGE", "applicationId", yusuf, "stage", "SELECTED"))), none)))
+                .contains("Not allowed");
+        assertThat(none).isEmpty();
+
+        // The edited text is what goes out, and it counts as contact.
+        var done = askActions.execute(recruiter, proposed.get(0), null, "Hi Yusuf, edited text. Priya, CodeWalnut", "http://localhost/");
+        assertThat(done.result()).isEqualTo("Sent");
+        mockMvc.perform(get("/api/v1/applications/" + yusuf + "/messages").param("channel", "CANDIDATE").with(RECRUITER))
+                .andExpect(jsonPath("$[0].body").value("Hi Yusuf, edited text. Priya, CodeWalnut"));
+    }
 }
