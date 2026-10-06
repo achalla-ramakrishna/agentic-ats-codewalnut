@@ -61,9 +61,9 @@ flow back into the pipeline.
 | ID | Requirement | Priority |
 | --- | --- | --- |
 | SUB-17 | Drawer → Profile → **CodeWalnut résumé** → **✨ Create with AI** (`MANAGE_JOBS`): drafts the client version from the latest original résumé, tailored to the opening (title line, 2–3 sentence summary, skill groups, experience, projects, education, achievements, additional info). No invented facts. | Done |
-| SUB-18 | Phone numbers and links are removed by the app from every draft and edit; email is a toggle (on by default); address, date of birth and personal details are left out. | Done |
-| SUB-19 | Everything is editable (name, city, title line, summary, skill groups, sections, entries, bullets; reorder and remove sections); "CodeWalnut screening" lists passed tests (toggle). | Done |
-| SUB-20 | **Preview PDF**, **Download Word** (editable), **Save PDF to documents** (stored as the CodeWalnut résumé, new version each time; then **Share with client**). Logo, CodeWalnut layout and footer on every page (`ATS_RESUME_FOOTER`). | Done |
+| SUB-18 | Phone numbers and social/contact links (LinkedIn etc.) are removed by the app from every draft and edit; address, date of birth and personal details are left out. The **email is always shown** (Save PDF is refused without one); one optional **GitHub or portfolio** link is kept in the contact line. | Done |
+| SUB-19 | Everything is editable (name, city, email, GitHub/portfolio link, title line, summary, skill groups, sections, entries, bullets; reorder and remove sections); "CodeWalnut screening" lists passed tests (toggle). | Done |
+| SUB-20 | **Preview PDF**, **Download Word** (editable), **Save PDF to documents** (stored as the CodeWalnut résumé, new version each time; then **Share with client**). Follows CodeWalnut's résumé template: blue top bar, "CODE WALNUT / TALENT PROFILE", name, title line, contact line (city \| email \| link), summary, then blue section headings over thin rules (Technical skills, Experience with dates after the role, Selected projects with the stack in grey, Education with the institution below, others); logo top right; footer with page number on every page (`ATS_RESUME_FOOTER`). | Done |
 
 ## Business rules
 
@@ -115,6 +115,7 @@ flow back into the pipeline.
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md; review link confirmed as enough for MVP, commercials deferred to v1 |
+| 2026-10-06 | CodeWalnut résumé PDF matches the CodeWalnut template; email always shown; GitHub/portfolio link kept (SUB-18…SUB-20) |
 | 2026-10-03 | CodeWalnut-branded résumé generator (SUB-17…SUB-20, ADR-0012) |
 | 2026-10-01 | Client contacts can now sign in and see explicitly shared candidates ([client-access.md](client-access.md), ADR-0007); submissions with snapshots and feedback stay in this chunk |
 

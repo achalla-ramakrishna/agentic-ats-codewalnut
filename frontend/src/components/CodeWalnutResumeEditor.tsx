@@ -33,7 +33,6 @@ export function CodeWalnutResumeEditor({
 }) {
   const [draft, setDraft] = useState<DraftResponse | null>(null)
   const [resume, setResume] = useState<BrandedResume | null>(null)
-  const [showEmail, setShowEmail] = useState(true)
   const [includeScreening, setIncludeScreening] = useState(true)
   const [open, setOpen] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -44,7 +43,6 @@ export function CodeWalnutResumeEditor({
   function take(d: DraftResponse) {
     setDraft(d)
     setResume(d.resume)
-    setShowEmail(d.showEmail)
     setIncludeScreening(d.includeScreening)
     setDirty(false)
   }
@@ -72,7 +70,7 @@ export function CodeWalnutResumeEditor({
   }
 
   const persist = async () => {
-    if (resume && dirty) take(await updateCodeWalnutResume(applicationId, { resume, showEmail, includeScreening }))
+    if (resume && dirty) take(await updateCodeWalnutResume(applicationId, { resume, showEmail: true, includeScreening }))
   }
 
   const generate = () =>
@@ -116,6 +114,9 @@ export function CodeWalnutResumeEditor({
           {error}
         </div>
       )}
+      {draft.exists && resume && !resume.email.trim() && (
+        <div className="alert alert-info">Add the candidate&apos;s email under Edit. CodeWalnut résumés always show it.</div>
+      )}
       {draft.exists && resume && (
         <div className="row" style={{ gap: 6 }}>
           <Button
@@ -147,7 +148,8 @@ export function CodeWalnutResumeEditor({
           {canEdit && (
             <Button
               size="sm"
-              disabled={!!busy}
+              disabled={!!busy || !resume.email.trim()}
+              title={resume.email.trim() ? undefined : 'Add their email first'}
               onClick={() =>
                 void run('save', async () => {
                   await persist()
@@ -167,7 +169,7 @@ export function CodeWalnutResumeEditor({
         <div className="stack cwr-editor" style={{ gap: 10 }}>
           <p className="muted" style={{ margin: 0, fontSize: 13 }}>
             Made from {draft.sourceFileName ?? 'the original résumé'}
-            {draft.updatedBy ? ` · last changed by ${draft.updatedBy}` : ''}. Phone numbers and links are always removed.
+            {draft.updatedBy ? ` · last changed by ${draft.updatedBy}` : ''}. Phone numbers and social links are always removed; the email is always shown.
           </p>
           <fieldset disabled={!canEdit} className="stack" style={{ gap: 8, border: 0, padding: 0, margin: 0 }}>
             <div className="row" style={{ alignItems: 'flex-end' }}>
@@ -180,6 +182,21 @@ export function CodeWalnutResumeEditor({
                 <input className="input" value={resume.location} onChange={(e) => edit((r) => ({ ...r, location: e.target.value }))} />
               </label>
             </div>
+            <div className="row" style={{ alignItems: 'flex-end' }}>
+              <label className="field" style={{ flex: '1 1 200px' }}>
+                Email
+                <input className="input" type="email" value={resume.email} onChange={(e) => edit((r) => ({ ...r, email: e.target.value }))} />
+              </label>
+              <label className="field" style={{ flex: '1 1 200px' }}>
+                GitHub or portfolio (optional)
+                <input
+                  className="input"
+                  placeholder="github.com/username"
+                  value={resume.link ?? ''}
+                  onChange={(e) => edit((r) => ({ ...r, link: e.target.value }))}
+                />
+              </label>
+            </div>
             <label className="field">
               Title line
               <input className="input" value={resume.headline} onChange={(e) => edit((r) => ({ ...r, headline: e.target.value }))} />
@@ -189,17 +206,6 @@ export function CodeWalnutResumeEditor({
               <textarea className="input" rows={3} value={resume.summary} onChange={(e) => edit((r) => ({ ...r, summary: e.target.value }))} />
             </label>
             <div className="row" style={{ gap: 16 }}>
-              <label className="row" style={{ gap: 6 }}>
-                <input
-                  type="checkbox"
-                  checked={showEmail}
-                  onChange={(e) => {
-                    setShowEmail(e.target.checked)
-                    setDirty(true)
-                  }}
-                />{' '}
-                Show their email ({resume.email || 'none'})
-              </label>
               <label className="row" style={{ gap: 6 }}>
                 <input
                   type="checkbox"

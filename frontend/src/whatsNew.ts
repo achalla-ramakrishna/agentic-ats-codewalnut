@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-06-codewalnut-resume-template',
+    date: '2026-10-06',
+    title: 'CodeWalnut résumés in the new template',
+    summary: 'CodeWalnut résumé PDFs now follow the CodeWalnut template: blue top bar, “Talent profile” header with the logo, a contact line with the email (always shown) and GitHub or portfolio link, blue section headings, and a numbered footer.',
+    steps: [
+      'Open a candidate in an opening; under Profile → CodeWalnut résumé, click Edit.',
+      'Check the Email and, if they have one, the GitHub or portfolio link.',
+      'Click Preview PDF, then Save PDF to documents. Re-save older ones to get the new layout.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-04-coding-room',
     date: '2026-10-04',
     title: 'Live coding rooms in interviews',

@@ -43,3 +43,20 @@ these by hand in Word today.
 - The AI can still misstate a fact; the editor says to check every line
   against the original, and the original stays attached.
 - Adds openhtmltopdf + PDFBox (~10 MB) to the backend.
+
+## Update 2026-10-06
+
+- The PDF and Word layout now follow CodeWalnut's résumé template (a sample
+  CodeWalnut résumé from the recruiting team): top accent bar, "CODE WALNUT /
+  TALENT PROFILE" label, contact line, blue section headings over thin rules,
+  role and dates on one line, projects with their stack in grey, education
+  with the institution underneath, numbered footer. Colours and sizes are
+  taken from that template; the logo is the template's higher-resolution one.
+- **Email is always shown** (the per-résumé toggle is retired): clients and
+  recruiters expect it on every profile. Saving a PDF without an email is
+  refused.
+- **One GitHub or portfolio link is kept** (normalised, e.g.
+  `github.com/asha`), as in the template; LinkedIn and other social or
+  contact links are still removed, and links inside the text are still
+  stripped.
+

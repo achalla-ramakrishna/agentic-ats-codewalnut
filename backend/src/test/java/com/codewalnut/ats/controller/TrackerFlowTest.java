@@ -58,7 +58,7 @@ class TrackerFlowTest {
     private String paste() {
         return String.join("\n",
                 "slno\tname\temail\tphone",
-                "1\tASHA " + tag + "\tasha." + tag + "@gmail.com\t9" + tag.hashCode() % 1000 + "000001",
+                "1\tASHA " + tag + "\tasha." + tag + "@gmail.com\t" + phone + "001",
                 "2\tKAVYA " + tag + "\tKavya KS\t",
                 "3\tRAVI " + tag + "\travi." + tag + "@gmail.com|\t" + phone + "003",
                 "4\tRAVI AGAIN\travi." + tag + "@gmail.com\t" + phone + "003",

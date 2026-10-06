@@ -14,6 +14,8 @@ export interface BrandedResume {
   headline: string
   location: string
   email: string
+  /** GitHub or portfolio, e.g. "github.com/asha"; LinkedIn and other links are never kept. */
+  link?: string
   summary: string
   skills: { label: string; items: string[] }[]
   sections: { title: string; entries: Entry[] }[]

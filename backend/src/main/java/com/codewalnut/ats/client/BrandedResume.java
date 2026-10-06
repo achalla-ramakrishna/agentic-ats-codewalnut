@@ -7,7 +7,8 @@ import java.util.List;
 /**
  * A candidate's résumé rewritten in CodeWalnut's format for a client (ADR-0012). The JSON schema
  * sent to Claude (structured output) is derived from these records; people edit it before use.
- * It never holds a phone number: clients reach candidates through CodeWalnut.
+ * It never holds a phone number or social/contact links: clients reach candidates through CodeWalnut.
+ * Email is always shown; a GitHub or portfolio link is the only link kept.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record BrandedResume(
@@ -19,6 +20,8 @@ public record BrandedResume(
         String location,
         @JsonPropertyDescription("The candidate's email from the résumé, or empty")
         String email,
+        @JsonPropertyDescription("The candidate's GitHub profile or personal portfolio URL from the résumé, without https://, e.g. \"github.com/asha\"; never LinkedIn or other social or contact links; or empty")
+        String link,
         @JsonPropertyDescription("2–3 sentences for the client: what the candidate does well and why they fit the opening, using only facts from the résumé")
         String summary,
         @JsonPropertyDescription("Technical skills in 2–5 labelled groups, e.g. {label: \"Backend\", items: [\"Java\", \"Spring Boot\"]}")

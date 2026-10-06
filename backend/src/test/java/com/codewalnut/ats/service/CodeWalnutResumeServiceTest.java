@@ -16,4 +16,14 @@ class CodeWalnutResumeServiceTest {
         assertThat(CodeWalnutResumeService.strip("2022 - 2026 | CGPA: 7.8/10")).isEqualTo("2022 - 2026 | CGPA: 7.8/10");
         assertThat(CodeWalnutResumeService.strip("Served 200+ peers in 2023")).isEqualTo("Served 200+ peers in 2023");
     }
+
+    @Test
+    void keepsOnlyAGithubOrPortfolioLink() {
+        assertThat(CodeWalnutResumeService.link("https://www.github.com/asha/")).isEqualTo("github.com/asha");
+        assertThat(CodeWalnutResumeService.link("asha.dev")).isEqualTo("asha.dev");
+        assertThat(CodeWalnutResumeService.link("https://linkedin.com/in/asha")).isEmpty();
+        assertThat(CodeWalnutResumeService.link("in.linkedin.com/in/asha")).isEmpty();
+        assertThat(CodeWalnutResumeService.link("call me maybe")).isEmpty();
+        assertThat(CodeWalnutResumeService.link(null)).isEmpty();
+    }
 }

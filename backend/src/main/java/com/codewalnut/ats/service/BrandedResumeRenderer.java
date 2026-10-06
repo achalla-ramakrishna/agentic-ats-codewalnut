@@ -24,8 +24,11 @@ public class BrandedResumeRenderer {
     /** showEmail: print the candidate's email under their name. screening: lines for "CodeWalnut screening". */
     public record Options(boolean showEmail, List<String> screening, String footer) {}
 
-    private static final String NAVY = "1E1B4B";
-    private static final String ACCENT = "4F5BD5";
+    // Colours from CodeWalnut's résumé template.
+    private static final String TEXT = "293140";
+    private static final String GREY = "606B7A";
+    private static final String ACCENT = "4459EB";
+    private static final String RULE = "DCE1EB";
 
     private final byte[] logo = resource("branding/codewalnut-logo.png");
     private final byte[] regular = resource("branding/LiberationSans-Regular.ttf");
@@ -53,92 +56,177 @@ public class BrandedResumeRenderer {
     String html(BrandedResume r, Options o) {
         StringBuilder h = new StringBuilder();
         h.append("<!DOCTYPE html><html><head><meta charset=\"utf-8\"/><style>")
-                .append("@page { size: A4; margin: 16mm 17mm 18mm 17mm; @bottom-center { content: element(footer); } }")
-                .append("body { font-family: 'Liberation Sans'; font-size: 9.6pt; line-height: 1.35; color: #1f2937; }")
+                .append("@page { size: A4; margin: 46pt 0 52pt 0;")
+                .append(" @bottom-center { content: element(footer); vertical-align: top; } }")
+                .append("@page :first { margin-top: 0; }")
+                .append("body { font-family: 'Liberation Sans'; font-size: 9pt; line-height: 1.2; color: #").append(TEXT).append("; margin: 0; }")
+                .append(".bar { height: 6.75pt; background: #").append(ACCENT).append("; margin: 0 0 50pt 0; }")
+                .append(".page { padding: 0 40pt; }")
                 .append(".top { width: 100%; border-collapse: collapse; } .top td { vertical-align: top; padding: 0; }")
-                .append(".logo { width: 34mm; } h1 { font-size: 21pt; margin: 0; color: #").append(NAVY).append("; }")
-                .append(".headline { font-size: 11pt; margin-top: 2pt; } .meta { color: #4b5563; margin-top: 2pt; }")
-                .append("h2 { font-size: 10.5pt; text-transform: uppercase; letter-spacing: 0.5pt; color: #").append(NAVY)
-                .append("; border-bottom: 1.2pt solid #").append(ACCENT).append("; padding-bottom: 2pt; margin: 11pt 0 4pt; }")
-                .append(".summary { margin: 0; } .skills td { padding: 1pt 8pt 1pt 0; vertical-align: top; }")
-                .append(".label { font-weight: bold; white-space: nowrap; } .entry { margin-top: 5pt; page-break-inside: avoid; }")
-                .append(".etitle { font-weight: bold; } .period { float: right; color: #6b7280; }")
-                .append("ul { margin: 2pt 0 0 0; padding-left: 13pt; } li { margin: 1pt 0; }")
-                .append(".screen { background: #eef0fb; padding: 5pt 7pt; }")
-                .append(".footer { position: running(footer); font-size: 7.8pt; color: #6b7280; text-align: center; }")
+                .append(".kicker { font-size: 7.5pt; font-weight: bold; color: #").append(GREY).append("; letter-spacing: 0.2pt; }")
+                .append("h1 { font-size: 26pt; line-height: 1.1; margin: 8pt 0 0 0; color: #").append(TEXT).append("; }")
+                .append(".headline { font-size: 11pt; color: #").append(GREY).append("; margin-top: 4pt; }")
+                .append(".contact { font-size: 8pt; color: #").append(GREY).append("; margin-top: 3pt; }")
+                .append(".link { color: #").append(ACCENT).append("; }")
+                .append(".logo { width: 105pt; } .summary { font-size: 10pt; line-height: 1.17; margin: 12pt 0 0 0; }")
+                .append(".rule { border-top: 1pt solid #").append(RULE).append("; margin-top: 10pt; }")
+                .append("h2 { font-size: 8pt; font-weight: bold; color: #").append(ACCENT)
+                .append("; letter-spacing: 0.2pt; margin: 8pt 0 6pt 0; page-break-after: avoid; }")
+                .append(".skill { margin: 0 0 5pt 0; } .b { font-weight: bold; } .grey { color: #").append(GREY).append("; }")
+                .append(".entry { margin: 0 0 6pt 0; page-break-inside: avoid; } .etitle { font-size: 9.5pt; }")
+                .append(".etitle .b { font-weight: bold; } .sub { color: #").append(GREY).append("; margin-top: 2pt; }")
+                .append(".para { margin: 3pt 0 0 0; line-height: 1.12; }")
+                .append("ul { margin: 3pt 0 0 0; padding: 0; list-style: none; }")
+                .append("li { margin: 0 0 4pt 0; padding-left: 7pt; text-indent: -7pt; line-height: 1.12; }")
+                .append(".footer { position: running(footer); width: 515pt; margin-left: 40pt; border-top: 1pt solid #").append(RULE)
+                .append("; padding-top: 6pt; font-size: 7.5pt; color: #").append(GREY).append("; }")
+                .append(".footer table { width: 100%; border-collapse: collapse; } .footer td { padding: 0; }")
+                .append(".pageno::after { content: counter(page, decimal-leading-zero); }")
                 .append("</style></head><body>");
-        h.append("<div class=\"footer\">").append(esc(o.footer())).append("</div>");
-        h.append("<table class=\"top\"><tr><td><h1>").append(esc(r.name())).append("</h1>");
+        h.append("<div class=\"footer\"><table><tr><td>").append(esc(o.footer()))
+                .append("</td><td style=\"text-align: right;\"><span class=\"pageno\"></span></td></tr></table></div>");
+        h.append("<div class=\"bar\"></div><div class=\"page\">");
+        h.append("<table class=\"top\"><tr><td><div class=\"kicker\">CODE WALNUT / TALENT PROFILE</div><h1>")
+                .append(esc(r.name())).append("</h1>");
         if (StringUtils.hasText(r.headline())) {
             h.append("<div class=\"headline\">").append(esc(r.headline())).append("</div>");
         }
-        String meta = meta(r, o);
-        if (!meta.isEmpty()) {
-            h.append("<div class=\"meta\">").append(esc(meta)).append("</div>");
+        List<String> contact = contactParts(r, o);
+        if (!contact.isEmpty()) {
+            h.append("<div class=\"contact\">");
+            for (int i = 0; i < contact.size(); i++) {
+                String part = contact.get(i);
+                h.append(i == 0 ? "" : " | ");
+                boolean isLink = StringUtils.hasText(r.link()) && part.equals(r.link().strip());
+                h.append(isLink ? "<span class=\"link\">" + esc(part) + "</span>" : esc(part));
+            }
+            h.append("</div>");
         }
-        h.append("</td><td style=\"text-align: right; width: 36mm;\"><img class=\"logo\" src=\"data:image/png;base64,")
+        h.append("</td><td style=\"text-align: right; width: 110pt;\"><img class=\"logo\" src=\"data:image/png;base64,")
                 .append(Base64.getEncoder().encodeToString(logo)).append("\"/></td></tr></table>");
         if (StringUtils.hasText(r.summary())) {
-            h.append("<h2>Summary</h2><p class=\"summary\">").append(esc(r.summary())).append("</p>");
+            h.append("<p class=\"summary\">").append(esc(r.summary())).append("</p>");
         }
         List<BrandedResume.SkillGroup> skills = nonEmptySkills(r);
         if (!skills.isEmpty()) {
-            h.append("<h2>Technical skills</h2><table class=\"skills\">");
+            h.append("<div class=\"rule\"></div><h2>TECHNICAL SKILLS</h2>");
             for (BrandedResume.SkillGroup g : skills) {
-                h.append("<tr><td class=\"label\">").append(esc(g.label())).append("</td><td>")
-                        .append(esc(String.join(", ", g.items()))).append("</td></tr>");
+                h.append("<div class=\"skill\">");
+                if (StringUtils.hasText(g.label())) {
+                    h.append("<span class=\"b\">").append(esc(g.label().strip())).append("</span> ");
+                }
+                h.append(esc(String.join(", ", g.items()))).append("</div>");
             }
-            h.append("</table>");
         }
         if (o.screening() != null && !o.screening().isEmpty()) {
-            h.append("<h2>CodeWalnut screening</h2><div class=\"screen\"><ul>");
-            o.screening().forEach(line -> h.append("<li>").append(esc(line)).append("</li>"));
-            h.append("</ul></div>");
+            h.append("<div class=\"rule\"></div><h2>CODE WALNUT SCREENING</h2><ul>");
+            o.screening().forEach(line -> h.append("<li>&#8226; ").append(esc(line)).append("</li>"));
+            h.append("</ul>");
         }
         for (BrandedResume.Section s : sections(r)) {
-            h.append("<h2>").append(esc(s.title())).append("</h2>");
+            Kind kind = kind(s.title());
+            h.append("<div class=\"rule\"></div><h2>").append(esc(s.title().strip().toUpperCase(java.util.Locale.ROOT))).append("</h2>");
             for (BrandedResume.Entry e : s.entries()) {
-                h.append("<div class=\"entry\">");
-                if (StringUtils.hasText(e.period())) {
-                    h.append("<span class=\"period\">").append(esc(e.period())).append("</span>");
-                }
-                if (StringUtils.hasText(e.title()) || StringUtils.hasText(e.subtitle())) {
-                    h.append("<div>");
-                    if (StringUtils.hasText(e.title())) {
-                        h.append("<span class=\"etitle\">").append(esc(e.title())).append("</span>");
-                    }
-                    if (StringUtils.hasText(e.subtitle())) {
-                        h.append(StringUtils.hasText(e.title()) ? " | " : "").append(esc(e.subtitle()));
-                    }
-                    h.append("</div>");
-                }
                 List<String> bullets = bullets(e);
-                if (!bullets.isEmpty()) {
-                    h.append("<ul>");
-                    bullets.forEach(b -> h.append("<li>").append(esc(b)).append("</li>"));
-                    h.append("</ul>");
+                boolean hasTitle = StringUtils.hasText(e.title()) || StringUtils.hasText(e.subtitle());
+                h.append("<div class=\"entry\">");
+                if (kind == Kind.OTHER && hasTitle && bullets.size() == 1) {
+                    // e.g. "Class Representative  Dr Ambedkar Institute of Technology | 2022 - 2026. Represented a batch of…"
+                    h.append("<div class=\"para\" style=\"margin-top: 0;\">").append(inline(e)).append(" ")
+                            .append(esc(bullets.get(0))).append("</div></div>");
+                    continue;
+                }
+                if (hasTitle || StringUtils.hasText(e.period())) {
+                    h.append("<div class=\"etitle\">").append(titleLine(e, kind)).append("</div>");
+                }
+                if (kind == Kind.EDUCATION && StringUtils.hasText(e.subtitle())) {
+                    h.append("<div class=\"sub\">").append(esc(e.subtitle().strip())).append("</div>");
+                }
+                if (kind == Kind.EXPERIENCE || bullets.size() > 1 && kind != Kind.EDUCATION) {
+                    if (!bullets.isEmpty()) {
+                        h.append("<ul>");
+                        bullets.forEach(b -> h.append("<li>&#8226; ").append(esc(b)).append("</li>"));
+                        h.append("</ul>");
+                    }
+                } else {
+                    bullets.forEach(b -> h.append("<div class=\"para\">").append(esc(b)).append("</div>"));
                 }
                 h.append("</div>");
             }
         }
-        h.append("</body></html>");
+        h.append("</div></body></html>");
         return h.toString();
+    }
+
+    enum Kind { EXPERIENCE, PROJECTS, EDUCATION, OTHER }
+
+    static Kind kind(String title) {
+        String t = title == null ? "" : title.toLowerCase(java.util.Locale.ROOT);
+        if (t.contains("project")) {
+            return Kind.PROJECTS;
+        }
+        if (t.contains("education") || t.contains("academic") || t.contains("qualification")) {
+            return Kind.EDUCATION;
+        }
+        if (t.contains("experience") || t.contains("employment") || t.contains("work") || t.contains("internship")) {
+            return Kind.EXPERIENCE;
+        }
+        return Kind.OTHER;
+    }
+
+    /** "Role | Organisation / dates" (projects: the stack in grey; education: the institution goes on the next line). */
+    private static String titleLine(BrandedResume.Entry e, Kind kind) {
+        StringBuilder t = new StringBuilder();
+        String title = StringUtils.hasText(e.title()) ? e.title().strip() : "";
+        String sub = StringUtils.hasText(e.subtitle()) ? e.subtitle().strip() : "";
+        if (kind == Kind.PROJECTS || kind == Kind.EDUCATION) {
+            if (!title.isEmpty()) {
+                t.append("<span class=\"b\">").append(esc(title)).append("</span>");
+            }
+            if (kind == Kind.PROJECTS && !sub.isEmpty()) {
+                t.append("<span class=\"grey\">").append(title.isEmpty() ? "" : " | ").append(esc(sub)).append("</span>");
+            }
+            if (kind == Kind.EDUCATION && title.isEmpty() && !sub.isEmpty()) {
+                t.append("<span class=\"b\">").append(esc(sub)).append("</span>");
+            }
+        } else {
+            String main = title.isEmpty() || sub.isEmpty() ? title + sub : title + " | " + sub;
+            t.append("<span class=\"b\">").append(esc(main)).append("</span>");
+        }
+        if (StringUtils.hasText(e.period())) {
+            t.append("<span class=\"grey\">").append(t.length() > 0 ? " / " : "").append(esc(e.period().strip())).append("</span>");
+        }
+        return t.toString();
+    }
+
+    private static String inline(BrandedResume.Entry e) {
+        StringBuilder t = new StringBuilder();
+        if (StringUtils.hasText(e.title())) {
+            t.append("<span class=\"b\">").append(esc(e.title().strip())).append("</span>");
+        }
+        String rest = String.join(" | ", java.util.stream.Stream.of(e.subtitle(), e.period())
+                .filter(StringUtils::hasText).map(String::strip).toList());
+        if (!rest.isEmpty()) {
+            t.append(t.length() > 0 ? " " : "").append(esc(rest)).append(".");
+        }
+        return t.toString();
     }
 
     // ---- Word (.docx) ----
 
     public byte[] docx(BrandedResume r, Options o) {
         StringBuilder body = new StringBuilder();
-        body.append(para(run(r.name(), true, 42, NAVY), 0, 0));
+        body.append(para(run("CODE WALNUT / TALENT PROFILE", true, 15, GREY), 0, 60));
+        body.append(para(run(r.name(), true, 52, TEXT), 0, 40));
         if (StringUtils.hasText(r.headline())) {
-            body.append(para(run(r.headline(), false, 22, null), 0, 20));
+            body.append(para(run(r.headline(), false, 22, GREY), 0, 20));
         }
         String meta = meta(r, o);
         if (!meta.isEmpty()) {
-            body.append(para(run(meta, false, 19, "4B5563"), 0, 40));
+            body.append(para(run(meta, false, 16, GREY), 0, 120));
         }
         if (StringUtils.hasText(r.summary())) {
-            body.append(heading("Summary")).append(para(run(r.summary(), false, 19, null), 0, 0));
+            body.append(para(run(r.summary(), false, 20, null), 0, 0));
         }
         List<BrandedResume.SkillGroup> skills = nonEmptySkills(r);
         if (!skills.isEmpty()) {
@@ -148,7 +236,7 @@ public class BrandedResumeRenderer {
             }
         }
         if (o.screening() != null && !o.screening().isEmpty()) {
-            body.append(heading("CodeWalnut screening"));
+            body.append(heading("Code Walnut screening"));
             o.screening().forEach(line -> body.append(bullet(line)));
         }
         for (BrandedResume.Section s : sections(r)) {
@@ -163,7 +251,7 @@ public class BrandedResumeRenderer {
                         line.append(run((StringUtils.hasText(e.title()) ? " | " : "") + e.subtitle(), false, 19, null));
                     }
                     if (StringUtils.hasText(e.period())) {
-                        line.append("<w:r><w:tab/></w:r>").append(run(e.period(), false, 19, "6B7280"));
+                        line.append(run(" / " + e.period(), false, 19, GREY));
                     }
                     body.append("<w:p><w:pPr><w:keepNext/><w:tabs><w:tab w:val=\"right\" w:pos=\"9638\"/></w:tabs>"
                             + "<w:spacing w:before=\"100\" w:after=\"20\"/></w:pPr>").append(line).append("</w:p>");
@@ -200,9 +288,9 @@ public class BrandedResumeRenderer {
     }
 
     private static String heading(String text) {
-        return "<w:p><w:pPr><w:keepNext/><w:pBdr><w:bottom w:val=\"single\" w:sz=\"8\" w:space=\"1\" w:color=\"" + ACCENT
-                + "\"/></w:pBdr><w:spacing w:before=\"220\" w:after=\"80\"/></w:pPr>"
-                + run(text.toUpperCase(java.util.Locale.ROOT), true, 21, NAVY) + "</w:p>";
+        return "<w:p><w:pPr><w:keepNext/><w:pBdr><w:top w:val=\"single\" w:sz=\"8\" w:space=\"10\" w:color=\"" + RULE
+                + "\"/></w:pBdr><w:spacing w:before=\"220\" w:after=\"100\"/></w:pPr>"
+                + run(text.toUpperCase(java.util.Locale.ROOT), true, 16, ACCENT) + "</w:p>";
     }
 
     private static String bullet(String text) {
@@ -223,7 +311,7 @@ public class BrandedResumeRenderer {
     private static String footer(String text) {
         return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
                 + "<w:ftr xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:p><w:pPr><w:jc w:val=\"center\"/></w:pPr>"
-                + run(text, false, 16, "6B7280") + "</w:p></w:ftr>";
+                + run(text, false, 16, GREY) + "</w:p></w:ftr>";
     }
 
     private static void put(ZipOutputStream zip, String name, String content) throws IOException {
@@ -234,10 +322,14 @@ public class BrandedResumeRenderer {
 
     // ---- shared ----
 
+    /** City, email and profile link, in that order, for the line under the title. */
+    private static List<String> contactParts(BrandedResume r, Options o) {
+        return java.util.stream.Stream.of(r.location(), o.showEmail() ? r.email() : null, r.link())
+                .filter(StringUtils::hasText).map(String::strip).toList();
+    }
+
     private static String meta(BrandedResume r, Options o) {
-        String location = StringUtils.hasText(r.location()) ? r.location().strip() : "";
-        String email = o.showEmail() && StringUtils.hasText(r.email()) ? r.email().strip() : "";
-        return location.isEmpty() || email.isEmpty() ? location + email : location + " | " + email;
+        return String.join(" | ", contactParts(r, o));
     }
 
     private static List<BrandedResume.SkillGroup> nonEmptySkills(BrandedResume r) {
@@ -325,7 +417,7 @@ public class BrandedResumeRenderer {
     private static final String STYLES = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
             + "<w:styles xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">"
             + "<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii=\"Arial\" w:hAnsi=\"Arial\" w:eastAsia=\"Arial\" w:cs=\"Arial\"/>"
-            + "<w:color w:val=\"1F2937\"/><w:sz w:val=\"19\"/><w:szCs w:val=\"19\"/><w:lang w:val=\"en-IN\"/></w:rPr></w:rPrDefault>"
+            + "<w:color w:val=\"293140\"/><w:sz w:val=\"19\"/><w:szCs w:val=\"19\"/><w:lang w:val=\"en-IN\"/></w:rPr></w:rPrDefault>"
             + "<w:pPrDefault><w:pPr><w:spacing w:after=\"40\" w:line=\"264\" w:lineRule=\"auto\"/></w:pPr></w:pPrDefault></w:docDefaults>"
             + "<w:style w:type=\"paragraph\" w:default=\"1\" w:styleId=\"Normal\"><w:name w:val=\"Normal\"/></w:style>"
             + "</w:styles>";
@@ -337,7 +429,7 @@ public class BrandedResumeRenderer {
             + "<w:pPr><w:ind w:left=\"340\" w:hanging=\"220\"/></w:pPr></w:lvl></w:abstractNum>"
             + "<w:num w:numId=\"1\"><w:abstractNumId w:val=\"0\"/></w:num></w:numbering>";
 
-    /** The logo (277 × 106 px) at about 3.4 cm wide, right-aligned in the page header. */
+    /** The logo (924 × 432 px) at 105 pt wide, right-aligned in the page header, as in the template. */
     private static final String HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
             + "<w:hdr xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" "
             + "xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" "
@@ -345,11 +437,11 @@ public class BrandedResumeRenderer {
             + "xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" "
             + "xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">"
             + "<w:p><w:pPr><w:jc w:val=\"right\"/></w:pPr><w:r><w:drawing>"
-            + "<wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\"><wp:extent cx=\"1224000\" cy=\"468000\"/>"
+            + "<wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\"><wp:extent cx=\"1333500\" cy=\"623454\"/>"
             + "<wp:docPr id=\"1\" name=\"CodeWalnut\"/><a:graphic><a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">"
             + "<pic:pic><pic:nvPicPr><pic:cNvPr id=\"1\" name=\"logo.png\"/><pic:cNvPicPr/></pic:nvPicPr>"
             + "<pic:blipFill><a:blip r:embed=\"rIdLogo\"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>"
-            + "<pic:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"1224000\" cy=\"468000\"/></a:xfrm>"
+            + "<pic:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"1333500\" cy=\"623454\"/></a:xfrm>"
             + "<a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></pic:spPr></pic:pic>"
             + "</a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p></w:hdr>";
 }

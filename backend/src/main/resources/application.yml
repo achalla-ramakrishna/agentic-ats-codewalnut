@@ -56,7 +56,7 @@ ats:
     default-country-code: ${WHATSAPP_DEFAULT_COUNTRY_CODE:91}
   # Footer on CodeWalnut-branded résumés (ADR-0012).
   branding:
-    resume-footer: ${ATS_RESUME_FOOTER:Presented by CodeWalnut | Staffing enquiries through CodeWalnut}
+    resume-footer: ${ATS_RESUME_FOOTER:Presented by Code Walnut | Staffing enquiries through Code Walnut}
   # Résumé reading runs in the background, this many at a time (ADR-0010).
   ai:
     async: true

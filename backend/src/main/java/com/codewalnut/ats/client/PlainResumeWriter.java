@@ -15,6 +15,8 @@ public class PlainResumeWriter implements ResumeWriter {
 
     private static final Pattern EMAIL = Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}");
 
+    private static final Pattern GITHUB = Pattern.compile("(?i)github\\.com/[A-Za-z0-9-]+");
+
     @Override
     public boolean available() {
         return true;
@@ -68,7 +70,9 @@ public class PlainResumeWriter implements ResumeWriter {
                 rest.add(s);
             }
         }
-        return new BrandedResume(name, headline, "", email.find() ? email.group() : "", summary, List.of(), rest);
+        Matcher github = GITHUB.matcher(text);
+        return new BrandedResume(name, headline, "", email.find() ? email.group() : "", github.find() ? github.group() : "", summary,
+                List.of(), rest);
     }
 
     private static boolean isHeading(String line) {

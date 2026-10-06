@@ -61,4 +61,23 @@ describe('CodeWalnutResumeEditor', () => {
     })
     expect(onSaved).toHaveBeenCalled()
   })
+
+  it('needs an email before the PDF can be saved, and takes a GitHub link', async () => {
+    const noEmail = { ...draft, resume: { ...draft.resume, email: '' } }
+    const fetchMock = fakeFetch([
+      { path: '/applications/a1/codewalnut-resume', method: 'PUT', body: draft },
+      { path: '/applications/a1/codewalnut-resume', body: noEmail },
+    ])
+    render(<CodeWalnutResumeEditor applicationId="a1" canEdit onSaved={vi.fn()} />)
+
+    expect(await screen.findByText(/Add the candidate.s email under Edit/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save PDF to documents' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await userEvent.type(screen.getByLabelText('Email'), 'asha@example.com')
+    await userEvent.type(screen.getByLabelText('GitHub or portfolio (optional)'), 'github.com/asha')
+    expect(screen.getByRole('button', { name: 'Save changes & PDF' })).toBeEnabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    const put = fetchMock.mock.calls.find(([, init]) => init?.method === 'PUT')!
+    expect(JSON.parse(put[1]!.body as string)).toMatchObject({ resume: { email: 'asha@example.com', link: 'github.com/asha' } })
+  })
 })

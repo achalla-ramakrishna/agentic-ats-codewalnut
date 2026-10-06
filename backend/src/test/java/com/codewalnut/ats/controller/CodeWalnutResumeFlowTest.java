@@ -85,11 +85,22 @@ class CodeWalnutResumeFlowTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"showEmail\":false,\"includeScreening\":true,\"resume\":{\"name\":\"Ravi Tester\","
                                 + "\"headline\":\"Java Developer | Spring Boot\",\"location\":\"Mysuru, India\",\"email\":\"ravi@example.test\","
+                                + "\"link\":\"https://www.github.com/ravi-tester/\","
                                 + "\"summary\":\"Spring Boot developer. Call 98450 12345.\",\"skills\":[{\"label\":\"Backend\",\"items\":[\"Java\",\"Spring Boot\"]}],"
                                 + "\"sections\":[{\"title\":\"Experience\",\"entries\":[{\"title\":\"Intern\",\"subtitle\":\"Acme\",\"period\":\"2025\",\"bullets\":[\"Built APIs.\"]}]}]}}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.showEmail").value(false))
-                .andExpect(jsonPath("$.resume.summary").value("Spring Boot developer. Call ."));
+                .andExpect(jsonPath("$.resume.summary").value("Spring Boot developer. Call ."))
+                .andExpect(jsonPath("$.resume.link").value("github.com/ravi-tester"));
+
+        // The email is always on the PDF (the old "hide email" choice is ignored), with the GitHub link.
+        byte[] pdf = mockMvc.perform(get("/api/v1/applications/" + app + "/codewalnut-resume.pdf").with(HM))
+                .andReturn().getResponse().getContentAsByteArray();
+        try (var doc = org.apache.pdfbox.Loader.loadPDF(pdf)) {
+            org.assertj.core.api.Assertions.assertThat(new org.apache.pdfbox.text.PDFTextStripper().getText(doc))
+                    .contains("Mysuru, India | ravi@example.test | github.com/ravi-tester", "CODE WALNUT / TALENT PROFILE")
+                    .doesNotContain("98450");
+        }
 
         mockMvc.perform(get("/api/v1/applications/" + app + "/codewalnut-resume.pdf").with(HM))
                 .andExpect(status().isOk())

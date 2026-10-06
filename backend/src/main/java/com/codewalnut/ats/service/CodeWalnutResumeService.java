@@ -41,6 +41,7 @@ public class CodeWalnutResumeService {
 
     /** 10+ digits with optional +, spaces, dots, dashes or brackets: a phone number. */
     static final Pattern PHONE = Pattern.compile("\\+?\\(?\\d[\\d\\s().-]{8,}\\d");
+    private static final Pattern LINK = Pattern.compile("[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,}(/[A-Za-z0-9._~%/-]*)?");
     private static final Pattern URL = Pattern.compile("(?i)\\b(https?://|www\\.)\\S+|\\b(linkedin|github)\\.com/\\S*");
 
     private final ApplicationRepository applicationRepository;
@@ -60,7 +61,7 @@ public class CodeWalnutResumeService {
             DocumentService documentService, AssessmentInviteService tests, ResumeWriter writer,
             BrandedResumeRenderer renderer, AccessPolicy accessPolicy, AuditService auditService,
             ObjectMapper objectMapper,
-            @Value("${ats.branding.resume-footer:Presented by CodeWalnut | Staffing enquiries through CodeWalnut}") String footer) {
+            @Value("${ats.branding.resume-footer:Presented by Code Walnut | Staffing enquiries through Code Walnut}") String footer) {
         this.applicationRepository = applicationRepository;
         this.documentRepository = documentRepository;
         this.resumeRepository = resumeRepository;
@@ -145,6 +146,9 @@ public class CodeWalnutResumeService {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);
         Application application = application(applicationId);
         CodeWalnutResume row = existing(applicationId);
+        if (!StringUtils.hasText(read(row).email())) {
+            throw new IllegalArgumentException("email: add the candidate's email to the résumé first. CodeWalnut résumés always show it");
+        }
         String fileName = fileName(application.getCandidate().getName()) + ".pdf";
         CandidateDocument document = documentService.store(application.getCandidate().getId(), DocumentKind.CODEWALNUT_RESUME,
                 fileName, renderer.pdf(read(row), options(row)), actor.getEmail());
@@ -179,7 +183,19 @@ public class CodeWalnutResumeService {
                                         .filter(StringUtils::hasText).toList()))
                         .toList()))
                 .toList();
-        return new BrandedResume(name, strip(r.headline()), strip(r.location()), email, strip(r.summary()), skills, sections);
+        return new BrandedResume(name, strip(r.headline()), strip(r.location()), email, link(r.link()), strip(r.summary()), skills, sections);
+    }
+
+    /** A GitHub or portfolio link as "github.com/asha" (no scheme, www or trailing slash); LinkedIn and anything else odd is dropped. */
+    static String link(String raw) {
+        if (!StringUtils.hasText(raw)) {
+            return "";
+        }
+        String l = raw.strip().replaceFirst("(?i)^https?://", "").replaceFirst("(?i)^www\\.", "").replaceAll("/+$", "");
+        if (!LINK.matcher(l).matches() || l.toLowerCase(java.util.Locale.ROOT).matches("^(\\S*\\.)?(linkedin|facebook|instagram|twitter|x|wa|t)\\.(com|me)(/.*)?$")) {
+            return "";
+        }
+        return l;
     }
 
     static String strip(String s) {
@@ -216,7 +232,8 @@ public class CodeWalnutResumeService {
     }
 
     private BrandedResumeRenderer.Options options(CodeWalnutResume row) {
-        return new BrandedResumeRenderer.Options(row.isShowEmail(),
+        // The email is always on CodeWalnut résumés (the old "hide email" option is ignored).
+        return new BrandedResumeRenderer.Options(true,
                 row.isIncludeScreening() ? screening(row.getApplicationId()) : List.of(), footer);
     }
 
