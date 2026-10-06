@@ -41,6 +41,7 @@ approvers, candidates and client contacts don't get it.
 | WF-05 | **History**: every event and message for the candidate in one list, newest first: added, stage moves with reasons, notes, emails/WhatsApps/messages sent, the candidate's replies, tests, interviews, client shares and client messages, document requests and uploads, team chat, logged contacts. | Done |
 | WF-06 | **Log a call or message made outside the app** (call, WhatsApp, email, met in person, other, with an optional note). It counts as a contact, shows in the history and is audited. | Done |
 | WF-07 | Ask ATS can answer the same questions ("who haven't we contacted?", "who is waiting for a reply?", "what should I do next for the Java openings?"). | Done |
+| WF-09 | **WhatsApp** button on each row (people who can message candidates): opens WhatsApp in a new tab with a message suggested for the next step (first contact, test reminder, documents, offer, joining…), from the candidate's mobile number; the recruiter presses Send there. With the WhatsApp Business API on, the message is shown first and sent from CodeWalnut's number. Either way it is recorded like any WhatsApp from the chat, so it counts as contact. Disabled when no mobile number is on file. | Done |
 | WF-08 | Reminders: a daily email to each recruiter with their urgent steps. | Later |
 
 ## Business rules
@@ -52,7 +53,7 @@ approvers, candidates and client contacts don't get it.
 
 - Candidates imported at a later stage (e.g. Interviewed) with no recorded contact show "No contact recorded", not "Never contacted".
 - Emails sent from personal Gmail outside the app aren't seen; log them (WF-06).
-- At most 2,000 rows are shown at once; pick an opening to narrow it.
+- At most 2,000 rows are shown at once (the most recently active, across all open openings); pick an opening to narrow it.
 
 ## Acceptance criteria
 
@@ -75,4 +76,5 @@ No new tables: `application_event` (new type `CONTACT_LOGGED`), `message`,
 
 | Date | Change |
 | --- | --- |
+| 2026-10-06 | WhatsApp button with a suggested message per next step (WF-09) |
 | 2026-10-06 | Created: workflow page, history, logged contacts, next steps (WF-01…WF-07, ADR-0022) |

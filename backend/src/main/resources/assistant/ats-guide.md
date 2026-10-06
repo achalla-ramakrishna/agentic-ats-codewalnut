@@ -36,7 +36,9 @@ Withdrawn.
   Tabs: Needs action, Waiting for our reply, Never contacted, No contact for 7+ days, Closed. Pick
   one opening at the top, or all open ones.
 - Click a row to see everything that happened (messages, tests, interviews, stage moves, notes).
-- Called or messaged someone outside the app? Click the row → Log a call or message.
+- WhatsApp a candidate from the Workflow page: click WhatsApp on their row; it opens with a suggested
+  message ready to send.
+- Called or messaged someone outside the app? Click History on the row → Log a call or message.
 
 ## Clients
 - Add a client: Clients → New client. Rename: Clients → Rename.

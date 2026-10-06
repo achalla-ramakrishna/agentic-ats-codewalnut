@@ -19,11 +19,12 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     id: '2026-10-06-workflow',
     date: '2026-10-06',
     title: 'Workflow: who you’ve contacted and what’s next',
-    summary: 'One page with every candidate’s last contact (when, how, by whom), who wrote and is waiting for your reply, who was never contacted, their test, interview and client status, and a suggested next step. Click History for everything that happened, and log calls or WhatsApps made outside the app.',
+    summary: 'One page with every candidate’s last contact (when, how, by whom), who wrote and is waiting for your reply, who was never contacted, their test, interview and client status, and a suggested next step. Click History for everything that happened, log calls made outside the app, and WhatsApp anyone in one click.',
     steps: [
       'Click Workflow in the menu (or Workflow on an opening).',
       'Use the tabs: Needs action, Waiting for our reply, Never contacted, No contact for 7+ days.',
       'Click the next step to do it, or History to see everything and Log a call.',
+      'Click WhatsApp on a row: WhatsApp opens with a suggested message; check it and press Send.',
     ],
     link: { to: '/workflow', label: 'Open Workflow' },
     capability: 'VIEW_CANDIDATES',

@@ -112,9 +112,11 @@ public class WorkflowService {
     @Transactional(readOnly = true)
     public WorkflowBoard board(AppUser actor, UUID jobId) {
         accessPolicy.require(actor, Capability.VIEW_CANDIDATES);
-        List<Application> applications = (jobId != null
-                ? applicationRepository.findByJobIdOrderByCandidateNameAsc(jobId)
-                : applicationRepository.findByJobStatusNot(JobStatus.CLOSED)).stream().limit(MAX_ROWS).toList();
+        // Over the cap, the most recently active people are kept.
+        List<Application> applications = jobId != null
+                ? applicationRepository.findByJobIdOrderByCandidateNameAsc(jobId).stream().limit(MAX_ROWS).toList()
+                : applicationRepository.findByJobStatusNotOrderByUpdatedAtDesc(JobStatus.CLOSED,
+                        org.springframework.data.domain.PageRequest.of(0, MAX_ROWS));
         List<WorkflowRow> rows = rows(applications, Instant.now());
         Map<String, Long> counts = new LinkedHashMap<>();
         FILTERS.forEach((key, filter) -> counts.put(key, rows.stream().filter(filter).count()));
@@ -230,7 +232,7 @@ public class WorkflowService {
                 interview, client, pendingDocs, inStageSince, a.getCreatedAt(), now);
 
         return new WorkflowRow(a.getId(), job.getId(), job.getTitle(), job.getClient() == null ? null : job.getClient().getName(),
-                a.getCandidate().getId(), a.getCandidate().getName(), stage.name(), stage.getLabel(), closed, inStageSince,
+                a.getCandidate().getId(), a.getCandidate().getName(), StringUtils.hasText(a.getCandidate().getPhone()), stage.name(), stage.getLabel(), closed, inStageSince,
                 a.getCreatedAt(), last, contacts.size(), awaitingReply,
                 lastCandidateMessage == null ? null : lastCandidateMessage.getCreatedAt(), test, interviewStatus, client,
                 pendingDocs.size(), next, lastActivity);

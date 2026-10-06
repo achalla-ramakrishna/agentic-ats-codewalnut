@@ -76,3 +76,29 @@
     gap: 2px;
   }
 }
+.wf-wa {
+  margin-top: 6px;
+}
+.wf-wa-btn {
+  border: 1px solid #25d366;
+  background: transparent;
+  color: #128c4b;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.wf-wa-btn:hover:not(:disabled) {
+  background: #25d36622;
+}
+.wf-wa-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+@media (prefers-color-scheme: dark) {
+  .wf-wa-btn {
+    color: #5fd38d;
+  }
+}

@@ -89,6 +89,7 @@ class WorkflowFlowTest {
 
         Map<String, Object> nina = row(board, never);
         assertThat(nina.get("contacts")).isEqualTo(0);
+        assertThat(nina.get("hasPhone")).isEqualTo(false);
         assertThat(nina.get("lastContact")).isNull();
         assertThat(JsonPath.<String>read(nina, "$.nextStep.code")).isEqualTo("FIRST_CONTACT");
 

@@ -26,7 +26,7 @@ public final class WorkflowDtos {
     public record NextStep(String code, String label, boolean urgent) {}
 
     public record WorkflowRow(
-            UUID applicationId, UUID jobId, String jobTitle, String clientName, UUID candidateId, String candidateName,
+            UUID applicationId, UUID jobId, String jobTitle, String clientName, UUID candidateId, String candidateName, boolean hasPhone,
             String stage, String stageLabel, boolean closed, Instant inStageSince, Instant addedAt,
             Contact lastContact, int contacts, boolean awaitingReply, Instant candidateWroteAt,
             TestStatus test, InterviewStatus interview, ClientStatus client, int documentsPending,

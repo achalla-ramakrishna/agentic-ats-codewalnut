@@ -11,6 +11,8 @@ import {
   type WorkflowFilter,
   type WorkflowRow,
 } from '../api/workflow'
+import { getWhatsAppStatus, postMessage } from '../api/messages'
+import { useMe } from '../auth/AuthContext'
 import { Badge, Button, PageHeader } from '../components/ui'
 import '../components/tracker.css'
 import './WorkflowPage.css'
@@ -86,6 +88,34 @@ function actionLink(row: WorkflowRow): string {
       return row.interview ? `/interviews/${row.interview.interviewId}/feedback` : base
     default:
       return base
+  }
+}
+
+const firstName = (name: string) => {
+  const first = name.trim().split(/\s+/)[0] ?? ''
+  return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase()
+}
+
+/** A starting WhatsApp message for the suggested step; the recruiter can change it before sending. */
+export function suggestedWhatsApp(row: WorkflowRow, sender: string): string {
+  const hi = `Hi ${firstName(row.candidateName)}, this is ${sender} from CodeWalnut`
+  const role = `the ${row.jobTitle} role`
+  switch (row.nextStep?.code) {
+    case 'FIRST_CONTACT':
+      return `${hi}. We came across your profile for ${role}. Are you open to a quick call? Please share a convenient time.`
+    case 'REMIND_TEST':
+    case 'WAIT_TEST':
+      return `${hi}. A gentle reminder to take the online test for ${role}; the link is in your email. Let me know if you face any issue.`
+    case 'CHASE_DOCS':
+      return `${hi}. Could you please upload the documents we requested for ${role} on your candidate page?`
+    case 'OFFER_FOLLOW_UP':
+      return `${hi}. Just checking whether you've had a chance to look at the offer for ${role}. Happy to answer any questions.`
+    case 'JOINING':
+      return `${hi}. Congratulations again! Could you confirm your joining date for ${role}?`
+    case 'REPLY':
+      return `${hi}. Thanks for your message about ${role}. `
+    default:
+      return `${hi}, regarding ${role}. `
   }
 }
 
@@ -180,7 +210,51 @@ export function WorkflowPage() {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
+  const [waApi, setWaApi] = useState(false)
+  const [compose, setCompose] = useState<{ applicationId: string; text: string } | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [waError, setWaError] = useState<string | null>(null)
+  const [waBusy, setWaBusy] = useState<string | null>(null)
+  const me = useMe()
+  const sender = firstName(me.name ?? me.email.split('@')[0])
   const now = Date.now()
+
+  useEffect(() => {
+    if (!board?.canLog) return
+    getWhatsAppStatus()
+      .then((s) => setWaApi(s.apiEnabled))
+      .catch(() => setWaApi(false))
+  }, [board?.canLog])
+
+  /**
+   * Without the WhatsApp Business API, WhatsApp opens with the message ready and the recruiter
+   * presses Send there. With the API it would send at once, so the message is shown first.
+   */
+  async function whatsApp(row: WorkflowRow, text: string) {
+    setWaError(null)
+    setNotice(null)
+    // Open the tab now, while the click still counts (browsers block pop-ups after a network call).
+    const tab = waApi ? null : window.open('about:blank', '_blank')
+    setWaBusy(row.applicationId)
+    try {
+      const sent = await postMessage(row.applicationId, { channel: 'CANDIDATE', body: text, sendEmail: false, sendWhatsApp: true })
+      if (sent.whatsappLink) {
+        if (tab) tab.location.href = sent.whatsappLink
+        else window.open(sent.whatsappLink, '_blank')
+        setNotice(`WhatsApp opened for ${row.candidateName} with the message ready: press Send there.`)
+      } else {
+        tab?.close()
+        setNotice(`Sent to ${row.candidateName} on WhatsApp.`)
+      }
+      setCompose(null)
+      setReload((n) => n + 1)
+    } catch (e) {
+      tab?.close()
+      setWaError(e instanceof Error ? e.message : 'Could not open WhatsApp')
+    } finally {
+      setWaBusy(null)
+    }
+  }
 
   useEffect(() => {
     getWorkflow(jobId || undefined)
@@ -253,6 +327,12 @@ export function WorkflowPage() {
         ))}
       </div>
 
+      {notice && <div className="alert alert-info">{notice}</div>}
+      {waError && (
+        <div role="alert" className="alert alert-error">
+          {waError}
+        </div>
+      )}
       {!board && <p className="muted">Loading…</p>}
       {board && rows.length === 0 && <p className="muted">Nobody here.</p>}
       {board && rows.length > 0 && (
@@ -305,6 +385,24 @@ export function WorkflowPage() {
                       {r.awaitingReply && r.candidateWroteAt && (
                         <div>
                           <Badge tone="danger">They wrote {ago(r.candidateWroteAt, now)}</Badge>
+                        </div>
+                      )}
+                      {board.canLog && (
+                        <div className="wf-wa">
+                          <button
+                            type="button"
+                            className="wf-wa-btn"
+                            disabled={!r.hasPhone || waBusy === r.applicationId}
+                            title={r.hasPhone ? 'Open WhatsApp with a message ready' : 'No mobile number on file'}
+                            aria-label={`WhatsApp ${r.candidateName}`}
+                            onClick={() => {
+                              const text = suggestedWhatsApp(r, sender)
+                              if (waApi) setCompose({ applicationId: r.applicationId, text })
+                              else void whatsApp(r, text)
+                            }}
+                          >
+                            {waBusy === r.applicationId ? 'Opening…' : 'WhatsApp'}
+                          </button>
                         </div>
                       )}
                     </td>
@@ -365,6 +463,38 @@ export function WorkflowPage() {
                       </Button>
                     </td>
                   </tr>
+                  {compose?.applicationId === r.applicationId && (
+                    <tr className="wf-expanded">
+                      <td colSpan={8}>
+                        <form
+                          className="stack"
+                          style={{ gap: 8 }}
+                          aria-label={`WhatsApp message to ${r.candidateName}`}
+                          onSubmit={(e) => {
+                            e.preventDefault()
+                            void whatsApp(r, compose.text)
+                          }}
+                        >
+                          <textarea
+                            className="input"
+                            aria-label="WhatsApp message"
+                            rows={3}
+                            style={{ fontFamily: 'inherit' }}
+                            value={compose.text}
+                            onChange={(e) => setCompose({ ...compose, text: e.target.value })}
+                          />
+                          <div className="row" style={{ gap: 8 }}>
+                            <Button size="sm" type="submit" disabled={!compose.text.trim() || waBusy === r.applicationId}>
+                              Send on WhatsApp
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setCompose(null)}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      </td>
+                    </tr>
+                  )}
                   {open === r.applicationId && (
                     <tr className="wf-expanded">
                       <td colSpan={8}>

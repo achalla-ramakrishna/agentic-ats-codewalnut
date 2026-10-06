@@ -1,15 +1,31 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fakeFetch } from '../test/fakeFetch'
-import { WorkflowPage } from './WorkflowPage'
+import type { Me } from '../api/types'
+import { App } from '../App'
+import { AuthProvider } from '../auth/AuthContext'
+import { fakeFetch, type FakeRoute } from '../test/fakeFetch'
+
+const recruiter: Me = {
+  id: 'u1',
+  email: 'priya@codewalnut.test',
+  name: 'Priya Sharma',
+  roles: ['RECRUITER'],
+  capabilities: ['VIEW_DASHBOARD', 'VIEW_CANDIDATES', 'MESSAGE_CANDIDATES'],
+  navigation: [{ key: 'workflow', label: 'Workflow', path: '/workflow' }],
+}
+const signedIn: FakeRoute[] = [
+  { path: '/auth/session', body: { type: 'STAFF' } },
+  { path: '/me', body: recruiter },
+]
 
 const base = {
   jobId: 'j1',
   jobTitle: 'Java Intern',
   clientName: null,
   candidateId: 'p',
+  hasPhone: true,
   closed: false,
   inStageSince: '2026-10-01T00:00:00Z',
   addedAt: '2026-10-01T00:00:00Z',
@@ -73,10 +89,9 @@ const timeline = {
 function renderPage(path = '/workflow') {
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/workflow" element={<WorkflowPage />} />
-        <Route path="/jobs/:id" element={<p>Candidate panel</p>} />
-      </Routes>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </MemoryRouter>,
   )
 }
@@ -85,7 +100,7 @@ describe('WorkflowPage (WF-01…WF-05)', () => {
   afterEach(() => vi.unstubAllGlobals())
 
   it('shows who is waiting, who was never contacted, and filters', async () => {
-    fakeFetch([{ path: '/workflow', body: board }])
+    fakeFetch([...signedIn, { path: '/whatsapp/status', body: { apiEnabled: false } }, { path: '/workflow', body: board }])
     renderPage()
 
     expect(await screen.findByText('Rekha Rao')).toBeInTheDocument()
@@ -104,6 +119,8 @@ describe('WorkflowPage (WF-01…WF-05)', () => {
 
   it('opens the history and logs a call', async () => {
     const fetch = fakeFetch([
+      ...signedIn,
+      { path: '/whatsapp/status', body: { apiEnabled: false } },
       { path: '/workflow', body: board },
       { path: '/applications/a2/timeline', body: timeline },
       {
@@ -123,5 +140,49 @@ describe('WorkflowPage (WF-01…WF-05)', () => {
     const post = fetch.mock.calls.find(([, init]) => init?.method === 'POST')!
     expect(JSON.parse(post[1]!.body as string)).toEqual({ how: 'CALL', note: 'Interested' })
     expect(fetch.mock.calls.some(([url]) => String(url).includes('/workflow?jobId=j1'))).toBe(true)
+  })
+
+  it('opens WhatsApp with a suggested message and records it', async () => {
+    const fetch = fakeFetch([
+      ...signedIn,
+      { path: '/whatsapp/status', body: { apiEnabled: false } },
+      { path: '/workflow', body: board },
+      { method: 'POST', path: '/applications/a2/messages', body: { id: 'm1', whatsapp: 'OPENED', whatsappLink: 'https://wa.me/919800000001?text=Hi' } },
+    ])
+    const tab = { location: { href: '' }, close: vi.fn() }
+    const open = vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window)
+    renderPage()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'WhatsApp Nina Shah' }))
+    expect(await screen.findByText(/WhatsApp opened for Nina Shah/)).toBeInTheDocument()
+    expect(open).toHaveBeenCalledWith('about:blank', '_blank')
+    expect(tab.location.href).toBe('https://wa.me/919800000001?text=Hi')
+    const post = fetch.mock.calls.find(([, init]) => init?.method === 'POST')!
+    const body = JSON.parse(post[1]!.body as string)
+    expect(body).toMatchObject({ channel: 'CANDIDATE', sendEmail: false, sendWhatsApp: true })
+    expect(body.body).toMatch(/^Hi Nina, this is Priya from CodeWalnut\. We came across your profile for the Java Intern role/)
+    open.mockRestore()
+  })
+
+  it('with the Business API, shows the message before sending, and needs a mobile number', async () => {
+    const noPhone = { ...rows[1], applicationId: 'a4', candidateName: 'Ravi Kumar', hasPhone: false }
+    const fetch = fakeFetch([
+      ...signedIn,
+      { path: '/whatsapp/status', body: { apiEnabled: true } },
+      { path: '/workflow', body: { ...board, rows: [...rows, noPhone] } },
+      { method: 'POST', path: '/applications/a2/messages', body: { id: 'm1', whatsapp: 'SENT', whatsappLink: null } },
+    ])
+    renderPage()
+    expect(await screen.findByRole('button', { name: 'WhatsApp Ravi Kumar' })).toBeDisabled()
+
+    await userEvent.click(screen.getByRole('button', { name: 'WhatsApp Nina Shah' }))
+    const box = screen.getByLabelText('WhatsApp message')
+    await userEvent.clear(box)
+    await userEvent.type(box, 'Hi Nina, are you free today?')
+    expect(fetch.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false)
+    await userEvent.click(screen.getByRole('button', { name: 'Send on WhatsApp' }))
+    expect(await screen.findByText('Sent to Nina Shah on WhatsApp.')).toBeInTheDocument()
+    const post = fetch.mock.calls.find(([, init]) => init?.method === 'POST')!
+    expect(JSON.parse(post[1]!.body as string).body).toBe('Hi Nina, are you free today?')
   })
 })

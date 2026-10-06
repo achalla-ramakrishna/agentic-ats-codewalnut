@@ -20,6 +20,8 @@ export interface WorkflowRow {
   clientName: string | null
   candidateId: string
   candidateName: string
+  /** A mobile number is on file, so WhatsApp can be opened. */
+  hasPhone: boolean
   stage: string
   stageLabel: string
   closed: boolean
