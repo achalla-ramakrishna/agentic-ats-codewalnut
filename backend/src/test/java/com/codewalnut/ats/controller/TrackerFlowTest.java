@@ -40,7 +40,13 @@ class TrackerFlowTest {
 
     private final String tag = UUID.randomUUID().toString().substring(0, 6);
     /** Unique per run: tests share a database, and phones are used to spot existing candidates. */
-    private final String phone = "9" + String.format("%06d", Integer.parseInt(tag, 16) % 1_000_000);
+    private final String phone = randomPhone();
+    private final String ashaPhone = randomPhone();
+    private final String ravisPhone = randomPhone();
+
+    private static String randomPhone() {
+        return "9" + String.format("%09d", java.util.concurrent.ThreadLocalRandom.current().nextLong(1_000_000_000L));
+    }
 
     private String send(RequestPostProcessor who, String url, Object body, int expected) throws Exception {
         return mockMvc.perform(post(url).with(who).with(csrf())
@@ -58,11 +64,11 @@ class TrackerFlowTest {
     private String paste() {
         return String.join("\n",
                 "slno\tname\temail\tphone",
-                "1\tASHA " + tag + "\tasha." + tag + "@gmail.com\t" + phone + "001",
+                "1\tASHA " + tag + "\tasha." + tag + "@gmail.com\t" + ashaPhone,
                 "2\tKAVYA " + tag + "\tKavya KS\t",
-                "3\tRAVI " + tag + "\travi." + tag + "@gmail.com|\t" + phone + "003",
-                "4\tRAVI AGAIN\travi." + tag + "@gmail.com\t" + phone + "003",
-                "5\t\tnobody." + tag + "@gmail.com\t" + phone + "009");
+                "3\tRAVI " + tag + "\travi." + tag + "@gmail.com|\t" + ravisPhone,
+                "4\tRAVI AGAIN\travi." + tag + "@gmail.com\t" + ravisPhone,
+                "5\t\tnobody." + tag + "@gmail.com\t" + phone);
     }
 
     @Test

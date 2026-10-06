@@ -22,6 +22,7 @@ import { NoAccessPage } from './pages/NoAccessPage'
 import { PublicJobPage, RETURN_TO_KEY } from './pages/PublicJobPage'
 import { CodingRoomPage } from './pages/CodingRoomPage'
 import { TakeTestPage } from './pages/TakeTestPage'
+import { AskPage } from './pages/AskPage'
 import { TestsPage } from './pages/TestsPage'
 import { ViewAsPage } from './pages/ViewAsPage'
 import { ViewAsBanner } from './components/ViewAsBanner'
@@ -32,6 +33,7 @@ import { WhatsNewPage } from './pages/WhatsNewPage'
 /** Screen per navigation key. The server decides which keys a user gets. */
 const SCREENS: Record<string, ReactElement> = {
   dashboard: <DashboardPage />,
+  ask: <AskPage />,
   jobs: <JobsPage />,
   candidates: <CandidatesPage />,
   clients: <ClientsPage />,

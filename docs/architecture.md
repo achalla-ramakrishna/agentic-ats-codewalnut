@@ -40,6 +40,15 @@ also email a candidate message through `client/GmailClient` (scope
 `gmail.send`, same Google connection as the calendar, ADR-0006); dev and demo
 use `FakeMailClient`.
 
+Ask ATS (ADR-0021): `AskService` exposes read-only tools (openings, candidates,
+one candidate in full, opening profiles, interviews, tests, recent activity) that
+call `TrackerService`, `InterviewService`, `InterviewFeedbackService`,
+`AssessmentInviteService` and `ResumeIntelligenceService` as the asking user, so
+permissions are the screens' own. `client/ClaudeAskClient` runs the tool-use loop
+(Anthropic Java SDK, cached system prompt with `resources/assistant/ats-guide.md`,
+up to 10 rounds); dev and demo use `RuleBasedAskClient`. Chats are stored per
+user in `ask_conversation` (V22), questions and answers only.
+
 AI assistant (ADR-0009): `AssistantService` sends the opening's candidate
 names and stages plus the recruiter's instruction to Claude through
 `client/ClaudeAssistantClient` (official Anthropic Java SDK, structured

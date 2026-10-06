@@ -130,7 +130,7 @@ class UserControllerTest {
         String id = createUser(email, "[\"INTERVIEWER\"]");
 
         mockMvc.perform(get("/api/v1/me").with(user(email)))
-                .andExpect(jsonPath("$.navigation.length()").value(3));
+                .andExpect(jsonPath("$.navigation.length()").value(4));
 
         mockMvc.perform(patch("/api/v1/users/" + id).with(ADMIN).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -139,7 +139,7 @@ class UserControllerTest {
 
         mockMvc.perform(get("/api/v1/me").with(user(email)))
                 .andExpect(jsonPath("$.roles[0]").value("RECRUITER"))
-                .andExpect(jsonPath("$.navigation[1].key").value("jobs"));
+                .andExpect(jsonPath("$.navigation[2].key").value("jobs"));
 
         assertThat(auditLogRepository.findByActionAndActorEmailOrderByCreatedAtDesc(
                         AuditAction.USER_UPDATED, "admin@codewalnut.test"))

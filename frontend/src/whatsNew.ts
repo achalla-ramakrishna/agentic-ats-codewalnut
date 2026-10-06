@@ -16,6 +16,19 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-06-ask-ats',
+    date: '2026-10-06',
+    title: 'Ask ATS: ask anything, like ChatGPT',
+    summary: 'A chat that answers questions from the live ATS: openings and their pipelines, candidates, interviews, pending feedback, test results and recent activity, plus “how do I…” questions. Names are links to the candidate. It only reads, never changes anything, and shows only what you’re allowed to see. Your chats are saved and private.',
+    steps: [
+      'Click Ask ATS in the menu.',
+      'Type a question, e.g. “Who is shortlisted for the Java openings?” or “Whose feedback is pending?”, and press Enter.',
+      'Ask follow-ups in the same chat, or start a New chat. Earlier chats are on the left.',
+    ],
+    link: { to: '/ask', label: 'Open Ask ATS' },
+    capability: 'VIEW_DASHBOARD',
+  },
+  {
     id: '2026-10-06-codewalnut-resume-template',
     date: '2026-10-06',
     title: 'CodeWalnut résumés in the new template',

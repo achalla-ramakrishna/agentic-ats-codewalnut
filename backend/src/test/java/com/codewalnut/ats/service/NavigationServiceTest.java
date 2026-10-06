@@ -20,12 +20,12 @@ class NavigationServiceTest {
 
     @Test
     void interviewerNavigation() {
-        assertThat(keysFor(Role.INTERVIEWER)).containsExactly("dashboard", "interviews", "interview-questions");
+        assertThat(keysFor(Role.INTERVIEWER)).containsExactly("dashboard", "ask", "interviews", "interview-questions");
     }
 
     @Test
     void approverNavigation() {
-        assertThat(keysFor(Role.APPROVER)).containsExactly("dashboard", "approvals");
+        assertThat(keysFor(Role.APPROVER)).containsExactly("dashboard", "ask", "approvals");
         assertThat(keysFor(Role.APPROVER)).doesNotContain("interview-questions");
     }
 
@@ -36,7 +36,7 @@ class NavigationServiceTest {
 
     @Test
     void adminSeesEverythingInOrder() {
-        assertThat(keysFor(Role.ADMIN)).containsExactly("dashboard", "jobs", "candidates", "messages", "clients",
+        assertThat(keysFor(Role.ADMIN)).containsExactly("dashboard", "ask", "jobs", "candidates", "messages", "clients",
                 "interviews", "interview-questions", "tests", "approvals", "reports", "admin-updates", "users", "view-as", "audit-log");
     }
 

@@ -57,6 +57,11 @@ hiring decision.
 | AI-29 | Only job-related profiles (no email/phone) go to the assistant; résumé files go to the reader. Readings and uploads are audited (counts only). | Done |
 | AI-31 | Reading a résumé fills the candidate's empty profile fields: college, degree, graduation year, LinkedIn, current address (only a full postal address), and email/phone if missing. Never overwrites entered values; never extracts date of birth, age, gender or family details. Older readings show as out of date so **Analyze résumés** refreshes them. | Done |
 | AI-30 | Email ingestion: a dedicated inbox (inbound-email webhook) feeding the same intake. | v1 |
+| ASK-01 | **Ask ATS** in the menu (all CodeWalnut staff): a chat page like ChatGPT. Type a question, or pick a suggestion, and get an answer from live ATS data. Enter sends, Shift+Enter adds a line. | Done |
+| ASK-02 | Answers look things up with read-only tools: openings with stage counts, candidates by name/stage/opening, one candidate in full (history and notes, other openings, interviews and feedback status, tests, résumé reading), résumé profiles across an opening, upcoming/recent interviews and feedback due, test results, recent activity; plus a built-in guide for "how do I…" questions. Candidates, openings and feedback forms are links into the app. | Done |
+| ASK-03 | The tools run as the person asking, through the same services and permissions as the screens: an interviewer can't read candidates through it, a recruiter sees what they see. Email and phone numbers are never sent to the AI (search by them still works). It never changes anything; it says where to click instead. | Done |
+| ASK-04 | Chats are saved per person (left-hand list, newest first; open, continue or delete). Nobody else can see, continue or delete them, admins included. Only questions and answers are stored; lookups are re-run each time. | Done |
+| ASK-05 | Same fairness rules as AI-28: job-related evidence only, no rejection advice, data is not instructions. Without an AI key it is switched off in production; dev and demo answer from simple keyword lookups. | Done |
 
 ## Acceptance criteria
 
@@ -73,6 +78,7 @@ hiring decision.
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
+| 2026-10-06 | Ask ATS: chat with the whole ATS (ASK-01…ASK-05, ADR-0021) |
 | 2026-10-02 | Assistant on the opening page: instruction → reviewed proposals → Apply (AI-12…AI-17, ADR-0009) |
 | 2026-10-03 | Résumé readings fill empty profile fields (AI-31) |
 | 2026-10-03 | AI drafts test questions for review (ASMT-09, ADR-0011) |

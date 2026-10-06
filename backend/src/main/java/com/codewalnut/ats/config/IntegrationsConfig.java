@@ -17,9 +17,14 @@ import com.codewalnut.ats.client.ResumeAnalyzer;
 import java.util.Optional;
 import com.codewalnut.ats.client.AssistantClient;
 import com.codewalnut.ats.client.CalendarClient;
+import com.codewalnut.ats.client.AskClient;
+import com.codewalnut.ats.client.ClaudeAskClient;
 import com.codewalnut.ats.client.ClaudeAssistantClient;
+import com.codewalnut.ats.client.DisabledAskClient;
+import com.codewalnut.ats.client.RuleBasedAskClient;
 import com.codewalnut.ats.client.DisabledAssistantClient;
 import com.codewalnut.ats.client.RuleBasedAssistantClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import com.codewalnut.ats.client.FakeCalendarClient;
@@ -134,6 +139,21 @@ public class IntegrationsConfig {
     @Profile({"dev", "demo"})
     public ResumeAnalyzer keywordResumeAnalyzer() {
         return new KeywordResumeAnalyzer();
+    }
+
+    @Bean
+    @Profile({"dev", "demo"})
+    public AskClient ruleBasedAskClient(ObjectMapper objectMapper) {
+        return new RuleBasedAskClient(objectMapper);
+    }
+
+    /** Ask ATS on Claude when ANTHROPIC_API_KEY is set; otherwise it is off. */
+    @Bean
+    @Profile("!dev & !demo")
+    public AskClient askClient(@Value("${ANTHROPIC_API_KEY:}") String apiKey,
+            @Value("${ats.assistant.model:claude-opus-5-5}") String model) {
+        return anthropic(apiKey).<AskClient>map(c -> new ClaudeAskClient(c, model))
+                .orElseGet(DisabledAskClient::new);
     }
 
     /** Claude when ANTHROPIC_API_KEY is set; otherwise the assistant is off. */
