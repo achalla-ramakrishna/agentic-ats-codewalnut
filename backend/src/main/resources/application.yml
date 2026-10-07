@@ -42,7 +42,7 @@ ats:
     failure-url: ${ATS_LOGIN_FAILURE_URL:/login?error}
   # Admin updates (ADR-0018): moving a candidate into one of these stages sends admins a summary.
   admin-updates:
-    stages: ${ATS_ADMIN_UPDATE_STAGES:SHORTLISTED,SELECTED,OFFER_ACCEPTED,JOINED}
+    stages: ${ATS_ADMIN_UPDATE_STAGES:SHORTLISTED,OFFER_SENT,JOINED}
   # WhatsApp Business API (Meta Cloud API). All optional: without a token and phone number id,
   # "WhatsApp" opens WhatsApp with the message ready and the recruiter presses Send.
   whatsapp:

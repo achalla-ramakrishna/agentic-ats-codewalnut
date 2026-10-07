@@ -75,9 +75,8 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
 
 /** Which template to suggest after moving a candidate to a stage. */
 export const TEMPLATE_FOR_STAGE: Partial<Record<Stage, string>> = {
-  SCREENING: 'screening',
   SHORTLISTED: 'shortlisted',
-  SELECTED: 'selected',
+  OFFER_SENT: 'selected',
   REJECTED: 'rejected',
 }
 

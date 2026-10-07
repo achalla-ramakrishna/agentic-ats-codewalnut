@@ -114,7 +114,7 @@ class AdminUpdateFlowTest {
         Map<String, Object> u = mine.get(0);
         assertThat(u.get("kind")).isEqualTo("FEEDBACK_SUBMITTED");
         assertThat((String) u.get("title")).startsWith(name + ": Hire from ").contains("Java Intern");
-        assertThat((String) u.get("body")).contains("Stage: Screening", tag + "@example.com",
+        assertThat((String) u.get("body")).contains("Stage: Applied / Sourced", tag + "@example.com",
                 "Recommendation: Hire", "Average 3.5 / 4", "Problem solving 3, Communication 4",
                 "Strengths: Clear about HashMap internals", "Panel so far: 1 of 2 have given feedback (Hire)");
         assertThat(u.get("emailStatus")).isEqualTo("SENT");
@@ -153,7 +153,7 @@ class AdminUpdateFlowTest {
         assertThat(updatesFor(app)).hasSize(1);
 
         String keyStages = mockMvc.perform(get("/api/v1/admin-updates").with(ADMIN)).andReturn().getResponse().getContentAsString();
-        assertThat(JsonPath.<List<String>>read(keyStages, "$.keyStages")).containsExactly("Shortlisted", "Selected", "Offer accepted", "Joined");
+        assertThat(JsonPath.<List<String>>read(keyStages, "$.keyStages")).containsExactly("Shortlisted", "Offer sent", "Joined");
     }
 
     @Test

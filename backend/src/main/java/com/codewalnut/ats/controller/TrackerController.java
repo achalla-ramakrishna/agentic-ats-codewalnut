@@ -51,7 +51,7 @@ public class TrackerController {
     @GetMapping("/stages")
     public List<StageOption> stages() {
         currentUserService.require();
-        return Arrays.stream(Stage.values()).map(s -> new StageOption(s, s.getLabel(), s.isExit())).toList();
+        return Stage.inUse().stream().map(s -> new StageOption(s, s.getLabel(), s.isExit())).toList();
     }
 
     @GetMapping("/dashboard")

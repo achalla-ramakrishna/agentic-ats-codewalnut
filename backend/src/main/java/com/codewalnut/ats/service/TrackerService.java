@@ -227,7 +227,8 @@ public class TrackerService {
     public List<ApplicationResponse> searchApplications(AppUser actor, String q, Stage stage) {
         accessPolicy.require(actor, Capability.VIEW_CANDIDATES);
         String query = StringUtils.hasText(q) ? q.trim() : null;
-        List<Application> applications = applicationRepository.search(query, stage).stream().limit(500).toList();
+        List<Application> applications = applicationRepository.search(query, stage == null ? null : stage.current()).stream()
+                .limit(500).toList();
         Map<UUID, Set<DocumentKind>> documents = documentKinds(applications);
         return applications.stream()
                 .map(a -> ApplicationResponse.from(a, null, documents.getOrDefault(a.getCandidate().getId(), Set.of())))
@@ -310,24 +311,25 @@ public class TrackerService {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);
         Application application = application(applicationId);
         Stage from = application.getStage();
-        if (from == request.stage()) {
+        Stage to = request.stage().current();
+        if (from == to) {
             return ApplicationResponse.from(application, lastNote(applicationId));
         }
         String note = StringUtils.hasText(request.note()) ? request.note().trim() : null;
-        if (request.stage().requiresReason() && note == null) {
-            throw new IllegalArgumentException("note: please give a reason when moving to " + request.stage().getLabel());
+        if (to.requiresReason() && note == null) {
+            throw new IllegalArgumentException("note: please give a reason when moving to " + to.getLabel());
         }
-        application.setStage(request.stage());
+        application.setStage(to);
         applicationRepository.saveAndFlush(application);
         eventRepository.save(ApplicationEvent.builder()
                 .application(application)
                 .type(ApplicationEventType.STAGE_CHANGED)
                 .fromStage(from)
-                .toStage(request.stage())
+                .toStage(to)
                 .note(note)
                 .actorEmail(actor.getEmail())
                 .build());
-        adminUpdates.stageChanged(actor, application, from, request.stage(), note);
+        adminUpdates.stageChanged(actor, application, from, to, note);
         return ApplicationResponse.from(application, note != null ? note : lastNote(applicationId));
     }
 
@@ -460,6 +462,7 @@ public class TrackerService {
 
     Application createApplication(String actorEmail, JobOpening job, Candidate candidate, Stage stage, String note,
             ApplicationSource source, java.time.Instant consentAt) {
+        stage = stage == null ? Stage.SOURCED : stage.current();
         Application application = applicationRepository.save(Application.builder()
                 .job(job).candidate(candidate).stage(stage).source(source).consentAt(consentAt).build());
         eventRepository.save(ApplicationEvent.builder()
@@ -515,7 +518,9 @@ public class TrackerService {
     }
 
     private static Map<Stage, Long> emptyCounts() {
-        return new EnumMap<>(Stage.class);
+        Map<Stage, Long> counts = new EnumMap<>(Stage.class);
+        Stage.inUse().forEach(s -> counts.put(s, 0L));
+        return counts;
     }
 
     private JobOpening job(UUID id) {

@@ -124,7 +124,7 @@ class ClientAccessFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].name").value("Asha Blendo"))
-                .andExpect(jsonPath("$[0].stageLabel").value("Selected"))
+                .andExpect(jsonPath("$[0].stageLabel").value("Offer sent"))
                 .andExpect(jsonPath("$[0].email").doesNotExist())
                 .andExpect(jsonPath("$[0].profile.dateOfBirth").value("2003-01-02"))
                 .andExpect(jsonPath("$[0].documents.length()").value(1))

@@ -35,7 +35,7 @@ on the dashboard. It grows into the fuller features linked above.
 | TRK-04 | Import candidates by pasting a table from Excel / Google Sheets (header row with name, email, phone; extra columns such as "slno" ignored); preview first, nothing saved until Import. | Done |
 | TRK-05 | Import cleans data and flags problems per row: text in the email column is left blank with a warning, stray characters (e.g. trailing `\|`) and spaces removed, missing phone flagged. | Done |
 | TRK-06 | No duplicates: same email (or phone when no email) reuses the person; a person already in the opening is skipped; duplicate rows in one paste are skipped; name-only rows match by name within the opening. | Done |
-| TRK-07 | Fixed stages: Applied / Sourced → Screening → Interviewed → Shortlisted → Submitted to client → Client interview → Selected → Offer sent → Offer accepted → Joined; exits On hold, Rejected, Withdrawn. | Done |
+| TRK-07 | Fixed stages: Applied / Sourced → Interviewed → Shortlisted → Offer sent → Joined; exits On hold, Rejected (reduced from thirteen on 2026-10-07, see pipeline.md PIPE-15). | Done |
 | TRK-08 | Change a stage from the pipeline table; Rejected and Withdrawn need a reason. | Done |
 | TRK-09 | Notes per candidate; append-only history of every add, stage change and note with who and when. | Done |
 | TRK-10 | Two résumés per candidate — original and CodeWalnut-formatted — PDF or Word, ≤ 10 MB, checked by content; new uploads keep old versions. | Done |

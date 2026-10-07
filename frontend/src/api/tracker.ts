@@ -1,6 +1,8 @@
 import { api } from './client'
 
 export type Stage =
+  // Only SOURCED, INTERVIEWED, SHORTLISTED, OFFER_SENT, JOINED, ON_HOLD and REJECTED are in use (PIPE-15);
+  // the others appear only in older history.
   | 'SOURCED' | 'SCREENING' | 'INTERVIEWED' | 'SHORTLISTED' | 'SUBMITTED_TO_CLIENT' | 'CLIENT_INTERVIEW'
   | 'SELECTED' | 'OFFER_SENT' | 'OFFER_ACCEPTED' | 'JOINED' | 'ON_HOLD' | 'REJECTED' | 'WITHDRAWN'
 

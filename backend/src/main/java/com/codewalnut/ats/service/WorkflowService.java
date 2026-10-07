@@ -70,7 +70,7 @@ public class WorkflowService {
     static final Duration QUIET = Duration.ofDays(7);
 
     private static final Set<Stage> CLOSED = EnumSet.of(Stage.REJECTED, Stage.WITHDRAWN, Stage.JOINED);
-    private static final Set<Stage> EARLY = EnumSet.of(Stage.SOURCED, Stage.SCREENING);
+    private static final Set<Stage> EARLY = EnumSet.of(Stage.SOURCED);
 
     /** The filters the page offers, in order. */
     static final Map<String, Predicate<WorkflowRow>> FILTERS = new LinkedHashMap<>();
@@ -272,7 +272,7 @@ public class WorkflowService {
         Duration inStage = Duration.between(inStageSince, now);
         boolean stale = inStage.compareTo(Duration.ofDays(3)) > 0;
         return switch (stage) {
-            case SOURCED, SCREENING -> {
+            case SOURCED -> {
                 if (last == null) {
                     yield new NextStep("FIRST_CONTACT", "Get in touch: email, WhatsApp or call",
                             addedAt.isBefore(now.minus(Duration.ofDays(2))));
@@ -293,13 +293,9 @@ public class WorkflowService {
             case SHORTLISTED -> clientOpening && client == null
                     ? new NextStep("SHARE", "Share with the client", stale)
                     : clientOpening
-                            ? new NextStep("SUBMIT", "Shared: mark as submitted to client", stale)
-                            : new NextStep("DECIDE", "Decide: select or reject", stale);
-            case SUBMITTED_TO_CLIENT -> new NextStep("CLIENT_FOLLOW_UP", "Follow up with the client for feedback", stale);
-            case CLIENT_INTERVIEW -> new NextStep("CLIENT_DECISION", "Get the client's decision", stale);
-            case SELECTED -> new NextStep("SEND_OFFER", "Send the offer", inStage.compareTo(Duration.ofDays(2)) > 0);
-            case OFFER_SENT -> new NextStep("OFFER_FOLLOW_UP", "Follow up on the offer", stale);
-            case OFFER_ACCEPTED -> new NextStep("JOINING", "Confirm the joining date and documents", false);
+                            ? new NextStep("CLIENT_FOLLOW_UP", "Get the client's feedback or decision", stale)
+                            : new NextStep("DECIDE", "Decide: send an offer or reject", stale);
+            case OFFER_SENT -> new NextStep("OFFER_FOLLOW_UP", "Follow up on the offer and confirm the joining date", stale);
             case ON_HOLD -> new NextStep("ON_HOLD", "On hold: check back with them",
                     last == null || last.at().isBefore(now.minus(Duration.ofDays(14))));
             default -> null;

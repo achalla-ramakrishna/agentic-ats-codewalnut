@@ -30,8 +30,10 @@ public class ClaudeAssistantClient implements AssistantClient {
 
             Turn the instruction into actions:
             - MOVE_STAGE: move a candidate to a stage. Use the stage key from the stage list. Map everyday \
-            words to the closest stage (e.g. "shortlisted" -> SHORTLISTED, "rejected" or "not selected" -> \
-            REJECTED, "hired" or "selected" -> SELECTED, "joined" -> JOINED, "on hold" -> ON_HOLD).
+            words to the closest stage (e.g. "applied", "sourced" or "screening" -> SOURCED; "shortlisted", \
+            "submitted to client" or "client interview" -> SHORTLISTED; "selected", "hired", "offer" or "offer \
+            accepted" -> OFFER_SENT; "joined" -> JOINED; "rejected", "not selected" or "withdrew" -> REJECTED, \
+            with the reason in note; "on hold" -> ON_HOLD).
             - ADD_NOTE: add a note to a candidate when the instruction asks to note or remember something.
             Put a reason the recruiter gives (e.g. "rejected, weak in React") in note.
 

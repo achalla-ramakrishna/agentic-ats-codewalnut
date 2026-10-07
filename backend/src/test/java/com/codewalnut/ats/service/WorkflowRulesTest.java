@@ -35,20 +35,20 @@ class WorkflowRulesTest {
 
     @Test
     void testsAreChasedThenReviewed() {
-        assertThat(step(Stage.SCREENING, false, invite(AssessmentInvite.Status.SENT, Duration.ofHours(5), null), null, null, null,
+        assertThat(step(Stage.SOURCED, false, invite(AssessmentInvite.Status.SENT, Duration.ofHours(5), null), null, null, null,
                 List.of(), Duration.ofDays(1)).code()).isEqualTo("WAIT_TEST");
-        NextStep remind = step(Stage.SCREENING, false, invite(AssessmentInvite.Status.SENT, Duration.ofDays(3), null), null, null,
+        NextStep remind = step(Stage.SOURCED, false, invite(AssessmentInvite.Status.SENT, Duration.ofDays(3), null), null, null,
                 null, List.of(), Duration.ofDays(3));
         assertThat(remind.code()).isEqualTo("REMIND_TEST");
         assertThat(remind.urgent()).isTrue();
-        assertThat(step(Stage.SCREENING, false, invite(AssessmentInvite.Status.SUBMITTED, Duration.ofDays(1), 80), null, null, null,
+        assertThat(step(Stage.SOURCED, false, invite(AssessmentInvite.Status.SUBMITTED, Duration.ofDays(1), 80), null, null, null,
                 List.of(), Duration.ofDays(1)).code()).isEqualTo("REVIEW_TEST");
     }
 
     @Test
     void interviewsNeedFeedbackThenADecision() {
         Interview held = Interview.builder().startAt(NOW.minus(Duration.ofDays(2))).endAt(NOW.minus(Duration.ofDays(2)).plusSeconds(2700)).build();
-        NextStep feedback = step(Stage.SCREENING, false, null, new InterviewStatus(null, "DONE", held.getStartAt(), 0, 2), held, null,
+        NextStep feedback = step(Stage.SOURCED, false, null, new InterviewStatus(null, "DONE", held.getStartAt(), 0, 2), held, null,
                 List.of(), Duration.ofDays(4));
         assertThat(feedback.code()).isEqualTo("FEEDBACK");
         assertThat(feedback.urgent()).isTrue();
@@ -59,7 +59,7 @@ class WorkflowRulesTest {
     @Test
     void clientOpeningsShareThenFollowUp() {
         assertThat(step(Stage.SHORTLISTED, true, null, null, null, null, List.of(), Duration.ofDays(1)).code()).isEqualTo("SHARE");
-        NextStep followUp = step(Stage.SUBMITTED_TO_CLIENT, true, null, null, null,
+        NextStep followUp = step(Stage.SHORTLISTED, true, null, null, null,
                 new ClientStatus("Blend", NOW.minus(Duration.ofDays(5)), null), List.of(), Duration.ofDays(5));
         assertThat(followUp.code()).isEqualTo("CLIENT_FOLLOW_UP");
         assertThat(followUp.urgent()).isTrue();
@@ -69,8 +69,10 @@ class WorkflowRulesTest {
     @Test
     void documentsAndOffers() {
         DocumentRequest old = DocumentRequest.builder().requestedAt(NOW.minus(Duration.ofDays(5))).build();
-        assertThat(step(Stage.OFFER_ACCEPTED, false, null, null, null, null, List.of(old), Duration.ofDays(5)).code()).isEqualTo("CHASE_DOCS");
-        assertThat(step(Stage.SELECTED, false, null, null, null, null, List.of(), Duration.ofDays(3)).urgent()).isTrue();
+        assertThat(step(Stage.OFFER_SENT, false, null, null, null, null, List.of(old), Duration.ofDays(5)).code()).isEqualTo("CHASE_DOCS");
+        NextStep offer = step(Stage.OFFER_SENT, false, null, null, null, null, List.of(), Duration.ofDays(4));
+        assertThat(offer.code()).isEqualTo("OFFER_FOLLOW_UP");
+        assertThat(offer.urgent()).isTrue();
         assertThat(step(Stage.JOINED, false, null, null, null, null, List.of(), Duration.ofDays(3))).isNull();
     }
 }

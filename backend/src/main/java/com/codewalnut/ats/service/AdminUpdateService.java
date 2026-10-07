@@ -85,7 +85,7 @@ public class AdminUpdateService {
             AssessmentInviteRepository inviteRepository, InterviewRepository interviewRepository,
             InterviewFeedbackRepository feedbackRepository, AccessPolicy accessPolicy, MailClient mailClient,
             ApplicationEventPublisher events, PlatformTransactionManager transactionManager,
-            @Value("${ats.admin-updates.stages:SHORTLISTED,SELECTED,OFFER_ACCEPTED,JOINED}") Set<Stage> keyStages) {
+            @Value("${ats.admin-updates.stages:SHORTLISTED,OFFER_SENT,JOINED}") Set<Stage> keyStages) {
         this.updateRepository = updateRepository;
         this.userRepository = userRepository;
         this.inviteRepository = inviteRepository;

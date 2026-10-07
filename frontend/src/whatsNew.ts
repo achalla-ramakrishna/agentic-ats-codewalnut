@@ -16,6 +16,17 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-07-seven-stages',
+    date: '2026-10-07',
+    title: 'Seven simple stages',
+    summary: 'Candidates now have one of seven stages: Applied / Sourced, Interviewed, Shortlisted, Offer sent, Joined, On hold or Rejected. Screening is part of Applied; submitted to client and client interviews are part of Shortlisted; selected and offer accepted are part of Offer sent; withdrawn is Rejected. Everyone already in the system was moved to the matching stage; their history still shows the old detail.',
+    steps: [
+      'Open any opening: the stage buttons show the seven stages with counts.',
+      'Use the Workflow page for what happened and what to do next (shared with client, offer follow-up…).',
+    ],
+    capability: 'VIEW_CANDIDATES',
+  },
+  {
     id: '2026-10-06-ask-ats-actions',
     date: '2026-10-06',
     title: 'Ask ATS can now do things, after you confirm',

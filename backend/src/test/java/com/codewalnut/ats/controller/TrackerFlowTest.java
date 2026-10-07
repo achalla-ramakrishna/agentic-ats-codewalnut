@@ -101,7 +101,8 @@ class TrackerFlowTest {
         mockMvc.perform(patch("/api/v1/applications/" + appId + "/stage").with(RECRUITER).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content("{\"stage\":\"SUBMITTED_TO_CLIENT\",\"note\":\"Sent to Blend\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.stage").value("SUBMITTED_TO_CLIENT"))
+                // "Submitted to client" is retired: it lands in Shortlisted (PIPE-15).
+                .andExpect(jsonPath("$.stage").value("SHORTLISTED"))
                 .andExpect(jsonPath("$.lastNote").value("Sent to Blend"));
 
         send(RECRUITER, "/api/v1/applications/" + appId + "/notes", Map.of("text", "Client interview Monday"), 201);
@@ -115,7 +116,10 @@ class TrackerFlowTest {
 
         mockMvc.perform(get("/api/v1/jobs/" + jobId).with(ADMIN))
                 .andExpect(jsonPath("$.stageCounts.INTERVIEWED").value(2))
-                .andExpect(jsonPath("$.stageCounts.SUBMITTED_TO_CLIENT").value(1))
+                .andExpect(jsonPath("$.stageCounts.SHORTLISTED").value(1))
+                // Only the seven stages in use are counted.
+                .andExpect(jsonPath("$.stageCounts.SUBMITTED_TO_CLIENT").doesNotExist())
+                .andExpect(jsonPath("$.stageCounts.OFFER_SENT").value(0))
                 .andExpect(jsonPath("$.total").value(3));
 
         mockMvc.perform(get("/api/v1/dashboard").with(ADMIN))

@@ -83,7 +83,7 @@ class CandidateOpeningsFlowTest {
         mockMvc.perform(get("/api/v1/applications/" + app + "/openings").with(RECRUITER))
                 .andExpect(jsonPath("$[1].stage").value("INTERVIEWED"))
                 .andExpect(jsonPath("$[1].current").value(true))
-                .andExpect(jsonPath("$[0].stage").value("SCREENING"));
+                .andExpect(jsonPath("$[0].stage").value("SOURCED")); // Screening is now part of Applied / Sourced
 
         // Not twice.
         post(RECRUITER, "/api/v1/applications/" + app + "/openings", "{\"jobId\":\"" + globex + "\"}")

@@ -15,9 +15,9 @@ import java.util.regex.Pattern;
 public class RuleBasedAskClient implements AskClient {
 
     private static final Map<String, String> STAGES = Map.ofEntries(
-            Map.entry("applied", "SOURCED"), Map.entry("sourced", "SOURCED"), Map.entry("screening", "SCREENING"),
+            Map.entry("applied", "SOURCED"), Map.entry("sourced", "SOURCED"), Map.entry("screening", "SOURCED"),
             Map.entry("interviewed", "INTERVIEWED"), Map.entry("shortlisted", "SHORTLISTED"),
-            Map.entry("submitted", "SUBMITTED_TO_CLIENT"), Map.entry("selected", "SELECTED"),
+            Map.entry("submitted", "SHORTLISTED"), Map.entry("selected", "OFFER_SENT"),
             Map.entry("offer", "OFFER_SENT"), Map.entry("joined", "JOINED"), Map.entry("rejected", "REJECTED"),
             Map.entry("on hold", "ON_HOLD"));
     private static final Pattern STOP = Pattern.compile(

@@ -4,9 +4,9 @@ Menu (left side; people see only what their role allows): Dashboard, Ask ATS, Op
 Messages, Clients, Interviews, Interview questions, Tests, Admin updates, Users, View as, Audit log,
 What's new.
 
-Stages, in order: Applied / Sourced, Screening, Interviewed, Shortlisted, Submitted to client,
-Client interview, Selected, Offer sent, Offer accepted, Joined. Off the main path: On hold, Rejected,
-Withdrawn.
+Stages, in order: Applied / Sourced, Interviewed, Shortlisted, Offer sent, Joined. Off the main
+path: On hold, Rejected. (Screening is part of Applied; submitted to client and client interviews are
+part of Shortlisted; selected and offer accepted are part of Offer sent; withdrawn is Rejected.)
 
 ## Openings
 - New opening: Openings → New opening.

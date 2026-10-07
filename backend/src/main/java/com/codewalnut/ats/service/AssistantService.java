@@ -85,7 +85,7 @@ public class AssistantService {
                         .map(a -> new AssistantClient.Candidate(a.getId().toString(), a.getCandidate().getName(),
                                 a.getStage().getLabel(), withTests(profileText(profiles.get(a.getId())), testLines.get(a.getId()))))
                         .toList(),
-                Arrays.stream(Stage.values()).map(s -> new AssistantClient.StageOption(s.name(), s.getLabel())).toList()));
+                Stage.inUse().stream().map(s -> new AssistantClient.StageOption(s.name(), s.getLabel())).toList()));
 
         List<String> notes = new ArrayList<>();
         List<ProposedAction> actions = new ArrayList<>();
@@ -239,7 +239,7 @@ public class AssistantService {
             return null;
         }
         try {
-            return Stage.valueOf(key.strip().toUpperCase(java.util.Locale.ROOT));
+            return Stage.valueOf(key.strip().toUpperCase(java.util.Locale.ROOT)).current();
         } catch (IllegalArgumentException e) {
             return null;
         }

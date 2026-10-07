@@ -212,7 +212,7 @@ public class AskService {
                             + "Filter by part of a name, email or phone, by stage, and/or by opening. Leave query empty to list. "
                             + "Contact details are never returned: people open the candidate in the app for those.",
                     Map.of("query", str("Part of a name, email or phone; empty for all"),
-                            "stage", oneOf("Only candidates at this stage", Arrays.stream(Stage.values()).map(Enum::name).toList()),
+                            "stage", oneOf("Only candidates at this stage", Stage.inUse().stream().map(Enum::name).toList()),
                             "jobId", str("Only this opening (id from list_openings)")),
                     List.of()),
             new ToolSpec("get_candidate",
@@ -300,7 +300,7 @@ public class AskService {
 
     private String searchCandidates(AppUser actor, String query, String stage, String jobId) {
         allow(actor, Capability.VIEW_CANDIDATES, "candidates");
-        Stage st = stage == null ? null : Stage.valueOf(stage.toUpperCase(Locale.ROOT));
+        Stage st = stage == null ? null : Stage.valueOf(stage.toUpperCase(Locale.ROOT)).current();
         List<ApplicationResponse> rows;
         if (jobId != null) {
             String q = query == null ? null : query.toLowerCase(Locale.ROOT);

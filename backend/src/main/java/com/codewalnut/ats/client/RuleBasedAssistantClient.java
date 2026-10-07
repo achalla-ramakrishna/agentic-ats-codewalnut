@@ -25,17 +25,17 @@ public class RuleBasedAssistantClient implements AssistantClient {
         STAGE_WORDS.put("shortlist", "SHORTLISTED");
         STAGE_WORDS.put("reject", "REJECTED");
         STAGE_WORDS.put("not selected", "REJECTED");
-        STAGE_WORDS.put("withdr", "WITHDRAWN");
+        STAGE_WORDS.put("withdr", "REJECTED");
         STAGE_WORDS.put("on hold", "ON_HOLD");
-        STAGE_WORDS.put("offer accepted", "OFFER_ACCEPTED");
+        STAGE_WORDS.put("offer accepted", "OFFER_SENT");
         STAGE_WORDS.put("offer", "OFFER_SENT");
         STAGE_WORDS.put("joined", "JOINED");
-        STAGE_WORDS.put("selected", "SELECTED");
-        STAGE_WORDS.put("hired", "SELECTED");
-        STAGE_WORDS.put("client interview", "CLIENT_INTERVIEW");
-        STAGE_WORDS.put("submitted", "SUBMITTED_TO_CLIENT");
+        STAGE_WORDS.put("selected", "OFFER_SENT");
+        STAGE_WORDS.put("hired", "OFFER_SENT");
+        STAGE_WORDS.put("client interview", "SHORTLISTED");
+        STAGE_WORDS.put("submitted", "SHORTLISTED");
         STAGE_WORDS.put("interviewed", "INTERVIEWED");
-        STAGE_WORDS.put("screen", "SCREENING");
+        STAGE_WORDS.put("screen", "SOURCED");
         STAGE_WORDS.put("applied", "SOURCED");
     }
 

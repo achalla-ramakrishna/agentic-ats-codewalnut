@@ -149,7 +149,7 @@ class ResumeIntelligenceFlowTest {
         mockMvc.perform(get("/api/v1/jobs/" + job + "/insights").with(RECRUITER))
                 .andExpect(jsonPath("$.contactNext").isEmpty())
                 .andExpect(jsonPath("$.closestToSelection[0].candidateName").value("Asha Tester"))
-                .andExpect(jsonPath("$.closestToSelection[0].reason").value(Matchers.startsWith("At Client interview")));
+                .andExpect(jsonPath("$.closestToSelection[0].reason").value(Matchers.startsWith("At Shortlisted")));
 
         // Questions get an answer and the candidates it points to; nothing changes.
         json("/api/v1/jobs/" + job + "/assistant", "{\"instruction\":\"who knows react?\"}")

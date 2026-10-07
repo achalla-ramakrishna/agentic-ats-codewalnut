@@ -56,7 +56,7 @@ public class AskActionService {
 
     static final ToolSpec TOOL = new ToolSpec("propose_actions",
             "Propose changes for the person to confirm. Nothing happens until they click Do it on each card, so never say "
-                    + "something was done. Types: MOVE_STAGE (stage; note required for REJECTED or WITHDRAWN: their reason), "
+                    + "something was done. Types: MOVE_STAGE (stage; note required for REJECTED: their reason), "
                     + "ADD_NOTE (note), LOG_CONTACT (how, note: a call or message made outside the app), REMIND_TEST (a test "
                     + "they haven't started; sendEmail and/or sendWhatsApp), MESSAGE (to the candidate: body, subject for "
                     + "email; sendEmail and/or sendWhatsApp; neither means a message on their candidate page; write the full "
@@ -67,7 +67,7 @@ public class AskActionService {
                     "properties", Map.ofEntries(
                             Map.entry("type", Map.of("type", "string", "enum", TYPES)),
                             Map.entry("applicationId", Map.of("type", "string")),
-                            Map.entry("stage", Map.of("type", "string", "enum", Arrays.stream(Stage.values()).map(Enum::name).toList())),
+                            Map.entry("stage", Map.of("type", "string", "enum", Stage.inUse().stream().map(Enum::name).toList())),
                             Map.entry("note", Map.of("type", "string")),
                             Map.entry("how", Map.of("type", "string", "enum", List.of("CALL", "WHATSAPP", "EMAIL", "MEETING", "OTHER"))),
                             Map.entry("sendEmail", Map.of("type", "boolean")),
@@ -134,7 +134,7 @@ public class AskActionService {
                 allow(actor, Capability.MANAGE_JOBS, "move candidates");
                 Stage to;
                 try {
-                    to = Stage.valueOf(String.valueOf(a.get("stage")).toUpperCase(Locale.ROOT));
+                    to = Stage.valueOf(String.valueOf(a.get("stage")).toUpperCase(Locale.ROOT)).current();
                 } catch (IllegalArgumentException e) {
                     throw new IllegalArgumentException("stage: not a stage");
                 }
