@@ -23,10 +23,18 @@ import { Badge, Button } from './ui'
 
 const DURATIONS = [30, 45, 60, 90]
 
-function today() {
-  const d = new Date()
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+const pad2 = (n: number) => String(n).padStart(2, '0')
+
+/** The next full hour today; after 11 pm, tomorrow at 10:00. Never a time already past. */
+function defaultSlot(now = new Date()) {
+  const next = new Date(now)
+  next.setMinutes(0, 0, 0)
+  next.setHours(next.getHours() + 1)
+  if (next.getDate() !== now.getDate()) next.setHours(10)
+  return {
+    date: `${next.getFullYear()}-${pad2(next.getMonth() + 1)}-${pad2(next.getDate())}`,
+    time: `${pad2(next.getHours())}:00`,
+  }
 }
 
 export function defaultMessage(candidateName: string, jobTitle: string) {
@@ -55,8 +63,9 @@ function ScheduleForm({
 }) {
   const [status, setStatus] = useState<GoogleStatus | null>(null)
   const [title, setTitle] = useState(`CodeWalnut interview – ${jobTitle}`)
-  const [date, setDate] = useState(today())
-  const [time, setTime] = useState(() => `${String(Math.min(23, new Date().getHours() + 1)).padStart(2, '0')}:00`)
+  const [slot] = useState(() => defaultSlot())
+  const [date, setDate] = useState(slot.date)
+  const [time, setTime] = useState(slot.time)
   const [duration, setDuration] = useState(45)
   const [interviewers, setInterviewers] = useState('')
   const [message, setMessage] = useState(defaultMessage(candidateName, jobTitle))

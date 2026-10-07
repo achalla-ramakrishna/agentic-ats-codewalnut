@@ -33,7 +33,14 @@ function SuggestionList({ items, onOpen, empty }: { items: Suggestion[]; onOpen:
           <button type="button" className="row-link" onClick={() => onOpen(s.applicationId)}>
             {s.candidateName}
           </button>
-          {s.fitPercent != null && <span className="muted"> · {s.fitPercent}%</span>}
+          {s.readiness != null ? (
+            <span className="muted" title="From interview feedback, test score and résumé match">
+              {' '}
+              · readiness {s.readiness}%
+            </span>
+          ) : (
+            s.fitPercent != null && <span className="muted"> · {s.fitPercent}%</span>
+          )}
           <div className="muted" style={{ fontSize: 13 }}>
             {s.reason}
           </div>
@@ -111,7 +118,7 @@ export function InsightsPanel({
           <div>
             <h3 style={{ margin: '0 0 4px' }}>Contact next</h3>
             <p className="muted" style={{ margin: '0 0 6px', fontSize: 13 }}>
-              Applied or in screening, best match to the opening first.
+              Applied, best résumé match to the opening first.
             </p>
             <SuggestionList
               items={data.contactNext}
@@ -122,7 +129,7 @@ export function InsightsPanel({
           <div>
             <h3 style={{ margin: '0 0 4px' }}>Closest to selection</h3>
             <p className="muted" style={{ margin: '0 0 6px', fontSize: 13 }}>
-              Furthest along the pipeline, then best match.
+              Interviewed or shortlisted, ranked by interview feedback, test score and résumé match. Anyone the panel said no to is left out.
             </p>
             <SuggestionList items={data.closestToSelection} onOpen={onOpen} empty="Nobody has been interviewed yet." />
           </div>

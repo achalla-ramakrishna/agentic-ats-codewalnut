@@ -16,6 +16,17 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-07-closest-to-selection',
+    date: '2026-10-07',
+    title: '“Closest to selection” now uses interview feedback',
+    summary: 'AI suggestions rank interviewed and shortlisted candidates by a readiness score from the panel’s feedback (weighted most), test scores and résumé match, and leave out anyone the panel said no to. It updates as soon as feedback is submitted. “Analyze résumés” now counts only résumés still to read; people with no résumé attached are shown separately.',
+    steps: [
+      'Open an opening and look at AI suggestions → Closest to selection.',
+      'Each name shows its readiness and why: stage, panel recommendations, test, requirements met.',
+    ],
+    capability: 'VIEW_CANDIDATES',
+  },
+  {
     id: '2026-10-07-seven-stages',
     date: '2026-10-07',
     title: 'Seven simple stages',

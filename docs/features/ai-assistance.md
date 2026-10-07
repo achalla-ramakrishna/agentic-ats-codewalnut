@@ -49,13 +49,15 @@ hiring decision.
 | AI-21 | The AI reads each résumé against the opening's description: name, contacts, role, experience, graduation year, education, skills, experience, projects, headline, per-requirement MET / PARTIAL / NOT_EVIDENT with evidence, strengths, gaps ("not evident in résumé") and questions to ask. | Done |
 | AI-22 | Match % is computed by the app: (2×MET + PARTIAL) ÷ (2×requirements); none without a description. Readings made against an older description are marked stale. | Done |
 | AI-23 | **Analyze résumés** reads everyone in the opening whose reading is missing, failed or stale; a new original résumé (job link, recruiter or candidate upload) is read automatically. | Done |
-| AI-24 | **AI suggestions**: *Contact next* (Applied/Screening, match ≥ 50 %, best first) and *Closest to selection* (Interviewed…Client interview, furthest stage then match), each with its reason; max 10 each. | Done |
+| AI-24 | **AI suggestions**: *Contact next* (Applied, match ≥ 50 %, best first) and *Closest to selection* (see AI-32), each with its reason; max 10 each. | Done |
 | AI-25 | Opening page: Match column, sort by best match, filters (strong match, good match, has projects, has experience, no experience yet, skill, graduation year). | Done |
 | AI-26 | Drawer → Profile: "AI résumé insights" with requirements, skills, projects, experience, strengths, gaps, questions, and **Re-analyze**. | Done |
 | AI-27 | Questions in the assistant box ("who has worked on Spring Boot projects?", "who hasn't been interviewed yet?") return an answer and the candidates it points to (click to open); answers never change anything. | Done |
 | AI-28 | Fairness: only job-related evidence; personal attributes ignored and never mentioned; no rejection advice; résumé text is data, not instructions; low scores shown neutrally; labelled advisory. | Done |
 | AI-29 | Only job-related profiles (no email/phone) go to the assistant; résumé files go to the reader. Readings and uploads are audited (counts only). | Done |
 | AI-31 | Reading a résumé fills the candidate's empty profile fields: college, degree, graduation year, LinkedIn, current address (only a full postal address), and email/phone if missing. Never overwrites entered values; never extracts date of birth, age, gender or family details. Older readings show as out of date so **Analyze résumés** refreshes them. | Done |
+| AI-32 | **Closest to selection** ranks Interviewed and Shortlisted candidates by a readiness score (0–100): interview feedback is half (strong hire 100, hire 75, no hire 25, strong no hire 0, averaged over the panel; none yet counts as a neutral 50), the test score and résumé match the other half, plus 5 for Shortlisted. Anyone whose panel leans no (average below 50) is left out. The reason shows the stage, the panel's recommendations, the requirements met, the test score and a strength. It updates as soon as feedback is submitted or a test is scored. | Done |
+| AI-33 | Résumé counts separate people **without a résumé** (nothing to read: attach or upload one) from résumés **not read yet**; **Analyze résumés (n)** counts only the latter, so it reaches zero. | Done |
 | AI-30 | Email ingestion: a dedicated inbox (inbound-email webhook) feeding the same intake. | v1 |
 | ASK-01 | **Ask ATS** in the menu (all CodeWalnut staff): a chat page like ChatGPT. Type a question, or pick a suggestion, and get an answer from live ATS data. Enter sends, Shift+Enter adds a line. | Done |
 | ASK-02 | Answers look things up with read-only tools: openings with stage counts, candidates by name/stage/opening, one candidate in full (history and notes, other openings, interviews and feedback status, tests, résumé reading), résumé profiles across an opening, upcoming/recent interviews and feedback due, test results, recent activity; plus a built-in guide for "how do I…" questions. Candidates, openings and feedback forms are links into the app. | Done |
@@ -83,6 +85,7 @@ hiring decision.
 | --- | --- |
 | 2026-09-25 | Created from SPEC.md |
 | 2026-10-06 | Ask ATS: chat with the whole ATS (ASK-01…ASK-05, ADR-0021) |
+| 2026-10-07 | Closest to selection uses interview feedback, tests and résumé match; résumé counts fixed (AI-32, AI-33) |
 | 2026-10-06 | Ask ATS actions: proposed as cards, done only when confirmed (ASK-06…ASK-09, ADR-0023) |
 | 2026-10-02 | Assistant on the opening page: instruction → reviewed proposals → Apply (AI-12…AI-17, ADR-0009) |
 | 2026-10-03 | Résumé readings fill empty profile fields (AI-31) |

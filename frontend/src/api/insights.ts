@@ -26,6 +26,8 @@ export interface Suggestion {
   stageLabel: string
   fitPercent: number | null
   reason: string
+  /** Closest to selection: 0–100 from interview feedback, test and résumé match. */
+  readiness?: number | null
 }
 
 export interface InsightsResponse {

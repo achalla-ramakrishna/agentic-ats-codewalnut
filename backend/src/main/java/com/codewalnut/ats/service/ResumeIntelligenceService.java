@@ -7,6 +7,7 @@ import com.codewalnut.ats.domain.AppUser;
 import com.codewalnut.ats.domain.Application;
 import com.codewalnut.ats.domain.AuditAction;
 import com.codewalnut.ats.domain.CandidateInsight;
+import com.codewalnut.ats.domain.InterviewFeedback;
 import com.codewalnut.ats.domain.JobOpening;
 import com.codewalnut.ats.domain.JobStatus;
 import com.codewalnut.ats.domain.ResumeIntake;
@@ -67,8 +68,8 @@ public class ResumeIntelligenceService {
     /** Below this, a match isn't strong enough to suggest contacting first. */
     static final int CONTACT_THRESHOLD = 50;
     private static final Set<Stage> EARLY = EnumSet.of(Stage.SOURCED, Stage.SCREENING);
-    private static final Set<Stage> ADVANCED = EnumSet.of(Stage.INTERVIEWED, Stage.SHORTLISTED,
-            Stage.SUBMITTED_TO_CLIENT, Stage.CLIENT_INTERVIEW);
+    /** Interviewed or shortlisted: not yet offered. */
+    private static final Set<Stage> ADVANCED = EnumSet.of(Stage.INTERVIEWED, Stage.SHORTLISTED);
     private static final Duration STUCK = Duration.ofMinutes(10);
 
     private final JobOpeningRepository jobRepository;
@@ -83,6 +84,8 @@ public class ResumeIntelligenceService {
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
     private final AssessmentInviteService tests;
+    private final com.codewalnut.ats.repository.InterviewRepository interviewRepository;
+    private final com.codewalnut.ats.repository.InterviewFeedbackRepository feedbackRepository;
 
     // ---- bulk upload ----
 
@@ -331,19 +334,127 @@ public class ResumeIntelligenceService {
                 .limit(SUGGESTIONS)
                 .map(a -> suggestion(a, byApplication.get(a.getId()), profiles.get(a.getId()), latestTest.get(a.getId()), false))
                 .toList();
+        Map<UUID, List<InterviewFeedback.Recommendation>> panel = recommendations(applications);
+        Map<UUID, Integer> readiness = new java.util.HashMap<>();
+        for (Application a : applications) {
+            if (ADVANCED.contains(a.getStage())) {
+                Integer r = readiness(a, panel.get(a.getId()), latestTest.get(a.getId()), fit(byApplication.get(a.getId())));
+                if (r != null) {
+                    readiness.put(a.getId(), r);
+                }
+            }
+        }
+        // Interviewed or shortlisted, the panel not against them, best overall evidence first (AI-32).
         List<Suggestion> closest = applications.stream()
                 .filter(a -> ADVANCED.contains(a.getStage()))
-                .sorted(Comparator.comparing((Application a) -> a.getStage().ordinal()).reversed()
-                        .thenComparing(byTest).thenComparing(byFit))
+                .filter(a -> !panelAgainst(panel.get(a.getId())))
+                .sorted(Comparator.comparing((Application a) -> readiness.get(a.getId()), Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(Comparator.comparing((Application a) -> a.getStage().ordinal()).reversed()))
                 .limit(SUGGESTIONS)
-                .map(a -> suggestion(a, byApplication.get(a.getId()), profiles.get(a.getId()), latestTest.get(a.getId()), true))
+                .map(a -> withReadiness(suggestion(a, byApplication.get(a.getId()), profiles.get(a.getId()), latestTest.get(a.getId()),
+                        true, panel.get(a.getId())), readiness.get(a.getId())))
                 .toList();
 
-        int withReading = (int) applications.stream().filter(a -> insights.containsKey(a.getId())).count();
+        // Résumé counts by whether a résumé is attached at all, so "to read" never includes people without one.
+        Set<UUID> withResume = new java.util.HashSet<>();
+        for (Object[] row : documentRepository.kindsFor(applications.stream().map(a -> a.getCandidate().getId()).distinct().toList())) {
+            if (row[1] == com.codewalnut.ats.domain.DocumentKind.ORIGINAL_RESUME) {
+                withResume.add((UUID) row[0]);
+            }
+        }
+        int noResume = (int) applications.stream().filter(a -> !withResume.contains(a.getCandidate().getId())).count();
+        int notAnalyzed = (int) applications.stream()
+                .filter(a -> withResume.contains(a.getCandidate().getId()))
+                .filter(a -> !insights.containsKey(a.getId()) || insights.get(a.getId()).getStatus() == CandidateInsight.Status.NO_RESUME)
+                .count();
         return new InsightsResponse(analyzer.available(), StringUtils.hasText(job.getDescription()),
                 countStatus(insights, CandidateInsight.Status.DONE), countStatus(insights, CandidateInsight.Status.PENDING),
-                countStatus(insights, CandidateInsight.Status.FAILED), countStatus(insights, CandidateInsight.Status.NO_RESUME),
-                applications.size() - withReading, summaries, contactNext, closest);
+                countStatus(insights, CandidateInsight.Status.FAILED), noResume, notAnalyzed, summaries, contactNext, closest);
+    }
+
+    /** Submitted interview recommendations per application (drafts and no-shows left out). */
+    private Map<UUID, List<InterviewFeedback.Recommendation>> recommendations(List<Application> applications) {
+        List<com.codewalnut.ats.domain.Interview> interviews = applications.isEmpty() ? List.of()
+                : interviewRepository.findByApplicationIdIn(applications.stream().map(Application::getId).toList()).stream()
+                        .filter(i -> i.getStatus() != com.codewalnut.ats.domain.InterviewStatus.CANCELLED).toList();
+        if (interviews.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, UUID> applicationOf = interviews.stream()
+                .collect(Collectors.toMap(com.codewalnut.ats.domain.Interview::getId, i -> i.getApplication().getId()));
+        Map<UUID, List<InterviewFeedback.Recommendation>> out = new java.util.HashMap<>();
+        for (InterviewFeedback f : feedbackRepository.findByInterviewIdIn(applicationOf.keySet())) {
+            if (!f.isDraft() && f.getRecommendation() != null) {
+                out.computeIfAbsent(applicationOf.get(f.getInterviewId()), k -> new ArrayList<>()).add(f.getRecommendation());
+            }
+        }
+        return out;
+    }
+
+    private static int points(InterviewFeedback.Recommendation r) {
+        return switch (r) {
+            case STRONG_YES -> 100;
+            case YES -> 75;
+            case NO -> 25;
+            case STRONG_NO -> 0;
+        };
+    }
+
+    static boolean panelAgainst(List<InterviewFeedback.Recommendation> recs) {
+        return recs != null && !recs.isEmpty() && recs.stream().mapToInt(ResumeIntelligenceService::points).average().orElse(100) < 50;
+    }
+
+    /**
+     * 0–100. Interview feedback is half (no feedback yet counts as a neutral 50, so good feedback lifts
+     * someone above a résumé-only candidate); the other half is the test score and résumé match, over
+     * whichever exist. Shortlisted adds 5. Null when there is no evidence at all.
+     */
+    static Integer readiness(Application a, List<InterviewFeedback.Recommendation> recs, InviteView test, Integer fit) {
+        boolean hasFeedback = recs != null && !recs.isEmpty();
+        boolean hasTest = test != null && test.percent() != null;
+        if (!hasFeedback && !hasTest && fit == null) {
+            return null;
+        }
+        double feedback = hasFeedback ? recs.stream().mapToInt(ResumeIntelligenceService::points).average().orElse(50) : 50;
+        double rest = 0;
+        double weight = 0;
+        if (hasTest) {
+            rest += 0.4 * test.percent();
+            weight += 0.4;
+        }
+        if (fit != null) {
+            rest += 0.6 * fit;
+            weight += 0.6;
+        }
+        double other = weight == 0 ? 50 : rest / weight;
+        int score = (int) Math.round(0.5 * feedback + 0.5 * other) + (a.getStage() == Stage.SHORTLISTED ? 5 : 0);
+        return Math.min(100, score);
+    }
+
+    private static Suggestion withReadiness(Suggestion s, Integer readiness) {
+        return new Suggestion(s.applicationId(), s.candidateName(), s.stageLabel(), s.fitPercent(), s.reason(), readiness);
+    }
+
+    private static String panelSummary(List<InterviewFeedback.Recommendation> recs) {
+        Map<InterviewFeedback.Recommendation, Long> counts = recs.stream()
+                .collect(Collectors.groupingBy(Function.identity(), () -> new java.util.EnumMap<>(InterviewFeedback.Recommendation.class),
+                        Collectors.counting()));
+        List<String> parts = new ArrayList<>();
+        java.util.List<InterviewFeedback.Recommendation> order = List.of(InterviewFeedback.Recommendation.STRONG_YES,
+                InterviewFeedback.Recommendation.YES, InterviewFeedback.Recommendation.NO, InterviewFeedback.Recommendation.STRONG_NO);
+        for (InterviewFeedback.Recommendation r : order) {
+            Long n = counts.get(r);
+            if (n != null) {
+                String label = switch (r) {
+                    case STRONG_YES -> "strong hire";
+                    case YES -> "hire";
+                    case NO -> "no hire";
+                    case STRONG_NO -> "strong no hire";
+                };
+                parts.add(n + " " + label);
+            }
+        }
+        return "panel: " + String.join(", ", parts);
     }
 
     @Transactional(readOnly = true)
@@ -386,9 +497,19 @@ public class ResumeIntelligenceService {
 
     private Suggestion suggestion(Application a, InsightSummary summary, ResumeInsight profile, InviteView test,
             boolean advanced) {
+        return suggestion(a, summary, profile, test, advanced, null);
+    }
+
+    private Suggestion suggestion(Application a, InsightSummary summary, ResumeInsight profile, InviteView test,
+            boolean advanced, List<InterviewFeedback.Recommendation> panel) {
         List<String> parts = new ArrayList<>();
         if (advanced) {
             parts.add("At " + a.getStage().getLabel());
+        }
+        if (panel != null && !panel.isEmpty()) {
+            parts.add(panelSummary(panel));
+        } else if (advanced) {
+            parts.add("no interview feedback yet");
         }
         if (summary != null && summary.total() > 0 && summary.fitPercent() != null) {
             parts.add("meets " + summary.met() + " of " + summary.total() + " requirements"
@@ -405,7 +526,7 @@ public class ResumeIntelligenceService {
         String reason = String.join(" · ", parts);
         return new Suggestion(a.getId(), a.getCandidate().getName(), a.getStage().getLabel(),
                 summary != null ? summary.fitPercent() : null,
-                reason.isEmpty() ? reason : Character.toUpperCase(reason.charAt(0)) + reason.substring(1));
+                reason.isEmpty() ? reason : Character.toUpperCase(reason.charAt(0)) + reason.substring(1), null);
     }
 
     private InsightSummary summary(CandidateInsight insight, ResumeInsight profile, String hash) {

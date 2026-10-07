@@ -19,8 +19,9 @@ public final class InsightDtos {
             int met, int partial, int total, List<String> skills, int projects, int experienceMonths,
             Integer graduationYear) {}
 
+    /** readiness: for "closest to selection", 0–100 from interview feedback, test and résumé match (AI-32). */
     public record Suggestion(UUID applicationId, String candidateName, String stageLabel, Integer fitPercent,
-            String reason) {}
+            String reason, Integer readiness) {}
 
     /**
      * available: AI reading is switched on. hasDescription: the opening has a description to match
