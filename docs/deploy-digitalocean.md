@@ -207,6 +207,9 @@ References: [Vercel rewrites](https://vercel.com/docs/routing/rewrites),
    warmup and verification duration plus headroom; record a realistic outage window.
 7. Test restoration of the encrypted backup and matching object set. Destroy the
    rehearsal copy after signoff; reinitialize a clean final target before cutover.
+   After any target/volume reinitialization, provision `ats_backup` again and repeat
+   the backup-host forced-command and restore verification below: the `ats` dump
+   does not include accounts from MySQL’s separate system schema.
 
 Health is process liveness, not readiness/data validity. Rehearsal flags are read
 only on startup. They cannot drain previously admitted work or undo a provider call.
