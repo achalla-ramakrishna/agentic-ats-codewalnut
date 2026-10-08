@@ -224,3 +224,9 @@ Feature-specific questions live in each feature file.
 [DOCSTORE-01…05](features/document-storage.md) specify opt-in private file storage,
 existing authorization, durable staging, verified copying and resumable migration.
 Deployment enablement is gated on a live private-store smoke test and restore rehearsal.
+
+## Production operations
+
+[DEPLOY requirements](features/production-operations.md) cover the Vercel/Droplet
+deployment, isolated rehearsals, maintenance freeze, backups and Railway cutover.
+See the [operator runbook](deploy-digitalocean.md) before changing production.

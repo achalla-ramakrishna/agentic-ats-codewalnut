@@ -48,3 +48,4 @@ here holds the detailed, testable requirements for one feature.
 | PORTAL | [Candidate portal](candidate-portal.md) | v1 | Draft |
 | RPT | [Reports](reports.md) | v1 | Draft |
 | DOCSTORE | [Private document storage](document-storage.md) | Operations | Done (opt-in) |
+| DEPLOY | [Production operations and migration](production-operations.md) | Operations | Done (operator-gated) |
