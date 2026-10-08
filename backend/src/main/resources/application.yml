@@ -35,6 +35,7 @@ server:
 
 ats:
   document-storage:
+    cleanup-enabled: ${ATS_DOCUMENT_STORAGE_CLEANUP_ENABLED:false}
     enabled: ${ATS_DOCUMENT_STORAGE_ENABLED:false}
     operations-enabled: ${ATS_DOCUMENT_STORAGE_OPERATIONS_ENABLED:false}
     bridge-url: ${ATS_BLOB_BRIDGE_URL:}

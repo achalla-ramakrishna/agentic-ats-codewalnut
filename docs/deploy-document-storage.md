@@ -84,6 +84,10 @@ Blob-only files exist, rolling back to a pre-storage release is unsafe.
 
 ## Failure/recovery
 
+After the hosting observation period, use the separate
+[legacy-byte cleanup runbook](deploy-document-cleanup.md) if database copies should
+be removed. Cleanup is independently disabled by default; migration never clears them.
+
 - A restarted worker resumes durable due tasks; leases expire after five minutes.
 - Immutable object keys make replay after provider success/DB failure safe.
 - Copying does not replay emails, AI analysis or stage transitions.
