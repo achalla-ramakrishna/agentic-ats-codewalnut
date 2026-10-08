@@ -149,7 +149,7 @@ class PrivateStorageLifecycleTest {
     }
 
     @Test
-    void DOCSTORE02_staffDownloadReleasesDatabaseBeforeReadingBlobOnlyBytes() throws Exception {
+    void DOCSTORE01_staffDownloadReleasesDatabaseBeforeReadingBlobOnlyBytes() throws Exception {
         var manifest = blobOnly(upload());
         remoteBytesWithoutDatabaseConnection(manifest);
         var download = documents.download(users.findByEmail("admin@codewalnut.test").orElseThrow(), manifest.targetId());
@@ -158,7 +158,7 @@ class PrivateStorageLifecycleTest {
     }
 
     @Test
-    void DOCSTORE02_clientDownloadFinishesShareAuthorizationBeforeReadingBlobOnlyBytes() throws Exception {
+    void DOCSTORE01_clientDownloadFinishesShareAuthorizationBeforeReadingBlobOnlyBytes() throws Exception {
         ResumeIntake intake = upload();
         var manifest = blobOnly(intake);
         Client client = clients.save(Client.builder().name("Fake lifecycle client " + tag).build());
@@ -172,7 +172,7 @@ class PrivateStorageLifecycleTest {
     }
 
     @Test
-    void DOCSTORE02_insightReleasesItsPendingStateTransactionBeforeRemoteRead() throws Exception {
+    void DOCSTORE01_insightReleasesItsPendingStateTransactionBeforeRemoteRead() throws Exception {
         ResumeIntake intake = upload();
         var manifest = blobOnly(intake);
         remoteBytesWithoutDatabaseConnection(manifest);
@@ -183,7 +183,7 @@ class PrivateStorageLifecycleTest {
     }
 
     @Test
-    void DOCSTORE02_brandedDraftReadsStorageAndCallsWriterWithoutHoldingDatabaseConnection() throws Exception {
+    void DOCSTORE01_brandedDraftReadsStorageAndCallsWriterWithoutHoldingDatabaseConnection() throws Exception {
         ResumeIntake intake = upload();
         var manifest = blobOnly(intake);
         remoteBytesWithoutDatabaseConnection(manifest);
@@ -199,7 +199,7 @@ class PrivateStorageLifecycleTest {
     }
 
     @Test
-    void DOCSTORE02_brandedDraftRefusesToSaveIfOriginalChangedDuringRemoteWork() throws Exception {
+    void DOCSTORE01_brandedDraftRefusesToSaveIfOriginalChangedDuringRemoteWork() throws Exception {
         ResumeIntake intake = upload();
         var manifest = blobOnly(intake);
         remoteBytesWithoutDatabaseConnection(manifest);
