@@ -50,3 +50,6 @@ Optional private Vercel Blob documents and live-data migration:
 
 For Vercel + DigitalOcean, including the live Railway cutover and rollback:
 [`docs/deploy-digitalocean.md`](docs/deploy-digitalocean.md).
+
+After verified migration and the rollback observation period, the separately gated
+[legacy-copy cleanup](docs/deploy-document-cleanup.md) can remove retained database bytes.

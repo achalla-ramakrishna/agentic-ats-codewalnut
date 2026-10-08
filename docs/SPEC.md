@@ -221,7 +221,7 @@ Feature-specific questions live in each feature file.
 
 ## Private document storage
 
-[DOCSTORE-01…05](features/document-storage.md) specify opt-in private file storage,
+[DOCSTORE-01…06](features/document-storage.md) specify opt-in private file storage,
 existing authorization, durable staging, verified copying and resumable migration.
 Deployment enablement is gated on a live private-store smoke test and restore rehearsal.
 
