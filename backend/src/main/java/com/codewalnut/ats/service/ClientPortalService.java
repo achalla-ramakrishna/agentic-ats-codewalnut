@@ -1,6 +1,7 @@
 package com.codewalnut.ats.service;
 
 import com.codewalnut.ats.domain.Application;
+import com.codewalnut.ats.dto.DocumentDownload;
 import com.codewalnut.ats.domain.AuditAction;
 import com.codewalnut.ats.domain.Candidate;
 import com.codewalnut.ats.domain.CandidateDocument;
@@ -32,6 +33,7 @@ public class ClientPortalService {
     private final ClientShareRepository shareRepository;
     private final CandidateDocumentRepository documentRepository;
     private final AuditService auditService;
+    private final DocumentContentService content;
 
     public ClientMe me(ClientContact contact) {
         return new ClientMe(contact.getEmail(), contact.getName(), contact.getClient().getName());
@@ -49,7 +51,7 @@ public class ClientPortalService {
     }
 
     @Transactional(readOnly = true)
-    public CandidateDocument download(ClientContact contact, UUID documentId) {
+    public DocumentDownload download(ClientContact contact, UUID documentId) {
         ClientShare share = shareRepository.findByClientIdAndRevokedAtIsNullOrderBySharedAtDesc(contact.getClient().getId())
                 .stream()
                 .filter(s -> s.getDocumentIds().contains(documentId))
@@ -60,8 +62,7 @@ public class ClientPortalService {
         auditService.recordAnonymous(contact.getEmail(), AuditAction.DOCUMENT_DOWNLOADED, Map.of(
                 "clientId", contact.getClient().getId(), "applicationId", share.getApplication().getId(),
                 "documentId", documentId, "kind", document.getKind()));
-        document.getData(); // load the bytes inside the transaction
-        return document;
+        return new DocumentDownload(document.getFileName(), document.getContentType(), content.read(document));
     }
 
     /** The application, if it is actively shared with this contact's company; otherwise "not found". */

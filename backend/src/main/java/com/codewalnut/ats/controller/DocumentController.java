@@ -1,6 +1,6 @@
 package com.codewalnut.ats.controller;
 
-import com.codewalnut.ats.domain.CandidateDocument;
+import com.codewalnut.ats.dto.DocumentDownload;
 import com.codewalnut.ats.domain.DocumentKind;
 import com.codewalnut.ats.dto.ProfileDtos.DocumentKindOption;
 import com.codewalnut.ats.dto.ProfileDtos.DocumentRequestResponse;
@@ -73,15 +73,15 @@ public class DocumentController {
     }
 
     /** The file as a download (or inline view), never cached, never content-sniffed. */
-    static ResponseEntity<byte[]> file(CandidateDocument document, boolean inline) {
+    static ResponseEntity<byte[]> file(DocumentDownload document, boolean inline) {
         ContentDisposition disposition = (inline ? ContentDisposition.inline() : ContentDisposition.attachment())
-                .filename(document.getFileName())
+                .filename(document.fileName())
                 .build();
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
                 .header("X-Content-Type-Options", "nosniff")
                 .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
-                .contentType(MediaType.parseMediaType(document.getContentType()))
-                .body(document.getData());
+                .contentType(MediaType.parseMediaType(document.contentType()))
+                .body(document.data());
     }
 }

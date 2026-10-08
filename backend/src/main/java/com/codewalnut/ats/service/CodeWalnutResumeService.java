@@ -48,6 +48,7 @@ public class CodeWalnutResumeService {
     private final CandidateDocumentRepository documentRepository;
     private final CodeWalnutResumeRepository resumeRepository;
     private final DocumentService documentService;
+    private final DocumentContentService content;
     private final AssessmentInviteService tests;
     private final ResumeWriter writer;
     private final BrandedResumeRenderer renderer;
@@ -58,7 +59,7 @@ public class CodeWalnutResumeService {
 
     public CodeWalnutResumeService(ApplicationRepository applicationRepository,
             CandidateDocumentRepository documentRepository, CodeWalnutResumeRepository resumeRepository,
-            DocumentService documentService, AssessmentInviteService tests, ResumeWriter writer,
+            DocumentService documentService, DocumentContentService content, AssessmentInviteService tests, ResumeWriter writer,
             BrandedResumeRenderer renderer, AccessPolicy accessPolicy, AuditService auditService,
             ObjectMapper objectMapper,
             @Value("${ats.branding.resume-footer:Presented by Code Walnut | Staffing enquiries through Code Walnut}") String footer) {
@@ -66,6 +67,7 @@ public class CodeWalnutResumeService {
         this.documentRepository = documentRepository;
         this.resumeRepository = resumeRepository;
         this.documentService = documentService;
+        this.content = content;
         this.tests = tests;
         this.writer = writer;
         this.renderer = renderer;
@@ -97,7 +99,7 @@ public class CodeWalnutResumeService {
                 .orElseThrow(() -> new IllegalArgumentException("Upload the candidate's original résumé first"));
         CandidateDocument file = documentRepository.findById(original.getId()).orElseThrow();
         BrandedResume draft = writer.write(new ResumeAnalyzer.Job(application.getJob().getTitle(), application.getJob().getDescription()),
-                new ResumeAnalyzer.ResumeFile(file.getFileName(), file.getContentType(), file.getData()));
+                new ResumeAnalyzer.ResumeFile(file.getFileName(), file.getContentType(), content.read(file)));
         CodeWalnutResume row = resumeRepository.findByApplicationId(applicationId)
                 .orElseGet(() -> CodeWalnutResume.builder().applicationId(applicationId).showEmail(true).includeScreening(true).build());
         BrandedResume clean = clean(draft, application);

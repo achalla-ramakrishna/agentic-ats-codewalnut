@@ -34,6 +34,14 @@ server:
       timeout: 8h
 
 ats:
+  document-storage:
+    enabled: ${ATS_DOCUMENT_STORAGE_ENABLED:false}
+    operations-enabled: ${ATS_DOCUMENT_STORAGE_OPERATIONS_ENABLED:false}
+    bridge-url: ${ATS_BLOB_BRIDGE_URL:}
+    bridge-secret: ${ATS_BLOB_BRIDGE_SECRET:}
+    poll-ms: ${ATS_DOCUMENT_STORAGE_POLL_MS:30000}
+  background-work:
+    enabled: ${ATS_BACKGROUND_WORK_ENABLED:true}
   auth:
     allowed-domains: ${ATS_ALLOWED_DOMAINS:codewalnut.com}
     bootstrap-admins: ${ATS_BOOTSTRAP_ADMINS:}

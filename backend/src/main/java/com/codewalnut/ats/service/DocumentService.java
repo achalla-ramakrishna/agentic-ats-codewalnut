@@ -1,6 +1,8 @@
 package com.codewalnut.ats.service;
 
 import com.codewalnut.ats.domain.AppUser;
+import com.codewalnut.ats.domain.BackgroundTask.Target;
+import com.codewalnut.ats.dto.DocumentDownload;
 import com.codewalnut.ats.domain.Application;
 import com.codewalnut.ats.domain.ApplicationEvent;
 import com.codewalnut.ats.domain.ApplicationEventType;
@@ -59,6 +61,7 @@ public class DocumentService {
     private static final Set<String> IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png");
 
     private final CandidateDocumentRepository documentRepository;
+    private final DocumentContentService content;
     private final CandidateRepository candidateRepository;
     private final DocumentRequestRepository requestRepository;
     private final ApplicationRepository applicationRepository;
@@ -96,7 +99,7 @@ public class DocumentService {
     }
 
     @Transactional(readOnly = true)
-    public CandidateDocument download(AppUser actor, UUID documentId) {
+    public DocumentDownload download(AppUser actor, UUID documentId) {
         accessPolicy.require(actor, Capability.VIEW_CANDIDATES);
         CandidateDocument document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("File not found"));
@@ -105,8 +108,7 @@ public class DocumentService {
         }
         auditService.record(actor, AuditAction.DOCUMENT_DOWNLOADED, "Candidate", document.getCandidateId(),
                 Map.of("documentId", documentId, "kind", document.getKind()));
-        document.getData(); // load the bytes inside the transaction
-        return document;
+        return new DocumentDownload(document.getFileName(), document.getContentType(), content.read(document));
     }
 
     /** Ask the candidate to upload documents from their candidate page. Already-open requests are kept. */
@@ -204,7 +206,7 @@ public class DocumentService {
                     ? "file: only PDF, Word, JPG or PNG files are accepted"
                     : "file: only PDF or Word (.doc, .docx) files are accepted");
         }
-        return documentRepository.save(CandidateDocument.builder()
+        CandidateDocument saved = documentRepository.save(CandidateDocument.builder()
                 .candidateId(candidateId)
                 .kind(kind)
                 .fileName(name)
@@ -213,6 +215,8 @@ public class DocumentService {
                 .data(data)
                 .uploadedBy(uploadedBy)
                 .build());
+        content.stage(Target.DOCUMENT, saved.getId(), data);
+        return saved;
     }
 
     /** A new original résumé: its readings get refreshed after this transaction commits (ADR-0010). */

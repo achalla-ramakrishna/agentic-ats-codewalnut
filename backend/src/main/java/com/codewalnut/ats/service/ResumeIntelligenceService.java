@@ -77,6 +77,7 @@ public class ResumeIntelligenceService {
     private final ResumeIntakeRepository intakeRepository;
     private final CandidateInsightRepository insightRepository;
     private final CandidateDocumentRepository documentRepository;
+    private final DocumentContentService content;
     private final ResumeProcessor processor;
     private final ResumeAnalyzer analyzer;
     private final AiWorkQueue queue;
@@ -124,6 +125,7 @@ public class ResumeIntelligenceService {
                     .uploadedBy(actor.getEmail())
                     .build());
             if (problem == null) {
+                content.stage(com.codewalnut.ats.domain.BackgroundTask.Target.INTAKE, intake.getId(), data);
                 created.add(intake.getId());
             }
         }

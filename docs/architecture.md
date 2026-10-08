@@ -294,3 +294,14 @@ MySQL `JSON` columns.
 | Slack | Notifications | v1 |
 | LinkedIn, Naukri, Indeed | Posting + applicant import | v1 |
 | HRMS (Keka / Darwinbox / Zoho People) | Hired hand-off | v1 |
+
+## Private document storage (ADR-0026)
+
+Optional private Vercel Blob storage uses `DocumentContentService`, the
+`PrivateDocumentStore` adapter and an internal official-SDK bridge. Original bytes
+and a `BackgroundTask` commit together; a leased worker copies and verifies them.
+The task doubles as the immutable object manifest. Existing permissions run before
+all downloads; APIs expose metadata and file bytes, never provider URLs/tokens.
+See [storage requirements](features/document-storage.md) and
+[the migration runbook](deploy-document-storage.md). Retained database bytes are
+removed only by a subsequent gated cleanup, not by initial Flyway migration.
