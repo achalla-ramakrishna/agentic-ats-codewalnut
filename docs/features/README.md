@@ -47,3 +47,4 @@ here holds the detailed, testable requirements for one feature.
 | WF | [Workflow: contacts, history, next steps](workflow.md) | v1 | Done |
 | PORTAL | [Candidate portal](candidate-portal.md) | v1 | Draft |
 | RPT | [Reports](reports.md) | v1 | Draft |
+| DOCSTORE | [Private document storage](document-storage.md) | Operations | Done (opt-in) |
