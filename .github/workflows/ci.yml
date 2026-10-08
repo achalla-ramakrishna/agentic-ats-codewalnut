@@ -57,3 +57,18 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+  blob-bridge:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: storage/blob-bridge
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: storage/blob-bridge/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm test
