@@ -24,8 +24,15 @@ and [ADR-0026](adr/0026-private-document-storage.md).
    current table size alone is not a sufficient disk budget. Check long-running
    transactions/metadata locks and record the tested MySQL version.
    Railway currently allows only 120 seconds for the health check (`railway.json`).
-   Configure a deployment health-check timeout with measured headroom **before** this
-   release. If the platform cannot accommodate it, stop and plan a controlled migration
+   Set `deploy.healthcheckTimeout` in `railway.json` to the measured duration plus
+   headroom in the release commit (or an earlier reviewed config commit). Code config
+   overrides dashboard values; a dashboard-only change is insufficient. Check any
+   environment-specific override and confirm the effective timeout/config source in
+   Railway's deployment details before proceeding ([configuration precedence](https://docs.railway.com/config-as-code)).
+   Restore the ordinary timeout only in a later release after V24 succeeds and normal
+   startup has been measured. Verify Railway still supports this existing service's
+   config format at the actual rollout date; its legacy config format is being retired.
+   If the platform cannot accommodate the required timeout, stop and plan a controlled migration
    window rather than relying on repeated startup retries. Arrange an agreed maintenance
    window and stop all writers if the rehearsal requires it. Run the unchanged Flyway
    migration through the release process with storage disabled. Do not manually apply

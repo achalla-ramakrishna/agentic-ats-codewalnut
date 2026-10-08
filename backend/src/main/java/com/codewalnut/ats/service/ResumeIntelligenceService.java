@@ -253,7 +253,7 @@ public class ResumeIntelligenceService {
 
     void processInsight(UUID applicationId) {
         try {
-            Optional<ResumeProcessor.Work> work = processor.startInsight(applicationId);
+            Optional<ResumeProcessor.Work> work = processor.startInsight(applicationId).map(processor::readInsight);
             if (work.isEmpty()) {
                 return;
             }

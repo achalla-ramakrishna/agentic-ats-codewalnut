@@ -1,6 +1,7 @@
 package com.codewalnut.ats.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.clearInvocations;
@@ -12,22 +13,35 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.codewalnut.ats.client.CalendarException;
+import com.codewalnut.ats.client.BrandedResume;
 import com.codewalnut.ats.client.PrivateDocumentStore;
 import com.codewalnut.ats.client.ResumeAnalyzer;
 import com.codewalnut.ats.client.ResumeInsight;
+import com.codewalnut.ats.client.ResumeWriter;
 import com.codewalnut.ats.domain.BackgroundTask;
 import com.codewalnut.ats.domain.BackgroundTask.Target;
 import com.codewalnut.ats.domain.CandidateInsight;
+import com.codewalnut.ats.domain.Client;
+import com.codewalnut.ats.domain.ClientContact;
+import com.codewalnut.ats.domain.ClientShare;
+import com.codewalnut.ats.domain.DocumentKind;
 import com.codewalnut.ats.domain.HiringType;
 import com.codewalnut.ats.domain.JobOpening;
 import com.codewalnut.ats.domain.ResumeIntake;
 import com.codewalnut.ats.repository.AppUserRepository;
+import com.codewalnut.ats.repository.ApplicationRepository;
 import com.codewalnut.ats.repository.CandidateInsightRepository;
+import com.codewalnut.ats.repository.ClientRepository;
+import com.codewalnut.ats.repository.ClientContactRepository;
+import com.codewalnut.ats.repository.ClientShareRepository;
 import com.codewalnut.ats.repository.DocumentStorageRepository;
 import com.codewalnut.ats.repository.JobOpeningRepository;
 import com.codewalnut.ats.repository.ResumeIntakeRepository;
 import com.codewalnut.ats.task.DocumentStorageWorker;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zaxxer.hikari.HikariDataSource;
+import jakarta.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
@@ -60,6 +74,15 @@ class PrivateStorageLifecycleTest {
     private static final byte[] PDF = "%PDF-1.4\nObviously fake lifecycle document".getBytes(StandardCharsets.US_ASCII);
     @Autowired private ResumeIntelligenceService resumes;
     @Autowired private ResumeProcessor processor;
+    @Autowired private DocumentService documents;
+    @Autowired private ClientPortalService clientPortal;
+    @Autowired private CodeWalnutResumeService brandedResumes;
+    @Autowired private ApplicationRepository applications;
+    @Autowired private ClientRepository clients;
+    @Autowired private ClientContactRepository contacts;
+    @Autowired private ClientShareRepository shares;
+    @Autowired private DataSource dataSource;
+    @Autowired private EntityManagerFactory entityManagerFactory;
     @Autowired private ResumeIntakeRepository intakes;
     @Autowired private CandidateInsightRepository insights;
     @Autowired private JobOpeningRepository jobs;
@@ -71,6 +94,7 @@ class PrivateStorageLifecycleTest {
     @SpyBean private DocumentStorageRepository tasks;
     @MockBean private PrivateDocumentStore store;
     @MockBean private ResumeAnalyzer analyzer;
+    @MockBean private ResumeWriter writer;
     private final String tag = UUID.randomUUID().toString();
 
     @BeforeEach
@@ -98,6 +122,98 @@ class PrivateStorageLifecycleTest {
 
     private UUID document(ResumeIntake intake) {
         return insights.findByApplicationId(intake.getApplicationId()).orElseThrow().getDocumentId();
+    }
+
+    private BackgroundTask blobOnly(ResumeIntake intake) {
+        UUID document = document(intake);
+        var manifest = tasks.find(Target.DOCUMENT, document).orElseThrow();
+        jdbc.update("UPDATE background_task SET status='READY',verified_at=CURRENT_TIMESTAMP(6) WHERE id=?",
+                DocumentStorageRepository.bytes(manifest.id()));
+        jdbc.update("UPDATE candidate_document SET data=NULL WHERE id=?", DocumentStorageRepository.bytes(document));
+        return tasks.find(Target.DOCUMENT, document).orElseThrow();
+    }
+
+    private void assertDatabaseReleased() {
+        assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+        assertThat(TransactionSynchronizationManager.hasResource(dataSource)).isFalse();
+        assertThat(TransactionSynchronizationManager.hasResource(entityManagerFactory)).isFalse();
+        // A suspended transaction would hide its bindings but still occupy the pool.
+        assertThat(((HikariDataSource) dataSource).getHikariPoolMXBean().getActiveConnections()).isZero();
+    }
+
+    private void remoteBytesWithoutDatabaseConnection(BackgroundTask manifest) {
+        when(store.get(manifest.storageKey())).thenAnswer(invocation -> {
+            assertDatabaseReleased();
+            return PDF;
+        });
+    }
+
+    @Test
+    void DOCSTORE02_staffDownloadReleasesDatabaseBeforeReadingBlobOnlyBytes() throws Exception {
+        var manifest = blobOnly(upload());
+        remoteBytesWithoutDatabaseConnection(manifest);
+        var download = documents.download(users.findByEmail("admin@codewalnut.test").orElseThrow(), manifest.targetId());
+        assertThat(download.data()).isEqualTo(PDF);
+        verify(store).get(manifest.storageKey());
+    }
+
+    @Test
+    void DOCSTORE02_clientDownloadFinishesShareAuthorizationBeforeReadingBlobOnlyBytes() throws Exception {
+        ResumeIntake intake = upload();
+        var manifest = blobOnly(intake);
+        Client client = clients.save(Client.builder().name("Fake lifecycle client " + tag).build());
+        ClientContact contact = contacts.save(ClientContact.builder().client(client).email("client." + tag + "@example.test")
+                .name("Fake lifecycle client").addedBy("admin@codewalnut.test").build());
+        shares.save(ClientShare.builder().client(client).application(applications.findById(intake.getApplicationId()).orElseThrow())
+                .documentIds(Set.of(manifest.targetId())).sharedBy("admin@codewalnut.test").sharedAt(Instant.now()).build());
+        remoteBytesWithoutDatabaseConnection(manifest);
+        assertThat(clientPortal.download(contact, manifest.targetId()).data()).isEqualTo(PDF);
+        verify(store).get(manifest.storageKey());
+    }
+
+    @Test
+    void DOCSTORE02_insightReleasesItsPendingStateTransactionBeforeRemoteRead() throws Exception {
+        ResumeIntake intake = upload();
+        var manifest = blobOnly(intake);
+        remoteBytesWithoutDatabaseConnection(manifest);
+        processor.markPending(intake.getApplicationId());
+        resumes.processInsight(intake.getApplicationId());
+        assertThat(insights.findByApplicationId(intake.getApplicationId()).orElseThrow().getStatus()).isEqualTo(CandidateInsight.Status.DONE);
+        verify(store).get(manifest.storageKey());
+    }
+
+    @Test
+    void DOCSTORE02_brandedDraftReadsStorageAndCallsWriterWithoutHoldingDatabaseConnection() throws Exception {
+        ResumeIntake intake = upload();
+        var manifest = blobOnly(intake);
+        remoteBytesWithoutDatabaseConnection(manifest);
+        when(writer.write(any(), any())).thenAnswer(invocation -> {
+            assertDatabaseReleased();
+            assertThat(invocation.<ResumeAnalyzer.ResumeFile>getArgument(1).data()).isEqualTo(PDF);
+            return new BrandedResume("Fake lifecycle candidate", "Fake role", "", "", "", "Fake summary", List.of(), List.of());
+        });
+        var draft = brandedResumes.generate(users.findByEmail("admin@codewalnut.test").orElseThrow(), intake.getApplicationId());
+        assertThat(draft.exists()).isTrue();
+        assertThat(draft.sourceFileName()).isEqualTo("fake-lifecycle.pdf");
+        verify(store).get(manifest.storageKey());
+    }
+
+    @Test
+    void DOCSTORE02_brandedDraftRefusesToSaveIfOriginalChangedDuringRemoteWork() throws Exception {
+        ResumeIntake intake = upload();
+        var manifest = blobOnly(intake);
+        remoteBytesWithoutDatabaseConnection(manifest);
+        var candidateId = applications.findById(intake.getApplicationId()).orElseThrow().getCandidate().getId();
+        when(writer.write(any(), any())).thenAnswer(invocation -> {
+            assertDatabaseReleased();
+            new TransactionTemplate(transactions).execute(status -> documents.store(candidateId, DocumentKind.ORIGINAL_RESUME,
+                    "fake-replacement.pdf", PDF, "admin@codewalnut.test"));
+            return new BrandedResume("Fake candidate", "Fake role", "", "", "", "Fake summary", List.of(), List.of());
+        });
+        assertThatThrownBy(() -> brandedResumes.generate(users.findByEmail("admin@codewalnut.test").orElseThrow(), intake.getApplicationId()))
+                .isInstanceOf(ConflictException.class);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM codewalnut_resume WHERE application_id=?", Long.class,
+                DocumentStorageRepository.bytes(intake.getApplicationId()))).isZero();
     }
 
     @Test

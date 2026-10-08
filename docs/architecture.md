@@ -304,6 +304,9 @@ Temporary bulk intakes stay only in MySQL until processing clears them. Verified
 bytes are preferred until cleanup; Blob-only reads use bounded retries for busy responses.
 The task doubles as the immutable object manifest. Existing permissions run before
 all downloads; APIs expose metadata and file bytes, never provider URLs/tokens.
+Authorized loaders capture document metadata, manifest and retained bytes in short
+transactions. Download and AI orchestration reads provider bytes after those
+transactions finish, so Blob latency and retry waits do not occupy DB connections.
 See [storage requirements](features/document-storage.md) and
 [the migration runbook](deploy-document-storage.md). Retained database bytes are
 removed only by a subsequent gated cleanup, not by initial Flyway migration.

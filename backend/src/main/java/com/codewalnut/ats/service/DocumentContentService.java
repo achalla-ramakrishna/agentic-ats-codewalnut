@@ -27,8 +27,12 @@ public class DocumentContentService {
         if (properties.enabled() && type == Target.DOCUMENT) repository.enqueue(type, id, data, sha256(data));
     }
 
-    public byte[] read(CandidateDocument document) {
-        return read(Target.DOCUMENT, document.getId(), document.getData());
+    /** Immutable storage coordinates captured while the caller's metadata transaction is open. */
+    public record Source(UUID documentId, String fileName, String contentType, BackgroundTask manifest, byte[] legacy) {}
+
+    public Source snapshot(CandidateDocument document) {
+        return new Source(document.getId(), document.getFileName(), document.getContentType(),
+                repository.find(Target.DOCUMENT, document.getId()).orElse(null), document.getData());
     }
 
     public byte[] read(ResumeIntake intake) {
@@ -37,15 +41,17 @@ public class DocumentContentService {
         return intake.getData();
     }
 
-    private byte[] read(Target type, UUID id, byte[] legacy) {
-        var task = repository.find(type, id);
+    /** Resolve the captured source only after the caller has finished its database transaction. */
+    public byte[] read(Source source) {
+        BackgroundTask task = source.manifest();
+        byte[] legacy = source.legacy();
         if (legacy != null) {
-            if (task.isPresent() && "READY".equals(task.get().status())) verify(task.get(), legacy);
+            if (task != null && "READY".equals(task.status())) verify(task, legacy);
             return legacy;
         }
-        if (task.isPresent() && "READY".equals(task.get().status()) && properties.enabled()) {
-            byte[] bytes = store.get(task.get().storageKey());
-            verify(task.get(), bytes);
+        if (task != null && "READY".equals(task.status()) && properties.enabled()) {
+            byte[] bytes = store.get(task.storageKey());
+            verify(task, bytes);
             return bytes;
         }
         throw new DocumentStorageUnavailableException();

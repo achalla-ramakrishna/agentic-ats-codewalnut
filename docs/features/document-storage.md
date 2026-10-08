@@ -10,7 +10,7 @@
 
 | ID | Requirement |
 | --- | --- |
-| DOCSTORE-01 | Files use a private Vercel Blob store. Staff/client download authorization remains in the API before any provider read; ID permission, client isolation, explicit versions, revocation, session/CSRF and read-only View as apply. Never expose storage credentials or storage references in API metadata. Responses remain private/no-store. |
+| DOCSTORE-01 | Files use a private Vercel Blob store. Staff/client download authorization remains in the API before any provider read; ID permission, client isolation, explicit versions, revocation, session/CSRF and read-only View as apply. Finish authorization/metadata transactions before remote reads or retry waits, including AI and branded résumé source reads. Never expose storage credentials or storage references in API metadata. Responses remain private/no-store. |
 | DOCSTORE-02 | Object keys contain only a type and opaque UUID. Immutable PUT retries succeed only for identical bytes. Validate uploads as before, cap content at 10 MiB, and verify SHA-256 and byte length after copying and when reading. Public stores, redirecting origins, oversized/corrupt provider responses fail closed. |
 | DOCSTORE-03 | Accepted attached-document uploads persist legacy bytes and a BackgroundTask in the same transaction. A serial leased worker copies and verifies them outside database transactions. Failures retain the original bytes, retry with backoff, then remain visible as FAILED for operator retry. An enabled store never silently switches to public storage. |
 | DOCSTORE-04 | Copy existing attached documents in bounded, resumable batches without changing IDs/shares. Prefer verified retained database bytes, reading Blob only after those bytes are absent. This release never deletes legacy document bytes. Temporary bulk intakes stay database-only and are cleared on completion/failure; neither uploads nor migration may create intake objects. |
@@ -35,5 +35,6 @@ this change is not a claim of 2 GiB production capacity.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-08 | Separate authorized database snapshots from provider reads so storage waits do not hold database connections (DOCSTORE-01). |
 | 2026-10-08 | Keep temporary intakes database-only, prefer verified local reads and bound busy-read retries (DOCSTORE-02…04, ADR-0029). |
 | 2026-10-08 | Add opt-in private Blob bridge, durable transfers, authorized dual reads and resumable migration (DOCSTORE-01…05). |

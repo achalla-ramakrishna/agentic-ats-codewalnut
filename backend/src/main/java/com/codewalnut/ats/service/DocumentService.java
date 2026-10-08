@@ -62,6 +62,7 @@ public class DocumentService {
 
     private final CandidateDocumentRepository documentRepository;
     private final DocumentContentService content;
+    private final DocumentReadService documentReads;
     private final CandidateRepository candidateRepository;
     private final DocumentRequestRepository requestRepository;
     private final ApplicationRepository applicationRepository;
@@ -98,17 +99,9 @@ public class DocumentService {
         return info(candidateId, saved.getId());
     }
 
-    @Transactional(readOnly = true)
     public DocumentDownload download(AppUser actor, UUID documentId) {
-        accessPolicy.require(actor, Capability.VIEW_CANDIDATES);
-        CandidateDocument document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new NotFoundException("File not found"));
-        if (document.getKind().isSensitive()) {
-            accessPolicy.require(actor, Capability.VIEW_ID_DOCUMENTS);
-        }
-        auditService.record(actor, AuditAction.DOCUMENT_DOWNLOADED, "Candidate", document.getCandidateId(),
-                Map.of("documentId", documentId, "kind", document.getKind()));
-        return new DocumentDownload(document.getFileName(), document.getContentType(), content.read(document));
+        var source = documentReads.staff(actor, documentId);
+        return new DocumentDownload(source.fileName(), source.contentType(), content.read(source));
     }
 
     /** Ask the candidate to upload documents from their candidate page. Already-open requests are kept. */

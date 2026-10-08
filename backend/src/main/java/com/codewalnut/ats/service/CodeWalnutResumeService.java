@@ -28,7 +28,9 @@ import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
 /**
@@ -49,6 +51,8 @@ public class CodeWalnutResumeService {
     private final CodeWalnutResumeRepository resumeRepository;
     private final DocumentService documentService;
     private final DocumentContentService content;
+    private final DocumentReadService documentReads;
+    private final TransactionTemplate generationSave;
     private final AssessmentInviteService tests;
     private final ResumeWriter writer;
     private final BrandedResumeRenderer renderer;
@@ -61,13 +65,15 @@ public class CodeWalnutResumeService {
             CandidateDocumentRepository documentRepository, CodeWalnutResumeRepository resumeRepository,
             DocumentService documentService, DocumentContentService content, AssessmentInviteService tests, ResumeWriter writer,
             BrandedResumeRenderer renderer, AccessPolicy accessPolicy, AuditService auditService,
-            ObjectMapper objectMapper,
+            ObjectMapper objectMapper, DocumentReadService documentReads, PlatformTransactionManager transactions,
             @Value("${ats.branding.resume-footer:Presented by Code Walnut | Staffing enquiries through Code Walnut}") String footer) {
         this.applicationRepository = applicationRepository;
         this.documentRepository = documentRepository;
         this.resumeRepository = resumeRepository;
         this.documentService = documentService;
         this.content = content;
+        this.documentReads = documentReads;
+        this.generationSave = new TransactionTemplate(transactions);
         this.tests = tests;
         this.writer = writer;
         this.renderer = renderer;
@@ -88,28 +94,30 @@ public class CodeWalnutResumeService {
     }
 
     /** Asks the AI for a fresh draft from the latest original résumé (replaces the current draft). */
-    @Transactional
     public DraftResponse generate(AppUser actor, UUID applicationId) {
-        accessPolicy.require(actor, Capability.MANAGE_JOBS);
-        Application application = application(applicationId);
-        CandidateDocumentRepository.Info original = documentRepository
-                .findByCandidateIdOrderByUploadedAtDesc(application.getCandidate().getId()).stream()
-                .filter(d -> d.getKind() == DocumentKind.ORIGINAL_RESUME)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Upload the candidate's original résumé first"));
-        CandidateDocument file = documentRepository.findById(original.getId()).orElseThrow();
-        BrandedResume draft = writer.write(new ResumeAnalyzer.Job(application.getJob().getTitle(), application.getJob().getDescription()),
-                new ResumeAnalyzer.ResumeFile(file.getFileName(), file.getContentType(), content.read(file)));
-        CodeWalnutResume row = resumeRepository.findByApplicationId(applicationId)
-                .orElseGet(() -> CodeWalnutResume.builder().applicationId(applicationId).showEmail(true).includeScreening(true).build());
-        BrandedResume clean = clean(draft, application);
-        row.setData(write(clean));
-        row.setSourceDocumentId(original.getId());
-        row.setModel(writer.model());
-        row.setUpdatedBy(actor.getEmail());
-        resumeRepository.save(row);
-        auditService.record(actor, AuditAction.CODEWALNUT_RESUME_UPDATED, "Application", applicationId, Map.of("via", "ai"));
-        return response(application, row);
+        var source = documentReads.forGeneration(actor, applicationId);
+        var document = source.document();
+        BrandedResume draft = writer.write(source.job(),
+                new ResumeAnalyzer.ResumeFile(document.fileName(), document.contentType(), content.read(document)));
+        return generationSave.execute(status -> {
+            accessPolicy.require(actor, Capability.MANAGE_JOBS);
+            Application application = application(applicationId);
+            var latest = documentRepository.findByCandidateIdOrderByUploadedAtDesc(application.getCandidate().getId()).stream()
+                    .filter(d -> d.getKind() == DocumentKind.ORIGINAL_RESUME).findFirst();
+            if (latest.isEmpty() || !latest.get().getId().equals(document.documentId())) {
+                throw new ConflictException("The original résumé changed while drafting. Generate the draft again.");
+            }
+            CodeWalnutResume row = resumeRepository.findByApplicationId(applicationId)
+                    .orElseGet(() -> CodeWalnutResume.builder().applicationId(applicationId).showEmail(true).includeScreening(true).build());
+            BrandedResume clean = clean(draft, application);
+            row.setData(write(clean));
+            row.setSourceDocumentId(document.documentId());
+            row.setModel(writer.model());
+            row.setUpdatedBy(actor.getEmail());
+            resumeRepository.save(row);
+            auditService.record(actor, AuditAction.CODEWALNUT_RESUME_UPDATED, "Application", applicationId, Map.of("via", "ai"));
+            return response(application, row);
+        });
     }
 
     @Transactional

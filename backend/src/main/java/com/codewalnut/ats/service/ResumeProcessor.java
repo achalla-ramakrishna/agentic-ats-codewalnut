@@ -62,6 +62,13 @@ class ResumeProcessor {
     private final AuditService auditService;
 
     record Work(ResumeAnalyzer.Job job, ResumeAnalyzer.ResumeFile file, UUID documentId, String jobHash) {}
+    record InsightSource(ResumeAnalyzer.Job job, DocumentContentService.Source document, String jobHash) {}
+
+    Work readInsight(InsightSource source) {
+        var document = source.document();
+        return new Work(source.job(), new ResumeAnalyzer.ResumeFile(document.fileName(), document.contentType(), content.read(document)),
+                document.documentId(), source.jobHash());
+    }
 
     // ---- bulk upload ----
 
@@ -189,7 +196,7 @@ class ResumeProcessor {
 
     /** Marks the reading as in progress and loads the latest original résumé; empty when there is none. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public Optional<Work> startInsight(UUID applicationId) {
+    public Optional<InsightSource> startInsight(UUID applicationId) {
         Application application = applicationRepository.findById(applicationId).orElse(null);
         if (application == null) {
             return Optional.empty();
@@ -207,9 +214,7 @@ class ResumeProcessor {
         insight.setError(null);
         insightRepository.save(insight);
         CandidateDocument document = documentRepository.findById(latest.get().getId()).orElseThrow();
-        return Optional.of(new Work(jobOf(application.getJob()),
-                new ResumeAnalyzer.ResumeFile(document.getFileName(), document.getContentType(), content.read(document)),
-                document.getId(), jobHash(application.getJob())));
+        return Optional.of(new InsightSource(jobOf(application.getJob()), content.snapshot(document), jobHash(application.getJob())));
     }
 
     /** Marks the reading as queued, so people see "Reading…" straight away. */
