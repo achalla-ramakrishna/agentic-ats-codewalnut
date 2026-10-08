@@ -8,6 +8,15 @@ import { fakeFetch } from '../test/fakeFetch'
 const config = { googleEnabled: true, googleRedirectUri: 'https://ats.example/login/oauth2/code/google', devLoginEnabled: false, accessCodeRequired: false, devUsers: [] }
 
 describe('LoginPage', () => {
+  it('shows the maintenance message when configuration becomes unavailable (DEPLOY-01)', async () => {
+    fakeFetch([
+      { path: '/auth/session', body: { type: null } },
+      { path: '/auth/config', status: 503, body: { error: 'Scheduled maintenance. Please try again shortly.' } },
+    ])
+    render(<MemoryRouter initialEntries={['/login']}><AuthProvider><App /></AuthProvider></MemoryRouter>)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Scheduled maintenance. Please try again shortly.')
+  })
+
   afterEach(() => vi.unstubAllGlobals())
 
   it('says which email was refused and what to do', async () => {

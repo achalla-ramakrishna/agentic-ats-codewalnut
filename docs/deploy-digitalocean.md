@@ -34,12 +34,27 @@ or candidate documents to Git/PRs. Restrict and later destroy rehearsal copies.
    DigitalOcean cloud firewall too. Keep Judge0 on a separate host.
 2. Checkout the reviewed commit at `/opt/ats`. Copy
    `deploy/digitalocean/.env.example` to `.env` in that directory and
-   `backend.env.example` to `.env.backend`; chmod both 600. No dev/demo profile.
+   `backend.env.example` to `.env.backend`, and `mysql-backup.cnf.example` to
+   `.env.mysql-backup`; make the backup client file root-owned and chmod all three
+   600. The backup mount is required at first MySQL boot; provision its read-only
+   dump user later as described below. No dev/demo profile.
    The checked-in defaults keep rehearsal and maintenance on, workers off.
 3. Select reviewed MySQL/Caddy image **digests**. Match Railway's actual MySQL
    release first. Do not combine an untested 8.0→8.4 upgrade with the hosting move.
+   Run `scripts/deploy/test_proxy.py` with `CADDY_TEST_IMAGE` set to the exact chosen
+   Caddy digest; the default `caddy:2` CI test does not certify a different pin.
    Pin these manually; container image replacement must never delete volumes.
-4. After merging the stack, run `Build deployment images` on an exact main SHA.
+4. Before publishing, a GitHub administrator must create the `production-images`
+   environment with **selected deployment branches: `main` only**, required
+   reviewers and self-review disabled. Ensure these server-side protections are
+   available/enforced on the repository plan; do not publish without them. Protect
+   `main` and changes to deployment workflows with company review requirements.
+   An environment name in YAML alone does not install any of those protections.
+   After merging the stack, dispatch `Build deployment images` using **workflow
+   branch `main`**, with an exact reviewed main SHA as the `revision` input.
+   Verify the run's branch/ref is main and its environment approval record before
+   trusting the recorded digests. The workflow's ref/ancestry checks are defense in
+   depth; writable branch YAML is not a server-side permission boundary.
    It runs backend tests on MySQL, frontend checks and bridge tests before publishing
    images. Record both image digests from its summary in `.env`. GHCR packages must
    be private; authenticate the Droplet with a read-only package credential.
@@ -71,21 +86,53 @@ forwarding headers and token-free backend-failure logs in isolated Docker contai
 
 ## Vercel configuration and release
 
-Use a dedicated production Vercel project rooted at `frontend`. Before importing
-or deploying it, in a clean checkout run:
+Use a **CLI-only project with no connected Git repository**, owned by the company's
+Vercel **Pro team**, not an engineer's personal account. The company's Pro team
+should own the production private Blob store and a separate backup store as well.
+Use role-based team access and company-managed credentials/billing. Keep the
+repository under company control; a GitHub organization is recommended for durable
+ownership and review controls, but no repository/account transfer is performed by
+this change. A GitHub organization is not required for this CLI-only deployment.
+
+For this procedure, `frontend/` is the uploaded project root and the Vercel project's
+**Root Directory setting must be blank (repository root), not `frontend`**. From a
+clean reviewed checkout, generate the routing configuration, then link/create the
+project through CLI (not Import Git Repository) under the verified company team:
 
 ```sh
 node scripts/deploy/configure-vercel.mjs https://YOUR-REAL-ORIGIN-HOST production
+vercel link --cwd frontend --scope YOUR-COMPANY-TEAM
 ```
 
-This writes an ignored `frontend/vercel.json` **before** Vercel reads configuration.
-Do not generate it from the build command. Deploy with the Vercel CLI from that
-frontend directory or an equivalent controlled pipeline that includes the generated
-file. Verify the linked Vercel project/team before promotion. Git auto-deployment is
-disabled in generated config: do not connect unattended preview deployments to the
-production API. For a preview, use a separate project, database, Blob store,
-OAuth client/hosts and generated config with the `preview` argument; the argument
-is an operator label, not an automatic isolation/security boundary.
+Check `frontend/.vercel/project.json` for the intended project/team and check the
+Vercel dashboard: **Settings → Git must show no connected repository**; Root
+Directory must be blank. Do not use `vercel link --repo` or import/connect this
+repository to the production project. Vercel CLI project linking is local metadata,
+not permission to connect the Git integration. Before every release verify team,
+project, no Git connection and generated `frontend/vercel.json`, then:
+
+```sh
+vercel deploy --cwd frontend --scope YOUR-COMPANY-TEAM --prod
+```
+
+The generated configuration is included in this explicit CLI upload. It is ignored
+by Git and cannot disable or configure a Git-triggered build. A Git connection would
+allow a deployment without the required rewrites and is unsupported by this workflow.
+Do not generate routing from the build command: Vercel reads it before the build.
+Do not upload the repository root with this setup, or configure another `frontend`
+Root Directory inside the already uploaded frontend directory.
+
+For a preview, use a separate CLI-only project with its own database, Blob store,
+OAuth client and origin; generate with the `preview` argument and deploy without
+`--prod`. That argument is an operator label, not automatic isolation. Never point
+an arbitrary Vercel preview at the production backend. Review the team's platform
+request-log retention/access settings for OAuth codes and token-bearing URLs;
+Caddy's log redaction does not configure Vercel logs.
+
+After promotion, `GET https://PUBLIC-HOST/api/v1/health` **through Vercel** must return
+200 with JSON `{"status":"ok"}` and private/no-store headers, not the SPA/404. Check
+an ordinary SPA deep link and authenticated requests too; keep maintenance enabled
+until this routing gate passes.
 
 Proxy paths: `/api/*`, `/oauth2/*`, `/login/oauth2/*`, `/webhooks/*`. Other application
 routes use the SPA; assets retain ordinary static caching. Proxy responses are
@@ -103,6 +150,8 @@ requests and large uploads against the account's actual current limits before go
 
 References: [Vercel rewrites](https://vercel.com/docs/routing/rewrites),
 [Vercel configuration](https://vercel.com/docs/project-configuration/vercel-json),
+[Vercel CLI deployment](https://vercel.com/docs/cli/deploy),
+[GitHub environment protections](https://docs.github.com/en/actions/concepts/workflows-and-actions/deployment-environments),
 [Caddy reverse proxy](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy).
 
 ## Rehearsal on an isolated database copy
@@ -115,8 +164,13 @@ References: [Vercel rewrites](https://vercel.com/docs/routing/rewrites),
    schema-history table and all binary data must be included.
 2. Restore to a **new disposable target** database. For the provided Compose,
    `MYSQL_DATABASE=ats` creates the target and app user; apply dump to `ats` via
-   `docker compose exec -T mysql`, with `MYSQL_PWD` set inside the container from
-   its root environment. Never put a password in command arguments/history.
+   `docker compose exec -T mysql`, using the MySQL client with
+   **`mysql --max-allowed-packet=128M -u root ats`** and `MYSQL_PWD` set inside the
+   container from its root environment. The server's matching 128M setting alone
+   does not raise the client's packet limit. A 10 MB BLOB is about 20 MB in a hex
+   INSERT and exceeds the client's default. Never use `--force` to skip failed
+   statements; abort and reconcile every table count and document checksum.
+   Never put a password in command arguments/history.
    Decrypt/pipe directly; do not leave plaintext dumps on disks or terminals.
 3. Set `ATS_REHEARSAL_ENABLED=true` before the first app start. It overrides other
    flags, blocks **all** HTTP except GET health and stops startup AI/code grading,
@@ -173,9 +227,12 @@ only on startup. They cannot drain previously admitted work or undo a provider c
    writable app. Use a temporary redirect/proxy on old **owned** hosts as needed.
 7. Final go/no-go: acceptable memory/headroom, data reconciled, backups verified,
    Google callbacks correct, exact compatible image versions, no old workers.
-   Restart target with rehearsal false, maintenance false, background true,
-   document storage true. Opening HTTP and starting workers is the write boundary:
-   record it. Confirm only the target executes work. New sessions must log in;
+   Set all four flags together in `.env`: `ATS_REHEARSAL_ENABLED=false`,
+   `ATS_MAINTENANCE_ENABLED=false`, `ATS_BACKGROUND_WORK_ENABLED=true`, and
+   `ATS_DOCUMENT_STORAGE_ENABLED=true`, then restart using `scripts/deploy/deploy.sh`.
+   That script refuses open HTTP with paused workers or disabled private storage;
+   the application also warns at startup if HTTP is open while work is paused.
+   Opening HTTP and starting workers is the write boundary: record it. Confirm only the target executes work. New sessions must log in;
    Calendar/Gmail connections are session-held and need reconnection.
 8. Smoke-test production using fake records/accounts: login/logout/CSRF, staff
    scope, candidate/client access, document permissions, uploads, integrations and
@@ -208,6 +265,39 @@ plaintext disk files, and creates the final file only after every stage succeeds
 Run it on a schedule appropriate to the agreed recovery point, alert on failures,
 and test decryption + restoration. Use age recipients whose private keys are
 held outside the Droplet and tested by an authorized recovery operator.
+
+Provision a dedicated local MySQL `ats_backup` user with a unique password matching
+`.env.mysql-backup`. Grant only `SELECT, SHOW VIEW, TRIGGER, EVENT ON ats.*`, plus
+`SHOW_ROUTINE ON *.*` if required by the source MySQL 8 version for the script's
+`--routines` export. Verify grants and an actual dump/restore with the installed
+version; do not grant writes, `ALL`, `SUPER` or reuse app/root credentials. If the
+inventory confirms no routines, a reviewed variant may omit `--routines` instead
+of granting global routine visibility. The file is mounted read-only and root-only.
+
+Install `scripts/deploy/backup-source.sh` as root-owned, non-writable-by-backup-user
+`/usr/local/libexec/ats-backup-source` (0755). Its fixed command uses `/usr/bin/docker`
+and Compose's `ats-mysql-1` name; verify those on the host. Give a dedicated
+`atsbackup` OS account **no Docker-group membership** and no general sudo access.
+Allow only the exact argument-free wrapper via a validated sudoers rule:
+
+```text
+atsbackup ALL=(root) NOPASSWD: /usr/local/libexec/ats-backup-source ""
+```
+
+Restrict its `authorized_keys` entry to the backup host IP and a forced command:
+
+```text
+from="BACKUP_HOST_IP",restrict,command="sudo -n /usr/local/libexec/ats-backup-source" ssh-ed25519 REPLACE_WITH_BACKUP_PUBLIC_KEY
+```
+
+`restrict` disables forwarding, PTY and user rc; the forced command ignores the SSH
+request and runs only the fixed dump. Keep this key file and wrapper protected from
+the backup account. Test that arbitrary requested commands still produce only a
+backup and cannot run shell/Docker commands. The remote key can read all candidate
+data through the dump, so restrict access and rotate it accordingly. The backup
+script requests `ats-database-backup`; it no longer invokes arbitrary remote shell
+commands or MySQL root. Do not describe an ordinary unrestricted Docker-capable SSH
+account as a restricted backup key.
 
 Keep backups outside the Droplet (a separate private Blob backup store is possible
 through a separately reviewed upload process). Vercel Blob live storage is not a

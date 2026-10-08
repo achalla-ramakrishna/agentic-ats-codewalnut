@@ -13,6 +13,11 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
+      - type: bind
+        source: ./.env.mysql-backup
+        target: /run/secrets/ats-backup.cnf
+        read_only: true
+        bind: {create_host_path: false}
     networks: [database]
     healthcheck:
       test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u ats -D ats -e 'SELECT 1' >/dev/null 2>&1"]

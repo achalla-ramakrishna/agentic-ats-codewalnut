@@ -1,0 +1,6 @@
+# Copy to .env.mysql-backup, root-owned mode 0600. Mounted read-only inside MySQL.
+# Provision this separate read-only dump user after initializing MySQL; see runbook.
+[client]
+user=ats_backup
+password=replace-with-unique-backup-password
+host=127.0.0.1

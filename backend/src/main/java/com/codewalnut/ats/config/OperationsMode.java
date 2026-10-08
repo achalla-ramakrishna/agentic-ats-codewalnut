@@ -1,10 +1,12 @@
 package com.codewalnut.ats.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 /** Restart-scoped cutover controls. Rehearsal never admits traffic or resumes copied work. */
+@Slf4j
 @Component
 public class OperationsMode {
     private final boolean maintenance;
@@ -18,6 +20,10 @@ public class OperationsMode {
         }
         this.maintenance = maintenance || rehearsal;
         this.backgroundWork = backgroundWork && !this.maintenance;
+        if (!this.maintenance && !this.backgroundWork) {
+            log.warn("HTTP is open while background work is disabled. Resume uploads, grading and storage transfers "
+                    + "will remain pending until restart with ATS_BACKGROUND_WORK_ENABLED=true.");
+        }
     }
 
     public boolean maintenance() { return maintenance; }

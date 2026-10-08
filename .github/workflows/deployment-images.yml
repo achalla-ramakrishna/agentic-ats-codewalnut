@@ -10,6 +10,7 @@ permissions:
   contents: read
 jobs:
   verify:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -26,9 +27,12 @@ jobs:
         env:
           REVISION: ${{ inputs.revision }}
         run: |
+          [[ "$GITHUB_REF" == refs/heads/main ]]
           [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]
           git merge-base --is-ancestor "$REVISION" origin/main
           git checkout --detach "$REVISION"
+      - name: Verify cutover flag gates
+        run: python3 scripts/deploy/test_deploy.py
       - name: Verify canonical proxy headers and private error handling
         run: python3 scripts/deploy/test_proxy.py
       - uses: actions/setup-java@v4
@@ -44,10 +48,16 @@ jobs:
       - run: npm ci && npm test
         working-directory: storage/blob-bridge
   publish:
+    if: github.ref == 'refs/heads/main'
+    # Configure this environment SERVER-SIDE before use: selected deployment branch main only,
+    # required reviewers, prevent self-review. The YAML alone does not create those protections.
+    environment: production-images
     needs: verify
     runs-on: ubuntu-latest
     permissions: {contents: read, packages: write}
     steps:
+      - name: Require main workflow definition
+        run: test "$GITHUB_REF" = refs/heads/main
       - uses: actions/checkout@v4
         with: {ref: '${{ inputs.revision }}'}
       - uses: docker/setup-buildx-action@v3

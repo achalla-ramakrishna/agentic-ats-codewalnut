@@ -28,7 +28,7 @@ public class MaintenanceFilter extends OncePerRequestFilter {
             response.setHeader("Retry-After", "300");
             response.setHeader("Cache-Control", "private, no-store");
             response.setContentType("application/json");
-            response.getWriter().write("{\"message\":\"Scheduled maintenance. Please try again shortly.\"}");
+            response.getWriter().write("{\"error\":\"Scheduled maintenance. Please try again shortly.\"}");
             return;
         }
         chain.doFilter(request, response);

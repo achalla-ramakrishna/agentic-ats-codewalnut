@@ -13,7 +13,16 @@ import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+@org.junit.jupiter.api.extension.ExtendWith(org.springframework.boot.test.system.OutputCaptureExtension.class)
 class OperationsModeTest {
+    @Test
+    void DEPLOY_03_openHttpWithPausedWorkersWarnsOperator(org.springframework.boot.test.system.CapturedOutput output) {
+        OperationsMode mode = new OperationsMode(false, false, false, new MockEnvironment());
+        assertThat(mode.maintenance()).isFalse();
+        assertThat(mode.backgroundWorkEnabled()).isFalse();
+        assertThat(output.getOut()).contains("HTTP is open while background work is disabled");
+    }
+
     @Test
     void DEPLOY_01_normalModeAllowsTrafficAndWork() throws Exception {
         OperationsMode mode = new OperationsMode(false, true, false, new MockEnvironment());
@@ -37,6 +46,8 @@ class OperationsModeTest {
                 MockHttpServletResponse response = new MockHttpServletResponse();
                 new MaintenanceFilter(mode).doFilter(new MockHttpServletRequest(method, path), response, chain);
                 assertThat(response.getStatus()).isEqualTo(503);
+                assertThat(response.getContentAsString()).isEqualTo(
+                        "{\"error\":\"Scheduled maintenance. Please try again shortly.\"}");
                 assertThat(response.getHeader("Retry-After")).isEqualTo("300");
                 assertThat(response.getHeader("Cache-Control")).contains("no-store");
                 verifyNoInteractions(chain);

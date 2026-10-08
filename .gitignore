@@ -22,3 +22,6 @@ frontend/vercel.json
 *.sql.gz
 *.sql.age
 *.sql.gz.age
+
+# Local Vercel CLI team/project linkage; never upload account metadata.
+**/.vercel/
