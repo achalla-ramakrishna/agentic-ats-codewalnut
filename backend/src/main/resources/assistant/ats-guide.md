@@ -74,6 +74,10 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
   draft or your own questions) → check → Mark ready.
 - Send: open the candidate → Profile → Tests → Send test (email and/or WhatsApp), or Tests → open
   the test → Send to candidates (many at once). Copy link to share it yourself.
+- Intern screening by stack: Tests → Build from bank → By role → Software engineering intern — Java
+  track (or Python, MERN). Then open the test → Send to candidates → pick the opening → Select
+  everyone with a Java background (read from their résumés) → Send. Intern aptitude: By pattern or
+  section → Aptitude → Software engineering intern — aptitude.
 - Results: Tests → New test results; the candidate's Tests tab shows answers and scores; Remind if
   they haven't started.
 

@@ -77,7 +77,17 @@ public final class Roles {
             new Role("data-analyst", "Data analyst", "SQL, spreadsheets, BI dashboards, statistics and metrics.",
                     Category.DATA_ANALYTICS, List.of(Category.SQL), ALL),
             new Role("graduate-trainee", "Graduate / fresher trainee", "Any stack: aptitude and computer-science basics.",
-                    Category.CS_FUNDAMENTALS, List.of(), List.of(Level.FRESHER)));
+                    Category.CS_FUNDAMENTALS, List.of(), List.of(Level.FRESHER)),
+            // Software engineering intern screening, one paper per background (ASMT-39).
+            new Role("se-intern-java", "Software engineering intern — Java track",
+                    "Aptitude, Java, REST/HTTP and web basics, SQL scenarios, DSA and two coding problems.", Category.JAVA,
+                    List.of(Category.WEB_API, Category.SQL), List.of(Level.FRESHER)),
+            new Role("se-intern-python", "Software engineering intern — Python track",
+                    "Aptitude, Python, REST/HTTP and web basics, SQL scenarios, DSA and two coding problems.", Category.PYTHON,
+                    List.of(Category.WEB_API, Category.SQL), List.of(Level.FRESHER)),
+            new Role("se-intern-mern", "Software engineering intern — MERN track",
+                    "Aptitude, JavaScript, React, Node.js, REST/HTTP and HTML/CSS, SQL, DSA and two coding problems.",
+                    Category.JAVASCRIPT, List.of(Category.REACT, Category.NODEJS, Category.WEB_API, Category.SQL), List.of(Level.FRESHER)));
 
     /** Roles whose tests don't include coding problems (ADR-0016). */
     static final java.util.Set<String> NO_CODING = java.util.Set.of("sql-developer", "devops-engineer", "data-analyst");
@@ -91,6 +101,9 @@ public final class Roles {
 
     /** The paper for a role at a level. */
     public static Preset preset(Role role, Level level) {
+        if (role.id().startsWith("se-intern-")) {
+            return seIntern(role);
+        }
         List<SectionPlan> plan = new ArrayList<>(role.id().equals("graduate-trainee") ? graduate() : mix(role, level));
         SectionPlan coding = NO_CODING.contains(role.id()) ? null : coding(level);
         int minutes = level.minutes;
@@ -179,6 +192,36 @@ public final class Roles {
             default -> throw new IllegalStateException("level " + level);
         }
         return out;
+    }
+
+    /**
+     * Intern screening (ASMT-39): about 30 questions in 35 minutes plus an easy and a medium coding
+     * problem (40 minutes): aptitude 10, the stack 7–11, web/API 5, SQL 4, DSA 3.
+     */
+    static Preset seIntern(Role role) {
+        List<SectionPlan> plan = new ArrayList<>();
+        plan.add(plan(Category.APTITUDE, Section.QUANT, 2, 1, 1));
+        plan.add(plan(Category.APTITUDE, Section.LOGICAL, 2, 1, 1));
+        plan.add(plan(Category.APTITUDE, Section.VERBAL, 1, 1, 0));
+        plan.add(plan(role.primary(), Section.FUNDAMENTALS, 3, 3, 1));
+        for (Category other : role.others()) {
+            if (other == Category.WEB_API) {
+                plan.add(plan(Category.WEB_API, Section.FUNDAMENTALS, 2, 2, 1));
+            } else if (other == Category.SQL) {
+                plan.add(plan(Category.SQL, Section.FUNDAMENTALS, 2, 2, 0));
+            } else {
+                plan.add(plan(other, Section.FUNDAMENTALS, 1, 1, 0));
+            }
+        }
+        plan.add(plan(Category.DSA, Section.FUNDAMENTALS, 1, 2, 0));
+        plan.add(plan(Category.CODING, Section.FUNDAMENTALS, 1, 1, 0));
+        int questions = plan.stream().mapToInt(p -> p.easy() + p.medium() + p.hard()).sum();
+        int minutes = 35 + codingMinutes(plan.get(plan.size() - 1));
+        List<Category> areas = new ArrayList<>(role.areas());
+        areas.add(0, Category.APTITUDE);
+        areas.add(Category.DSA);
+        return new Preset(role.id() + "-fresher", role.name(), questions + " questions in " + minutes + " minutes for interns: "
+                + String.join(", ", areas.stream().map(Presets::areaName).toList()) + ", and 2 coding problems.", minutes, 60, plan);
     }
 
     private static List<SectionPlan> graduate() {

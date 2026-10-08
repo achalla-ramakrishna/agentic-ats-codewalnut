@@ -1,6 +1,7 @@
 package com.codewalnut.ats.controller;
 
 import com.codewalnut.ats.dto.InsightDtos.AnalyzeResult;
+import com.codewalnut.ats.dto.InsightDtos.Background;
 import com.codewalnut.ats.dto.InsightDtos.InsightDetail;
 import com.codewalnut.ats.dto.InsightDtos.InsightsResponse;
 import com.codewalnut.ats.dto.InsightDtos.IntakeProgress;
@@ -40,6 +41,11 @@ public class ResumeIntelligenceController {
     @GetMapping("/api/v1/jobs/{id}/insights")
     public InsightsResponse insights(@PathVariable UUID id) {
         return service.insights(currentUserService.require(), id);
+    }
+
+    @GetMapping("/api/v1/jobs/{id}/backgrounds")
+    public List<Background> backgrounds(@PathVariable UUID id) {
+        return service.backgrounds(currentUserService.require(), id);
     }
 
     @PostMapping("/api/v1/jobs/{id}/insights/analyze")

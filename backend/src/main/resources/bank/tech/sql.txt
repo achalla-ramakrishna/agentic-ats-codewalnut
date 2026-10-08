@@ -359,6 +359,147 @@ Q H What is the difference between CHAR(10) and VARCHAR(10)?
 - They behave the same; VARCHAR is just the newer name
 = CHAR suits fixed codes (e.g. country codes); VARCHAR suits names and emails.
 
+@topic sql-scenarios | FUNDAMENTALS | Scenario queries | Everyday interview problems: second highest salary, employees earning more than their manager, duplicates, customers with no orders, top department, running balances.
+Q E Table employees(id, name, salary). Which query returns the highest salary?
++ SELECT MAX(salary) FROM employees;
+- SELECT salary FROM employees WHERE salary = MAX;
+- SELECT TOP salary FROM employees;
+- SELECT HIGHEST(salary) FROM employees;
+= MAX is the aggregate for the largest value.
+
+Q M Which query returns the second highest distinct salary from employees(salary)?
++ SELECT MAX(salary) FROM employees WHERE salary < (SELECT MAX(salary) FROM employees);
+- SELECT salary FROM employees ORDER BY salary DESC LIMIT 2;
+- SELECT MAX(salary) - 1 FROM employees;
+- SELECT salary FROM employees WHERE salary = MAX(salary) - 1;
+= The subquery finds the top salary; the outer MAX finds the highest one below it, even when the top salary repeats.
+
+Q M Salaries are 900, 900, 700 and 500. What does SELECT salary FROM employees ORDER BY salary DESC LIMIT 1 OFFSET 1 return?
++ 900
+- 700
+- 500
+- No rows
+= OFFSET skips one row, but the next row is the duplicate 900. Use DISTINCT (or DENSE_RANK) to get 700.
+
+Q M Which query correctly returns the second highest distinct salary using LIMIT?
++ SELECT DISTINCT salary FROM employees ORDER BY salary DESC LIMIT 1 OFFSET 1;
+- SELECT salary FROM employees ORDER BY salary ASC LIMIT 1 OFFSET 1;
+- SELECT salary FROM employees LIMIT 2 ORDER BY salary DESC;
+- SELECT DISTINCT salary FROM employees LIMIT 1 OFFSET 2;
+= DISTINCT removes duplicates first, then OFFSET 1 skips the highest.
+
+Q M Table employees(id, name, salary, manager_id). Which query lists employees who earn more than their manager?
++ SELECT e.name FROM employees e JOIN employees m ON e.manager_id = m.id WHERE e.salary > m.salary;
+- SELECT name FROM employees WHERE salary > manager_id;
+- SELECT e.name FROM employees e JOIN employees m ON e.id = m.id WHERE e.salary > m.salary;
+- SELECT name FROM employees GROUP BY manager_id HAVING salary > MAX(salary);
+= A self join pairs each employee (e) with their manager (m) through manager_id.
+
+Q E Table users(id, email). Which query finds emails that appear more than once?
++ SELECT email FROM users GROUP BY email HAVING COUNT(*) > 1;
+- SELECT email FROM users WHERE COUNT(email) > 1;
+- SELECT DISTINCT email FROM users;
+- SELECT email FROM users ORDER BY email HAVING COUNT(*) > 1;
+= GROUP BY collects equal emails; HAVING filters groups after counting. WHERE can't use aggregates.
+
+Q M Which query lists customers who have never placed an order? customers(id, name), orders(id, customer_id)
++ SELECT c.name FROM customers c WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id);
+- SELECT c.name FROM customers c JOIN orders o ON o.customer_id = c.id WHERE o.id IS NULL;
+- SELECT name FROM customers WHERE id != (SELECT customer_id FROM orders);
+- SELECT c.name FROM customers c, orders o WHERE c.id <> o.customer_id;
+= NOT EXISTS (or LEFT JOIN … WHERE o.id IS NULL) keeps customers with no matching order; an INNER JOIN can never return them.
+
+Q M employees(id, name, dept_id, salary). Which query returns the department with the highest average salary?
++ SELECT dept_id FROM employees GROUP BY dept_id ORDER BY AVG(salary) DESC LIMIT 1;
+- SELECT dept_id, MAX(salary) FROM employees GROUP BY dept_id LIMIT 1;
+- SELECT dept_id FROM employees WHERE salary = (SELECT MAX(salary) FROM employees);
+- SELECT dept_id FROM employees ORDER BY salary DESC LIMIT 1;
+= Average per department, then sort descending and take the first. The other queries find the highest single salary.
+
+Q E Which query counts employees in each department?
++ SELECT dept_id, COUNT(*) FROM employees GROUP BY dept_id;
+- SELECT dept_id, COUNT(*) FROM employees;
+- SELECT COUNT(dept_id) FROM employees GROUP BY name;
+- SELECT dept_id FROM employees WHERE COUNT(*) > 0;
+= Every non-aggregated column in the SELECT must be in the GROUP BY.
+
+Q M loans(id, customer_id, amount) and repayments(id, loan_id, paid). Which query shows each loan's balance, including loans with no repayment yet?
++ SELECT l.id, l.amount - COALESCE(SUM(r.paid), 0) AS balance FROM loans l LEFT JOIN repayments r ON r.loan_id = l.id GROUP BY l.id, l.amount;
+- SELECT l.id, l.amount - SUM(r.paid) AS balance FROM loans l JOIN repayments r ON r.loan_id = l.id GROUP BY l.id, l.amount;
+- SELECT id, amount - paid AS balance FROM loans, repayments;
+- SELECT l.id, SUM(l.amount - r.paid) FROM loans l LEFT JOIN repayments r ON r.loan_id = l.id;
+= LEFT JOIN keeps unpaid loans; COALESCE turns their NULL sum into 0 so the balance is the full amount.
+
+Q M Why is storing a running "remaining_balance" column on the loans table risky compared with computing it from repayments?
++ It can drift out of sync if a repayment is added, edited or rolled back without updating the column
+- SQL cannot store decimal numbers in a column
+- A computed balance is always slower, so the column is never useful
+- Columns on a table cannot be updated after insert
+= Deriving the balance from the repayment rows keeps one source of truth; a stored balance needs careful transactions.
+
+Q E Which query returns the 3 most recent orders from orders(id, created_at)?
++ SELECT * FROM orders ORDER BY created_at DESC LIMIT 3;
+- SELECT * FROM orders ORDER BY created_at LIMIT 3;
+- SELECT TOP 3 FROM orders ORDER BY id;
+- SELECT * FROM orders WHERE created_at = MAX LIMIT 3;
+= Newest first means descending by date, then limit to three.
+
+Q M Which query finds the highest salary in each department?
++ SELECT dept_id, MAX(salary) FROM employees GROUP BY dept_id;
+- SELECT dept_id, salary FROM employees ORDER BY salary DESC LIMIT 1;
+- SELECT MAX(dept_id), MAX(salary) FROM employees;
+- SELECT dept_id, salary FROM employees GROUP BY salary;
+= Group by department, then take the aggregate per group.
+
+Q M orders(customer_id, amount). Which query lists customers whose total spend is over 10,000?
++ SELECT customer_id, SUM(amount) FROM orders GROUP BY customer_id HAVING SUM(amount) > 10000;
+- SELECT customer_id, SUM(amount) FROM orders WHERE SUM(amount) > 10000 GROUP BY customer_id;
+- SELECT customer_id FROM orders WHERE amount > 10000;
+- SELECT customer_id, amount FROM orders HAVING amount > 10000;
+= Filters on aggregates go in HAVING, after GROUP BY.
+
+Q M Which query returns the Nth highest salary (here N = 3) with a window function?
++ SELECT salary FROM (SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS r FROM employees) t WHERE r = 3;
+- SELECT salary FROM employees WHERE ROW_NUMBER() = 3 ORDER BY salary DESC;
+- SELECT salary, RANK(3) FROM employees;
+- SELECT salary FROM employees ORDER BY salary DESC WHERE r = 3;
+= DENSE_RANK gives equal salaries the same rank with no gaps; window functions can't go in WHERE directly, so wrap them.
+
+Q E Which statement removes all rows from orders but keeps the table?
++ DELETE FROM orders; (or TRUNCATE TABLE orders;)
+- DROP TABLE orders;
+- REMOVE * FROM orders;
+- DELETE TABLE orders;
+= DROP removes the table itself; DELETE and TRUNCATE empty it.
+
+Q H Two requests read a product's stock (1 left) and both place an order. How do you stop overselling?
++ Update with a condition, e.g. UPDATE products SET stock = stock - 1 WHERE id = ? AND stock > 0, and check one row changed (or lock the row with SELECT … FOR UPDATE)
+- Read the stock twice before writing it
+- Add an index on the stock column
+- Run both requests with READ UNCOMMITTED isolation
+= The condition makes the check and the decrement one atomic step, so only one request succeeds.
+
+Q H users(id, email) has duplicate emails. Which statement deletes duplicates, keeping the row with the smallest id?
++ DELETE u FROM users u JOIN users k ON u.email = k.email AND u.id > k.id;
+- DELETE FROM users WHERE email IN (SELECT email FROM users);
+- DELETE FROM users GROUP BY email HAVING COUNT(*) > 1;
+- DELETE DISTINCT email FROM users;
+= Each row with a smaller-id twin is removed; the smallest id of each email survives. (MySQL syntax; then add a UNIQUE index.)
+
+Q H Table employees(id, name, dept_id, salary). Which query returns the highest-paid employee in each department, keeping ties?
++ SELECT * FROM (SELECT e.*, RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) r FROM employees e) t WHERE r = 1;
+- SELECT dept_id, name, MAX(salary) FROM employees GROUP BY dept_id;
+- SELECT * FROM employees ORDER BY salary DESC LIMIT 1;
+- SELECT * FROM (SELECT e.*, ROW_NUMBER() OVER (ORDER BY salary DESC) r FROM employees e) t WHERE r = 1;
+= RANK per department gives every top earner rank 1, so ties stay. Selecting name next to MAX with GROUP BY picks an arbitrary name (or fails in strict mode).
+
+Q H Table logins(user_id, login_date). Which query finds users who logged in on two consecutive days?
++ SELECT DISTINCT a.user_id FROM logins a JOIN logins b ON a.user_id = b.user_id AND b.login_date = a.login_date + INTERVAL 1 DAY;
+- SELECT user_id FROM logins GROUP BY user_id HAVING COUNT(*) >= 2;
+- SELECT user_id FROM logins WHERE login_date = login_date + 1;
+- SELECT DISTINCT user_id FROM logins ORDER BY login_date LIMIT 2;
+= The self-join pairs each login with one from the next day for the same user. Counting two logins doesn't check that the days are consecutive.
+
 @topic sql-subqueries | PRACTICAL | Subqueries, CTEs and set operations | Subqueries in WHERE and FROM, correlated subqueries, EXISTS vs IN, WITH (CTEs), recursive CTEs, UNION vs UNION ALL.
 Q E What is a subquery?
 + A query inside another query

@@ -92,9 +92,13 @@ for review) and builds papers by copying questions into a draft assessment.
 Technical banks (ADR-0015): `bank/TechBank` parses the hand-written
 `resources/bank/tech/*.txt` files (Java, Python, JavaScript, React, Angular,
 SQL, CS fundamentals, System design, Node.js, QA automation, DevOps, Data
-analytics) into the same seeds; `bank/Roles` turns a role and level into a
+analytics, Web/APIs & tools) into the same seeds; `bank/Roles` turns a role and level into a
 cross-area paper, banded FUNDAMENTALS / PRACTICAL / ADVANCED, with
 keys hashed from content so edited questions replace old ones on load.
+Intern track tests (ADR-0025): `Roles.seIntern` builds the Java, Python and
+MERN intern papers; `service/TechBackground` reads a candidate's stack from
+their résumé reading for `GET /jobs/{id}/backgrounds`, used by Send to
+candidates to pre-select the matching people.
 
 Coding questions (ADR-0016): `client/CodeRunner` sends candidate code to a
 self-hosted Judge0 (`Judge0CodeRunner`; `DisabledCodeRunner` when

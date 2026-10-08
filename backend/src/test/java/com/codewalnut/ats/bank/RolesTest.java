@@ -76,4 +76,28 @@ class RolesTest {
         assertThat(Roles.preset(Roles.role("sql-developer"), Roles.Level.FRESHER).sections()).noneMatch(s -> s.area() == dsa);
         assertThat(Presets.areaName(dsa)).isEqualTo("Data structures & algorithms");
     }
+
+    /** ASMT-39: software engineering intern tracks test the candidate's own stack plus web, SQL, DSA and one coding problem. */
+    @Test
+    void internTracksTestTheirOwnStack() {
+        for (String[] t : new String[][] {{"se-intern-java", "JAVA"}, {"se-intern-python", "PYTHON"}, {"se-intern-mern", "JAVASCRIPT"}}) {
+            Roles.Role role = Roles.role(t[0]);
+            assertThat(role.levels()).containsExactly(Roles.Level.FRESHER);
+            Preset p = Roles.preset(role, Roles.Level.FRESHER);
+            assertThat(p.sections()).anyMatch(s -> s.area().name().equals(t[1]) && s.easy() + s.medium() + s.hard() >= 6);
+            assertThat(p.sections().stream().map(s -> s.area().name()))
+                    .contains("WEB_API", "SQL", "DSA", "CODING", "APTITUDE");
+            assertThat(p.passPercent()).isEqualTo(60);
+        }
+        assertThat(Roles.preset(Roles.role("se-intern-mern"), Roles.Level.FRESHER).sections().stream().map(s -> s.area().name()))
+                .contains("REACT", "NODEJS");
+        assertThat(Roles.preset(Roles.role("se-intern-java"), Roles.Level.FRESHER).sections().stream().map(s -> s.area().name()))
+                .doesNotContain("PYTHON", "REACT");
+    }
+
+    @Test
+    void internAptitudePatternFitsTheBank() {
+        Preset p = Presets.APTITUDE.stream().filter(x -> x.id().equals("se-intern")).findFirst().orElseThrow();
+        assertThat(p.sections().stream().mapToInt(s -> s.easy() + s.medium() + s.hard()).sum()).isEqualTo(30);
+    }
 }

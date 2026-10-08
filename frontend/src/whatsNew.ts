@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-08-intern-tracks',
+    date: '2026-10-08',
+    title: 'Intern screening tests: Java, Python and MERN tracks',
+    summary: 'Three ready-made tests for software engineering interns, one per stack: aptitude, the candidate’s language, web and REST APIs, SQL scenario queries, data structures and one coding problem (75 minutes, pass mark 60%). There is also a 30-question intern aptitude test. When you send a Java, Python or MERN test to many candidates, each one shows the background their résumé points to, and one click selects everyone with the matching background.',
+    steps: [
+      'Tests → Build from bank → By role → Software engineering intern — Java track (or Python, MERN) → Create → check → Mark ready.',
+      'For aptitude: Tests → Build from bank → By pattern or section → Aptitude → Software engineering intern — aptitude.',
+      'Open the test → Send to candidates → pick the opening → Select everyone with a Java background → Send.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-07-closest-to-selection',
     date: '2026-10-07',
     title: '“Closest to selection” now uses interview feedback',

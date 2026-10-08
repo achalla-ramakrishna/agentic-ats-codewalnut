@@ -1,10 +1,19 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { listJobTests, sendTest, testStatusLabel, type AssessmentSummary, type InviteView } from '../api/assessments'
+import { getBackgrounds, TRACK_LABEL, type Background, type Track } from '../api/insights'
 import { getWhatsAppStatus } from '../api/messages'
 import { listApplications, listJobs, type ApplicationRow, type Job } from '../api/tracker'
 import { Badge, Button } from './ui'
 
 const OPEN = new Set(['SENT', 'STARTED', 'SUBMITTED'])
+
+/** The résumé background a test is meant for (ASMT-39); aptitude and other tests suit everyone. */
+function trackFor(category: AssessmentSummary['category']): Track | null {
+  if (category === 'JAVA') return 'JAVA'
+  if (category === 'PYTHON') return 'PYTHON'
+  if (category === 'JAVASCRIPT' || category === 'NODEJS' || category === 'REACT') return 'MERN'
+  return null
+}
 
 /**
  * Send a ready test to several candidates of one opening at once. Each candidate gets the usual
@@ -15,6 +24,7 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
   const [jobId, setJobId] = useState('')
   const [rows, setRows] = useState<ApplicationRow[] | null>(null)
   const [invites, setInvites] = useState<InviteView[]>([])
+  const [backgrounds, setBackgrounds] = useState<Background[]>([])
   const [chosen, setChosen] = useState<string[]>([])
   const [dueDays, setDueDays] = useState(3)
   const [email, setEmail] = useState(true)
@@ -44,12 +54,20 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
         setInvites(tests)
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load candidates'))
+    // The background badges are a help, not a must: without them the list still works.
+    getBackgrounds(jobId)
+      .then(setBackgrounds)
+      .catch(() => setBackgrounds([]))
   }, [jobId])
 
   const existing = (applicationId: string) =>
     invites.find((i) => i.applicationId === applicationId && i.assessmentId === test.id && OPEN.has(i.status))
   const canSend = (r: ApplicationRow) => !!r.email && !existing(r.id) && r.stage !== 'REJECTED' && r.stage !== 'WITHDRAWN'
   const sendable = (rows ?? []).filter(canSend)
+  const track = trackFor(test.category)
+  const background = (applicationId: string) => backgrounds.find((b) => b.applicationId === applicationId)
+  const matching = track ? sendable.filter((r) => background(r.id)?.track === track) : []
+  const unread = backgrounds.filter((b) => !b.read).length
 
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -108,17 +126,29 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
             <Button size="sm" variant="secondary" disabled={sendable.length === 0} onClick={() => setChosen(sendable.map((r) => r.id))}>
               Select all who can get it ({sendable.length})
             </Button>
+            {track && (
+              <Button size="sm" variant="secondary" disabled={matching.length === 0} onClick={() => setChosen(matching.map((r) => r.id))}>
+                Select everyone with a {TRACK_LABEL[track]} background ({matching.length})
+              </Button>
+            )}
             {chosen.length > 0 && (
               <Button size="sm" variant="ghost" onClick={() => setChosen([])}>
                 Clear
               </Button>
             )}
           </div>
+          {track && unread > 0 && (
+            <p className="muted" style={{ margin: 0, fontSize: 12 }}>
+              {unread} résumé{unread === 1 ? ' hasn’t' : 's haven’t'} been read by the AI yet, so their background is unknown. Open the
+              opening → AI suggestions → Analyze résumés to read them.
+            </p>
+          )}
           <table className="send-list" aria-label="Candidates">
             <tbody>
               {rows.map((r) => {
                 const open = existing(r.id)
                 const reason = open ? `Already sent · ${testStatusLabel(open)}` : !r.email ? 'No email' : canSend(r) ? null : r.stageLabel
+                const bg = background(r.id)
                 return (
                   <tr key={r.id}>
                     <td>
@@ -135,6 +165,13 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
                     </td>
                     <td className="muted">{r.email ?? '—'}</td>
                     <td>{r.stageLabel}</td>
+                    <td>
+                      {bg?.track && (
+                        <span title={bg.evidence.join(', ')}>
+                          <Badge tone={track && bg.track === track ? 'primary' : 'neutral'}>{TRACK_LABEL[bg.track]}</Badge>
+                        </span>
+                      )}
+                    </td>
                     <td>{reason && <Badge tone="neutral">{reason}</Badge>}</td>
                   </tr>
                 )

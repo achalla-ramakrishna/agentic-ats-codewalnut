@@ -31,7 +31,7 @@ import org.hibernate.annotations.UuidGenerator;
 public class Assessment {
 
     public enum Category { APTITUDE, JAVA, PYTHON, JAVASCRIPT, REACT, ANGULAR, SQL, CS_FUNDAMENTALS, SYSTEM_DESIGN, NODEJS, QA_AUTOMATION, DEVOPS,
-        DATA_ANALYTICS, DSA, CODING, OTHER }
+        DATA_ANALYTICS, DSA, CODING, WEB_API, OTHER }
 
     public enum Status { DRAFT, READY, ARCHIVED }
 

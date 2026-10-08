@@ -474,6 +474,21 @@ public class ResumeIntelligenceService {
                 insight.getAnalyzedAt(), fileName, parse(insight));
     }
 
+    /** Each candidate's stack (Java, Python, MERN) from their résumé reading, to send the matching test (ASMT-39). */
+    @Transactional(readOnly = true)
+    public List<com.codewalnut.ats.dto.InsightDtos.Background> backgrounds(AppUser actor, UUID jobId) {
+        accessPolicy.require(actor, Capability.VIEW_CANDIDATES);
+        job(jobId);
+        List<Application> applications = applicationRepository.findByJobIdOrderByCandidateNameAsc(jobId);
+        Map<UUID, ResumeInsight> read = profiles(applications);
+        return applications.stream().map(a -> {
+            ResumeInsight profile = read.get(a.getId());
+            TechBackground.Result r = TechBackground.of(profile);
+            return new com.codewalnut.ats.dto.InsightDtos.Background(a.getId(),
+                    r.track() == null ? null : r.track().name(), r.evidence(), profile != null);
+        }).toList();
+    }
+
     /** Readings for the assistant's questions, by application id. Only DONE ones. */
     @Transactional(readOnly = true)
     public Map<UUID, ResumeInsight> profiles(List<Application> applications) {

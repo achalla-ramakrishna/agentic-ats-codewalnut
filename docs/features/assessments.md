@@ -71,6 +71,7 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | ASMT-36 | **Built-in coding problems**: 60 problems in 12 topics (basics, strings, arrays, hashing, two pointers, stacks, sorting, recursion, graphs, dynamic programming, greedy, heaps), in Build from bank → Coding with freshers / 1–3 years / 3+ years presets; developer role tests include one coding problem per level. | Done |
 | ASMT-37 | **Integrity signals**: tab switches and pastes while the test is open, and the number of sample runs, shown to staff with the result as things to ask about (never an automatic penalty). | Done |
 | ASMT-38 | **Data structures & algorithms bank**: 15 topics × 50 questions (17 easy, 17 medium, 16 hard), about a third of them code-reading questions in Java, Python, JavaScript or C++ that were each run to check the answer. Fundamentals (freshers and interns): complexity, arrays and strings, hashing, linked lists, stacks and queues, recursion, sorting and searching, and data structures in your language. Applied (1–3 years): trees, heaps, two pointers and sliding window, graphs. Advanced (3+ years): dynamic programming, greedy and intervals, tries, union-find and bits. In Build from bank with freshers / 1–3 years / 3+ years presets; developer role tests add DSA questions at fresher (fundamentals) and junior (applied) level, as does the graduate trainee test. | Done |
+| ASMT-39 | **Software engineering intern screening**: role tests for the Java, Python and MERN tracks (fresher only; 75 minutes, pass 60%): aptitude (quant, logical, verbal), 7 questions on the track's language, a new **Web, APIs & tools** area (HTTP and REST, HTML/CSS, Git/Docker/Kubernetes basics), SQL including a new *Scenario queries* topic (second highest salary, manager joins, duplicates, top per group), DSA and one coding problem; MERN adds React and Node.js. A 30-question *Software engineering intern — aptitude* pattern. In Send to candidates, each candidate's background (Java, Python, MERN, Mixed) is read from their AI résumé reading (`GET /jobs/{id}/backgrounds`) and *Select everyone with a … background* ticks the matching ones; staff still review and send. | Done |
 | ASMT-25 | Per-section timers and optional negative marking. | v1 |
 | ASMT-17 | Automatic reminders (needs a sender that works without a staff session, e.g. WhatsApp Business API or a shared mailbox). | v1 |
 
@@ -107,6 +108,7 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-08 | Intern screening: Java/Python/MERN track tests, Web, APIs & tools bank, SQL scenario queries, select candidates by résumé background (ASMT-39) |
 | 2026-10-04 | Data structures & algorithms bank (750 questions) and DSA in fresher and junior role tests (ASMT-38) |
 | 2026-09-25 | Created from SPEC.md |
 | 2026-10-04 | Coding questions graded in a Judge0 sandbox; 60 built-in coding problems; integrity signals (ASMT-29, ASMT-36, ASMT-37) |

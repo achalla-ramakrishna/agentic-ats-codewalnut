@@ -113,3 +113,17 @@ export const analyzeAll = (jobId: string) =>
 export const getInsight = (applicationId: string) => api<InsightDetail>(`/applications/${applicationId}/insight`)
 export const reanalyze = (applicationId: string) =>
   api<InsightDetail>(`/applications/${applicationId}/insight`, { method: 'POST' })
+
+export type Track = 'JAVA' | 'PYTHON' | 'MERN' | 'MIXED'
+
+/** The stack a candidate's résumé points to (ASMT-39); read is false until the AI has read the résumé. */
+export interface Background {
+  applicationId: string
+  track: Track | null
+  evidence: string[]
+  read: boolean
+}
+
+export const TRACK_LABEL: Record<Track, string> = { JAVA: 'Java', PYTHON: 'Python', MERN: 'MERN', MIXED: 'Mixed' }
+
+export const getBackgrounds = (jobId: string) => api<Background[]>(`/jobs/${jobId}/backgrounds`)

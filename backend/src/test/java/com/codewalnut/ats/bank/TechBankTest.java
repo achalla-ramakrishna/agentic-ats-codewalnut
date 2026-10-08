@@ -22,9 +22,14 @@ class TechBankTest {
     void everyAreaHasTopicsInEveryBandWithEasyMediumAndHardQuestions() {
         for (Category area : TechBank.AREAS) {
             List<TechBank.Topic> topics = TechBank.topics(area);
-            assertThat(topics).as(area.name()).hasSizeGreaterThanOrEqualTo(10);
-            for (Section band : List.of(Section.FUNDAMENTALS, Section.PRACTICAL, Section.ADVANCED)) {
-                assertThat(topics.stream().filter(t -> t.section() == band)).as(area + " " + band).hasSizeGreaterThanOrEqualTo(3);
+            if (area == Category.WEB_API) {
+                // A small fresher-only area (ASMT-39): basics for interns, no advanced band.
+                assertThat(topics).as(area.name()).hasSizeGreaterThanOrEqualTo(3).allMatch(t -> t.section() == Section.FUNDAMENTALS);
+            } else {
+                assertThat(topics).as(area.name()).hasSizeGreaterThanOrEqualTo(10);
+                for (Section band : List.of(Section.FUNDAMENTALS, Section.PRACTICAL, Section.ADVANCED)) {
+                    assertThat(topics.stream().filter(t -> t.section() == band)).as(area + " " + band).hasSizeGreaterThanOrEqualTo(3);
+                }
             }
             for (TechBank.Topic t : topics) {
                 assertThat(t.covers()).isNotBlank();

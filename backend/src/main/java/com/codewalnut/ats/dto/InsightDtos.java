@@ -38,6 +38,12 @@ public final class InsightDtos {
 
     public record AnalyzeResult(int queued, int noResume, int upToDate) {}
 
+    /**
+     * The stack a candidate's résumé points to (ASMT-39): JAVA, PYTHON, MERN, MIXED, or null when
+     * none shows. read: false when the résumé hasn't been read by the AI yet.
+     */
+    public record Background(UUID applicationId, String track, List<String> evidence, boolean read) {}
+
     public record IntakeItem(UUID id, String fileName, String status, String outcome, UUID applicationId,
             String candidateName, String error) {}
 

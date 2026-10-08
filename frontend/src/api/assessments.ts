@@ -19,6 +19,7 @@ export type Category =
   | 'DATA_ANALYTICS'
   | 'DSA'
   | 'CODING'
+  | 'WEB_API'
   | 'OTHER'
 export type QuestionKind = 'SINGLE_CHOICE' | 'MULTI_CHOICE' | 'SHORT_ANSWER' | 'CODING'
 export type InviteStatus = 'SENT' | 'STARTED' | 'SUBMITTED' | 'EXPIRED' | 'CANCELLED'
@@ -39,6 +40,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   DATA_ANALYTICS: 'Data analytics',
   DSA: 'Data structures & algorithms',
   CODING: 'Coding',
+  WEB_API: 'Web, APIs & tools',
   OTHER: 'Other',
 }
 

@@ -1,0 +1,461 @@
+# CodeWalnut built-in "Web, APIs & tools" bank (ADR-0015). Format: see TechBank.java.
+# For freshers and interns: how the web and APIs work, HTML/CSS basics, and everyday tools
+# (Git, Docker, Kubernetes). Distractors are kept as long and as plausible as the answer.
+
+@topic web-http-rest | FUNDAMENTALS | HTTP and REST APIs | Path vs query parameters, HTTP methods, PUT vs PATCH, status codes, headers, JSON, statelessness and idempotency.
+Q E In GET /users/101/orders?status=delivered, which part is a path parameter?
++ 101
+- status
+- delivered
+- orders?status
+= 101 sits in the path and identifies a specific user; status=delivered after the ? is a query parameter that filters the orders.
+
+Q E What is a query parameter usually used for?
++ Filtering, sorting, searching or paginating a list
+- Identifying exactly one resource by its id
+- Sending a password securely to the server
+- Choosing which HTTP method the server should run
+= Query parameters such as ?city=bangalore&page=2 refine a request; the path identifies the resource.
+
+Q E Which HTTP method is meant for reading data without changing anything on the server?
++ GET
+- POST
+- PUT
+- DELETE
+= GET is safe: it only reads. POST creates, PUT replaces and DELETE removes.
+
+Q E Which status code means the request succeeded and a new resource was created?
++ 201 Created
+- 200 OK
+- 204 No Content
+- 302 Found
+= 201 is the usual reply to a successful POST that created something; 200 is a general success.
+
+Q E A client asks for /users/999 but no such user exists. Which status code fits best?
++ 404 Not Found
+- 400 Bad Request
+- 401 Unauthorized
+- 500 Internal Server Error
+= 404 says the resource doesn't exist; 400 is for a malformed request and 500 for a server fault.
+
+Q E What does status code 401 mean?
++ The client is not authenticated (no valid login or token)
+- The client is logged in but not allowed to do this
+- The server crashed while handling the request
+- The request body was not valid JSON
+= 401 Unauthorized means "who are you?"; 403 Forbidden means "I know who you are, but you can't do this".
+
+Q E Which status code says "you are logged in, but you are not allowed to do this"?
++ 403 Forbidden
+- 401 Unauthorized
+- 404 Not Found
+- 409 Conflict
+= 403 is for an authenticated user without permission.
+
+Q E What does REST stand for?
++ Representational State Transfer
+- Remote Execution of Server Tasks
+- Request–Response Streaming Technology
+- Reliable Encrypted Service Transport
+= REST is an architectural style that models an API as resources reached by URLs and standard HTTP methods.
+
+Q E In a REST API, which request deletes the user with id 10?
++ DELETE /users/10
+- GET /users/delete?id=10
+- POST /deleteUser/10
+- PUT /users/10/remove
+= REST uses the HTTP method for the action and the URL for the resource, so DELETE /users/10.
+
+Q E Which format do most REST APIs use for request and response bodies today?
++ JSON
+- CSV
+- YAML
+- Plain HTML
+= JSON is light, readable and supported by every language; XML is the older alternative.
+
+Q E What is the main difference between GET and POST?
++ GET reads data and sends parameters in the URL; POST sends data in the body, usually to create something
+- GET is encrypted and POST is not
+- GET can only return HTML while POST can return JSON
+- GET works only in browsers and POST only from servers
+= Both can use HTTPS; the difference is intent (read vs create/act) and where the data goes.
+
+Q M What is the difference between PUT and PATCH?
++ PUT replaces the whole resource; PATCH changes only the fields sent
+- PUT creates a resource; PATCH deletes part of a resource
+- PUT is for JSON bodies; PATCH is for form data
+- PUT is idempotent only when PATCH is not used
+= PUT /users/10 with {name, email, city} replaces the user; PATCH /users/10 with {city} changes just the city.
+
+Q M Which statement about idempotent methods is correct?
++ Sending the same PUT or DELETE request twice leaves the server in the same state as sending it once
+- An idempotent method never changes anything on the server
+- POST is idempotent because it always returns 201
+- Idempotent requests are cached by the browser for one hour
+= Repeating PUT /users/10 with the same body or DELETE /users/10 has no extra effect; repeating POST may create duplicates.
+
+Q M What does "REST APIs are stateless" mean?
++ Each request carries everything the server needs, such as the auth token; the server keeps no session between requests
+- The server never stores any data in a database
+- Responses must never change for the same URL
+- The client cannot keep any data between requests
+= Statelessness makes servers easy to scale: any server can handle any request.
+
+Q M A sign-up request is missing the required email field. Which status code should the API return?
++ 400 Bad Request
+- 404 Not Found
+- 403 Forbidden
+- 503 Service Unavailable
+= The client sent invalid input; 400 (or 422) with a clear message tells it what to fix.
+
+Q M Which header tells the server that the request body is JSON?
++ Content-Type: application/json
+- Accept: text/html
+- Authorization: Bearer json
+- Cache-Control: json
+= Content-Type describes the body being sent; Accept says what the client wants back.
+
+Q M In Express, which line sends a 200 JSON response with the user's id taken from /users/:id?
+| app.get("/users/:id", (req, res) => {
+|   // ?
+| });
++ res.status(200).json({ id: req.params.id });
+- res.send(200, req.query.id);
+- return { status: 200, id: req.body.id };
+- res.json(req.params).status(200).end(id);
+= Path parameters are in req.params; res.status(...).json(...) sets the code and sends JSON.
+
+Q M In Spring Boot, which annotation reads the 101 in GET /users/101?
+| @GetMapping("/users/{id}")
+| public User get(____ Long id) { ... }
++ @PathVariable
+- @RequestParam
+- @RequestBody
+- @RequestHeader
+= @PathVariable binds {id} from the path; @RequestParam would read ?id=101 from the query string.
+
+Q M Which URL design follows REST conventions for a user's orders?
++ GET /users/42/orders
+- GET /getOrdersForUser?userId=42
+- POST /users/42/getOrders
+- GET /orders/fetchAll/user/42/now
+= Nouns for resources, nesting for ownership and the method for the action.
+
+Q M What does status code 500 tell the client?
++ Something went wrong on the server; the request may have been fine
+- The client sent too many requests
+- The resource has moved permanently
+- The client must log in again
+= 5xx codes are server-side failures; 4xx codes are problems with the request.
+
+Q H A client may retry a "create payment" POST after a timeout. How do you stop it charging twice?
++ Send an idempotency key with the request and have the server return the first result for a repeated key
+- Change the method from POST to GET so it is safe to repeat
+- Ask the client to wait 10 seconds before every retry
+- Return 500 on every second request from the same client
+= An idempotency key lets the server recognise a retry and answer it without repeating the side effect.
+
+Q H Where should a JWT access token usually be sent in an API request?
++ In the Authorization header as "Bearer <token>"
+- As a query parameter, e.g. ?token=…
+- In the URL path, e.g. /token/…/users
+- Inside every JSON field of the body
+= Tokens in URLs leak into logs and browser history; the Authorization header is the standard place.
+
+Q H A client retries POST /payments after a timeout and the customer is charged twice. What is the standard fix?
++ Send an idempotency key with the request so the server recognises the retry and returns the first result
+- Switch the endpoint to GET so that retries are always safe
+- Return 500 for every second request from the same client
+- Ask the client to wait longer before giving up on the request
+= POST isn't idempotent; an idempotency key lets the server store the outcome and replay it for a repeat, so the charge happens once.
+
+Q H A list API returns 10,000 orders and new orders arrive while a client pages through with ?page=N. Which approach avoids skipped or repeated rows?
++ Cursor (keyset) pagination: return a cursor such as the last id and ask for rows after it
+- Offset pagination with a larger page size so fewer pages are needed
+- Return all 10,000 rows in one response and let the client page locally
+- Sort the rows randomly so that each page is different from the last
+= With offsets, inserts shift rows between pages; a cursor anchors each page to the last row seen, so the pages stay stable.
+
+@topic web-html-css | FUNDAMENTALS | HTML and CSS basics | Semantic HTML, forms, the box model, margin vs padding, display, visibility and opacity, flexbox, positioning, responsive design and specificity.
+Q E What is the difference between margin and padding?
++ Padding is space inside the element's border; margin is space outside it
+- Margin is space inside the border; padding is space outside it
+- Padding only works on images; margin works on text
+- They are the same; margin is the older name
+= Padding pushes the content away from the border; margin pushes other elements away.
+
+Q E Which CSS property hides an element and removes the space it took up?
++ display: none
+- visibility: hidden
+- opacity: 0
+- color: transparent
+= display: none takes it out of the layout; visibility: hidden and opacity: 0 still keep its space.
+
+Q E An element has visibility: hidden. What happens?
++ It is invisible but still takes up its space in the layout
+- It disappears and the elements around it move up
+- It is shown at half transparency
+- It is removed from the HTML document
+= visibility: hidden keeps the box; display: none removes it from the layout.
+
+Q E An element has opacity: 0. Which is true?
++ It is invisible but keeps its space and can still receive clicks
+- It is removed from the layout and cannot be clicked
+- It is invisible and cannot be clicked but keeps its space
+- It is only hidden on mobile screens
+= opacity only changes how see-through it is; the element is still there and interactive.
+
+Q E Which HTML tag creates a link to another page?
++ <a href="…">
+- <link to="…">
+- <href src="…">
+- <nav url="…">
+= <a> with href is a hyperlink; <link> in the head connects stylesheets and other resources.
+
+Q E Which is a semantic HTML element?
++ <nav>
+- <div>
+- <span>
+- <b>
+= Semantic elements such as <nav>, <header>, <main> and <article> describe their meaning, which helps accessibility and SEO.
+
+Q E In the CSS box model, what is the order from the inside out?
++ Content, padding, border, margin
+- Content, margin, border, padding
+- Margin, border, padding, content
+- Padding, content, border, margin
+= The content sits inside padding, which sits inside the border, which is surrounded by margin.
+
+Q E Which selector targets the element with id="login"?
++ #login
+- .login
+- login
+- *login
+= # selects by id and . selects by class.
+
+Q E Which input type shows a field that hides what the user types?
++ <input type="password">
+- <input type="hidden">
+- <input type="secret">
+- <input type="text" hidden>
+= type="hidden" isn't shown at all; type="password" masks the characters typed.
+
+Q M With box-sizing: border-box, what does width: 200px include?
++ Content, padding and border, but not margin
+- Only the content
+- Content, padding, border and margin
+- Content and margin only
+= border-box makes the stated width include padding and border, which makes layouts easier to reason about.
+
+Q M Which CSS centres a child both horizontally and vertically inside its parent?
+| .parent { ____ }
++ display: flex; justify-content: center; align-items: center;
+- text-align: center; vertical-align: center;
+- margin: center; padding: center;
+- position: center; float: center;
+= In a flex container, justify-content aligns along the main axis and align-items along the cross axis.
+
+Q M Which rule has the highest specificity?
++ #menu .item a
+- .menu .item a
+- nav ul li a
+- a
+= Ids weigh more than classes, which weigh more than element names.
+
+Q M What is the difference between position: relative and position: absolute?
++ Relative moves the element from its normal place; absolute positions it against the nearest positioned ancestor and takes it out of the flow
+- Relative positions it against the browser window; absolute against the parent's text
+- They are the same, but absolute is faster to render
+- Relative removes the element from the flow; absolute keeps it in place
+= An absolute child is often placed inside a relative parent so it is positioned against that parent.
+
+Q M What does a media query like @media (max-width: 600px) { … } do?
++ Applies the rules inside only when the viewport is 600px wide or narrower
+- Limits every element on the page to 600px wide
+- Loads the stylesheet only on screens wider than 600px
+- Scales all fonts down to 600px
+= Media queries are how pages adapt to phones and tablets (responsive design).
+
+Q M Which is the correct difference between display: block and display: inline?
++ Block starts on a new line and takes the full width; inline flows within text and ignores width and height
+- Block flows within text; inline always starts on a new line
+- Inline elements can have margins on all sides but block elements cannot
+- Block is only for divs and inline only for spans, whatever CSS says
+= display: inline-block is the middle ground: it flows inline but respects width and height.
+
+Q M Why should images have an alt attribute?
++ Screen readers read it out, and it shows if the image can't load
+- It makes the image load faster
+- It is required for the image to be responsive
+- It sets the image's tooltip colour
+= alt text is essential for accessibility and helps search engines.
+
+Q M Which unit is relative to the font size of the root (html) element?
++ rem
+- em
+- px
+- vh
+= rem is root-relative; em is relative to the element's own (inherited) font size; vh is a percentage of the viewport height.
+
+Q H Two elements overlap. Which property decides which one shows on top, and when does it work?
++ z-index, on elements that are positioned (not static) or are flex/grid children
+- z-index, on any element including static ones
+- order, on any element in the page
+- layer, on absolutely positioned elements only
+= z-index needs a positioned element (or a flex/grid item) and works within its stacking context.
+
+Q H A list of 1,000 items scrolls slowly because each item uses a heavy box-shadow animation. What helps most?
++ Animate transform or opacity instead, which the browser can do on the GPU without re-laying out the page
+- Change every px to rem
+- Wrap each item in an extra div
+- Move the CSS into a style attribute on each item
+= Animating layout properties (width, top, shadows) forces repaints; transform and opacity are cheap to animate.
+
+Q H Two rules target the same button: #save { color: red } and .toolbar .btn.primary { color: blue }. Which colour wins?
+| <div class="toolbar"><button id="save" class="btn primary">Save</button></div>
++ Red, because one id outranks any number of classes
+- Blue, because it has more selectors in total
+- Blue, because it comes later in the stylesheet
+- Neither; the browser falls back to the default colour
+= Specificity compares ids first (1,0,0 beats 0,3,0); source order only decides between equal specificity.
+
+Q H A container has display: flex and three children with flex: 1, flex: 2 and flex: 1. The container is 800px wide with no gaps. How wide is the middle child?
++ 400px
+- 266px
+- 200px
+- 800px
+= The free space is split in the ratio 1 : 2 : 1, so the middle child gets 2/4 of 800px.
+
+@topic web-tools | FUNDAMENTALS | Git, Docker and Kubernetes basics | Git workflow, branches and merge conflicts; Docker images, containers and Dockerfiles; containers vs VMs; Kubernetes pods, deployments and services.
+Q E What is Docker used for?
++ Packaging an application with everything it needs so it runs the same everywhere
+- Writing Java code faster with auto-complete
+- Storing source code history and branches
+- Monitoring CPU usage of a laptop
+= A container bundles the app, its runtime and libraries, so "it works on my machine" works everywhere.
+
+Q E What is the difference between a Docker image and a container?
++ An image is a read-only template; a container is a running instance of an image
+- An image is running; a container is the file on disk
+- They are the same thing with two names
+- An image runs on Linux; a container runs on Windows
+= You build an image once and can start many containers from it.
+
+Q E What is a Dockerfile?
++ A text file with the steps to build a Docker image
+- The log file a container writes when it crashes
+- A compressed backup of a running container
+- A file listing every container on the server
+= Lines such as FROM, COPY, RUN and CMD describe how to build the image.
+
+Q E How is a container different from a virtual machine?
++ Containers share the host's operating system kernel, so they start fast and use less memory; VMs each run a full OS
+- Containers run a full operating system each; VMs share one kernel
+- Containers only run on cloud servers; VMs only on laptops
+- There is no difference; container is the newer name for VM
+= Sharing the kernel makes containers light, which is why one server can run many of them.
+
+Q E Which Git command creates a new branch called feature-login and switches to it?
++ git checkout -b feature-login
+- git branch --switch feature-login
+- git commit -b feature-login
+- git push -b feature-login
+= git checkout -b (or git switch -c) creates the branch and moves to it in one step.
+
+Q E What does git pull do?
++ Fetches changes from the remote and merges them into your current branch
+- Uploads your commits to the remote
+- Deletes your local changes
+- Creates a pull request on GitHub
+= git pull = git fetch + git merge; git push uploads your commits.
+
+Q E What is Kubernetes?
++ A system that runs and manages containers across many machines: starting, scaling and restarting them
+- A programming language for writing containers
+- A database for storing Docker images
+- A tool that replaces Git for teams
+= Kubernetes orchestrates containers: it keeps the right number running, spreads them across servers and heals failures.
+
+Q E What is a Pod in Kubernetes?
++ The smallest unit Kubernetes runs: one or more containers that share network and storage
+- A physical server in the cluster
+- A copy of the Docker image registry
+- The command-line tool for Kubernetes
+= Usually a Pod holds one container; containers in the same Pod share an IP address and volumes.
+
+Q M Why do we need Kubernetes if Docker can already run containers?
++ Docker runs containers on one machine; Kubernetes manages many across a cluster: scaling, self-healing, rolling updates and load balancing
+- Docker cannot run containers in production at all
+- Kubernetes makes containers start faster than Docker
+- Kubernetes is needed to build Docker images
+= For one app on one server Docker is enough; for many services at scale you need orchestration.
+
+Q M What does a Kubernetes Deployment do?
++ Keeps a chosen number of identical Pods running and rolls out new versions gradually
+- Builds a Docker image from source code
+- Gives a Pod a public domain name
+- Stores secrets such as passwords
+= If a Pod dies, the Deployment starts another; on a new version it replaces Pods step by step.
+
+Q M What is a Kubernetes Service for?
++ A stable address that load-balances traffic to a changing set of Pods
+- A background job that runs once a day
+- A file describing how to build a container
+- A user account for the cluster
+= Pods come and go with new IPs; a Service gives them one stable name and spreads requests across them.
+
+Q M Two people edited the same lines of a file on different branches. What happens when you merge?
++ Git reports a merge conflict and you choose or combine the changes, then commit
+- Git silently keeps the newer change
+- Git deletes both changes
+- The merge is refused and the branch is deleted
+= Git can't decide which change is right, so it marks the conflict for a person to resolve.
+
+Q M In a Dockerfile, what is the difference between RUN and CMD?
++ RUN executes while building the image; CMD sets the command that runs when a container starts
+- RUN starts the container; CMD builds the image
+- They are the same; CMD is the older keyword
+- RUN is for Linux images and CMD for Windows images
+= RUN npm install happens at build time; CMD ["node", "server.js"] happens at run time.
+
+Q M Why is it better to COPY package.json and run npm install before copying the rest of the code in a Dockerfile?
++ Docker caches layers, so dependencies are reinstalled only when package.json changes, making rebuilds much faster
+- npm install does not work after the code is copied
+- It makes the final image run with less memory
+- Docker requires dependencies to be installed first
+= Each instruction is a cached layer; putting rarely changing steps first keeps rebuilds quick.
+
+Q M What does git stash do?
++ Puts your uncommitted changes aside so you get a clean working copy, and lets you bring them back later
+- Deletes your last commit permanently
+- Pushes your changes to a hidden remote branch
+- Merges the current branch into main
+= git stash pop restores the stashed changes.
+
+Q H A Pod keeps restarting with CrashLoopBackOff. What is the best first step?
++ Read the container's logs (kubectl logs, including --previous) and describe the Pod to see why it exits
+- Delete the whole cluster and create it again
+- Increase the number of replicas to 10
+- Rebuild the Docker image without changing anything
+= CrashLoopBackOff means the container starts and exits; logs and events usually show the error or a failed health check.
+
+Q H Where should a database password used by a container come from?
++ An environment variable or secret injected at run time (e.g. a Kubernetes Secret), never baked into the image
+- Hard-coded in the Dockerfile so every container has it
+- Committed to the Git repository in a config file
+- Printed in the application logs for easy access
+= Images and repositories are shared and copied; secrets must be supplied separately when the container starts.
+
+Q H You committed a password to a shared Git branch and pushed it. What must you do first?
++ Revoke or rotate the password, then remove it from the history
+- Delete the file in a new commit; that removes it from the repository
+- Run git reset --soft HEAD~1 locally and carry on
+- Rename the file so nobody finds it
+= Once pushed, anyone may have copied it; only rotating the secret makes the leak harmless. A new commit still leaves it in history.
+
+Q H A Kubernetes Deployment runs 3 replicas and one pod crashes. What happens?
++ The ReplicaSet notices only 2 are running and starts a new pod to get back to 3
+- The other two pods stop as well until someone restarts the Deployment
+- Nothing until an engineer runs kubectl apply again
+- The Service removes the Deployment because a pod failed
+= Kubernetes keeps reconciling the actual state to the desired state, so it replaces the failed pod automatically.

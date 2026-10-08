@@ -45,4 +45,30 @@ describe('Send to candidates', () => {
     const sent = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/applications/a1/tests') && init?.method === 'POST')!
     expect(JSON.parse(sent[1]!.body as string)).toMatchObject({ assessmentId: 't1', dueDays: 3, sendEmail: true, sendWhatsApp: false })
   })
+
+  it('selects only the candidates whose résumé matches the test’s stack (ASMT-39)', async () => {
+    fakeFetch([
+      { path: '/whatsapp/status', body: { apiEnabled: false, repliesEnabled: false } },
+      { path: '/jobs/j1/applications', body: [app('a1', 'Asha Test', 'asha@x.test'), app('a2', 'Ravi Test', 'ravi@x.test'), app('a3', 'Meena Test', 'meena@x.test')] },
+      { path: '/jobs/j1/tests', body: [] },
+      {
+        path: '/jobs/j1/backgrounds',
+        body: [
+          { applicationId: 'a1', track: 'JAVA', evidence: ['Java', 'Spring'], read: true },
+          { applicationId: 'a2', track: 'MERN', evidence: ['React'], read: true },
+          { applicationId: 'a3', track: null, evidence: [], read: false },
+        ],
+      },
+      { path: '/jobs', body: [{ id: 'j1', title: 'Interns', client: null, status: 'OPEN', total: 3 }] },
+    ])
+    render(<SendToCandidates test={test} onSent={() => undefined} onClose={() => undefined} />)
+
+    await userEvent.selectOptions(await screen.findByLabelText('Opening'), 'j1')
+    await userEvent.click(await screen.findByRole('button', { name: 'Select everyone with a Java background (1)' }))
+    expect(screen.getByRole('checkbox', { name: 'Send to Asha Test' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Send to Ravi Test' })).not.toBeChecked()
+    expect(screen.getByText('MERN')).toBeInTheDocument()
+    expect(screen.getByText(/1 résumé hasn’t been read by the AI yet/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Send to 1 candidate' })).toBeEnabled()
+  })
 })
