@@ -15,8 +15,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /** Explicit operator-only removal of retained bytes; never scheduled and never deletes remote objects. */
@@ -45,8 +43,11 @@ public class DocumentStorageCleanupService {
         this.transaction.setTimeout(15);
     }
 
-    /** The HTTP controller has no transaction; remote reads never participate in a database transaction. */
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    /**
+     * The HTTP controller has no transaction. Keep orchestration unannotated:
+     * even NOT_SUPPORTED creates a synchronization scope that makes JdbcTemplate
+     * retain eligible()'s connection during the subsequent provider reads.
+     */
     public Result cleanup(AppUser actor, Request request) {
         operations.requireOperator(actor);
         if (!enabled) throw new NotFoundException("Operation unavailable");

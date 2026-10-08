@@ -37,6 +37,7 @@ this change is not a claim of 2 GiB production capacity.
 | Date | Change |
 | --- | --- |
 | 2026-10-09 | Record download audits after authorization snapshots release their connections; preserve audit-before-read behavior and test concurrent staff/client downloads with a two-connection pool (DOCSTORE-01). |
+| 2026-10-08 | Release the eligibility query's JDBC connection before cleanup provider reads, including wholly failed batches; verify actual Hikari pool release and thread bindings without weakening the short locked/audited cleanup transaction (DOCSTORE-06). |
 | 2026-10-08 | Separate authorized database snapshots from provider reads so storage waits do not hold database connections (DOCSTORE-01). |
 | 2026-10-08 | Make the post-disable check explicitly non-destructive and distinguish automatic busy retries from subsequent-request recovery after provider failures in the cleanup rehearsal (DOCSTORE-06). |
 | 2026-10-08 | Keep temporary intakes database-only, prefer verified local reads and bound busy-read retries (DOCSTORE-02…04, ADR-0029). |

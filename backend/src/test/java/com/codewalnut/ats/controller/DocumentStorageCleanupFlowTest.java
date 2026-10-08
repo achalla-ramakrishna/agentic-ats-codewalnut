@@ -28,6 +28,7 @@ import com.codewalnut.ats.service.DocumentStorageCleanupService;
 import com.codewalnut.ats.service.DocumentStorageUnavailableException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import com.zaxxer.hikari.HikariDataSource;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.sql.Connection;
@@ -154,6 +155,15 @@ class DocumentStorageCleanupFlowTest {
         return postJson(URL, json.writeValueAsString(request));
     }
 
+    private void assertDatabaseReleased() {
+        assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+        assertThat(TransactionSynchronizationManager.hasResource(dataSource)).isFalse();
+        assertThat(TransactionSynchronizationManager.isSynchronizationActive()).isFalse();
+        // No other request/worker is active in the single-request tests. Checking
+        // the pool also catches a connection hidden by transaction suspension.
+        assertThat(((HikariDataSource) dataSource).getHikariPoolMXBean().getActiveConnections()).isZero();
+    }
+
     @Test
     void DOCSTORE06_nextSetupRepairsFixturesLeftByAnAbortedRun() throws Exception {
         UUID abandoned = document;
@@ -167,6 +177,10 @@ class DocumentStorageCleanupFlowTest {
 
     @Test
     void DOCSTORE06_dryRunIsTheDefaultAndAuditsWithoutDeletingBytes() throws Exception {
+        doAnswer(invocation -> {
+            assertDatabaseReleased();
+            return PDF;
+        }).when(store).get(key);
         cleanup(request()).andExpect(status().isOk()).andExpect(jsonPath("$.eligible").value(1))
                 .andExpect(jsonPath("$.cleaned").value(0));
         assertThat(tasks.staged(Target.DOCUMENT, document)).isEqualTo(PDF);
@@ -205,6 +219,7 @@ class DocumentStorageCleanupFlowTest {
         CountDownLatch finishRemoteReads = new CountDownLatch(1);
         doAnswer(invocation -> {
             assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+            assertThat(TransactionSynchronizationManager.hasResource(dataSource)).isFalse();
             bothSelected.countDown();
             if (!finishRemoteReads.await(10, TimeUnit.SECONDS)) throw new AssertionError("Remote reads not released");
             return PDF;
@@ -246,14 +261,35 @@ class DocumentStorageCleanupFlowTest {
 
     @Test
     void DOCSTORE06_missingAndMismatchedObjectsKeepDatabaseBytes() throws Exception {
+        UUID second = UUID.randomUUID();
+        jdbc.update("INSERT INTO candidate_document (id,candidate_id,kind,file_name,content_type,size_bytes,data,uploaded_by) "
+                        + "SELECT ?,candidate_id,kind,file_name,content_type,size_bytes,data,uploaded_by FROM candidate_document WHERE id=?",
+                DocumentStorageRepository.bytes(second), DocumentStorageRepository.bytes(document));
+        tasks.enqueue(Target.DOCUMENT, second, PDF, com.codewalnut.ats.service.DocumentContentService.sha256(PDF));
+        jdbc.update("UPDATE background_task SET status='READY',verified_at=? WHERE target_type='DOCUMENT' AND target_id=?",
+                Timestamp.from(OLD), DocumentStorageRepository.bytes(second));
+        doAnswer(invocation -> {
+            assertDatabaseReleased();
+            byte[] bytes = objects.get(invocation.<String>getArgument(0));
+            if (bytes == null) throw new DocumentStorageUnavailableException();
+            return bytes;
+        }).when(store).get(anyString());
         var request = request();
         request.put("dryRun", false);
-        objects.clear();
-        cleanup(request).andExpect(status().isOk()).andExpect(jsonPath("$.failed").value(1)).andExpect(jsonPath("$.cleaned").value(0));
-        assertThat(tasks.staged(Target.DOCUMENT, document)).isEqualTo(PDF);
-        objects.put(key, "corrupt fake content".getBytes(StandardCharsets.US_ASCII));
-        cleanup(request).andExpect(status().isOk()).andExpect(jsonPath("$.failed").value(1));
-        assertThat(tasks.staged(Target.DOCUMENT, document)).isEqualTo(PDF);
+        request.put("limit", 2);
+        try {
+            objects.clear();
+            cleanup(request).andExpect(status().isOk()).andExpect(jsonPath("$.scanned").value(2))
+                    .andExpect(jsonPath("$.failed").value(2)).andExpect(jsonPath("$.cleaned").value(0));
+            assertThat(tasks.staged(Target.DOCUMENT, document)).isEqualTo(PDF);
+            objects.put(key, "corrupt fake content".getBytes(StandardCharsets.US_ASCII));
+            cleanup(request).andExpect(status().isOk()).andExpect(jsonPath("$.failed").value(2));
+            assertThat(tasks.staged(Target.DOCUMENT, document)).isEqualTo(PDF);
+            assertThat(tasks.staged(Target.DOCUMENT, second)).isEqualTo(PDF);
+        } finally {
+            jdbc.update("UPDATE background_task SET verified_at=? WHERE target_type='DOCUMENT' AND target_id=?",
+                    Timestamp.from(Instant.parse("2037-01-01T00:00:00Z")), DocumentStorageRepository.bytes(second));
+        }
     }
 
     @Test
