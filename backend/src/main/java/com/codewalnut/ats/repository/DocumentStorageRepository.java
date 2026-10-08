@@ -22,6 +22,7 @@ public class DocumentStorageRepository {
     private final JdbcTemplate jdbc;
 
     public void enqueue(Target type, UUID target, byte[] data, String sha256) {
+        if (type != Target.DOCUMENT) throw new IllegalArgumentException("Only attached documents use private storage");
         jdbc.update("INSERT IGNORE INTO background_task (id,target_type,target_id,storage_key,sha256,size_bytes) VALUES (?,?,?,?,?,?)",
                 bytes(UUID.randomUUID()), type.name(), bytes(target), type.key(target), sha256, data.length);
     }
@@ -73,12 +74,9 @@ public class DocumentStorageRepository {
         jdbc.query("SELECT status,COUNT(*) FROM background_task GROUP BY status", rs -> {
             counts.put(rs.getString(1), rs.getLong(2));
         });
-        for (Target type : Target.values()) {
-            Long count = jdbc.queryForObject("SELECT COUNT(*) FROM " + type.table()
-                    + " d LEFT JOIN background_task t ON t.target_type=? AND t.target_id=d.id WHERE d.data IS NOT NULL AND t.id IS NULL",
-                    Long.class, type.name());
-            counts.put("UNQUEUED_" + type.name(), count);
-        }
+        Long count = jdbc.queryForObject("SELECT COUNT(*) FROM candidate_document d LEFT JOIN background_task t "
+                + "ON t.target_type='DOCUMENT' AND t.target_id=d.id WHERE d.data IS NOT NULL AND t.id IS NULL", Long.class);
+        counts.put("UNQUEUED_DOCUMENT", count);
         return counts;
     }
 

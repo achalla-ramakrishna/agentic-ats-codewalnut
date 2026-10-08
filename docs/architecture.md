@@ -295,11 +295,13 @@ MySQL `JSON` columns.
 | LinkedIn, Naukri, Indeed | Posting + applicant import | v1 |
 | HRMS (Keka / Darwinbox / Zoho People) | Hired hand-off | v1 |
 
-## Private document storage (ADR-0026)
+## Private document storage (ADR-0026, ADR-0029)
 
 Optional private Vercel Blob storage uses `DocumentContentService`, the
 `PrivateDocumentStore` adapter and an internal official-SDK bridge. Original bytes
-and a `BackgroundTask` commit together; a leased worker copies and verifies them.
+for attached documents and a `BackgroundTask` commit together; a leased worker copies and verifies them.
+Temporary bulk intakes stay only in MySQL until processing clears them. Verified local
+bytes are preferred until cleanup; Blob-only reads use bounded retries for busy responses.
 The task doubles as the immutable object manifest. Existing permissions run before
 all downloads; APIs expose metadata and file bytes, never provider URLs/tokens.
 See [storage requirements](features/document-storage.md) and

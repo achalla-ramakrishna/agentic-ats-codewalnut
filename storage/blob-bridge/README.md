@@ -33,7 +33,9 @@ No token belongs in a `VITE_*` variable, frontend build, or source control.
 ## Internal HTTP contract
 
 Every object operation requires `Authorization: Bearer <ATS_BLOB_BRIDGE_SECRET>`.
-The only allowed keys are `documents/<lowercase UUID>` and `intakes/<lowercase UUID>`.
+The application writes only `documents/<lowercase UUID>`. The bridge also recognizes
+legacy `intakes/<lowercase UUID>` keys for compatibility, but intake uploads and
+migration never create them (ADR-0029).
 No filename, candidate identifier, URL, query string, path escape, listing, delete,
 or browser-token endpoint is accepted.
 
@@ -64,7 +66,7 @@ for this, SDK overhead and Node itself when setting container memory limits; thi
 is a document bridge, not a database backup uploader.
 
 Objects are immutable. This first migration phase deliberately has no deletion
-endpoint. Expired intake copies and abandoned object records need a separately
+endpoint. Intake copies from an earlier unreleased build and abandoned object records need a separately
 reviewed retention/reconciliation workflow; operators must retain referenced
 objects and rollback copies. Object storage is not a backup by itself.
 

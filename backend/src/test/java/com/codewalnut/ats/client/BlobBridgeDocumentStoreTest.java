@@ -105,6 +105,65 @@ class BlobBridgeDocumentStoreTest {
     }
 
     @Test
+    void DOCSTORE_02_busyReadRetriesButNeverExtendsTheCompleteDeadline() {
+        AtomicInteger calls = new AtomicInteger();
+        server.createContext("/objects/" + key, exchange -> {
+            if (calls.incrementAndGet() == 1) {
+                exchange.sendResponseHeaders(503, -1);
+            } else {
+                exchange.sendResponseHeaders(200, pdf.length);
+                exchange.getResponseBody().write(pdf);
+            }
+            exchange.close();
+        });
+        assertThat(store(Duration.ofSeconds(3)).get(key)).isEqualTo(pdf);
+        assertThat(calls.get()).isEqualTo(2);
+        server.removeContext("/objects/" + key);
+        calls.set(0);
+        server.createContext("/objects/" + key, exchange -> {
+            calls.incrementAndGet();
+            exchange.getResponseHeaders().set("Retry-After", "3600");
+            exchange.sendResponseHeaders(503, -1);
+            exchange.close();
+        });
+        assertTimeoutPreemptively(Duration.ofSeconds(2), () ->
+                assertThatThrownBy(() -> store(Duration.ofMillis(300)).get(key))
+                        .isInstanceOf(DocumentStorageUnavailableException.class));
+        assertThat(calls.get()).isEqualTo(1);
+    }
+
+    @Test
+    void DOCSTORE_02_busyReadRetriesAreBoundedAndWritesRemainOutboxManaged() {
+        AtomicInteger calls = new AtomicInteger();
+        server.createContext("/objects/" + key, exchange -> {
+            calls.incrementAndGet();
+            exchange.getRequestBody().readAllBytes();
+            exchange.sendResponseHeaders(503, -1);
+            exchange.close();
+        });
+        assertThatThrownBy(() -> store(Duration.ofSeconds(3)).get(key))
+                .isInstanceOf(DocumentStorageUnavailableException.class);
+        assertThat(calls.get()).isEqualTo(3);
+        calls.set(0);
+        assertThatThrownBy(() -> store(Duration.ofSeconds(3)).put(key, pdf, DocumentContentService.sha256(pdf)))
+                .isInstanceOf(DocumentStorageUnavailableException.class);
+        assertThat(calls.get()).isEqualTo(1);
+    }
+
+    @Test
+    void DOCSTORE_01_authorizationFailuresAreNeverRetried() {
+        AtomicInteger calls = new AtomicInteger();
+        server.createContext("/objects/" + key, exchange -> {
+            calls.incrementAndGet();
+            exchange.sendResponseHeaders(401, -1);
+            exchange.close();
+        });
+        assertThatThrownBy(() -> store(Duration.ofSeconds(3)).get(key))
+                .isInstanceOf(DocumentStorageUnavailableException.class);
+        assertThat(calls.get()).isEqualTo(1);
+    }
+
+    @Test
     void DOCSTORE_01_arbitraryUrlsAndDisabledStorageNeverReachBridge() {
         assertThatThrownBy(() -> store(Duration.ofSeconds(1)).get("https://public.example/file"))
                 .isInstanceOf(DocumentStorageUnavailableException.class);

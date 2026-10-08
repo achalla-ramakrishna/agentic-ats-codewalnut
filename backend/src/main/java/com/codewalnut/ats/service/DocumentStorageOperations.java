@@ -37,13 +37,11 @@ public class DocumentStorageOperations {
         requireOperator(actor);
         if (limit < 1 || limit > 100) throw new IllegalArgumentException("limit must be between 1 and 100");
         int count = 0;
-        for (Target type : Target.values()) {
-            for (UUID id : repository.unqueued(type, limit)) {
-                byte[] data = repository.staged(type, id);
-                if (data != null) {
-                    repository.enqueue(type, id, data, DocumentContentService.sha256(data));
-                    count++;
-                }
+        for (UUID id : repository.unqueued(Target.DOCUMENT, limit)) {
+            byte[] data = repository.staged(Target.DOCUMENT, id);
+            if (data != null) {
+                repository.enqueue(Target.DOCUMENT, id, data, DocumentContentService.sha256(data));
+                count++;
             }
         }
         audit.record(actor, AuditAction.DOCUMENT_STORAGE_MIGRATION, null, null, Map.of("queued", count));

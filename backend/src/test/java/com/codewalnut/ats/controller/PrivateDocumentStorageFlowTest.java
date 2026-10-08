@@ -272,13 +272,21 @@ class PrivateDocumentStorageFlowTest {
     }
 
     @Test
-    void DOCSTORE02_corruptRemoteCopyFallsBackOnlyToVerifiedLegacyBytes() throws Exception {
+    void DOCSTORE02_retainedCopyIsVerifiedWithoutRemoteReadAndBlobOnlyCorruptionFailsClosed() throws Exception {
         UUID document = upload(fixture("checksum"), "CODEWALNUT_RESUME");
         pollUntilProgress(document);
         assertThat(task(document).status()).isEqualTo("READY");
+        clearInvocations(store);
         objects.put(task(document).storageKey(), "corrupt remote fake bytes".getBytes(StandardCharsets.US_ASCII));
         mockMvc.perform(get("/api/v1/documents/" + document).with(ADMIN))
                 .andExpect(status().isOk()).andExpect(content().bytes(PDF));
+        verifyNoInteractions(store);
+        jdbc.update("UPDATE candidate_document SET data=? WHERE id=?", "corrupt local fixture".getBytes(StandardCharsets.US_ASCII),
+                DocumentStorageRepository.bytes(document));
+        entityManager.clear();
+        mockMvc.perform(get("/api/v1/documents/" + document).with(ADMIN))
+                .andExpect(status().isServiceUnavailable());
+        verifyNoInteractions(store);
         jdbc.update("UPDATE candidate_document SET data=NULL WHERE id=?", DocumentStorageRepository.bytes(document));
         entityManager.clear();
         mockMvc.perform(get("/api/v1/documents/" + document).with(ADMIN))
@@ -327,7 +335,30 @@ class PrivateDocumentStorageFlowTest {
         assertThat(task(document).id()).isEqualTo(taskId);
         assertThat(task(document).sha256()).isEqualTo(DocumentContentService.sha256(PDF));
         verifyNoInteractions(store);
+        jdbc.update("UPDATE background_task SET status='FAILED',attempts=8 WHERE id=?", DocumentStorageRepository.bytes(taskId));
         mockMvc.perform(post(OPERATIONS + "/retry").with(ADMIN).with(csrf())).andExpect(status().isOk());
+        assertThat(task(document).status()).isEqualTo("PENDING");
+        assertThat(task(document).attempts()).isZero();
+    }
+
+    @Test
+    void DOCSTORE04_migrationNeverCopiesPendingTemporaryIntakes() throws Exception {
+        Fixture fixture = fixture("temporary-intake");
+        UUID intake = UUID.randomUUID();
+        entityManager.flush();
+        byte[] job = jdbc.queryForObject("SELECT job_id FROM application WHERE id=?", byte[].class,
+                DocumentStorageRepository.bytes(UUID.fromString(fixture.applicationId())));
+        jdbc.update("INSERT INTO resume_intake(id,job_id,file_name,content_type,data,status,uploaded_by) VALUES(?,?,?,?,?,'PENDING',?)",
+                DocumentStorageRepository.bytes(intake), job, "fake-pending-intake.pdf", "application/pdf", PDF,
+                "admin@codewalnut.test");
+        mockMvc.perform(post(OPERATIONS + "/migrate?limit=100").with(ADMIN).with(csrf()))
+                .andExpect(status().isOk());
+        assertThat(tasks.find(Target.INTAKE, intake)).isEmpty();
+        assertThat(tasks.staged(Target.INTAKE, intake)).isEqualTo(PDF);
+        assertThatThrownBy(() -> tasks.enqueue(Target.INTAKE, intake, PDF, DocumentContentService.sha256(PDF)))
+                .isInstanceOf(org.springframework.dao.InvalidDataAccessApiUsageException.class)
+                .hasRootCauseInstanceOf(IllegalArgumentException.class);
+        verifyNoInteractions(store);
     }
 
     @Test
@@ -337,9 +368,11 @@ class PrivateDocumentStorageFlowTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"kind\":\"ROLE\",\"role\":\"RECRUITER\"}"))
                 .andExpect(status().isOk());
         mockMvc.perform(post(OPERATIONS + "/migrate").session(session).with(ADMIN).with(csrf()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error", org.hamcrest.Matchers.containsString("(read-only)")));
         mockMvc.perform(post(OPERATIONS + "/retry").session(session).with(ADMIN).with(csrf()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error", org.hamcrest.Matchers.containsString("(read-only)")));
         verifyNoInteractions(store);
     }
 }

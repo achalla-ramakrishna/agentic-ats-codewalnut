@@ -22,9 +22,9 @@ public class DocumentContentService {
     private final DocumentStorageProperties properties;
     private final PrivateDocumentStore store;
 
-    /** Called in the same transaction as the document/intake insert: durable staging plus outbox. */
+    /** Called in the same transaction as the document insert: durable staging plus outbox. */
     public void stage(Target type, UUID id, byte[] data) {
-        if (properties.enabled()) repository.enqueue(type, id, data, sha256(data));
+        if (properties.enabled() && type == Target.DOCUMENT) repository.enqueue(type, id, data, sha256(data));
     }
 
     public byte[] read(CandidateDocument document) {
@@ -32,24 +32,22 @@ public class DocumentContentService {
     }
 
     public byte[] read(ResumeIntake intake) {
-        return read(Target.INTAKE, intake.getId(), intake.getData());
+        // Temporary uploads keep their existing delete-after-processing lifecycle.
+        if (intake.getData() == null) throw new DocumentStorageUnavailableException();
+        return intake.getData();
     }
 
     private byte[] read(Target type, UUID id, byte[] legacy) {
         var task = repository.find(type, id);
-        if (task.isPresent() && "READY".equals(task.get().status()) && properties.enabled()) {
-            try {
-                byte[] bytes = store.get(task.get().storageKey());
-                verify(task.get(), bytes);
-                return bytes;
-            } catch (DocumentStorageUnavailableException e) {
-                // Only a verified retained copy is a valid fallback. Never fetch a public URL.
-                if (legacy == null) throw e;
-                verify(task.get(), legacy);
-                return legacy;
-            }
+        if (legacy != null) {
+            if (task.isPresent() && "READY".equals(task.get().status())) verify(task.get(), legacy);
+            return legacy;
         }
-        if (legacy != null) return legacy;
+        if (task.isPresent() && "READY".equals(task.get().status()) && properties.enabled()) {
+            byte[] bytes = store.get(task.get().storageKey());
+            verify(task.get(), bytes);
+            return bytes;
+        }
         throw new DocumentStorageUnavailableException();
     }
 

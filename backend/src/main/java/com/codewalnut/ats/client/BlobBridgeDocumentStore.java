@@ -70,13 +70,43 @@ public class BlobBridgeDocumentStore implements PrivateDocumentStore {
     }
 
     private byte[] exchange(HttpRequest request, int limit) {
+        long deadline = System.nanoTime() + timeout.toNanos();
+        for (int attempt = 0; attempt < 3; attempt++) {
+            HttpResponse<byte[]> response = exchangeOnce(request, limit, deadline);
+            if (response.statusCode() == 200) return response.body();
+            // Only retry explicit transient read failures. Uploads already have a durable
+            // outbox; redirects, auth failures and corrupt bodies must never be retried here.
+            if (!request.method().equals("GET") || response.statusCode() != 503 || attempt == 2) {
+                throw new DocumentStorageUnavailableException();
+            }
+            long delayMillis = 200L << attempt;
+            try {
+                long retryAfter = Long.parseLong(response.headers().firstValue("Retry-After").orElse("0"));
+                if (retryAfter > 0) delayMillis = Math.max(delayMillis, Math.min(retryAfter, 2) * 1000);
+            } catch (NumberFormatException ignored) {
+                // The internal bridge uses delta seconds; malformed headers use local backoff.
+            }
+            if (deadline - System.nanoTime() <= TimeUnit.MILLISECONDS.toNanos(delayMillis)) {
+                throw new DocumentStorageUnavailableException();
+            }
+            try {
+                Thread.sleep(delayMillis);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new DocumentStorageUnavailableException();
+            }
+        }
+        throw new DocumentStorageUnavailableException();
+    }
+
+    private HttpResponse<byte[]> exchangeOnce(HttpRequest request, int limit, long deadline) {
+        long remaining = deadline - System.nanoTime();
+        if (remaining <= 0) throw new DocumentStorageUnavailableException();
         BoundedBody body = new BoundedBody(limit);
         CompletableFuture<HttpResponse<byte[]>> future = client.sendAsync(request, ignored -> body);
         try {
-            // Covers the complete body, including a peer that sends headers then stalls.
-            HttpResponse<byte[]> response = future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-            if (response.statusCode() != 200) throw new DocumentStorageUnavailableException();
-            return response.body();
+            // One deadline covers all retries and complete bodies, including a stalled peer.
+            return future.get(remaining, TimeUnit.NANOSECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new DocumentStorageUnavailableException();

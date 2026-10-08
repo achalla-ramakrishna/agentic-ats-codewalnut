@@ -77,7 +77,6 @@ public class ResumeIntelligenceService {
     private final ResumeIntakeRepository intakeRepository;
     private final CandidateInsightRepository insightRepository;
     private final CandidateDocumentRepository documentRepository;
-    private final DocumentContentService content;
     private final ResumeProcessor processor;
     private final ResumeAnalyzer analyzer;
     private final AiWorkQueue queue;
@@ -125,7 +124,6 @@ public class ResumeIntelligenceService {
                     .uploadedBy(actor.getEmail())
                     .build());
             if (problem == null) {
-                content.stage(com.codewalnut.ats.domain.BackgroundTask.Target.INTAKE, intake.getId(), data);
                 created.add(intake.getId());
             }
         }
@@ -254,11 +252,11 @@ public class ResumeIntelligenceService {
     }
 
     void processInsight(UUID applicationId) {
-        Optional<ResumeProcessor.Work> work = processor.startInsight(applicationId);
-        if (work.isEmpty()) {
-            return;
-        }
         try {
+            Optional<ResumeProcessor.Work> work = processor.startInsight(applicationId);
+            if (work.isEmpty()) {
+                return;
+            }
             ResumeInsight insight = analyzer.analyze(work.get().job(), work.get().file());
             processor.finishInsight(applicationId, work.get().documentId(), insight, analyzer.model(), work.get().jobHash());
         } catch (CalendarException e) {

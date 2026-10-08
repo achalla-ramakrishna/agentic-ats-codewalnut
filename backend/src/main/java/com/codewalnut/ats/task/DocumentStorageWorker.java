@@ -38,9 +38,14 @@ public class DocumentStorageWorker {
         UUID lease = UUID.randomUUID();
         if (!repository.claim(task.id(), lease)) return;
         try {
+            // Compatibility with a queued intake from an earlier rollout: never create
+            // a permanent provider copy of data whose lifecycle ends after processing.
+            if (task.targetType() != BackgroundTask.Target.DOCUMENT) {
+                repository.complete(task.id(), lease, true);
+                return;
+            }
             byte[] bytes = repository.staged(task.targetType(), task.targetId());
             if (bytes == null) {
-                // An intake may finish before its upload task runs; its attached document has its own task.
                 repository.complete(task.id(), lease, true);
                 return;
             }
