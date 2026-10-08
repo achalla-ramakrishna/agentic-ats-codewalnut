@@ -64,6 +64,10 @@ Monitor OOM restarts, RSS, swap, disk/temp usage, latency, DB connections and lo
 under concurrent 10 MB uploads, bulk 60 MB requests and PDF rendering. Upgrade to
 4 GB if reserve/latency is inadequate. Build images on CI, not the Droplet. Configure
 alerts and rotating logs; never enable request/body logging for candidate data.
+Caddy handles proxy failures with a generic noncacheable response and removes
+request objects/response headers from its default runtime logs. Keep debug and
+access logging off. Run `python3 scripts/deploy/test_proxy.py` to verify spoofed
+forwarding headers and token-free backend-failure logs in isolated Docker containers.
 
 ## Vercel configuration and release
 

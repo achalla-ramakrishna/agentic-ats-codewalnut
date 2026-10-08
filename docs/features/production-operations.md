@@ -9,7 +9,7 @@ Droplet. ADR-0027 describes the decision. The Railway deployment remains support
 | DEPLOY-02 | Rehearsal forces maintenance and disables background work regardless of other flags. It refuses dev/demo profiles. Copied production data is never exercised with passwordless login or live provider credentials. |
 | DEPLOY-03 | A disabled background-work flag prevents AI queue execution, code grading startup/events/sweep and built-in question startup writes. Async=false is not a pause switch. |
 | DEPLOY-04 | The Droplet publishes only HTTPS/HTTP, keeps MySQL and the private storage bridge off public ports, limits container resources, and retains persistent data across image replacement. |
-| DEPLOY-05 | Vercel proxies API and authentication on one public origin. The origin proxy overwrites forwarded identity with the configured public host and forbids caching API/provider responses. Previews use isolated data and credentials. |
+| DEPLOY-05 | Vercel proxies API and authentication on one public origin. The origin proxy overwrites forwarded identity with the configured public host and forbids caching API/provider responses. Proxy errors never log request objects or reflect request tokens. Previews use isolated data and credentials. |
 | DEPLOY-06 | Deployment uses tested immutable image digests, manual promotion, encrypted off-server backups and a rehearsed restore. Final cutover has one writer, preserved links and an explicit post-write rollback plan. |
 
 Operations flags are read at restart, not live toggles. An HTTP freeze cannot cancel
@@ -21,3 +21,5 @@ this is an application activity freeze, not a read-only database connection.
 
 - 2026-10-08: Add same-origin Vercel/Droplet deployment, rehearsal/maintenance controls,
   immutable image publication and the Railway migration runbook (DEPLOY-01–06).
+
+- 2026-10-08: Verify forwarded-header handling and private upstream-failure logs against a real Caddy container (DEPLOY-05).

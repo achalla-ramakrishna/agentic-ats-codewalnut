@@ -29,6 +29,8 @@ jobs:
           [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]
           git merge-base --is-ancestor "$REVISION" origin/main
           git checkout --detach "$REVISION"
+      - name: Verify canonical proxy headers and private error handling
+        run: python3 scripts/deploy/test_proxy.py
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '21', cache: maven}
       - uses: actions/setup-node@v4

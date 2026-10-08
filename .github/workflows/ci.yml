@@ -72,3 +72,10 @@ jobs:
           cache-dependency-path: storage/blob-bridge/package-lock.json
       - run: npm ci --ignore-scripts
       - run: npm test
+
+  deployment-proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify canonical proxy headers and private error handling
+        run: python3 scripts/deploy/test_proxy.py
