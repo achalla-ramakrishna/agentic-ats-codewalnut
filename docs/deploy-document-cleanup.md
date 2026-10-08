@@ -31,8 +31,14 @@ completed and recorded the checks below.
    dry-run compete for storage. Include bursts of at least three simultaneous
    reads (beyond the bridge's two-operation capacity) and the expected peak load,
    with realistic file sizes. Verify successful authorized downloads and checksums,
-   bounded recovery after transient provider/busy failures, no insights left stuck
-   on "Reading…", and acceptable latency, memory and connection usage. Record
+   bounded automatic retry when the bridge returns 503 busy, no insights left stuck
+   on "Reading…", and acceptable latency, memory and connection usage. Provider
+   failures reported by the bridge as 502 are not automatically retried within that
+   request: after cleanup they reach the user as a generic 503. Explicitly rehearse
+   this failure and recovery: the insight must become FAILED, the user must be able
+   to retry it after storage recovers, and a subsequent download request must return
+   the correct file. Exhausted busy retries also surface an error; they do not
+   guarantee that the original request succeeds. Record
    the workload and measured results with the restore evidence. Unresolved 503s,
    stuck work, memory exhaustion or unacceptable latency block production cleanup;
    adjust capacity or resolve the failure and repeat the rehearsal.
@@ -124,8 +130,23 @@ manifests and remote objects are preserved. Intake staging is excluded.
 When maintenance is done, set `ATS_DOCUMENT_STORAGE_CLEANUP_ENABLED=false` and
 `ATS_DOCUMENT_STORAGE_OPERATIONS_ENABLED=false` in `.env.backend`, then run the
 same backend recreation command. Merely editing the file leaves the running
-process enabled. After it is healthy, verify an authenticated admin cleanup request
-with CSRF receives 404 without changing data. Keep `ATS_DOCUMENT_STORAGE_ENABLED=true`
+process enabled. After it is healthy, send an authenticated admin POST to the same
+cleanup endpoint, with CSRF and this deliberately invalid confirmation:
+
+```json
+{
+  "confirmation": "CHECK CLEANUP IS DISABLED",
+  "dryRun": true
+}
+```
+
+Expect 404 when the cleanup/operations gates are disabled. A 400 means the endpoint
+is still enabled and rejected the invalid confirmation: correct the configuration,
+recreate the backend and repeat this harmless probe. Other statuses do not verify
+disablement. Never reuse the last destructive request for this check; the probe
+cannot remove bytes even if the configuration change failed.
+
+Keep `ATS_DOCUMENT_STORAGE_ENABLED=true`
 in `.env`: documents whose database copies were removed still require Blob reads.
 There is no automatic cleanup schedule.
 

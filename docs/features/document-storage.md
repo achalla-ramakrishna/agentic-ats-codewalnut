@@ -38,6 +38,7 @@ this change is not a claim of 2 GiB production capacity.
 | --- | --- |
 | 2026-10-09 | Record download audits after authorization snapshots release their connections; preserve audit-before-read behavior and test concurrent staff/client downloads with a two-connection pool (DOCSTORE-01). |
 | 2026-10-08 | Separate authorized database snapshots from provider reads so storage waits do not hold database connections (DOCSTORE-01). |
+| 2026-10-08 | Make the post-disable check explicitly non-destructive and distinguish automatic busy retries from subsequent-request recovery after provider failures in the cleanup rehearsal (DOCSTORE-06). |
 | 2026-10-08 | Keep temporary intakes database-only, prefer verified local reads and bound busy-read retries (DOCSTORE-02…04, ADR-0029). |
 | 2026-10-08 | Require a measured Blob-only concurrent-load rehearsal before cleanup; clarify Compose flag sources/recreation and audit scope. Add interrupted-run fixture recovery, separate operations-gate, View-as-specific denial and real MySQL lock-contention regression coverage (DOCSTORE-06). |
 | 2026-10-08 | Add separately gated cleanup after backup restoration and observation, with fresh verification and atomic audit (DOCSTORE-06; [runbook](../deploy-document-cleanup.md), [ADR-0028](../adr/0028-gated-legacy-document-cleanup.md)). |
