@@ -22,19 +22,55 @@ completed and recorded the checks below.
 4. Verify the running application and rollback image both understand private Blob
    manifests. Once cleanup happens, a pre-storage application cannot serve those
    documents; reverting code alone cannot recover deleted bytes.
-5. Confirm live downloads and private provider access are healthy. Do not proceed
+5. **Pass a Blob-only concurrent-load rehearsal before the first destructive
+   production batch.** Use an isolated rehearsal with the exact deployment images,
+   target Droplet resources, limits and worker settings, a separate private store,
+   and representative synthetic documents whose database bytes are NULL. Never
+   remove production bytes just to perform this test. Exercise staff and client
+   downloads, including permission denials, while résumé reads and a cleanup
+   dry-run compete for storage. Include bursts of at least three simultaneous
+   reads (beyond the bridge's two-operation capacity) and the expected peak load,
+   with realistic file sizes. Verify successful authorized downloads and checksums,
+   bounded recovery after transient provider/busy failures, no insights left stuck
+   on "Reading…", and acceptable latency, memory and connection usage. Record
+   the workload and measured results with the restore evidence. Unresolved 503s,
+   stuck work, memory exhaustion or unacceptable latency block production cleanup;
+   adjust capacity or resolve the failure and repeat the rehearsal.
+6. Confirm live downloads and private provider access remain healthy. Do not proceed
    while transfers are failing, referenced objects are missing, backups are
-   incomplete, or there is an unresolved incident.
+   incomplete, or there is an unresolved incident. Healthy reads with retained
+   database copies do not satisfy the Blob-only rehearsal gate.
 
 ## Operator request
 
-Temporarily set all three flags on the backend:
+For the supplied DigitalOcean Compose deployment, the two environment files live
+beside `compose.yml` in `/opt/ats/deploy/digitalocean`. Configure flags in their
+actual sources:
 
-```text
-ATS_DOCUMENT_STORAGE_ENABLED=true
-ATS_DOCUMENT_STORAGE_OPERATIONS_ENABLED=true
-ATS_DOCUMENT_STORAGE_CLEANUP_ENABLED=true
+| File | Setting for the maintenance window |
+| --- | --- |
+| `.env` | `ATS_DOCUMENT_STORAGE_ENABLED=true` |
+| `.env.backend` | `ATS_DOCUMENT_STORAGE_OPERATIONS_ENABLED=true` |
+| `.env.backend` | `ATS_DOCUMENT_STORAGE_CLEANUP_ENABLED=true` |
+
+Compose's explicit `environment:` entry for `ATS_DOCUMENT_STORAGE_ENABLED`
+overrides a value placed in `.env.backend`; the operations and cleanup flags
+come from `.env.backend`. Keep both files private (`chmod 600`) and do not print
+the expanded Compose configuration or secrets into shared logs.
+
+These flags are read at application startup. After editing the files, recreate
+the backend container from that directory so Compose loads the changed values:
+
+```sh
+cd /opt/ats/deploy/digitalocean
+docker compose --env-file .env up -d --no-deps --force-recreate backend
 ```
+
+A plain `docker compose restart backend` does not reload the container environment.
+Plan the resulting brief backend interruption, wait for it to become healthy and
+verify the authenticated operator status/dry-run before attempting a destructive
+request. For a different deployment, set the same three variables in the backend
+service's environment and redeploy it; they never belong in the frontend.
 
 Use the normal authenticated admin session and CSRF header with
 `POST /api/v1/admin/document-storage/cleanup`. MANAGE_USERS is required; View as
@@ -64,12 +100,17 @@ a credential, signed URL, filename, candidate name or contact detail.
 
 The response contains only `scanned`, `eligible`, `cleaned`, `skipped`, and `failed`
 counts. Dry-run freshly checks private bytes and current database bytes without
-changing documents; it records a summary audit with `dryRun: true`. It does not
+changing documents; a completed dry-run records a summary audit with `dryRun: true`. It does not
 reserve a batch. A later destructive request reselects and re-verifies its batch.
 
 Review the dry-run and recovery evidence. To remove one verified copy, submit the
 same parameters with `dryRun: false`. Each removed copy receives a per-document
-audit committed atomically with the change; every request also has a count summary.
+audit committed atomically with the change. Requests that reach normal completion
+also have a count summary. Rejected configuration/confirmation/cutoff requests and
+requests that fail before summary recording do not produce a cleanup summary;
+permission denials follow the existing access-policy audit. The atomic per-document
+audit remains the source of truth for destructive changes if a later summary or
+HTTP response fails.
 If `failed` or `skipped` is nonzero, stop and investigate before proceeding. Failures
 keep their database bytes. Since the oldest eligible documents are selected first,
 a failing document must be repaired before a small batch can progress past it.
@@ -80,8 +121,12 @@ Documents verified after the cutoff remain in MySQL until a later eligible windo
 Only document bytes are cleared; document IDs, metadata, client shares, task
 manifests and remote objects are preserved. Intake staging is excluded.
 
-Disable `ATS_DOCUMENT_STORAGE_CLEANUP_ENABLED` and
-`ATS_DOCUMENT_STORAGE_OPERATIONS_ENABLED` immediately when the maintenance is done.
+When maintenance is done, set `ATS_DOCUMENT_STORAGE_CLEANUP_ENABLED=false` and
+`ATS_DOCUMENT_STORAGE_OPERATIONS_ENABLED=false` in `.env.backend`, then run the
+same backend recreation command. Merely editing the file leaves the running
+process enabled. After it is healthy, verify an authenticated admin cleanup request
+with CSRF receives 404 without changing data. Keep `ATS_DOCUMENT_STORAGE_ENABLED=true`
+in `.env`: documents whose database copies were removed still require Blob reads.
 There is no automatic cleanup schedule.
 
 ## Recovery and disk usage

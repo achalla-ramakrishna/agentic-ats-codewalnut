@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -29,11 +30,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.sql.Connection;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,6 +76,7 @@ class DocumentStorageCleanupFlowTest {
     @Autowired private DocumentStorageRepository tasks;
     @Autowired private AuditLogRepository audits;
     @Autowired private ObjectMapper json;
+    @Autowired private DataSource dataSource;
     @MockBean private PrivateDocumentStore store;
     @MockBean(name = "documentStorageCleanupClock") private Clock clock;
     @SpyBean private AuditService auditService;
@@ -80,6 +88,7 @@ class DocumentStorageCleanupFlowTest {
 
     @BeforeEach
     void fixture() throws Exception {
+        retireAbandonedFixtures();
         when(clock.instant()).thenReturn(NOW);
         String tag = UUID.randomUUID().toString();
         String client = id(postJson("/api/v1/clients", "{\"name\":\"Fake cleanup client " + tag + "\"}"));
@@ -101,11 +110,19 @@ class DocumentStorageCleanupFlowTest {
         jdbc.update("UPDATE background_task SET status='READY',verified_at=? WHERE target_id=? AND target_type='DOCUMENT'",
                 Timestamp.from(OLD), DocumentStorageRepository.bytes(document));
         objects.put(key, PDF);
-        when(store.get(anyString())).thenAnswer(invocation -> {
+        doAnswer(invocation -> {
             byte[] bytes = objects.get(invocation.<String>getArgument(0));
             if (bytes == null) throw new DocumentStorageUnavailableException();
             return bytes;
-        });
+        }).when(store).get(anyString());
+    }
+
+    private void retireAbandonedFixtures() {
+        // A killed JVM never runs @AfterEach. Restrict repair to this class's
+        // reserved synthetic filename/uploader, leaving other suites' rows alone.
+        jdbc.update("UPDATE background_task t JOIN candidate_document d ON d.id=t.target_id "
+                        + "SET t.verified_at=? WHERE t.target_type='DOCUMENT' AND d.file_name=? AND d.uploaded_by=?",
+                Timestamp.from(Instant.parse("2037-01-01T00:00:00Z")), "fake-cleanup.pdf", "admin@codewalnut.test");
     }
 
     @AfterEach
@@ -135,6 +152,17 @@ class DocumentStorageCleanupFlowTest {
 
     private ResultActions cleanup(Map<String, Object> request) throws Exception {
         return postJson(URL, json.writeValueAsString(request));
+    }
+
+    @Test
+    void DOCSTORE06_nextSetupRepairsFixturesLeftByAnAbortedRun() throws Exception {
+        UUID abandoned = document;
+        objects.clear(); // A previous JVM's fake object store does not survive.
+        fixture();
+        assertThat(tasks.find(Target.DOCUMENT, abandoned).orElseThrow().verifiedAt()).isAfter(NOW);
+        assertThat(tasks.staged(Target.DOCUMENT, abandoned)).isEqualTo(PDF);
+        cleanup(request()).andExpect(status().isOk()).andExpect(jsonPath("$.scanned").value(1))
+                .andExpect(jsonPath("$.eligible").value(1)).andExpect(jsonPath("$.failed").value(0));
     }
 
     @Test
@@ -169,6 +197,51 @@ class DocumentStorageCleanupFlowTest {
                     assertThat(audit.getEntityId()).isEqualTo(document.toString());
                     assertThat(audit.getDetails()).contains("\"cleaned\":1", "\"restoreVerified\":true");
                 });
+    }
+
+    @Test
+    void DOCSTORE06_concurrentCleanupWaitsForMysqlLockAndDeletesExactlyOnce() throws Exception {
+        CountDownLatch bothSelected = new CountDownLatch(2);
+        CountDownLatch finishRemoteReads = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+            bothSelected.countDown();
+            if (!finishRemoteReads.await(10, TimeUnit.SECONDS)) throw new AssertionError("Remote reads not released");
+            return PDF;
+        }).when(store).get(key);
+        var request = request();
+        request.put("dryRun", false);
+        try (Connection blocker = dataSource.getConnection(); var executor = Executors.newFixedThreadPool(2)) {
+            blocker.setAutoCommit(false);
+            // A third, independent connection owns the real MySQL row lock. Both
+            // HTTP requests must reach the provider before either can delete.
+            try (var statement = blocker.prepareStatement("SELECT id FROM candidate_document WHERE id=? FOR UPDATE")) {
+                statement.setBytes(1, DocumentStorageRepository.bytes(document));
+                try (var rows = statement.executeQuery()) { assertThat(rows.next()).isTrue(); }
+            }
+            var first = executor.submit(() -> cleanup(request).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+            var second = executor.submit(() -> cleanup(request).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+            try {
+                assertThat(bothSelected.await(10, TimeUnit.SECONDS)).isTrue();
+                finishRemoteReads.countDown();
+                org.junit.jupiter.api.Assertions.assertThrows(TimeoutException.class, () -> first.get(200, TimeUnit.MILLISECONDS));
+                org.junit.jupiter.api.Assertions.assertThrows(TimeoutException.class, () -> second.get(200, TimeUnit.MILLISECONDS));
+                blocker.commit();
+                String a = first.get(10, TimeUnit.SECONDS);
+                String b = second.get(10, TimeUnit.SECONDS);
+                assertThat((Integer) JsonPath.read(a, "$.cleaned") + (Integer) JsonPath.read(b, "$.cleaned")).isEqualTo(1);
+                assertThat((Integer) JsonPath.read(a, "$.skipped") + (Integer) JsonPath.read(b, "$.skipped")).isEqualTo(1);
+                assertThat((Integer) JsonPath.read(a, "$.failed") + (Integer) JsonPath.read(b, "$.failed")).isZero();
+                assertThat(tasks.staged(Target.DOCUMENT, document)).isNull();
+                long committedAudits = audits.findByActionAndActorEmailOrderByCreatedAtDesc(
+                        AuditAction.DOCUMENT_STORAGE_CLEANUP, "admin@codewalnut.test").stream()
+                        .filter(audit -> document.toString().equals(audit.getEntityId())).count();
+                assertThat(committedAudits).isEqualTo(1);
+            } finally {
+                finishRemoteReads.countDown();
+                blocker.rollback();
+            }
+        }
     }
 
     @Test
@@ -242,7 +315,10 @@ class DocumentStorageCleanupFlowTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"kind\":\"ROLE\",\"role\":\"RECRUITER\"}"))
                 .andExpect(status().isOk());
         mvc.perform(post(URL).session(session).with(user("admin@codewalnut.test")).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value(org.hamcrest.Matchers.allOf(
+                        org.hamcrest.Matchers.startsWith("You're viewing as "),
+                        org.hamcrest.Matchers.containsString("(read-only), so nothing was changed."))));
         verifyNoInteractions(store);
         assertThat(tasks.staged(Target.DOCUMENT, document)).isEqualTo(PDF);
     }
