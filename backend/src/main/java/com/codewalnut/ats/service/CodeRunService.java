@@ -45,6 +45,7 @@ public class CodeRunService {
     private static final int OUTPUT_PREVIEW = 1000;
     private static final int ERROR_PREVIEW = 2000;
 
+    private final com.codewalnut.ats.config.OperationsMode operations;
     private final AssessmentInviteService invites;
     private final AssessmentQuestionRepository questionRepository;
     private final CodingSpecs codingSpecs;
@@ -55,7 +56,8 @@ public class CodeRunService {
 
     public CodeRunService(AssessmentInviteService invites, AssessmentQuestionRepository questionRepository, CodingSpecs codingSpecs,
             CodeRunner runner, AccessPolicy accessPolicy, @Value("${ats.coding.async:true}") boolean async,
-            @Value("${ats.coding.workers:2}") int workers) {
+            @Value("${ats.coding.workers:2}") int workers, com.codewalnut.ats.config.OperationsMode operations) {
+        this.operations = operations;
         this.invites = invites;
         this.questionRepository = questionRepository;
         this.codingSpecs = codingSpecs;
@@ -114,13 +116,16 @@ public class CodeRunService {
     /** Picks up grading left unfinished by a restart. */
     @EventListener(ApplicationReadyEvent.class)
     public void resumePending() {
-        if (executor != null) {
+        if (operations.backgroundWorkEnabled() && executor != null) {
             invites.pendingGrading().forEach(this::submit);
         }
     }
 
     /** Grades in the background (inline when ats.coding.async is false, as in tests). */
     public void submit(UUID inviteId) {
+        if (!operations.backgroundWorkEnabled()) {
+            return;
+        }
         if (executor == null) {
             grade(inviteId);
         } else {
@@ -130,6 +135,9 @@ public class CodeRunService {
 
     /** Runs every coding answer of a submitted test and records the final score. Never throws. */
     public void grade(UUID inviteId) {
+        if (!operations.backgroundWorkEnabled()) {
+            return;
+        }
         if (!inFlight.add(inviteId)) {
             return;
         }

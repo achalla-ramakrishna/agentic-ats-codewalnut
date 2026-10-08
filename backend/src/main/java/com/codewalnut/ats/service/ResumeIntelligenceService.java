@@ -63,6 +63,8 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class ResumeIntelligenceService {
 
+    private final com.codewalnut.ats.config.OperationsMode operations;
+
     static final int MAX_FILES_PER_UPLOAD = 50;
     static final int SUGGESTIONS = 10;
     /** Below this, a match isn't strong enough to suggest contacting first. */
@@ -285,6 +287,9 @@ public class ResumeIntelligenceService {
     /** Picks up work a restart interrupted. */
     @EventListener(ApplicationReadyEvent.class)
     public void resumeUnfinished() {
+        if (!operations.backgroundWorkEnabled()) {
+            return;
+        }
         if (!analyzer.available()) {
             return;
         }

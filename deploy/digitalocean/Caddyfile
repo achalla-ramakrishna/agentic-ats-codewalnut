@@ -1,0 +1,23 @@
+{$ATS_ORIGIN_HOST} {
+	# Deliberately no access log: URLs can contain assessment/share tokens.
+	@backend path /api /api/* /oauth2/* /login/oauth2/* /webhooks/*
+	handle @backend {
+		reverse_proxy backend:8080 {
+			# Ignore every caller-supplied proxy identity; OAuth always uses the public host.
+			header_up -Forwarded
+			header_up -X-Forwarded-*
+			header_up -X-Real-IP
+			header_up Host {$ATS_PUBLIC_HOST}
+			header_up X-Forwarded-Host {$ATS_PUBLIC_HOST}
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-Port 443
+			header_up X-Forwarded-For {remote_host}
+			header_down Cache-Control "private, no-store"
+			header_down CDN-Cache-Control "no-store"
+			header_down Vercel-CDN-Cache-Control "no-store"
+		}
+	}
+	handle {
+		respond "Not found" 404
+	}
+}

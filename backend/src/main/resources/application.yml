@@ -42,6 +42,10 @@ ats:
     poll-ms: ${ATS_DOCUMENT_STORAGE_POLL_MS:30000}
   background-work:
     enabled: ${ATS_BACKGROUND_WORK_ENABLED:true}
+  operations:
+    maintenance: ${ATS_MAINTENANCE_ENABLED:false}
+    background-work: ${ATS_BACKGROUND_WORK_ENABLED:true}
+    rehearsal: ${ATS_REHEARSAL_ENABLED:false}
   auth:
     allowed-domains: ${ATS_ALLOWED_DOMAINS:codewalnut.com}
     bootstrap-admins: ${ATS_BOOTSTRAP_ADMINS:}
@@ -74,6 +78,7 @@ ats:
   coding:
     runner-url: ${ATS_CODE_RUNNER_URL:}
     runner-token: ${ATS_CODE_RUNNER_TOKEN:}
+    workers: ${ATS_CODING_WORKERS:2}
     async: true
 
 ---

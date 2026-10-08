@@ -310,3 +310,11 @@ transactions finish, so Blob latency and retry waits do not occupy DB connection
 See [storage requirements](features/document-storage.md) and
 [the migration runbook](deploy-document-storage.md). Retained database bytes are
 removed only by a subsequent gated cleanup, not by initial Flyway migration.
+
+## Split production hosting
+
+ADR-0027 adds Vercel static frontend hosting with same-origin API/OAuth rewrites to
+a DigitalOcean Docker Compose backend, private MySQL 8 and private Blob bridge.
+Deployment and live migration controls are specified in
+[production operations](features/production-operations.md); operators follow
+[the cutover runbook](deploy-digitalocean.md). The existing Railway image is retained.

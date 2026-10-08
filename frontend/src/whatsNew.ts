@@ -32,6 +32,13 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     capability: 'MANAGE_JOBS',
   },
   {
+    id: '2026-10-08-planned-maintenance',
+    date: '2026-10-08',
+    title: 'Clear notices during planned maintenance',
+    summary: 'During a scheduled hosting move, requests pause safely and ask you to try again shortly.',
+    steps: ['If a planned maintenance notice appears, wait for the announced window to finish, then refresh and sign in again.'],
+  },
+  {
     id: '2026-10-08-intern-tracks',
     date: '2026-10-08',
     title: 'Intern screening tests: Java, Python and MERN tracks',

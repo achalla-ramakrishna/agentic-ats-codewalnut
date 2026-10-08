@@ -15,3 +15,10 @@ application-local.yml
 *.log
 .DS_Store
 .idea/
+
+# Generated for one explicit production or isolated preview Vercel project.
+frontend/vercel.json
+# Migration exports must never enter Git.
+*.sql.gz
+*.sql.age
+*.sql.gz.age

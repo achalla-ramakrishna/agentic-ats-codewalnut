@@ -62,6 +62,8 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class QuestionBankService {
 
+    private final com.codewalnut.ats.config.OperationsMode operations;
+
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final BankQuestionRepository bankRepository;
@@ -84,6 +86,9 @@ public class QuestionBankService {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void loadBuiltIn() {
+        if (!operations.backgroundWorkEnabled()) {
+            return;
+        }
         List<Seed> seeds = new ArrayList<>(AptitudeBank.all());
         seeds.addAll(TechBank.all());
         seeds.addAll(com.codewalnut.ats.bank.CodingBank.all());

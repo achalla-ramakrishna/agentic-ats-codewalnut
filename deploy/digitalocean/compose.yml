@@ -1,0 +1,91 @@
+name: ats
+services:
+  mysql:
+    # Match Railway's measured version first; rehearse any minor/major version upgrade separately.
+    image: ${MYSQL_IMAGE:?Set MYSQL_IMAGE to a reviewed mysql:8.0 image digest}
+    restart: unless-stopped
+    mem_limit: 576m
+    command: ["--innodb-buffer-pool-size=192M", "--max-connections=30", "--performance-schema=OFF", "--max-allowed-packet=128M"]
+    environment:
+      MYSQL_DATABASE: ats
+      MYSQL_USER: ats
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks: [database]
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u ats -D ats -e 'SELECT 1' >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    logging: &logs
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+
+  backend:
+    image: ${ATS_BACKEND_IMAGE:?Set ATS_BACKEND_IMAGE to the tested image digest}
+    restart: unless-stopped
+    mem_limit: 832m
+    stop_grace_period: 90s
+    env_file: .env.backend
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      JAVA_TOOL_OPTIONS: "-Xms128m -Xmx384m -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=64m -XX:MaxDirectMemorySize=64m -XX:+ExitOnOutOfMemoryError"
+      DB_URL: jdbc:mysql://mysql:3306/ats?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+      DB_USERNAME: ats
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 8
+      SERVER_TOMCAT_THREADS_MAX: 30
+      SERVER_SHUTDOWN: graceful
+      SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE: 60s
+      ATS_AI_WORKERS: 1
+      ATS_CODING_WORKERS: 1
+      ATS_MAINTENANCE_ENABLED: ${ATS_MAINTENANCE_ENABLED:-true}
+      ATS_BACKGROUND_WORK_ENABLED: ${ATS_BACKGROUND_WORK_ENABLED:-false}
+      ATS_REHEARSAL_ENABLED: ${ATS_REHEARSAL_ENABLED:-true}
+      ATS_DOCUMENT_STORAGE_ENABLED: ${ATS_DOCUMENT_STORAGE_ENABLED:-false}
+      ATS_BLOB_BRIDGE_URL: http://blob-bridge:3001
+      ATS_BLOB_BRIDGE_SECRET: ${ATS_BLOB_BRIDGE_SECRET:?Set bridge secret}
+      SESSION_COOKIE_SECURE: "true"
+    depends_on:
+      mysql: {condition: service_healthy}
+    networks: [database, application, outbound]
+    logging: *logs
+
+  blob-bridge:
+    image: ${ATS_BLOB_BRIDGE_IMAGE:?Set bridge image digest from storage PR}
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      NODE_OPTIONS: --max-old-space-size=128
+      PORT: 3001
+      BLOB_READ_WRITE_TOKEN: ${BLOB_READ_WRITE_TOKEN:?Set PRIVATE store token}
+      ATS_BLOB_STORE_HOST: ${ATS_BLOB_STORE_HOST:?Set private Blob store host}
+      ATS_BLOB_BRIDGE_SECRET: ${ATS_BLOB_BRIDGE_SECRET:?Set bridge secret}
+    networks: [application, outbound]
+    logging: *logs
+
+  caddy:
+    image: ${CADDY_IMAGE:?Set CADDY_IMAGE to a reviewed caddy:2 image digest}
+    restart: unless-stopped
+    mem_limit: 64m
+    environment:
+      ATS_ORIGIN_HOST: ${ATS_ORIGIN_HOST:?Set backend origin hostname}
+      ATS_PUBLIC_HOST: ${ATS_PUBLIC_HOST:?Set frontend public hostname}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [application, outbound]
+    logging: *logs
+
+networks:
+  database: {internal: true}
+  application: {internal: true}
+  outbound: {}
+volumes:
+  mysql_data: {}
+  caddy_data: {}
+  caddy_config: {}
