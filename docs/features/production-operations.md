@@ -1,7 +1,7 @@
 # Production deployment and migration
 
 The ATS may run its React frontend on Vercel and its API/MySQL on one DigitalOcean
-Droplet. ADR-0027 describes the decision. The Railway deployment remains supported.
+Droplet. ADR-0027 and [ADR-0030](../adr/0030-cli-only-vercel-project.md) describe the decision. The Railway deployment remains supported.
 
 | ID | Requirement |
 |---|---|
@@ -25,3 +25,5 @@ this is an application activity freeze, not a read-only database connection.
 - 2026-10-08: Verify forwarded-header handling and private upstream-failure logs against a real Caddy container (DEPLOY-05).
 
 - 2026-10-08: Correct maintenance error envelopes and verify Spring filter/environment wiring; warn on open HTTP with paused workers and reject inconsistent Droplet cutover flags. Clarify CLI-only Vercel ownership/root, protect publication, and restrict backup credentials/SSH (DEPLOY-01–06).
+
+- 2026-10-08: ADR-0030 replaces the Git-linkage assumption; clarify health-only maintenance verification, all-worker rehearsal flags, exact TCP backup account grants and credential bind-mount rotation (DEPLOY-02, DEPLOY-05–06).

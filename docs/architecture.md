@@ -315,6 +315,9 @@ removed only by a subsequent gated cleanup, not by initial Flyway migration.
 
 ADR-0027 adds Vercel static frontend hosting with same-origin API/OAuth rewrites to
 a DigitalOcean Docker Compose backend, private MySQL 8 and private Blob bridge.
+[ADR-0030](adr/0030-cli-only-vercel-project.md) supersedes its Git deployment mechanism:
+production Vercel projects are CLI-only with no Git connection, checked before each
+release; generated local configuration cannot control a Git-triggered build.
 Deployment and live migration controls are specified in
 [production operations](features/production-operations.md); operators follow
 [the cutover runbook](deploy-digitalocean.md). The existing Railway image is retained.

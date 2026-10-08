@@ -2,7 +2,7 @@
 
 This is a planned maintenance migration of a **live** Railway installation. Do not
 run its cutover/cleanup commands against production merely to test this document.
-Requirements: DEPLOY-01–06; decision: ADR-0027. First merge and deploy the private
+Requirements: DEPLOY-01–06; decisions: ADR-0027 and [ADR-0030](adr/0030-cli-only-vercel-project.md). First merge and deploy the private
 storage PR on Railway. Complete and verify its document migration before hosting
 cutover; retain original database bytes and a Blob-compatible rollback release.
 
@@ -35,9 +35,14 @@ or candidate documents to Git/PRs. Restrict and later destroy rehearsal copies.
 2. Checkout the reviewed commit at `/opt/ats`. Copy
    `deploy/digitalocean/.env.example` to `.env` in that directory and
    `backend.env.example` to `.env.backend`, and `mysql-backup.cnf.example` to
-   `.env.mysql-backup`; make the backup client file root-owned and chmod all three
-   600. The backup mount is required at first MySQL boot; provision its read-only
-   dump user later as described below. No dev/demo profile.
+   `.env.mysql-backup`. Before the **first** MySQL container is created, replace the
+   backup password placeholder with the final unique password held in the company
+   password manager. Make the backup client file root-owned and chmod all three 600.
+   After MySQL initializes, provision the exact `ats_backup`@`127.0.0.1` account with
+   that same password as described below. Do not mount a placeholder and plan to
+   replace its file later: single-file bind mounts retain the old inode. If a file
+   is replaced after container creation, follow the planned recreation procedure
+   below. No dev/demo profile.
    The checked-in defaults keep rehearsal and maintenance on, workers off.
 3. Select reviewed MySQL/Caddy image **digests**. Match Railway's actual MySQL
    release first. Do not combine an untested 8.0→8.4 upgrade with the hosting move.
@@ -130,9 +135,12 @@ request-log retention/access settings for OAuth codes and token-bearing URLs;
 Caddy's log redaction does not configure Vercel logs.
 
 After promotion, `GET https://PUBLIC-HOST/api/v1/health` **through Vercel** must return
-200 with JSON `{"status":"ok"}` and private/no-store headers, not the SPA/404. Check
-an ordinary SPA deep link and authenticated requests too; keep maintenance enabled
-until this routing gate passes.
+200 with JSON `{"status":"ok"}` and private/no-store headers, not the SPA/404.
+This backend routing gate is **health-only while maintenance is enabled**. Confirm
+other API/auth/webhook requests return 503; they cannot pass authenticated checks
+until reopening. A frontend-only SPA deep link can still load its static shell.
+Keep maintenance enabled until this gate passes, then perform authenticated checks
+only at final-cutover step 8 (or on the separately sanitized rehearsal).
 
 Proxy paths: `/api/*`, `/oauth2/*`, `/login/oauth2/*`, `/webhooks/*`. Other application
 routes use the SPA; assets retain ordinary static caching. Proxy responses are
@@ -184,9 +192,15 @@ References: [Vercel rewrites](https://vercel.com/docs/routing/rewrites),
 5. To exercise login/API flows on copied data, use a tightly restricted test host,
    controlled staff accounts and a **sanitized** database copy (replace candidate
    contact details, webhook targets, pending work and tokens). Use separate test
-   provider accounts/credentials; no dev/demo with real data. Only then disable
-   rehearsal/maintenance and enable selected workers. A functional test mutates
-   its copy, so never reuse that database as the final target.
+   provider accounts/credentials; no dev/demo with real data. Only then set all
+   four deployment flags in the isolated environment together:
+   `ATS_REHEARSAL_ENABLED=false`, `ATS_MAINTENANCE_ENABLED=false`,
+   `ATS_BACKGROUND_WORK_ENABLED=true`, `ATS_DOCUMENT_STORAGE_ENABLED=true`, and
+   restart using `scripts/deploy/deploy.sh`. The background flag enables every
+   worker; it does not select individual workers. Ensure all pending work and
+   provider/storage credentials target only the sanitized copy/test accounts
+   before opening. A functional test mutates its copy, so never reuse that
+   database as the final target.
 6. Run the storage permission tests (allow/deny, cross-client, government IDs,
    revoked shares), auth/CSRF, upload/download, AI and coding flows. Verify no
    provider call was made from the frozen startup. Measure export/transfer/restore,
@@ -266,13 +280,52 @@ Run it on a schedule appropriate to the agreed recovery point, alert on failures
 and test decryption + restoration. Use age recipients whose private keys are
 held outside the Droplet and tested by an authorized recovery operator.
 
-Provision a dedicated local MySQL `ats_backup` user with a unique password matching
-`.env.mysql-backup`. Grant only `SELECT, SHOW VIEW, TRIGGER, EVENT ON ats.*`, plus
-`SHOW_ROUTINE ON *.*` if required by the source MySQL 8 version for the script's
-`--routines` export. Verify grants and an actual dump/restore with the installed
-version; do not grant writes, `ALL`, `SUPER` or reuse app/root credentials. If the
-inventory confirms no routines, a reviewed variant may omit `--routines` instead
-of granting global routine visibility. The file is mounted read-only and root-only.
+Set the **final** password in `.env.mysql-backup` before first container creation;
+never leave the example password mounted. Keep the file root-owned, mode 0600.
+After initialization, create the dump account using an authorized local MySQL admin
+session with client history disabled. Substitute the password from the company
+password manager in that protected session, not a shell argument, Git file or log:
+
+```sql
+CREATE USER 'ats_backup'@'127.0.0.1'
+  IDENTIFIED BY 'REPLACE_WITH_THE_FINAL_UNIQUE_PASSWORD';
+GRANT SELECT, SHOW VIEW, TRIGGER, EVENT ON ats.* TO 'ats_backup'@'127.0.0.1';
+GRANT SHOW_ROUTINE ON *.* TO 'ats_backup'@'127.0.0.1';
+SHOW GRANTS FOR 'ats_backup'@'127.0.0.1';
+```
+
+The client file explicitly connects over TCP to `127.0.0.1`. Use the literal IP in
+the account, **not `localhost`**: under `skip_name_resolve=ON`, the localhost socket
+account does not match that TCP connection. Confirm `SELECT @@version,
+@@skip_name_resolve` on the chosen image. This distinction was reproduced against
+MySQL 8.0.46 with fake accounts; the IP account succeeded and the localhost-only
+account failed. See [MySQL connection options](https://dev.mysql.com/doc/refman/8.0/en/connecting.html).
+
+`SHOW_ROUTINE` supports `--routines` on current MySQL 8 releases. Verify privileges
+against the exact chosen version; if the inventory confirms no routines, a reviewed
+variant may omit `--routines` instead of granting global routine visibility. Do not
+grant candidate-table writes, `ALL`, `SUPER` or reuse app/root credentials. The
+wrapper uses `--no-tablespaces` to avoid needing PROCESS, and
+`--single-transaction --set-gtid-purged=OFF`; validate source engines and export
+privileges during rehearsal.
+
+**Credential rotation or a file replaced after container creation:** editors and
+`sed -i` can atomically replace the host file while Docker's single-file bind mount
+still sees the old inode. Treat rotation as planned MySQL maintenance. Freeze and
+stop application writers/workers, preserve a verified backup, update the account
+password in the protected admin session, write the corresponding final client file
+to a root-owned 0600 temporary file and atomically rename it over `.env.mysql-backup`.
+Then, from `deploy/digitalocean`, run:
+
+```sh
+docker compose up -d --no-deps --force-recreate mysql
+```
+
+This recreates the container with the same pinned image and persistent volume and
+remounts the new file. Do not remove the volume or run `down -v`; do not combine this
+with an image upgrade. Wait for MySQL health, then verify the actual forced-command
+backup and restore below before restarting application traffic/workers. Do not
+rely on overwriting a live credential file in place as a safe rotation strategy.
 
 Install `scripts/deploy/backup-source.sh` as root-owned, non-writable-by-backup-user
 `/usr/local/libexec/ats-backup-source` (0755). Its fixed command uses `/usr/bin/docker`
@@ -298,6 +351,24 @@ data through the dump, so restrict access and rotate it accordingly. The backup
 script requests `ats-database-backup`; it no longer invokes arbitrary remote shell
 commands or MySQL root. Do not describe an ordinary unrestricted Docker-capable SSH
 account as a restricted backup key.
+
+Before production use, test from the **actual off-server backup host** using the
+restricted key/account (not an administrator's SSH key):
+
+```sh
+scripts/deploy/backup.sh ATS_BACKUP_SSH_ALIAS age1YOUR_RECOVERY_RECIPIENT /OFFSERVER/first-verified.sql.gz.age
+```
+
+The alias must select `atsbackup`, its dedicated key and the intended Droplet.
+Verify the forced-command boundary by making a harmless alternate SSH request such
+as `id`: it must still return a database dump, never run `id`. Encrypt that stream
+rather than displaying it. Decrypt each test export directly into a **disposable**
+MySQL database using the documented 128M client limit, then compare table counts,
+document byte sizes/checksums and the object manifest. Include a fake 10 MB document
+in the isolated rehearsal fixture. A successful SSH exit or encrypted file alone
+does not prove a restorable dump. Check failure alerts and verify the account cannot
+write candidate tables. Record the tested image version, grants, forced-command
+key, restore result and recovery-key access; only then enable the backup schedule.
 
 Keep backups outside the Droplet (a separate private Blob backup store is possible
 through a separately reviewed upload process). Vercel Blob live storage is not a
