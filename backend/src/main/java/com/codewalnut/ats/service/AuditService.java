@@ -36,6 +36,13 @@ public class AuditService {
         write(null, actorEmail, action, null, null, details);
     }
 
+    /** Destructive maintenance must commit its audit in the same transaction as the data change. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordInCurrentTransaction(AppUser actor, AuditAction action, String entityType, Object entityId,
+            Map<String, ?> details) {
+        write(actor, actor == null ? null : actor.getEmail(), action, entityType, entityId, details);
+    }
+
     @Transactional(readOnly = true)
     public Page<AuditLog> list(Pageable pageable) {
         return auditLogRepository.findAllByOrderByCreatedAtDesc(pageable);

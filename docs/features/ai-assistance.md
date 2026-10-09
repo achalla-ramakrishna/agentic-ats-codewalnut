@@ -48,7 +48,7 @@ hiring decision.
 | AI-20 | Each résumé is matched to an existing person by email, then phone, then the same name in the opening; otherwise the person is added at Applied / Sourced (source `RESUME_UPLOAD`). The file is attached as the original résumé (same name and size is not stored twice); upload bytes are cleared after reading. | Done |
 | AI-21 | The AI reads each résumé against the opening's description: name, contacts, role, experience, graduation year, education, skills, experience, projects, headline, per-requirement MET / PARTIAL / NOT_EVIDENT with evidence, strengths, gaps ("not evident in résumé") and questions to ask. | Done |
 | AI-22 | Match % is computed by the app: (2×MET + PARTIAL) ÷ (2×requirements); none without a description. Readings made against an older description are marked stale. | Done |
-| AI-23 | **Analyze résumés** reads everyone in the opening whose reading is missing, failed or stale; a new original résumé (job link, recruiter or candidate upload) is read automatically. | Done |
+| AI-23 | **Analyze résumés** reads everyone in the opening whose reading is missing, failed or stale; a failure while loading the source document marks the reading FAILED with a retryable error instead of leaving PENDING; a new original résumé (job link, recruiter or candidate upload) is read automatically. | Done |
 | AI-24 | **AI suggestions**: *Contact next* (Applied, match ≥ 50 %, best first) and *Closest to selection* (see AI-32), each with its reason; max 10 each. | Done |
 | AI-25 | Opening page: Match column, sort by best match, filters (strong match, good match, has projects, has experience, no experience yet, skill, graduation year). | Done |
 | AI-26 | Drawer → Profile: "AI résumé insights" with requirements, skills, projects, experience, strengths, gaps, questions, and **Re-analyze**. | Done |
@@ -83,6 +83,7 @@ hiring decision.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-08 | Storage failures during résumé loading finish as FAILED so people can retry (AI-23). |
 | 2026-09-25 | Created from SPEC.md |
 | 2026-10-06 | Ask ATS: chat with the whole ATS (ASK-01…ASK-05, ADR-0021) |
 | 2026-10-07 | Closest to selection uses interview feedback, tests and résumé match; résumé counts fixed (AI-32, AI-33) |

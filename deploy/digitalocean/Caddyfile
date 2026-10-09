@@ -1,0 +1,48 @@
+{
+	# Runtime proxy errors can include a request object even without access logs.
+	# Keep operational error/status fields, but never retain request URLs or headers.
+	log default {
+		format filter {
+			wrap json
+			fields {
+				request delete
+				resp_headers delete
+				user_id delete
+			}
+		}
+	}
+}
+
+{$ATS_ORIGIN_HOST} {
+	# Deliberately no access log: URLs can contain assessment/share tokens.
+	@backend path /api /api/* /oauth2/* /login/oauth2/* /webhooks/*
+	handle @backend {
+		# Strip untrusted identity in a separate handler BEFORE setting upstream values.
+		# Caddy applies HeaderOps Set before Delete regardless of textual ordering.
+		request_header -Forwarded
+		request_header -X-Forwarded-*
+		request_header -X-Real-IP
+		reverse_proxy backend:8080 {
+			# OAuth always uses the configured public host.
+			header_up Host {$ATS_PUBLIC_HOST}
+			header_up X-Forwarded-Host {$ATS_PUBLIC_HOST}
+			header_up X-Forwarded-Proto https
+			header_up X-Forwarded-Port 443
+			header_up X-Forwarded-For {remote_host}
+			header_down Cache-Control "private, no-store"
+			header_down CDN-Cache-Control "no-store"
+			header_down Vercel-CDN-Cache-Control "no-store"
+		}
+	}
+	handle {
+		respond "Not found" 404
+	}
+
+	# Handle upstream failures without reflecting the URI, OAuth code or share token.
+	handle_errors {
+		header Cache-Control "private, no-store"
+		header CDN-Cache-Control "no-store"
+		header Vercel-CDN-Cache-Control "no-store"
+		respond "Service temporarily unavailable" {err.status_code}
+	}
+}

@@ -3,6 +3,11 @@ import { fakeFetch } from '../test/fakeFetch'
 import { api, ApiError } from './client'
 
 describe('api client', () => {
+  it('preserves the maintenance explanation from a 503 response (DEPLOY-01)', async () => {
+    fakeFetch([{ path: '/auth/session', status: 503, body: { error: 'Scheduled maintenance. Please try again shortly.' } }])
+    await expect(api('/auth/session')).rejects.toMatchObject({ status: 503, message: 'Scheduled maintenance. Please try again shortly.' })
+  })
+
   afterEach(() => {
     vi.unstubAllGlobals()
     document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT'

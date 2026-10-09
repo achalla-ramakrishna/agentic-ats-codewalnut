@@ -19,10 +19,13 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Component
 public class AiWorkQueue {
 
+    private final com.codewalnut.ats.config.OperationsMode operations;
     private final boolean async;
     private final ExecutorService executor;
 
-    public AiWorkQueue(@Value("${ats.ai.async:true}") boolean async, @Value("${ats.ai.workers:3}") int workers) {
+    public AiWorkQueue(@Value("${ats.ai.async:true}") boolean async, @Value("${ats.ai.workers:3}") int workers,
+            com.codewalnut.ats.config.OperationsMode operations) {
+        this.operations = operations;
         this.async = async;
         AtomicInteger n = new AtomicInteger();
         this.executor = async
@@ -50,6 +53,9 @@ public class AiWorkQueue {
 
     /** Runs the task in the background (inline when async is off). Never throws. */
     public void submit(Runnable task) {
+        if (!operations.backgroundWorkEnabled()) {
+            return;
+        }
         Runnable safe = () -> {
             try {
                 task.run();
