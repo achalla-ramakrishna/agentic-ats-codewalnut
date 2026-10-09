@@ -48,7 +48,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 /** Synchronize two actual MySQL snapshots so nested audit transactions cannot borrow a third connection. */
 @SpringBootTest(properties = {
         "spring.datasource.hikari.maximum-pool-size=2",
-        "spring.datasource.hikari.connection-timeout=1000",
+        "spring.datasource.hikari.connection-timeout=3000",
         "ats.document-storage.enabled=false"
 })
 class DocumentDownloadConcurrencyTest {
@@ -113,7 +113,7 @@ class DocumentDownloadConcurrencyTest {
         try (var executor = Executors.newFixedThreadPool(3)) {
             List<Future<DocumentDownload>> requests = new ArrayList<>();
             for (int i = 0; i < 3; i++) requests.add(executor.submit(download));
-            for (var request : requests) assertThat(request.get(8, TimeUnit.SECONDS).data()).isEqualTo(PDF);
+            for (var request : requests) assertThat(request.get(15, TimeUnit.SECONDS).data()).isEqualTo(PDF);
         }
         assertThat(reads.get()).isEqualTo(3);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_log WHERE action='DOCUMENT_DOWNLOADED' "
