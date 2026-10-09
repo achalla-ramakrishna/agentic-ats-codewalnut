@@ -15,8 +15,10 @@ completed and recorded the checks below.
    referenced private object; a live Blob store alone is not a backup. Keep the
    restore credentials and the compatible application image/version available.
 3. Rehearse restoring that database/manifest/object recovery set into an isolated
-   environment. Disable all outbound business workers before starting a restored
-   application. Check file checksums, document counts, staff/ID permissions, client
+   environment. Apply the [migration runbook's frozen startup configuration](deploy-digitalocean.md)
+   before starting a restored application; pending work stays preserved and must
+   not resume against production providers during rehearsal. Check file checksums,
+   document counts, staff/ID permissions, client
    isolation and revoked shares. Record the restore result in an internal change
    record with a short, nonsecret identifier (for example `restore-20261029-01`).
 4. Verify the running application and rollback image both understand private Blob
@@ -46,6 +48,49 @@ completed and recorded the checks below.
    while transfers are failing, referenced objects are missing, backups are
    incomplete, or there is an unresolved incident. Healthy reads with retained
    database copies do not satisfy the Blob-only rehearsal gate.
+7. Confirm the approved production Vercel project/store, then verify the running
+   deployment binding with the automated identity preflight below. An operator
+   statement that the store is correct, or a matching
+   value in an edited environment file, is not a substitute for checking the
+   running backend and bridge. Keep the approved production Vercel project, public
+   ATS hostname and private-store hostname in the deployment change record; use
+   that production ATS hostname for the authenticated cleanup request.
+
+## Production identity preflight
+
+Follow the [deployment runbook](deploy-digitalocean.md) to provision the root-owned
+`/opt/ats/deploy/digitalocean/.production-blob-host` pin. Its value must be obtained
+independently from the approved company production Vercel project's private Blob
+store, not copied from the bridge environment merely to make the check pass.
+Confirm the project and store against that approved record before pinning them.
+The preflight rejects symlinks, nonregular files, nonroot ownership and any mode
+other than `0600`; retain those protections rather than changing the pin to make
+an unprivileged check succeed.
+
+From an authorized root shell in the reviewed checkout on the target Droplet, run:
+
+```sh
+cd /opt/ats
+./scripts/deploy/preflight.sh --require-production-identity --check-running-identity
+```
+
+Require a successful exit before the first cleanup dry-run, after recreating the
+backend with cleanup enabled, and **immediately before every destructive batch**.
+Repeat it after any container, routing, credential or environment change. The
+check must verify the expected Compose project/service identities, compare the
+effective configuration and running bridge host with the independent production
+pin, and verify the running backend's internal bridge target and matching bridge
+authentication configuration. This catches pending configuration edits that were never applied
+to the containers. Do not proceed on a missing pin, mismatch or unavailable check;
+investigate the selected project/store and deployment rather than weakening the
+check or repinning from runtime values.
+
+The hostname comparison verifies deployment binding to the independently approved
+store; it does not query Vercel to establish company ownership or prove that backups
+are complete. Keep the independent project/store approval, private-store smoke test
+and recovery evidence as separate prerequisites. The cleanup API does not execute
+this deployment preflight on the operator's behalf; fresh per-document integrity
+checks and atomic audits remain its runtime protections.
 
 ## Operator request
 
@@ -99,8 +144,14 @@ with your real nonsecret restore record identifier:
 ```
 
 The cutoff example is only valid on or after 2026-10-29 and must reflect the actual
-completed migration. Omitted `dryRun` means true; omitted `limit` means one. Batch
-size is 1–10. `backupReference` is 3–80 ASCII letters, digits, dots, underscores or
+completed migration. Omitted `dryRun` means true; omitted `limit` means one. **Use
+`limit: 1` for both dry-run and destructive requests through Vercel.** The API's
+1–10 validation range is not a recommendation to send ten-document HTTP batches.
+Vercel's external proxy has a [120-second request timeout](https://vercel.com/docs/limits#proxied-request-timeout),
+while each remote file read can consume its own 60-second deadline before the
+database check/audit. A larger serial batch can continue on the backend after the
+proxy returns 504. Even one document cannot guarantee a response before all
+intermediary timeouts. `backupReference` is 3–80 ASCII letters, digits, dots, underscores or
 hyphens, beginning with a letter/digit. It is recorded in the audit log: never use
 a credential, signed URL, filename, candidate name or contact detail.
 
@@ -109,7 +160,8 @@ counts. Dry-run freshly checks private bytes and current database bytes without
 changing documents; a completed dry-run records a summary audit with `dryRun: true`. It does not
 reserve a batch. A later destructive request reselects and re-verifies its batch.
 
-Review the dry-run and recovery evidence. To remove one verified copy, submit the
+Review the dry-run and recovery evidence, then rerun the production identity
+preflight immediately before proceeding. To remove one verified copy, submit the
 same parameters with `dryRun: false`. Each removed copy receives a per-document
 audit committed atomically with the change. Requests that reach normal completion
 also have a count summary. Rejected configuration/confirmation/cutoff requests and
@@ -121,8 +173,16 @@ If `failed` or `skipped` is nonzero, stop and investigate before proceeding. Fai
 keep their database bytes. Since the oldest eligible documents are selected first,
 a failing document must be repaired before a small batch can progress past it.
 
-After each batch, verify downloads and monitor storage errors. Subsequent batches
-skip already-cleaned documents; rerunning after an ambiguous response is safe.
+After each batch, verify downloads and monitor storage errors. **A 504, disconnected
+browser or other ambiguous response does not mean no bytes were removed.** Stop
+sending cleanup requests and wait until the backend request has finished or failed.
+Reconcile the committed per-document `DOCUMENT_STORAGE_CLEANUP` audits for the
+operator, time window and backup reference against the current document data state
+using authorized read-only checks. Those atomic per-document audits are the source
+of truth for completed removals; a missing summary does not undo them. Resolve any
+uncertainty before approving and sending another batch. Do not restart the backend
+or retry blindly to clear a proxy timeout. Already-cleaned documents are excluded,
+so a new request can select a different document and remove another copy.
 Documents verified after the cutoff remain in MySQL until a later eligible window.
 Only document bytes are cleared; document IDs, metadata, client shares, task
 manifests and remote objects are preserved. Intake staging is excluded.
