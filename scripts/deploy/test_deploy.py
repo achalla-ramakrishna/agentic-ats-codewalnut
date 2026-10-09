@@ -173,8 +173,10 @@ class DeploymentPreflightTest(unittest.TestCase):
         running = {name: container(name, config) for name in ("backend", "blob-bridge", "caddy")}
         with patch.object(preflight, "inspect_running", side_effect=lambda name: running[name]):
             self.validate(config, target="functional-rehearsal", check_running=True)
-            running["caddy"]["Config"]["Env"].append("ATS_PUBLIC_HOST=unexpected.example.com")
-            with self.assertRaises(preflight.PreflightError):
+            running["caddy"]["Config"]["Env"] = [
+                "ATS_PUBLIC_HOST=unexpected.example.com" if value.startswith("ATS_PUBLIC_HOST=") else value
+                for value in running["caddy"]["Config"]["Env"]]
+            with self.assertRaisesRegex(preflight.PreflightError, "Running proxy hostnames differ"):
                 self.validate(config, target="functional-rehearsal", check_running=True)
 
     def test_DEPLOY_08_inspection_rejects_wrong_compose_project_service_and_stopped_container(self):
