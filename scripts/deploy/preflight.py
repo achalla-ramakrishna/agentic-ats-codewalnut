@@ -2,6 +2,7 @@
 """Validate resolved Compose settings without printing secrets; DEPLOY-06–08."""
 import argparse
 import json
+import os
 import stat
 from pathlib import Path
 import re
@@ -48,7 +49,28 @@ def container_environment(container):
     return env
 
 
-def validate(config, directory=DIRECTORY, require_identity=False, check_running=False, identity_owner=0):
+def read_identity(path, owner):
+    try:
+        # Validate and read the same inode; no lstat/read race or symlink traversal.
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        with os.fdopen(descriptor, "r") as pinned:
+            metadata = os.fstat(pinned.fileno())
+            if (not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != owner
+                    or stat.S_IMODE(metadata.st_mode) != 0o600):
+                fail("Identity pin must be a root-owned regular file with mode 0600")
+            return pinned.read().strip()
+    except OSError:
+        fail("Missing or unreadable independently recorded identity pin for the selected target")
+
+
+def validate(config, directory=DIRECTORY, require_identity=False, check_running=False, identity_owner=0,
+             target="production"):
+    if target not in ("production", "functional-rehearsal"):
+        fail("Unknown deployment target")
+    if require_identity and target != "production":
+        fail("Production identity/cleanup checks cannot select functional rehearsal")
+    if target == "functional-rehearsal" and os.path.lexists(directory / ".production-blob-host"):
+        fail("Functional rehearsal is forbidden in a checkout with a production identity pin")
     if config.get("name") != "ats":
         fail("Compose project must be ats; do not override COMPOSE_PROJECT_NAME")
     services = config["services"]
@@ -104,28 +126,35 @@ def validate(config, directory=DIRECTORY, require_identity=False, check_running=
         if actual_controls != controls or actual_policy != policy:
             fail("Running MySQL recovery policy differs; recreate MySQL in a planned maintenance window first")
 
-    if opening or require_identity or check_running:
-        identity_file = directory / ".production-blob-host"
-        try:
-            metadata = identity_file.lstat()
-            if (not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != identity_owner
-                    or stat.S_IMODE(metadata.st_mode) != 0o600):
-                fail("Production Blob identity file must be a root-owned regular file with mode 0600")
-            expected = identity_file.read_text().strip()
-        except OSError:
-            fail("Missing independently recorded production Blob host file")
-        if not PRIVATE_HOST.fullmatch(expected):
-            fail("Production Blob identity file must contain one private store hostname")
+    if opening or require_identity or check_running or target == "functional-rehearsal":
+        expected_hosts = None
+        if target == "production":
+            expected = read_identity(directory / ".production-blob-host", identity_owner)
+        else:
+            identity = json.loads(read_identity(directory / ".rehearsal-identity.json", identity_owner))
+            if not isinstance(identity, dict) or set(identity) != {"blob_host", "public_host", "origin_host"}:
+                fail("Rehearsal identity must contain exactly blob_host, public_host and origin_host")
+            expected = identity["blob_host"]
+            expected_hosts = {"ATS_PUBLIC_HOST": identity["public_host"], "ATS_ORIGIN_HOST": identity["origin_host"]}
+            for key, host in expected_hosts.items():
+                if not isinstance(host, str) or services["caddy"]["environment"].get(key) != host:
+                    fail("Effective Compose hostname differs from the independently approved rehearsal target")
+        if not isinstance(expected, str) or not PRIVATE_HOST.fullmatch(expected):
+            fail("Identity pin must contain a valid private store hostname")
         configured = services["blob-bridge"]["environment"].get("ATS_BLOB_STORE_HOST")
         if configured != expected:
-            fail("Effective Compose Blob host differs from the independently recorded production store")
+            fail("Effective Compose Blob host differs from the independently recorded target store")
         if env.get("ATS_BLOB_BRIDGE_URL") != "http://blob-bridge:3001":
             fail("Backend must use the reviewed internal Blob bridge endpoint")
         if check_running:
+            if expected_hosts:
+                caddy = container_environment(inspect_running("caddy"))
+                if any(caddy.get(key) != host for key, host in expected_hosts.items()):
+                    fail("Running proxy hostnames differ from the independently approved rehearsal target")
             bridge = container_environment(inspect_running("blob-bridge"))
             backend = container_environment(inspect_running("backend"))
             if bridge.get("ATS_BLOB_STORE_HOST") != expected:
-                fail("Running Blob bridge store differs from the independently recorded production store")
+                fail("Running Blob bridge store differs from the independently recorded target store")
             if backend.get("ATS_BLOB_BRIDGE_URL") != "http://blob-bridge:3001":
                 fail("Running backend uses an unexpected Blob bridge endpoint")
             secret = bridge.get("ATS_BLOB_BRIDGE_SECRET", "")
@@ -135,12 +164,13 @@ def validate(config, directory=DIRECTORY, require_identity=False, check_running=
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--target", choices=("production", "functional-rehearsal"), default="production")
     parser.add_argument("--require-production-identity", action="store_true")
     parser.add_argument("--check-running-identity", action="store_true")
     args = parser.parse_args()
     try:
         validate(json.load(sys.stdin), require_identity=args.require_production_identity,
-                 check_running=args.check_running_identity)
+                 check_running=args.check_running_identity, target=args.target)
     except PreflightError as error:
         print(str(error), file=sys.stderr)
         return 1
@@ -148,7 +178,8 @@ def main():
         # Exception details can include provider/container environment output. Never dump them.
         print("Deployment preflight failed. Check recovery flags, image pins, operation flags and production store binding.", file=sys.stderr)
         return 1
-    print("Deployment preflight passed" + (" (running production store binding checked)" if args.check_running_identity else ""))
+    print("Deployment preflight passed for " + args.target
+          + (" (running store binding checked)" if args.check_running_identity else ""))
     return 0
 
 

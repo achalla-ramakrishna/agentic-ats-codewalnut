@@ -141,8 +141,13 @@ editing `.env` alone does not change a running database. Change logging policy o
 retention only in a planned freeze with a verified recovery point and any required
 archival, recreate MySQL using its same volume/image, and verify actual SQL values
 `SELECT @@log_bin, @@binlog_expire_logs_seconds` plus archive/restore behavior before
-reopening. Do not issue untracked runtime `SET GLOBAL` changes; container arguments
-cannot attest to those. Re-run preflight after any Compose override or environment
+reopening. Do not issue untracked `SET GLOBAL`, `SET PERSIST` or `SET PERSIST_ONLY`
+changes to recovery settings: container arguments cannot attest to those, and
+persisted values in `mysqld-auto.cnf` can survive recreation. Inventory any existing
+`mysqld-auto.cnf`/persisted variables on the restored data volume and resolve
+unexpected settings through a reviewed MySQL procedure; do not blindly delete a
+live server's files. Verify runtime SQL values after startup and record them with
+the chosen policy. Re-run preflight after any Compose override or environment
 change. The helper intentionally never prints resolved secrets.
 
 References: [MySQL binary logging options](https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html),
@@ -158,7 +163,9 @@ team/project ownership there), and record that hostname alone in
 0600 and its parent operator-controlled; symlinks are rejected. This is not a secret,
 but its integrity matters. Do not populate it by copying `.env`, Compose output or
 the running container; those are the configuration being checked. There is no
-shell environment override for the pin's path or value.
+shell environment override for the pin's path or value. Identity files are opened
+without following symlinks, then ownership/type/mode are checked and contents read
+from that same open file descriptor.
 
 `deploy.sh` reads `docker compose config --format json` and refuses to open HTTP
 unless the effective bridge host exactly matches that independent pin and the
@@ -291,12 +298,43 @@ References: [Vercel rewrites](https://vercel.com/docs/routing/rewrites),
 5. To exercise login/API flows on copied data, use a tightly restricted test host,
    controlled staff accounts and a **sanitized** database copy (replace candidate
    contact details, webhook targets, pending work and tokens). Use separate test
-   provider accounts/credentials; no dev/demo with real data. Only then set all
-   four deployment flags in the isolated environment together:
+   provider accounts/credentials; no dev/demo with real data. Use a separate
+   isolated functional-rehearsal host/checkout that has never been pinned as
+   production. Do not delete or repurpose `.production-blob-host` to bypass a gate.
+   Independently obtain the approved test store and test public/origin hostnames
+   and record them as root-owned mode 0600
+   `deploy/digitalocean/.rehearsal-identity.json`:
+
+   ```json
+   {
+     "blob_host": "rehearsalfixture.private.blob.vercel-storage.com",
+     "public_host": "rehearsal-ats.example.com",
+     "origin_host": "rehearsal-origin.example.com"
+   }
+   ```
+
+   Replace all three example values with the independently approved isolated
+   environment's values, not values copied from the Compose configuration under
+   test. The file must contain exactly these three keys. Only then set all four
+   deployment flags in that isolated environment together:
    `ATS_REHEARSAL_ENABLED=false`, `ATS_MAINTENANCE_ENABLED=false`,
    `ATS_BACKGROUND_WORK_ENABLED=true`, `ATS_DOCUMENT_STORAGE_ENABLED=true`, and
-   restart using `scripts/deploy/deploy.sh`. The background flag enables every
-   worker; it does not select individual workers. Ensure all pending work and
+   restart from an authorized root shell using:
+
+   ```sh
+   scripts/deploy/deploy.sh --target functional-rehearsal
+   scripts/deploy/preflight.sh --target functional-rehearsal --check-running-identity
+   ```
+
+   Target selection is an explicit CLI argument, never inferred from a shell
+   variable. Both scripts default to production. Functional rehearsal checks its
+   separate pin against effective store/public/origin hostnames, refuses a checkout
+   with any production pin, and rejects `--require-production-identity`. The running
+   check additionally verifies the proxy's hostnames, as well as the backend/bridge
+   bindings. Initial **frozen** rehearsal may still use the default closed-production
+   preflight before this test pin exists; opening requires the explicit test target.
+   The background flag enables every worker; it does not select individual workers.
+   Ensure all pending work and
    provider/storage credentials target only the sanitized copy/test accounts
    before opening. A functional test mutates its copy, so never reuse that
    database as the final target.

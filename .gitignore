@@ -28,3 +28,4 @@ frontend/vercel.json
 
 # Independently recorded operator production-store identity, never inferred from .env.
 deploy/digitalocean/.production-blob-host
+deploy/digitalocean/.rehearsal-identity.json
