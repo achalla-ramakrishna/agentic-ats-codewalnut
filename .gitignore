@@ -3,7 +3,7 @@ backend/target/
 *.class
 
 # Node / frontend
-frontend/node_modules/
+**/node_modules/
 frontend/dist/
 
 # Local config / secrets

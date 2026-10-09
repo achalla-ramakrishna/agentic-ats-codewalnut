@@ -252,11 +252,11 @@ public class ResumeIntelligenceService {
     }
 
     void processInsight(UUID applicationId) {
-        Optional<ResumeProcessor.Work> work = processor.startInsight(applicationId);
-        if (work.isEmpty()) {
-            return;
-        }
         try {
+            Optional<ResumeProcessor.Work> work = processor.startInsight(applicationId).map(processor::readInsight);
+            if (work.isEmpty()) {
+                return;
+            }
             ResumeInsight insight = analyzer.analyze(work.get().job(), work.get().file());
             processor.finishInsight(applicationId, work.get().documentId(), insight, analyzer.model(), work.get().jobHash());
         } catch (CalendarException e) {

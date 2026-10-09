@@ -218,3 +218,9 @@ Feature-specific questions live in each feature file.
 - [x] Client login in MVP? → First **No** (review link only); then **yes, narrowly**: client contacts sign in and see only explicitly shared candidates (ADR-0007).
 - [ ] Hosting preference; ISO 27001 / SOC 2 or client compliance constraints?
 - [ ] Product owner and pilot recruiter?
+
+## Private document storage
+
+[DOCSTORE-01…05](features/document-storage.md) specify opt-in private file storage,
+existing authorization, durable staging, verified copying and resumable migration.
+Deployment enablement is gated on a live private-store smoke test and restore rehearsal.

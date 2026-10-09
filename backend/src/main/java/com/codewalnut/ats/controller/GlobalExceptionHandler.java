@@ -28,6 +28,11 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
+    @ExceptionHandler(com.codewalnut.ats.service.DocumentStorageUnavailableException.class)
+    public ResponseEntity<Map<String, String>> handleStorage(com.codewalnut.ats.service.DocumentStorageUnavailableException ex) {
+        return error(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+    }
+
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<Map<String, String>> handleNotFound(NotFoundException ex) {
         return error(HttpStatus.NOT_FOUND, ex.getMessage());

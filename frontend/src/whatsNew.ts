@@ -16,6 +16,22 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-09-concurrent-document-downloads',
+    date: '2026-10-09',
+    title: 'More reliable document downloads',
+    summary: 'Document downloads are more reliable when several people download files at once.',
+    steps: ['Open a candidate’s documents and download the file you need.'],
+    capability: 'VIEW_CANDIDATES',
+  },
+  {
+    id: '2026-10-08-resume-storage-retry',
+    date: '2026-10-08',
+    title: 'Retry a résumé that could not be loaded',
+    summary: 'If storage is temporarily unavailable, the résumé reading shows an error instead of staying on Reading.',
+    steps: ['Open the candidate’s Profile → AI résumé insights.', 'Once storage is available again, click Re-analyze.'],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-08-intern-tracks',
     date: '2026-10-08',
     title: 'Intern screening tests: Java, Python and MERN tracks',

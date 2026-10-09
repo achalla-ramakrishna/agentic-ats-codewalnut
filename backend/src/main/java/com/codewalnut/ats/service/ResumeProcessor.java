@@ -56,23 +56,31 @@ class ResumeProcessor {
     private final CandidateDocumentRepository documentRepository;
     private final JobOpeningRepository jobRepository;
     private final DocumentService documentService;
+    private final DocumentContentService content;
     private final TrackerService trackerService;
     private final ObjectMapper objectMapper;
     private final AuditService auditService;
 
     record Work(ResumeAnalyzer.Job job, ResumeAnalyzer.ResumeFile file, UUID documentId, String jobHash) {}
+    record InsightSource(ResumeAnalyzer.Job job, DocumentContentService.Source document, String jobHash) {}
+
+    Work readInsight(InsightSource source) {
+        var document = source.document();
+        return new Work(source.job(), new ResumeAnalyzer.ResumeFile(document.fileName(), document.contentType(), content.read(document)),
+                document.documentId(), source.jobHash());
+    }
 
     // ---- bulk upload ----
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Optional<Work> startIntake(UUID intakeId) {
         ResumeIntake intake = intakeRepository.findById(intakeId).orElse(null);
-        if (intake == null || intake.getStatus() != ResumeIntake.Status.PENDING || intake.getData() == null) {
+        if (intake == null || intake.getStatus() != ResumeIntake.Status.PENDING) {
             return Optional.empty();
         }
         JobOpening job = jobRepository.findById(intake.getJobId()).orElseThrow();
         return Optional.of(new Work(jobOf(job),
-                new ResumeAnalyzer.ResumeFile(intake.getFileName(), intake.getContentType(), intake.getData()),
+                new ResumeAnalyzer.ResumeFile(intake.getFileName(), intake.getContentType(), content.read(intake)),
                 null, jobHash(job)));
     }
 
@@ -151,7 +159,7 @@ class ResumeProcessor {
 
         UUID documentId = sameResume(candidate.getId(), intake)
                 .orElseGet(() -> documentService.store(candidate.getId(), DocumentKind.ORIGINAL_RESUME,
-                        intake.getFileName(), intake.getData(), intake.getUploadedBy()).getId());
+                        intake.getFileName(), content.read(intake), intake.getUploadedBy()).getId());
         saveDone(application.getId(), documentId, insight, model, jobHash);
 
         intake.setStatus(ResumeIntake.Status.DONE);
@@ -176,7 +184,7 @@ class ResumeProcessor {
     /** The same file (name and size) already attached to this candidate: don't store it twice. */
     private Optional<UUID> sameResume(UUID candidateId, ResumeIntake intake) {
         String name = DocumentService.safeFileName(intake.getFileName());
-        long size = intake.getData().length;
+        long size = content.read(intake).length;
         return documentRepository.findByCandidateIdOrderByUploadedAtDesc(candidateId).stream()
                 .filter(d -> d.getKind() == DocumentKind.ORIGINAL_RESUME)
                 .filter(d -> d.getFileName().equals(name) && d.getSizeBytes() == size)
@@ -188,7 +196,7 @@ class ResumeProcessor {
 
     /** Marks the reading as in progress and loads the latest original résumé; empty when there is none. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public Optional<Work> startInsight(UUID applicationId) {
+    public Optional<InsightSource> startInsight(UUID applicationId) {
         Application application = applicationRepository.findById(applicationId).orElse(null);
         if (application == null) {
             return Optional.empty();
@@ -206,9 +214,7 @@ class ResumeProcessor {
         insight.setError(null);
         insightRepository.save(insight);
         CandidateDocument document = documentRepository.findById(latest.get().getId()).orElseThrow();
-        return Optional.of(new Work(jobOf(application.getJob()),
-                new ResumeAnalyzer.ResumeFile(document.getFileName(), document.getContentType(), document.getData()),
-                document.getId(), jobHash(application.getJob())));
+        return Optional.of(new InsightSource(jobOf(application.getJob()), content.snapshot(document), jobHash(application.getJob())));
     }
 
     /** Marks the reading as queued, so people see "Reading…" straight away. */

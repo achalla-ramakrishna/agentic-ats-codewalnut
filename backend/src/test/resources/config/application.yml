@@ -5,6 +5,11 @@ spring:
     active: dev
   datasource:
     url: ${TEST_DB_URL:jdbc:mysql://localhost:3306/ats_test?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true}
+    # Cached Spring contexts each own a pool. Keep idle connections bounded across
+    # the full suite while allowing concurrent requests and REQUIRES_NEW audits.
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 0
 
 # Run background AI work inline so tests can check the results straight away.
 ats:
