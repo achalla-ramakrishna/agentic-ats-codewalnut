@@ -2,8 +2,8 @@ package com.codewalnut.ats.service;
 
 import com.codewalnut.ats.domain.Application;
 import com.codewalnut.ats.domain.AuditAction;
+import com.codewalnut.ats.dto.DocumentDownload;
 import com.codewalnut.ats.domain.Candidate;
-import com.codewalnut.ats.domain.CandidateDocument;
 import com.codewalnut.ats.domain.ClientContact;
 import com.codewalnut.ats.domain.ClientShare;
 import com.codewalnut.ats.dto.ClientDtos.ClientCandidate;
@@ -15,7 +15,6 @@ import com.codewalnut.ats.repository.ClientShareRepository;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,7 +30,9 @@ public class ClientPortalService {
 
     private final ClientShareRepository shareRepository;
     private final CandidateDocumentRepository documentRepository;
-    private final AuditService auditService;
+    private final DocumentContentService content;
+    private final DocumentReadService documentReads;
+    private final AuditService audit;
 
     public ClientMe me(ClientContact contact) {
         return new ClientMe(contact.getEmail(), contact.getName(), contact.getClient().getName());
@@ -48,20 +49,11 @@ public class ClientPortalService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public CandidateDocument download(ClientContact contact, UUID documentId) {
-        ClientShare share = shareRepository.findByClientIdAndRevokedAtIsNullOrderBySharedAtDesc(contact.getClient().getId())
-                .stream()
-                .filter(s -> s.getDocumentIds().contains(documentId))
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("File not found"));
-        CandidateDocument document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new NotFoundException("File not found"));
-        auditService.recordAnonymous(contact.getEmail(), AuditAction.DOCUMENT_DOWNLOADED, Map.of(
-                "clientId", contact.getClient().getId(), "applicationId", share.getApplication().getId(),
-                "documentId", documentId, "kind", document.getKind()));
-        document.getData(); // load the bytes inside the transaction
-        return document;
+    public DocumentDownload download(ClientContact contact, UUID documentId) {
+        var download = documentReads.client(contact, documentId);
+        audit.recordAnonymous(contact.getEmail(), AuditAction.DOCUMENT_DOWNLOADED, download.auditDetails());
+        var source = download.document();
+        return new DocumentDownload(source.fileName(), source.contentType(), content.read(source));
     }
 
     /** The application, if it is actively shared with this contact's company; otherwise "not found". */

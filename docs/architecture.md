@@ -294,3 +294,30 @@ MySQL `JSON` columns.
 | Slack | Notifications | v1 |
 | LinkedIn, Naukri, Indeed | Posting + applicant import | v1 |
 | HRMS (Keka / Darwinbox / Zoho People) | Hired hand-off | v1 |
+
+## Private document storage (ADR-0026, ADR-0029)
+
+Optional private Vercel Blob storage uses `DocumentContentService`, the
+`PrivateDocumentStore` adapter and an internal official-SDK bridge. Original bytes
+for attached documents and a `BackgroundTask` commit together; a leased worker copies and verifies them.
+Temporary bulk intakes stay only in MySQL until processing clears them. Verified local
+bytes are preferred until cleanup; Blob-only reads use bounded retries for busy responses.
+The task doubles as the immutable object manifest. Existing permissions run before
+all downloads; APIs expose metadata and file bytes, never provider URLs/tokens.
+Authorized loaders capture document metadata, manifest and retained bytes in short
+transactions. Download and AI orchestration reads provider bytes after those
+transactions finish, so Blob latency and retry waits do not occupy DB connections.
+See [storage requirements](features/document-storage.md) and
+[the migration runbook](deploy-document-storage.md). Retained database bytes are
+removed only by a subsequent gated cleanup, not by initial Flyway migration.
+
+## Split production hosting
+
+ADR-0027 adds Vercel static frontend hosting with same-origin API/OAuth rewrites to
+a DigitalOcean Docker Compose backend, private MySQL 8 and private Blob bridge.
+[ADR-0030](adr/0030-cli-only-vercel-project.md) supersedes its Git deployment mechanism:
+production Vercel projects are CLI-only with no Git connection, checked before each
+release; generated local configuration cannot control a Git-triggered build.
+Deployment and live migration controls are specified in
+[production operations](features/production-operations.md); operators follow
+[the cutover runbook](deploy-digitalocean.md). The existing Railway image is retained.

@@ -3,7 +3,7 @@ backend/target/
 *.class
 
 # Node / frontend
-frontend/node_modules/
+**/node_modules/
 frontend/dist/
 
 # Local config / secrets
@@ -15,3 +15,17 @@ application-local.yml
 *.log
 .DS_Store
 .idea/
+
+# Generated for one explicit production or isolated preview Vercel project.
+frontend/vercel.json
+# Migration exports must never enter Git.
+*.sql.gz
+*.sql.age
+*.sql.gz.age
+
+# Local Vercel CLI team/project linkage; never upload account metadata.
+**/.vercel/
+
+# Independently recorded operator production-store identity, never inferred from .env.
+deploy/digitalocean/.production-blob-host
+deploy/digitalocean/.rehearsal-identity.json

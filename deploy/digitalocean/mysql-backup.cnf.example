@@ -1,0 +1,8 @@
+# Copy to .env.mysql-backup, root-owned mode 0600. Mounted read-only inside MySQL.
+# Set FINAL password before creating the MySQL container (single-file bind mount).
+# Then provision ats_backup@127.0.0.1 with the same password; see runbook.
+# Atomic replacement after first boot requires planned MySQL container recreation.
+[client]
+user=ats_backup
+password=replace-with-unique-backup-password
+host=127.0.0.1

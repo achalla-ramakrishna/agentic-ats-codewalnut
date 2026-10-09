@@ -16,11 +16,16 @@ import org.springframework.scheduling.annotation.Scheduled;
 @RequiredArgsConstructor
 public class CodeGradingSweeper {
 
+    private final com.codewalnut.ats.config.OperationsMode operations;
+
     private final AssessmentInviteService invites;
     private final CodeRunService runs;
 
     @Scheduled(fixedDelayString = "${ats.coding.sweep-ms:60000}", initialDelayString = "${ats.coding.sweep-ms:60000}")
     public void sweep() {
+        if (!operations.backgroundWorkEnabled()) {
+            return;
+        }
         invites.pendingGrading().forEach(runs::submit);
     }
 }

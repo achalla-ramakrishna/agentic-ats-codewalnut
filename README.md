@@ -44,3 +44,9 @@ a multi-role lead). Google sign-in needs the variables in `.env.example`.
 
 One Docker image (React UI + API) plus MySQL. Railway steps:
 [`docs/deploy-railway.md`](docs/deploy-railway.md).
+
+Optional private Vercel Blob documents and live-data migration:
+[`docs/deploy-document-storage.md`](docs/deploy-document-storage.md).
+
+For Vercel + DigitalOcean, including the live Railway cutover and rollback:
+[`docs/deploy-digitalocean.md`](docs/deploy-digitalocean.md).

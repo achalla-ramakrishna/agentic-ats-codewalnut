@@ -49,7 +49,7 @@ public class CandidateDocument {
 
     @Lob
     @Basic(fetch = FetchType.LAZY)
-    @Column(nullable = false, columnDefinition = "LONGBLOB")
+    @Column(columnDefinition = "LONGBLOB")
     private byte[] data;
 
     @Column(name = "uploaded_by", length = 254)

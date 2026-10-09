@@ -1,0 +1,95 @@
+name: Build deployment images
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Full 40-character commit SHA to test and publish (must be on main)
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env: {MYSQL_ROOT_PASSWORD: root, MYSQL_DATABASE: ats_test, MYSQL_USER: ats, MYSQL_PASSWORD: ats}
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Require an exact reviewed main revision
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: |
+          [[ "$GITHUB_REF" == refs/heads/main ]]
+          [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]]
+          git merge-base --is-ancestor "$REVISION" origin/main
+          git checkout --detach "$REVISION"
+      - name: Verify cutover flag gates
+        run: python3 scripts/deploy/test_deploy.py
+      - name: Verify canonical proxy headers and private error handling
+        run: python3 scripts/deploy/test_proxy.py
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21', cache: maven}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: mvn -B test
+        working-directory: backend
+        env:
+          TEST_DB_URL: jdbc:mysql://127.0.0.1:3306/ats_test?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+      - run: npm ci && npm run lint && npm test && npm run build
+        working-directory: frontend
+      - run: npm ci && npm test
+        working-directory: storage/blob-bridge
+  publish:
+    if: github.ref == 'refs/heads/main'
+    # Configure this environment SERVER-SIDE before use: selected deployment branch main only,
+    # required reviewers, prevent self-review. The YAML alone does not create those protections.
+    environment: production-images
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions: {contents: read, packages: write}
+    steps:
+      - name: Require main workflow definition
+        run: test "$GITHUB_REF" = refs/heads/main
+      - uses: actions/checkout@v4
+        with: {ref: '${{ inputs.revision }}'}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve lowercase package names
+        id: names
+        env: {REPOSITORY: '${{ github.repository }}'}
+        run: echo "repository=${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        id: backend
+        with:
+          context: .
+          file: deploy/digitalocean/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/${{ steps.names.outputs.repository }}-backend:${{ inputs.revision }}
+      - uses: docker/build-push-action@v6
+        id: bridge
+        with:
+          context: storage/blob-bridge
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/${{ steps.names.outputs.repository }}-blob-bridge:${{ inputs.revision }}
+      - name: Record immutable deployment references
+        env:
+          PACKAGE: ghcr.io/${{ steps.names.outputs.repository }}
+          BACKEND_DIGEST: ${{ steps.backend.outputs.digest }}
+          BRIDGE_DIGEST: ${{ steps.bridge.outputs.digest }}
+        run: |
+          echo "ATS_BACKEND_IMAGE=$PACKAGE-backend@$BACKEND_DIGEST" >> "$GITHUB_STEP_SUMMARY"
+          echo "ATS_BLOB_BRIDGE_IMAGE=$PACKAGE-blob-bridge@$BRIDGE_DIGEST" >> "$GITHUB_STEP_SUMMARY"
