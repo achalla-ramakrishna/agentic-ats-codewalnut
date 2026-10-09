@@ -1,6 +1,7 @@
 package com.codewalnut.ats.service;
 
 import com.codewalnut.ats.domain.Application;
+import com.codewalnut.ats.domain.AuditAction;
 import com.codewalnut.ats.dto.DocumentDownload;
 import com.codewalnut.ats.domain.Candidate;
 import com.codewalnut.ats.domain.ClientContact;
@@ -31,6 +32,7 @@ public class ClientPortalService {
     private final CandidateDocumentRepository documentRepository;
     private final DocumentContentService content;
     private final DocumentReadService documentReads;
+    private final AuditService audit;
 
     public ClientMe me(ClientContact contact) {
         return new ClientMe(contact.getEmail(), contact.getName(), contact.getClient().getName());
@@ -48,7 +50,9 @@ public class ClientPortalService {
     }
 
     public DocumentDownload download(ClientContact contact, UUID documentId) {
-        var source = documentReads.client(contact, documentId);
+        var download = documentReads.client(contact, documentId);
+        audit.recordAnonymous(contact.getEmail(), AuditAction.DOCUMENT_DOWNLOADED, download.auditDetails());
+        var source = download.document();
         return new DocumentDownload(source.fileName(), source.contentType(), content.read(source));
     }
 

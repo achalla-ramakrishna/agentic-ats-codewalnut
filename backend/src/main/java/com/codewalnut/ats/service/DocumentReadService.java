@@ -2,7 +2,6 @@ package com.codewalnut.ats.service;
 
 import com.codewalnut.ats.client.ResumeAnalyzer;
 import com.codewalnut.ats.domain.AppUser;
-import com.codewalnut.ats.domain.AuditAction;
 import com.codewalnut.ats.domain.ClientContact;
 import com.codewalnut.ats.domain.DocumentKind;
 import com.codewalnut.ats.repository.ApplicationRepository;
@@ -24,29 +23,28 @@ public class DocumentReadService {
     private final ClientShareRepository shares;
     private final ApplicationRepository applications;
     private final AccessPolicy accessPolicy;
-    private final AuditService audit;
     private final DocumentContentService content;
 
+    public record DownloadSource(DocumentContentService.Source document, UUID candidateId, Map<String, Object> auditDetails) {}
+
     @Transactional(readOnly = true)
-    public DocumentContentService.Source staff(AppUser actor, UUID documentId) {
+    public DownloadSource staff(AppUser actor, UUID documentId) {
         accessPolicy.require(actor, Capability.VIEW_CANDIDATES);
         var document = documents.findById(documentId).orElseThrow(() -> new NotFoundException("File not found"));
         if (document.getKind().isSensitive()) accessPolicy.require(actor, Capability.VIEW_ID_DOCUMENTS);
-        audit.record(actor, AuditAction.DOCUMENT_DOWNLOADED, "Candidate", document.getCandidateId(),
+        return new DownloadSource(content.snapshot(document), document.getCandidateId(),
                 Map.of("documentId", documentId, "kind", document.getKind()));
-        return content.snapshot(document);
     }
 
     @Transactional(readOnly = true)
-    public DocumentContentService.Source client(ClientContact contact, UUID documentId) {
+    public DownloadSource client(ClientContact contact, UUID documentId) {
         var share = shares.findByClientIdAndRevokedAtIsNullOrderBySharedAtDesc(contact.getClient().getId()).stream()
                 .filter(s -> s.getDocumentIds().contains(documentId)).findFirst()
                 .orElseThrow(() -> new NotFoundException("File not found"));
         var document = documents.findById(documentId).orElseThrow(() -> new NotFoundException("File not found"));
-        audit.recordAnonymous(contact.getEmail(), AuditAction.DOCUMENT_DOWNLOADED,
+        return new DownloadSource(content.snapshot(document), document.getCandidateId(),
                 Map.of("clientId", contact.getClient().getId(), "applicationId", share.getApplication().getId(),
                         "documentId", documentId, "kind", document.getKind()));
-        return content.snapshot(document);
     }
 
     public record ResumeSource(ResumeAnalyzer.Job job, DocumentContentService.Source document) {}

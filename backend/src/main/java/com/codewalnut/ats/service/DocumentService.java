@@ -100,7 +100,10 @@ public class DocumentService {
     }
 
     public DocumentDownload download(AppUser actor, UUID documentId) {
-        var source = documentReads.staff(actor, documentId);
+        var download = documentReads.staff(actor, documentId);
+        // The authorization transaction has returned its connection before the separate audit transaction.
+        auditService.record(actor, AuditAction.DOCUMENT_DOWNLOADED, "Candidate", download.candidateId(), download.auditDetails());
+        var source = download.document();
         return new DocumentDownload(source.fileName(), source.contentType(), content.read(source));
     }
 
