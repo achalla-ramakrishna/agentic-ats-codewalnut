@@ -2,9 +2,11 @@
 
 This is a planned maintenance migration of a **live** Railway installation. Do not
 run its cutover/cleanup commands against production merely to test this document.
-Requirements: DEPLOY-01–06; decisions: ADR-0027 and [ADR-0030](adr/0030-cli-only-vercel-project.md). First merge and deploy the private
-storage PR on Railway. Complete and verify its document migration before hosting
-cutover; retain original database bytes and a Blob-compatible rollback release.
+Requirements: DEPLOY-01–08; decisions: ADR-0027 and [ADR-0030](adr/0030-cli-only-vercel-project.md). First merge and deploy the private
+storage PR on Railway. Verify migrated objects and reconcile retained pending
+transfers before hosting cutover; retain database bytes and a Blob-compatible
+rollback release. A freeze can safely carry durable pending work to the new host;
+it must not wait for stopped workers to empty the queue.
 
 ## Inventory and go/no-go record
 
@@ -72,7 +74,12 @@ or candidate documents to Git/PRs. Restrict and later destroy rehearsal copies.
    production write token: use a separate empty rehearsal store/token initially,
    and a separate copied store only for controlled document checks. Do not
    rotate/delete live objects.
-7. From `deploy/digitalocean`, start only `docker compose up -d mysql`. Never start
+7. Record the recovery/RPO decision and set all required MySQL logging variables
+   described below. From the repository root run `scripts/deploy/preflight.sh`
+   **before first MySQL boot**, with rehearsal/maintenance on. It validates the
+   fully resolved Compose settings, including exported variable/override precedence;
+   the example values deliberately fail until a policy is selected. Then, from
+   `deploy/digitalocean`, start only `docker compose up -d mysql`. Never start
    the app before restoring the copied database: Flyway needs its actual history.
    Then run `scripts/deploy/deploy.sh` from the repo after configuring all digests.
    This replaces only app/bridge/proxy containers; it does not upgrade MySQL.
@@ -88,6 +95,98 @@ Caddy handles proxy failures with a generic noncacheable response and removes
 request objects/response headers from its default runtime logs. Keep debug and
 access logging off. Run `python3 scripts/deploy/test_proxy.py` to verify spoofed
 forwarding headers and token-free backend-failure logs in isolated Docker containers.
+
+## Explicit database recovery and binary-log policy
+
+Before initializing or recreating MySQL, the accountable operator must record the
+approved recovery point objective (maximum acceptable lost writes), backup frequency,
+restore time, retention, disk budget and recovery owner in the private cutover record.
+**This repository does not select an RPO.** MySQL 8 otherwise enables binary logs by
+default, which can fill a small disk during BLOB restores, transfers and cleanup.
+Choose one explicit policy in `.env`; placeholders are rejected by preflight:
+
+| Decision | `ATS_MYSQL_RECOVERY_POLICY` | `MYSQL_BINLOG_OPTION` | `MYSQL_BINLOG_EXPIRE_SECONDS` |
+|---|---|---|---|
+| Recover only to verified off-server database dumps | `dump-only` | `--skip-log-bin` | `0` |
+| Enable logging for an independently provisioned PITR process | `pitr` | `--log-bin=mysql-bin` | Explicit positive seconds approved for disk usage and archive-outage tolerance |
+
+`dump-only` disables new binary logs. A lost Droplet can lose every write after the
+last successfully archived restorable dump; choose its schedule/RPO accordingly.
+It cannot replay intervening transactions. Zero retention here is valid only because
+logging is explicitly disabled. Existing files from a previous logging policy do
+not automatically vanish; preserve required recovery data before a separately
+reviewed purge. Never delete live MySQL files manually.
+
+`pitr` is a **logging configuration, not a complete recovery system**. Before relying
+on it, provision continuous off-server archive/replication of every required binary
+log, monitor gaps/lag, retain a compatible base backup and its exact consistent
+log position/GTID, and successfully replay an archived sequence on a disposable
+server to a chosen recovery point. The existing dump-only `backup.sh` does not record
+that PITR boundary or archive logs. Provision and review a matching backup/archive
+procedure first; do not claim PITR from local retention alone. Loss of the Droplet
+loses local logs too. This logging profile must not open production until the
+operator has recorded the archive/replay evidence and its achieved RPO.
+
+Set local expiry longer than the reviewed archive lag/outage budget, with enough
+space for measured peak log volume and large transactions. Expiry is time-based,
+not a hard disk quota; a restore or cleanup can exhaust disk before the next purge.
+Monitor disk/free-space and archived continuity. Logs may contain candidate data:
+encrypt/restrict archives and align their retention with database/object recovery.
+Never purge the only copy needed by a base backup or replica just to free space.
+
+Preflight checks the effective MySQL command against the selected policy and rejects
+missing, zero-PITR, conflicting or overridden flags. Before HTTP opens it also checks
+the running MySQL container's project/service identity, command and policy label;
+editing `.env` alone does not change a running database. Change logging policy or
+retention only in a planned freeze with a verified recovery point and any required
+archival, recreate MySQL using its same volume/image, and verify actual SQL values
+`SELECT @@log_bin, @@binlog_expire_logs_seconds` plus archive/restore behavior before
+reopening. Do not issue untracked runtime `SET GLOBAL` changes; container arguments
+cannot attest to those. Re-run preflight after any Compose override or environment
+change. The helper intentionally never prints resolved secrets.
+
+References: [MySQL binary logging options](https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html),
+[point-in-time recovery](https://docs.oracle.com/cd/E17952_01/mysql-8.0-en/point-in-time-recovery-binlog.html).
+
+## Pin the production Blob store independently
+
+A rehearsal host can accidentally remain configured for its test store. Before
+opening production, an operator must independently obtain the approved **production**
+private store hostname from the company-owned Vercel project/store record (verify
+team/project ownership there), and record that hostname alone in
+`deploy/digitalocean/.production-blob-host`. Make the regular file root-owned mode
+0600 and its parent operator-controlled; symlinks are rejected. This is not a secret,
+but its integrity matters. Do not populate it by copying `.env`, Compose output or
+the running container; those are the configuration being checked. There is no
+shell environment override for the pin's path or value.
+
+`deploy.sh` reads `docker compose config --format json` and refuses to open HTTP
+unless the effective bridge host exactly matches that independent pin and the
+backend points at `http://blob-bridge:3001`. An exported shell variable or Compose
+override therefore cannot silently substitute the rehearsal host while a different
+value remains in `.env`. Initial rehearsal can use its isolated store while closed.
+
+Run deployment/preflight from an authorized **root shell** on the Droplet: the
+independent pin is intentionally root-only. Before the final opening, deploy the
+approved production credentials/store **while still in maintenance**, recreate
+backend/bridge, then from the repository root in that root shell run:
+
+```sh
+scripts/deploy/preflight.sh --require-production-identity --check-running-identity
+```
+
+Repeat after any recreation and immediately before destructive cleanup batches.
+This read-only command requires both desired and running bindings to match the
+independent host. It inspects exactly one running backend and bridge with Compose
+project `ats` and matching service labels, checks the running bridge hostname,
+backend internal endpoint and matching shared authentication secret. No token or
+container environment dump is printed. This assumes the reviewed private Compose
+networks and aliases; do not attach another container as `blob-bridge` or change
+service routing outside this configuration. Merely editing `.env` does not pass the
+running check. The command verifies local binding, **not** provider account ownership
+or that the token belongs to that Vercel project: independently verify ownership
+and complete the private-store upload/read/delete smoke test with fake data before
+production use. Store contents/checksum reconciliation remains a separate gate.
 
 ## Vercel configuration and release
 
@@ -231,10 +330,20 @@ only on startup. They cannot drain previously admitted work or undo a provider c
    route into a tested durable queue. Record unresolved deliveries and reconcile
    IDs after restart to prevent omissions/duplicate effects. Do not depend on a
    browser redirect for webhook POSTs.
-4. With every writer stopped (including SQL tools and migration workers), verify
-   storage migration has no unresolved/error rows. Take the final binary-safe dump
-   plus immutable object manifest, checksum/encrypt it, and copy off-server. Record
-   exact cutover time and final counts. Keep old database frozen for rollback.
+4. With every writer stopped (including SQL tools and migration workers), inventory
+   all storage task states, leases/retries, retained document bytes and pending
+   résumé intakes. Reconcile each ready object to its verified checksum/reference.
+   Durable pending or retryable failed transfers may move with their retained,
+   checksum-matching database bytes and task records; record their IDs/counts,
+   retry state and the responsible operator. A claimed lease may need to expire
+   before the new worker resumes it. Do not delete local bytes, mark tasks complete
+   or require the now-stopped workers to reach zero pending. Unaccounted rows,
+   missing source bytes, checksum mismatches or unknown remote state block cutover
+   until explained/repaired; known retryable failures need an explicit recorded
+   disposition. Take the final binary-safe dump including task/lease history and
+   retained bytes, plus immutable object manifest, checksum/encrypt it and copy
+   off-server. Record exact cutover time and final counts. Keep the old database
+   frozen for rollback.
 5. Restore into the clean target, verify table counts/Flyway history/manifests and
    representative private downloads/checksums. Keep target rehearsal/maintenance
    on and workers off during validation. No simultaneous writer is permitted.
@@ -253,7 +362,10 @@ only on startup. They cannot drain previously admitted work or undo a provider c
    Calendar/Gmail connections are session-held and need reconnection.
 8. Smoke-test production using fake records/accounts: login/logout/CSRF, staff
    scope, candidate/client access, document permissions, uploads, integrations and
-   pending task retry. Remove only the explicit fake records under normal policy.
+   pending task retry. Reconcile the carried task IDs/counts and leases against
+   the freeze inventory, confirm retries resume without duplicate provider effects,
+   and track every failure to resolution before cleanup. Remove only the explicit
+   fake records under normal policy.
    Monitor errors/latency/DB/disk/worker backlog/provider delivery for the agreed
    observation period. Keep old data, compatible image and encrypted backup intact.
 

@@ -25,3 +25,6 @@ frontend/vercel.json
 
 # Local Vercel CLI team/project linkage; never upload account metadata.
 **/.vercel/
+
+# Independently recorded operator production-store identity, never inferred from .env.
+deploy/digitalocean/.production-blob-host

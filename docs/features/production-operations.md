@@ -11,6 +11,8 @@ Droplet. ADR-0027 and [ADR-0030](../adr/0030-cli-only-vercel-project.md) describ
 | DEPLOY-04 | The Droplet publishes only HTTPS/HTTP, keeps MySQL and the private storage bridge off public ports, limits container resources, and retains persistent data across image replacement. |
 | DEPLOY-05 | Vercel proxies API and authentication on one public origin. The origin proxy overwrites forwarded identity with the configured public host and forbids caching API/provider responses. Proxy errors never log request objects or reflect request tokens. The company-owned Vercel project is CLI-only with no Git connection; previews use isolated data and credentials. |
 | DEPLOY-06 | Deployment uses tested immutable image digests published from main through a protected GitHub environment, manual promotion, encrypted off-server backups and a rehearsed restore. Final cutover has one writer, preserved links and an explicit post-write rollback plan. |
+| DEPLOY-07 | MySQL recovery policy is explicitly selected by the accountable operator against an approved RPO. Preflight validates effective binary-log enablement/expiry flags and refuses inconsistent settings. PITR requires off-server logs, a compatible backup boundary and a tested replay; local retention alone is insufficient. |
+| DEPLOY-08 | Opening production requires the effective private Blob hostname to match an independently recorded root-owned production-store pin. Before cleanup, preflight also verifies running backend/bridge Compose identities and binding. Configuration checks do not attest to cloud account ownership or object integrity. |
 
 Operations flags are read at restart, not live toggles. An HTTP freeze cannot cancel
 already admitted requests or provider calls; stop and verify the old process is gone
@@ -27,3 +29,5 @@ this is an application activity freeze, not a read-only database connection.
 - 2026-10-08: Correct maintenance error envelopes and verify Spring filter/environment wiring; warn on open HTTP with paused workers and reject inconsistent Droplet cutover flags. Clarify CLI-only Vercel ownership/root, protect publication, and restrict backup credentials/SSH (DEPLOY-01–06).
 
 - 2026-10-08: ADR-0030 replaces the Git-linkage assumption; clarify health-only maintenance verification, all-worker rehearsal flags, exact TCP backup account grants and credential bind-mount rotation (DEPLOY-02, DEPLOY-05–06).
+
+- 2026-10-09: Require explicit MySQL recovery/logging policy and independently pinned desired/running production-store checks. Reconcile durable retained pending transfers across the freeze instead of requiring stopped workers to empty the queue (DEPLOY-06–08).

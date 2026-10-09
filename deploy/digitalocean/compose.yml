@@ -5,7 +5,15 @@ services:
     image: ${MYSQL_IMAGE:?Set MYSQL_IMAGE to a reviewed mysql:8.0 image digest}
     restart: unless-stopped
     mem_limit: 576m
-    command: ["--innodb-buffer-pool-size=192M", "--max-connections=30", "--performance-schema=OFF", "--max-allowed-packet=128M"]
+    labels:
+      com.codewalnut.ats.recovery-policy: ${ATS_MYSQL_RECOVERY_POLICY:?Choose reviewed dump-only or pitr policy}
+    command:
+      - --innodb-buffer-pool-size=192M
+      - --max-connections=30
+      - --performance-schema=OFF
+      - --max-allowed-packet=128M
+      - ${MYSQL_BINLOG_OPTION:?Select --skip-log-bin or --log-bin=mysql-bin for the recovery policy}
+      - --binlog-expire-logs-seconds=${MYSQL_BINLOG_EXPIRE_SECONDS:?Set explicit retention seconds}
     environment:
       MYSQL_DATABASE: ats
       MYSQL_USER: ats
