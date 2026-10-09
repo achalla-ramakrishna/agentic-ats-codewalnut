@@ -130,12 +130,12 @@ endpoint. Do not copy browser session cookies into shell history or shared logs.
 
 Start with a dry-run body, replacing the example cutoff with the **actual agreed
 observation cutoff**, at least fourteen days before the request, and the reference
-with your real nonsecret restore record identifier:
+with a unique nonsecret batch identifier linked to your verified restore record:
 
 ```json
 {
   "confirmation": "REMOVE VERIFIED LEGACY DOCUMENT BYTES",
-  "backupReference": "restore-20261029-01",
+  "backupReference": "restore-20261029-01-dryrun-0001",
   "restoreVerified": true,
   "observedBefore": "2026-10-15T00:00:00Z",
   "limit": 1,
@@ -155,6 +155,14 @@ intermediary timeouts. `backupReference` is 3–80 ASCII letters, digits, dots, 
 hyphens, beginning with a letter/digit. It is recorded in the audit log: never use
 a credential, signed URL, filename, candidate name or contact detail.
 
+Assign a **new `backupReference` to every submitted batch**, including dry-runs,
+and record its link to the verified restore evidence in the maintenance record.
+For example, `restore-20261029-01-dryrun-0001` and
+`restore-20261029-01-apply-0001` identify two distinct requests backed by the same
+tested recovery set. Record the actor, submission time, cutoff and dry-run value
+before sending each request. Never reuse a reference for concurrent requests or
+blind retries; it is an audit correlation label, not an idempotency key.
+
 The response contains only `scanned`, `eligible`, `cleaned`, `skipped`, and `failed`
 counts. Dry-run freshly checks private bytes and current database bytes without
 changing documents; a completed dry-run records a summary audit with `dryRun: true`. It does not
@@ -162,7 +170,8 @@ reserve a batch. A later destructive request reselects and re-verifies its batch
 
 Review the dry-run and recovery evidence, then rerun the production identity
 preflight immediately before proceeding. To remove one verified copy, submit the
-same parameters with `dryRun: false`. Each removed copy receives a per-document
+same cutoff and limit with `dryRun: false` and a new batch-specific
+`backupReference`. Each removed copy receives a per-document
 audit committed atomically with the change. Requests that reach normal completion
 also have a count summary. Rejected configuration/confirmation/cutoff requests and
 requests that fail before summary recording do not produce a cleanup summary;
@@ -175,19 +184,54 @@ a failing document must be repaired before a small batch can progress past it.
 
 After each batch, verify downloads and monitor storage errors. **A 504, disconnected
 browser or other ambiguous response does not mean no bytes were removed.** Stop
-sending cleanup requests and wait until the backend request has finished or failed.
-Reconcile the committed per-document `DOCUMENT_STORAGE_CLEANUP` audits for the
-operator, time window and backup reference against the current document data state
-using authorized read-only checks. Those atomic per-document audits are the source
-of truth for completed removals; a missing summary does not undo them. Resolve any
-uncertainty before approving and sending another batch. Do not restart the backend
-or retry blindly to clear a proxy timeout. Already-cleaned documents are excluded,
-so a new request can select a different document and remove another copy.
+sending cleanup requests and use the observable completion check below. Already-cleaned
+documents are excluded, so a new request can select a different document and remove
+another copy.
 Documents verified after the cutoff remain in MySQL until a later eligible window.
 Only document bytes are cleared; document IDs, metadata, client shares, task
 manifests and remote objects are preserved. Intake staging is excluded.
 
-When maintenance is done, set `ATS_DOCUMENT_STORAGE_CLEANUP_ENABLED=false` and
+## Observe completion after an ambiguous response
+
+Using the normal authenticated admin API client with VIEW_AUDIT_LOG, read
+`GET /api/v1/audit-log?page=0&size=100`. Entries are newest first; page through the
+relevant submission window as needed. The endpoint supports pagination, not a
+server-side action/reference filter. Examine `items` and parse each matching row's
+`details` JSON string.
+
+The **committed batch summary** is the supported signal that cleanup work for the
+request has completed. Find a row with all of these properties:
+
+- `action` is `DOCUMENT_STORAGE_CLEANUP` and both `entityType` and `entityId` are null.
+- `actorEmail` matches the submitting administrator and `createdAt` is within the
+  recorded request window, after submission.
+- `details.backupReference` is the unique reference assigned to this request;
+  `details.observedBefore` and `details.dryRun` match its recorded cutoff and mode.
+- `details` contains the batch's `scanned`, `eligible`, `cleaned`, `skipped` and
+  `failed` counts.
+
+That summary is committed after all per-document work, even when the HTTP response
+is subsequently lost. Reconcile it with the same reference's per-document audits
+(`entityType: CandidateDocument`, document `entityId`) and current document data
+state using authorized read-only checks. The atomic **per-document audits remain
+the source of truth for which copies were removed**; summary completion alone is
+not permission to ignore nonzero failures or skips.
+
+If no matching summary appears, classify the batch as **indeterminate**, keep the
+next cleanup batch blocked and escalate to the deployment operator. A missing
+summary may mean work is still running, or that it stopped before recording the
+summary after committing some removals. Elapsed time, unchanged logs, the 120-second
+proxy limit, or a guessed sum of read/transaction deadlines cannot distinguish
+those cases: eligibility queries and audit work do not share that overall deadline.
+Do not restart the backend or retry blindly to clear the 504. Resume only after
+the operator has established completion or resolved the indeterminate operation
+through the controlled incident/recovery procedure and reconciled committed audits
+with the database. This runbook supplies no automatic timeout-based failure signal.
+
+## Disable maintenance access
+
+Only when all submitted batches have completed and been reconciled, or an
+indeterminate operation has been resolved, set `ATS_DOCUMENT_STORAGE_CLEANUP_ENABLED=false` and
 `ATS_DOCUMENT_STORAGE_OPERATIONS_ENABLED=false` in `.env.backend`, then run the
 same backend recreation command. Merely editing the file leaves the running
 process enabled. After it is healthy, send an authenticated admin POST to the same
