@@ -16,6 +16,19 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-11-naukri-import',
+    date: '2026-10-11',
+    title: 'Import from Naukri, best matches first',
+    summary: 'Upload the applicant Excel from Naukri on an opening. Every applicant is ranked against the job description with a match %, a reason and what to check. Tick the best (the top 10 start ticked), add them as candidates, then send each one an email asking for their résumé, CTC, notice period and times for a call. Only the people you add are saved.',
+    steps: [
+      'Open the opening (make sure it has a job description) → Import from Naukri.',
+      'Choose the Excel file → Rank against job description.',
+      'Tick who to add (Top 10 / 20 / 50) → Add to this opening.',
+      'Check the “Ask for résumé” email → Send. Replies show in Messages and Workflow → Waiting for our reply; schedule from the candidate.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-08-intern-tracks',
     date: '2026-10-08',
     title: 'Intern screening tests: Java, Python and MERN tracks',

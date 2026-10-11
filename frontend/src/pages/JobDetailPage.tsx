@@ -17,6 +17,7 @@ import { useMe } from '../auth/AuthContext'
 import { AssistantPlanCard } from '../components/AssistantPlanCard'
 import { CandidateDrawer, type DrawerTab } from '../components/CandidateDrawer'
 import { TEMPLATE_FOR_STAGE } from '../components/emailTemplates'
+import { NaukriImport } from '../components/NaukriImport'
 import { ImportCandidates } from '../components/ImportCandidates'
 import { FitBadge, InsightsPanel } from '../components/InsightsPanel'
 import { JobDetailsEditor } from '../components/JobDetailsEditor'
@@ -142,7 +143,7 @@ export function JobDetailPage() {
   const [plan, setPlan] = useState<AssistantPlan | null>(null)
   const [asking, setAsking] = useState(false)
   const [askError, setAskError] = useState<string | null>(null)
-  const [panel, setPanel] = useState<'none' | 'add' | 'import' | 'resumes' | 'edit'>('none')
+  const [panel, setPanel] = useState<'none' | 'add' | 'import' | 'naukri' | 'resumes' | 'edit'>('none')
   const [insights, setInsights] = useState<InsightsResponse | null>(null)
   const [sort, setSort] = useState<'name' | 'match' | 'recent'>('name')
   const [categories, setCategories] = useState<Category[]>([])
@@ -318,6 +319,9 @@ export function JobDetailPage() {
                 <Button variant="secondary" onClick={() => setPanel(panel === 'import' ? 'none' : 'import')}>
                   Import from spreadsheet
                 </Button>
+                <Button variant="secondary" onClick={() => setPanel(panel === 'naukri' ? 'none' : 'naukri')}>
+                  Import from Naukri
+                </Button>
                 <Button onClick={() => setPanel(panel === 'add' ? 'none' : 'add')}>Add candidate</Button>
                 <select
                   className="select"
@@ -392,6 +396,9 @@ export function JobDetailPage() {
       )}
       {insights && showMatch && (rows?.length ?? 0) > 0 && (
         <InsightsPanel jobId={job.id} data={insights} canEdit={canEdit} onOpen={openById} onChanged={load} />
+      )}
+      {panel === 'naukri' && (
+        <NaukriImport jobId={job.id} jobTitle={job.title} senderName={me.name} onAdded={load} onClose={() => setPanel('none')} />
       )}
       {panel === 'import' && (
         <ImportCandidates

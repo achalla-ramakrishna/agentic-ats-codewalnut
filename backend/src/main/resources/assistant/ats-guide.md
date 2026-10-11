@@ -19,6 +19,9 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
 ## Candidates
 - Add one: open the opening → Add candidate. Many: Import, then paste a table from Excel or Google
   Sheets (name, email, phone).
+- Naukri applicants: open the opening → Import from Naukri → choose the Excel from Naukri → Rank
+  against job description → tick the best (Top 10/20/50) → Add to this opening → check the "Ask for
+  résumé" email → Send. Replies show in Messages and Workflow; then Schedule interview.
 - Upload résumés: open the opening → Upload résumés (needs a job description for the match score).
   The AI fills each profile and a Match %; "AI suggestions" shows who to contact next.
 - Open a candidate: click their name in an opening (or search in Candidates). The panel has Profile,

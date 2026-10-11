@@ -4,6 +4,7 @@ import com.anthropic.client.AnthropicClient;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
 import com.codewalnut.ats.client.AssessmentDrafter;
 import com.codewalnut.ats.client.ClaudeAssessmentDrafter;
+import com.codewalnut.ats.client.ClaudeProfileRanker;
 import com.codewalnut.ats.client.ClaudeResumeAnalyzer;
 import com.codewalnut.ats.client.ClaudeResumeWriter;
 import com.codewalnut.ats.client.DisabledResumeWriter;
@@ -11,8 +12,10 @@ import com.codewalnut.ats.client.PlainResumeWriter;
 import com.codewalnut.ats.client.ResumeWriter;
 import com.codewalnut.ats.client.DisabledAssessmentDrafter;
 import com.codewalnut.ats.client.SampleAssessmentDrafter;
+import com.codewalnut.ats.client.DisabledProfileRanker;
 import com.codewalnut.ats.client.DisabledResumeAnalyzer;
 import com.codewalnut.ats.client.KeywordResumeAnalyzer;
+import com.codewalnut.ats.client.ProfileRanker;
 import com.codewalnut.ats.client.ResumeAnalyzer;
 import java.util.Optional;
 import com.codewalnut.ats.client.AssistantClient;
@@ -172,6 +175,17 @@ public class IntegrationsConfig {
             @Value("${ats.assistant.model:claude-opus-5-5}") String model) {
         return anthropic(apiKey).<ResumeAnalyzer>map(c -> new ClaudeResumeAnalyzer(c, model))
                 .orElseGet(DisabledResumeAnalyzer::new);
+    }
+
+    /** Job-portal profiles (Naukri) are ranked by Claude when ANTHROPIC_API_KEY is set; otherwise by rules. */
+    @Bean
+    public ProfileRanker profileRanker(@Value("${ANTHROPIC_API_KEY:}") String apiKey,
+            @Value("${ats.assistant.model:claude-opus-5-5}") String model, Environment environment) {
+        if (environment.acceptsProfiles(org.springframework.core.env.Profiles.of("dev", "demo"))) {
+            return new DisabledProfileRanker();
+        }
+        return anthropic(apiKey).<ProfileRanker>map(c -> new ClaudeProfileRanker(c, model))
+                .orElseGet(DisabledProfileRanker::new);
     }
 
     private static Optional<AnthropicClient> anthropic(String apiKey) {

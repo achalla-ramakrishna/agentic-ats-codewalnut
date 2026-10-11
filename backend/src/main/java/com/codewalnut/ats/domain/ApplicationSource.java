@@ -4,5 +4,6 @@ public enum ApplicationSource {
     MANUAL,
     IMPORT,
     JOB_LINK,
-    RESUME_UPLOAD
+    RESUME_UPLOAD,
+    NAUKRI
 }

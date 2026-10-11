@@ -19,6 +19,15 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
     body: 'Hi {firstName},\n\n\n\nBest regards,\n{senderName}\nCodeWalnut',
   },
   {
+    key: 'resume_request',
+    label: 'Ask for résumé (job portal applicants)',
+    subject: 'Your application for {jobTitle} at CodeWalnut – please share your résumé',
+    body:
+      'Hi {firstName},\n\nThank you for applying for the {jobTitle} role at CodeWalnut. Your profile looks like a good match and we would like to take it forward.\n\n' +
+      'Could you reply to this email with:\n- your latest résumé (PDF)\n- your current and expected CTC\n- your notice period\n- two or three times this week that suit you for a short call\n\n' +
+      'Once we have your résumé, we will set up the first conversation.\n\nBest regards,\n{senderName}\nCodeWalnut',
+  },
+  {
     key: 'received',
     label: 'Application received',
     subject: 'We received your application – {jobTitle}',

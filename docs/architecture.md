@@ -100,6 +100,13 @@ MERN intern papers; `service/TechBackground` reads a candidate's stack from
 their résumé reading for `GET /jobs/{id}/backgrounds`, used by Send to
 candidates to pre-select the matching people.
 
+Naukri imports (ADR-0026): `naukri/SpreadsheetReader` reads the first sheet of
+an .xlsx (zip + XML, through the central directory) or a .csv; `naukri/NaukriSheet`
+maps headings to `NaukriProfile` (job-related columns only); `NaukriImportService`
+scores every row with `naukri/RuleRanker` and, when `client/ProfileRanker` is
+Claude, re-scores them with the AI in parallel batches. Nothing is stored until
+`POST /jobs/{id}/naukri/import` adds the chosen rows through `TrackerService`.
+
 Coding questions (ADR-0016): `client/CodeRunner` sends candidate code to a
 self-hosted Judge0 (`Judge0CodeRunner`; `DisabledCodeRunner` when
 `ATS_CODE_RUNNER_URL` is unset). `CodeRunService` runs samples while a test is

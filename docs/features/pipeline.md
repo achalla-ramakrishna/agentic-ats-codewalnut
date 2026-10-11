@@ -50,6 +50,7 @@ view, and every move is recorded for reporting.
 | PIPE-13 | The candidate panel lists every opening the candidate is in, across clients, with client and stage, linking to each. | Done |
 | PIPE-14 | **Add to another opening** (recruiters and admins): put the same candidate forward for another opening, e.g. another client's, at a chosen active stage (default Applied / Sourced) with an optional note. One candidate record, so profile, résumés and documents carry over; stage, notes, tests and interviews stay per opening. Both openings' history records the link ("Also put forward for…", "Added from…"); audited. Refused if already in that opening or it is closed. Unlike PIPE-11, the original application stays. | Done |
 | PIPE-15 | **Seven stages**, in this order: Applied / Sourced, Interviewed, Shortlisted, Offer sent, Joined, plus On hold and Rejected. Screening is part of Applied / Sourced; Submitted to client and Client interview are part of Shortlisted; Selected and Offer accepted are part of Offer sent; Withdrawn is Rejected with the reason. The retired stages are never offered; anything that still sends one (old spreadsheets, links, AI wording) lands in the stage that replaced it. Existing candidates were moved accordingly (V23); their history keeps the old stage names. Admin updates go out for Shortlisted, Offer sent and Joined. | Done |
+| PIPE-16 | **Import from Naukri** (recruiters and admins): upload Naukri's applicant Excel (.xlsx, or .csv) on an opening. Every row is ranked against the job description: by AI when it is set up (batches of 20, up to 400 rows), otherwise by rules (opening's skills in headline/key skills/designation, years asked, title words, location, notice). Each row shows match %, a one-line reason, what's good and what to check, and whether the person is already in the ATS or this opening. The top 10 that can be added start ticked; Top 10/20/50/All change the choice. Only the ticked rows become candidates (Naukri details as the first note, source NAUKRI); the file and other rows are not stored. Then one editable *Ask for résumé* email goes to each added person from the recruiter's Gmail; replies show in Messages and Workflow → Waiting for our reply, and staff schedule interviews from there. Gender, date of birth and home town columns are never read (ADR-0026). | Done |
 
 ## Business rules
 
@@ -84,6 +85,7 @@ view, and every move is recorded for reporting.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-11 | PIPE-16: import a Naukri applicant export, ranked against the job description, then ask for résumés by email (ADR-0026) |
 | 2026-10-07 | PIPE-15: seven stages instead of thirteen (ADR-0024) |
 | 2026-10-04 | PIPE-13, PIPE-14: see all of a candidate's openings and add them to another client's opening |
 | 2026-09-25 | Created from SPEC.md |

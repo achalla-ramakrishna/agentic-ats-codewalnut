@@ -475,7 +475,7 @@ public class TrackerService {
         return application;
     }
 
-    private Optional<Candidate> findExisting(String email, String phone) {
+    Optional<Candidate> findExisting(String email, String phone) {
         if (email != null) {
             Optional<Candidate> byEmail = candidateRepository.findByEmail(email);
             if (byEmail.isPresent()) {
@@ -527,7 +527,7 @@ public class TrackerService {
         return jobRepository.findById(id).orElseThrow(() -> new NotFoundException("Opening not found"));
     }
 
-    private JobOpening openJob(UUID id) {
+    JobOpening openJob(UUID id) {
         JobOpening job = job(id);
         if (job.getStatus() == JobStatus.CLOSED) {
             throw new IllegalArgumentException("This opening is closed; reopen it to add candidates");
