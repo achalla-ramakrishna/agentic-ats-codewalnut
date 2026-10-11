@@ -18,9 +18,9 @@ export const WHATS_NEW: WhatsNewEntry[] = [
   {
     id: '2026-10-11-email-top-matches',
     date: '2026-10-11',
-    title: 'Email the top 30 matches from an opening',
-    summary: 'In an opening’s candidate list, Select top 30 by match ticks the best-matching people who haven’t been emailed yet; Email selected sends each of them their own email from your Gmail (Ask for résumé, or any template). Everyone emailed shows “Emailed <date>” under their contact details, so the next click picks the next 30.',
-    steps: ['Open the opening → above the list, Select top 30 by match.', 'Email selected → check the text → Send.', 'Later, Select top 30 by match again for the next batch.'],
+    title: 'Candidates 30 per page, best match first; email a page at a time',
+    summary: 'An opening’s list now shows 30 candidates per page, ranked by match. Tick Select this page (or the box in the header) and Email selected to send each person their own email from your Gmail. Tick Hide people already emailed and page 1 is always the next 30 to contact. Everyone emailed shows “Emailed <date>” under their contact details.',
+    steps: ['Open the opening: page 1 is the best 30 matches.', 'Tick Hide people already emailed → Select this page → Email selected → Send.', 'Next time, do the same: page 1 is the next 30.'],
     capability: 'MANAGE_JOBS',
   },
   {

@@ -201,7 +201,7 @@ export function JobDetailPage() {
   const [panel, setPanel] = useState<'none' | 'add' | 'import' | 'naukri' | 'resumes' | 'edit'>('none')
   const [columns, setColumns] = useState<ColumnKey[]>(loadColumns)
   const [picked, setPicked] = useState<Set<string>>(new Set())
-  const [skipEmailed, setSkipEmailed] = useState(true)
+  const [hideEmailed, setHideEmailed] = useState(false)
   const [emailing, setEmailing] = useState<BulkRecipient[] | null>(null)
   const [batch, setBatch] = useBatchSize()
   const toggleColumn = (k: ColumnKey) =>
@@ -215,7 +215,9 @@ export function JobDetailPage() {
       return next
     })
   const [insights, setInsights] = useState<InsightsResponse | null>(null)
-  const [sort, setSort] = useState<'name' | 'match' | 'recent'>('name')
+  // Until someone picks a sort, an opening with match scores is ranked best match first.
+  const [sortChoice, setSort] = useState<'name' | 'match' | 'recent' | null>(null)
+  const [page, setPage] = useState(0)
   const [categories, setCategories] = useState<Category[]>([])
   const [skill, setSkill] = useState('')
   const [year, setYear] = useState('')
@@ -308,10 +310,16 @@ export function JobDetailPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  // Back to the first page whenever what's listed changes.
+  useEffect(() => setPage(0), [filter, query, categories, skill, year, passedOnly, sortChoice, batch, hideEmailed])
+
   if (error && !job) return <p role="alert" className="alert alert-error">{error}</p>
   if (!job) return <p className="muted">Loading…</p>
 
   const byApplication = new Map((insights?.insights ?? []).map((i) => [i.applicationId, i]))
+  const aiMatch = !!insights && (insights.available || insights.insights.length > 0)
+  const showMatch = aiMatch || (rows ?? []).some((r) => r.portal?.matchPercent != null)
+  const sort = sortChoice ?? (showMatch ? 'match' : 'name')
   const show = (k: ColumnKey) => columns.includes(k)
   const matchOf = (r: ApplicationRow) => byApplication.get(r.id)?.fitPercent ?? r.portal?.matchPercent ?? -1
   const togglePick = (id: string, on: boolean) =>
@@ -331,7 +339,8 @@ export function JobDetailPage() {
         (!filter || r.stage === filter) &&
         matchesSearch(r, query) &&
         matchesInsight(byApplication.get(r.id), categories, skill, year) &&
-        (!passedOnly || passed.has(r.id)),
+        (!passedOnly || passed.has(r.id)) &&
+        (!hideEmailed || !r.lastEmailedAt),
     )
     .sort((a, b) => {
       if (sort === 'match') {
@@ -348,12 +357,19 @@ export function JobDetailPage() {
     read.flatMap((i) => i.skills).reduce((m, s) => m.set(s.toLowerCase(), m.get(s.toLowerCase()) ?? s), new Map<string, string>()).values(),
   ).sort((a, b) => a.localeCompare(b))
   const yearOptions = Array.from(new Set(read.map((i) => i.graduationYear).filter((y): y is number => y != null))).sort()
-  const aiMatch = !!insights && (insights.available || insights.insights.length > 0)
-  const showMatch = aiMatch || (rows ?? []).some((r) => r.portal?.matchPercent != null)
-  // Best match first among the rows on screen (search and filters apply), with an email, still in the running.
-  const emailable = visible
-    .filter((r) => r.email && r.stage !== 'REJECTED' && (!skipEmailed || !r.lastEmailedAt))
-    .sort((a, b) => matchOf(b) - matchOf(a) || a.name.localeCompare(b.name))
+  // Pages of one batch (default 30): select a page, email it, move on.
+  const pageCount = Math.max(1, Math.ceil(visible.length / batch))
+  const current = Math.min(page, pageCount - 1)
+  const pageRows = visible.slice(current * batch, (current + 1) * batch)
+  const canEmail = (r: ApplicationRow) => !!r.email && r.stage !== 'REJECTED'
+  const pageEmailable = pageRows.filter(canEmail)
+  const pageAllPicked = pageEmailable.length > 0 && pageEmailable.every((r) => picked.has(r.id))
+  const pickPage = (on: boolean) =>
+    setPicked((p) => {
+      const next = new Set(p)
+      pageEmailable.forEach((r) => (on ? next.add(r.id) : next.delete(r.id)))
+      return next
+    })
   // Best match first, so if Gmail stops part-way the strongest people already have their email.
   const pickedRows = (rows ?? []).filter((r) => picked.has(r.id)).sort((a, b) => matchOf(b) - matchOf(a))
   const openById = (applicationId: string) => {
@@ -634,13 +650,13 @@ export function JobDetailPage() {
         )}
         {canEdit && visible.length > 0 && (
           <div className="row" role="group" aria-label="Email candidates" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
-            <BatchSizeInput value={batch} onChange={setBatch} />
-            <Button size="sm" variant="secondary" disabled={emailable.length === 0} onClick={() => setPicked(new Set(emailable.slice(0, batch).map((r) => r.id)))}>
-              Select top {Math.min(batch, emailable.length)} by match
-            </Button>
+            <BatchSizeInput label="Per page" value={batch} onChange={setBatch} />
             <label className="row" style={{ gap: 4, fontSize: 13 }}>
-              <input type="checkbox" checked={skipEmailed} onChange={(e) => setSkipEmailed(e.target.checked)} /> Skip people already emailed
+              <input type="checkbox" checked={hideEmailed} onChange={(e) => setHideEmailed(e.target.checked)} /> Hide people already emailed
             </label>
+            <Button size="sm" variant="secondary" disabled={pageEmailable.length === 0 || pageAllPicked} onClick={() => pickPage(true)}>
+              Select this page ({pageEmailable.length})
+            </Button>
             {picked.size > 0 && (
               <>
                 <Button size="sm" onClick={() => setEmailing(pickedRows.map((r) => ({ applicationId: r.id, name: r.name, hasEmail: !!r.email })))}>
@@ -684,7 +700,17 @@ export function JobDetailPage() {
             <table className="table cand-table">
               <thead>
                 <tr>
-                  {canEdit && <th aria-label="Select" />}
+                  {canEdit && (
+                    <th>
+                      <input
+                        type="checkbox"
+                        aria-label="Select everyone on this page"
+                        disabled={pageEmailable.length === 0}
+                        checked={pageAllPicked}
+                        onChange={(e) => pickPage(e.target.checked)}
+                      />
+                    </th>
+                  )}
                   <th>Name</th>
                   {showMatch && <th title="Share of the opening’s requirements the résumé shows, or the job-portal ranking (AI, advisory)">Match</th>}
                   <th>Stage</th>
@@ -700,7 +726,7 @@ export function JobDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {visible.map((r) => {
+                {pageRows.map((r) => {
                   const insight = byApplication.get(r.id)
                   const d = details(r, insight)
                   return (
@@ -812,6 +838,25 @@ export function JobDetailPage() {
               </tbody>
             </table>
           </div>
+        )}
+        {visible.length > batch && (
+          <nav className="row pager" aria-label="Pages" style={{ gap: 8, alignItems: 'center', justifyContent: 'space-between', marginTop: 10, flexWrap: 'wrap' }}>
+            <span className="muted" style={{ fontSize: 13 }}>
+              Showing {current * batch + 1}–{Math.min(visible.length, (current + 1) * batch)} of {visible.length}
+              {sort === 'match' ? ', best match first' : ''}
+            </span>
+            <span className="row" style={{ gap: 6, alignItems: 'center' }}>
+              <Button size="sm" variant="secondary" disabled={current === 0} onClick={() => setPage(current - 1)}>
+                ‹ Previous
+              </Button>
+              <span style={{ fontSize: 13 }}>
+                Page {current + 1} of {pageCount}
+              </span>
+              <Button size="sm" variant="secondary" disabled={current >= pageCount - 1} onClick={() => setPage(current + 1)}>
+                Next ›
+              </Button>
+            </span>
+          </nav>
         )}
       </Card>
       {open && (

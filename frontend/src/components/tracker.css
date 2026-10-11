@@ -588,5 +588,6 @@
   max-width: 120px;
 }
 .cand-table .cell-emailed {
-  color: var(--color-primary-text, #1f5f46);
+  color: var(--color-primary);
+  font-weight: 500;
 }

@@ -28,11 +28,11 @@ export function useBatchSize(): [number, (n: number) => void] {
   return [size, update]
 }
 
-export function BatchSizeInput({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+export function BatchSizeInput({ value, onChange, label = 'Batch size' }: { value: number; onChange: (n: number) => void; label?: string }) {
   const [text, setText] = useState(String(value))
   return (
     <label className="row" style={{ gap: 6, fontSize: 13 }} title="Sending in batches (about 30 at a time, a little apart) keeps emails out of spam folders">
-      Batch size
+      {label}
       <input
         className="input"
         type="number"

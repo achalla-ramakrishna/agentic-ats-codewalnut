@@ -117,17 +117,20 @@ describe('JobDetailPage', () => {
     expect(screen.getByRole('button', { name: /Interviewed 1/ })).toBeInTheDocument()
   })
 
-  it('selects the best matches who have not been emailed and emails them in one go (PIPE-19)', async () => {
+  it('pages the list by best match, selects a page and emails it, then hides those already emailed (PIPE-19)', async () => {
     const portal = (match: number) => ({
       source: 'Naukri', experience: '5 Year(s)', experienceYears: 5, currentRole: 'Engineer at Example', skills: ['Java'],
       headline: 'Java developer', noticePeriod: '15 Days or less', location: 'Bengaluru', matchPercent: match, summary: null,
     })
-    const people = [
-      { ...row, id: 'a1', name: 'Asha Rao', email: 'asha@example.com', portal: portal(60), lastEmailedAt: null },
-      { ...row, id: 'a2', name: 'Bala Test', email: 'bala@example.com', portal: portal(90), lastEmailedAt: '2026-10-10T10:00:00Z' },
-      { ...row, id: 'a3', name: 'Chitra Test', email: 'chitra@example.com', portal: portal(80), lastEmailedAt: null },
-      { ...row, id: 'a4', name: 'Dev NoMail', email: null, portal: portal(99), lastEmailedAt: null },
-    ]
+    // 32 people with matches 1..32 %; one has no email; one was already emailed.
+    const people = Array.from({ length: 32 }, (_, i) => ({
+      ...row,
+      id: `a${i + 1}`,
+      name: `Person ${String(i + 1).padStart(2, '0')}`,
+      email: i === 30 ? null : `p${i + 1}@example.com`,
+      portal: portal(i + 1),
+      lastEmailedAt: i === 31 ? '2026-10-10T10:00:00Z' : null,
+    }))
     const fetchMock = fakeFetch([
       { path: '/auth/session', body: { type: 'STAFF' } },
       { path: '/me', body: recruiter },
@@ -135,27 +138,38 @@ describe('JobDetailPage', () => {
       { path: '/jobs/j1/applications', body: people },
       { path: '/jobs/j1/insights', body: noInsights },
       { path: '/jobs/j1/tests', body: [] },
-      { path: '/jobs/j1', body: { ...job, total: 4 } },
+      { path: '/jobs/j1', body: { ...job, total: 32 } },
       { path: '/google/status', body: { available: true, calendarConnected: true, mailConnected: true, redirectUri: 'x' } },
-      { path: '/applications/a3/messages', method: 'POST', status: 201, body: {} },
-      { path: '/applications/a1/messages', method: 'POST', status: 201, body: {} },
+      ...people.map((p) => ({ path: `/applications/${p.id}/messages`, method: 'POST', status: 201, body: {} })),
     ])
     renderJob()
 
-    expect(await screen.findByText(/Emailed (10 Oct|Oct 10)/)).toBeInTheDocument()
-    // Bala was already emailed and Dev has no email: the top 2 are Chitra (80%) then Asha (60%).
-    await userEvent.click(screen.getByRole('button', { name: 'Select top 2 by match' }))
-    expect(screen.getByRole('checkbox', { name: 'Select Chitra Test' })).toBeChecked()
-    expect(screen.getByRole('checkbox', { name: 'Select Asha Rao' })).toBeChecked()
-    expect(screen.getByRole('checkbox', { name: 'Select Bala Test' })).not.toBeChecked()
+    // Ranked best match first, 30 per page: Person 32 (emailed) leads, Person 03 ends page 1.
+    expect(await screen.findByText(/Showing 1–30 of 32, best match first/)).toBeInTheDocument()
+    expect(screen.getByText(/Emailed (10 Oct|Oct 10)/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Person 03' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Person 02' })).not.toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Email selected (2)' }))
+    // Hide the one already emailed: page 1 is now Person 31 (no email) down to Person 02.
+    await userEvent.click(screen.getByLabelText('Hide people already emailed'))
+    expect(screen.queryByRole('button', { name: 'Person 32' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Select this page (29)' }))
+    expect(screen.getByRole('checkbox', { name: 'Select Person 02' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Select Person 31' })).not.toBeChecked()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Next ›' }))
+    expect(screen.getByRole('button', { name: 'Person 01' })).toBeInTheDocument()
+    expect(screen.getByText(/Page 2 of 2/)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Email selected (29)' }))
     expect(screen.getByLabelText('Template')).toHaveValue('resume_request')
-    await userEvent.click(await screen.findByRole('button', { name: 'Send email to 2' }))
-    expect(await screen.findByText(/Emailed 2 candidates/)).toBeInTheDocument()
+    await userEvent.click(await screen.findByRole('button', { name: 'Send email to 29' }))
+    expect(await screen.findByText(/Emailed 29 candidates/)).toBeInTheDocument()
     const sent = fetchMock.mock.calls.filter(([url, init]) => String(url).includes('/messages') && init?.method === 'POST')
-    expect(sent.map(([url]) => String(url))).toEqual(['/api/v1/applications/a3/messages', '/api/v1/applications/a1/messages'])
-    expect(JSON.parse(sent[0][1]!.body as string).body).toContain('Hi Chitra,')
+    expect(sent).toHaveLength(29)
+    // Best match first.
+    expect(String(sent[0][0])).toBe('/api/v1/applications/a30/messages')
+    expect(JSON.parse(sent[0][1]!.body as string).body).toContain('Hi Person,')
   })
 
   it('previews a pasted table before importing', async () => {
