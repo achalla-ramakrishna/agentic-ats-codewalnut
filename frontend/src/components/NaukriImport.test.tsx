@@ -39,7 +39,8 @@ describe('Import from Naukri', () => {
     expect(screen.getByText('91%')).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: 'Add Meena Test' })).toBeDisabled()
     expect(screen.getByText('Already in this opening')).toBeInTheDocument()
-    // The best ones that can be added start ticked; untick Ravi.
+    // One batch (30 by default) of the best who can be added starts ticked; untick Ravi.
+    expect(screen.getByRole('button', { name: 'Select top 2' })).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: 'Add Ravi Test' })).toBeChecked()
     await userEvent.click(screen.getByRole('checkbox', { name: 'Add Ravi Test' }))
     await userEvent.click(screen.getByRole('button', { name: 'Add 1 to this opening' }))

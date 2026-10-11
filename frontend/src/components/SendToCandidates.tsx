@@ -3,6 +3,7 @@ import { listJobTests, sendTest, testStatusLabel, type AssessmentSummary, type I
 import { getBackgrounds, TRACK_LABEL, type Background, type Track } from '../api/insights'
 import { getWhatsAppStatus } from '../api/messages'
 import { listApplications, listJobs, type ApplicationRow, type Job } from '../api/tracker'
+import { BatchSizeInput, useBatchSize } from './BatchSize'
 import { Badge, Button } from './ui'
 
 const OPEN = new Set(['SENT', 'STARTED', 'SUBMITTED'])
@@ -27,6 +28,7 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
   const [backgrounds, setBackgrounds] = useState<Background[]>([])
   const [chosen, setChosen] = useState<string[]>([])
   const [dueDays, setDueDays] = useState(3)
+  const [batch, setBatch] = useBatchSize()
   const [email, setEmail] = useState(true)
   const [whatsApp, setWhatsApp] = useState(false)
   const [waApi, setWaApi] = useState(false)
@@ -122,15 +124,19 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
       {rows && rows.length === 0 && <p className="muted">No candidates in this opening yet.</p>}
       {rows && rows.length > 0 && (
         <>
-          <div className="row" style={{ gap: 8 }}>
-            <Button size="sm" variant="secondary" disabled={sendable.length === 0} onClick={() => setChosen(sendable.map((r) => r.id))}>
-              Select all who can get it ({sendable.length})
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <BatchSizeInput value={batch} onChange={setBatch} />
+            <Button size="sm" variant="secondary" disabled={sendable.length === 0} onClick={() => setChosen(sendable.slice(0, batch).map((r) => r.id))}>
+              Select next {Math.min(batch, sendable.length)}
             </Button>
             {track && (
-              <Button size="sm" variant="secondary" disabled={matching.length === 0} onClick={() => setChosen(matching.map((r) => r.id))}>
-                Select everyone with a {TRACK_LABEL[track]} background ({matching.length})
+              <Button size="sm" variant="secondary" disabled={matching.length === 0} onClick={() => setChosen(matching.slice(0, batch).map((r) => r.id))}>
+                Select next {Math.min(batch, matching.length)} with a {TRACK_LABEL[track]} background
               </Button>
             )}
+            <Button size="sm" variant="ghost" disabled={sendable.length === 0} onClick={() => setChosen(sendable.map((r) => r.id))}>
+              Select all who can get it ({sendable.length})
+            </Button>
             {chosen.length > 0 && (
               <Button size="sm" variant="ghost" onClick={() => setChosen([])}>
                 Clear

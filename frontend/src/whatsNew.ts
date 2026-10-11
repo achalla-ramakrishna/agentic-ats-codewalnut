@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-11-batch-size',
+    date: '2026-10-11',
+    title: 'Send in batches of 30',
+    summary: 'Import from Naukri and Send to candidates now have a Batch size box (30 by default, remembered in your browser). Select top 30 / Select next 30 ticks one batch; people already added or sent to are skipped, so the next click picks the next 30. Sending about 30 at a time, a little apart, keeps emails out of spam folders and well inside Gmail’s daily limit.',
+    steps: ['Opening → Import from Naukri → rank → Select top 30 → Add → Send email.', 'Tests → open a test → Send to candidates → Select next 30 → Send.'],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-11-candidate-columns',
     date: '2026-10-11',
     title: 'More columns in the candidate list',

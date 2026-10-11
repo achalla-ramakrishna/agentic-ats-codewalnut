@@ -5,6 +5,7 @@ import { canAdd, importNaukri, rankNaukri, STATUS_LABEL, type NaukriImportResult
 import type { Stage } from '../api/tracker'
 import { ConnectGoogle } from './ConnectGoogle'
 import { EMAIL_TEMPLATES, fillTemplate } from './emailTemplates'
+import { BatchSizeInput, useBatchSize } from './BatchSize'
 import { StageSelect } from './StageSelect'
 import { Badge, Button, Card } from './ui'
 
@@ -31,6 +32,7 @@ export function NaukriImport({
   const [result, setResult] = useState<RankResult | null>(null)
   const [chosen, setChosen] = useState<Set<number>>(new Set())
   const [stage, setStage] = useState<Stage>('SOURCED')
+  const [batch, setBatch] = useBatchSize()
   const [added, setAdded] = useState<NaukriImportResult | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -44,8 +46,8 @@ export function NaukriImport({
     try {
       const r = await rankNaukri(jobId, file)
       setResult(r)
-      // Start with the ten best that can be added; the recruiter changes the choice.
-      setChosen(new Set(r.rows.map((row, i) => ({ row, i })).filter(({ row }) => canAdd(row)).slice(0, 10).map(({ i }) => i)))
+      // Start with one batch of the best who can be added; the recruiter changes the choice.
+      setChosen(new Set(r.rows.map((row, i) => ({ row, i })).filter(({ row }) => canAdd(row)).slice(0, batch).map(({ i }) => i)))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not read the file')
     } finally {
@@ -126,15 +128,10 @@ export function NaukriImport({
               Columns not found: {result.missingColumns.join(', ')} — the ranking is less precise.
             </p>
           )}
-          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <Button size="sm" variant="secondary" onClick={() => pick(10)}>
-              Top 10
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => pick(20)}>
-              Top 20
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => pick(50)}>
-              Top 50
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <BatchSizeInput value={batch} onChange={setBatch} />
+            <Button size="sm" variant="secondary" onClick={() => pick(batch)}>
+              Select top {Math.min(batch, addable.length)}
             </Button>
             <Button size="sm" variant="secondary" onClick={() => pick('all')}>
               All who can be added ({addable.length})
@@ -280,7 +277,8 @@ function AskForResumes({
           <div className={`alert ${outcome.failed.length ? 'alert-error' : 'alert-info'}`} role="status">
             Emailed {outcome.sent} candidate{outcome.sent === 1 ? '' : 's'}.
             {outcome.failed.length > 0 && ` Not sent: ${outcome.failed.join('; ')}.`} Replies come to your Gmail and show under Messages
-            and Workflow → Waiting for our reply. When someone sends their résumé, open them and Schedule interview.
+            and Workflow → Waiting for our reply. When someone sends their résumé, open them and Schedule interview. For the next batch,
+            open Import from Naukri again with the same file: people already added can’t be picked twice.
           </div>
           <div className="row">
             <Button onClick={onClose}>Done</Button>

@@ -64,7 +64,7 @@ describe('Send to candidates', () => {
     render(<SendToCandidates test={test} onSent={() => undefined} onClose={() => undefined} />)
 
     await userEvent.selectOptions(await screen.findByLabelText('Opening'), 'j1')
-    await userEvent.click(await screen.findByRole('button', { name: 'Select everyone with a Java background (1)' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Select next 1 with a Java background' }))
     expect(screen.getByRole('checkbox', { name: 'Send to Asha Test' })).toBeChecked()
     expect(screen.getByRole('checkbox', { name: 'Send to Ravi Test' })).not.toBeChecked()
     expect(screen.getByText('MERN')).toBeInTheDocument()
