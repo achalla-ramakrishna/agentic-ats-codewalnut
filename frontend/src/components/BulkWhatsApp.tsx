@@ -84,7 +84,12 @@ export function BulkWhatsApp({
         Message
         <textarea className="input" rows={6} value={text} onChange={(e) => setText(e.target.value)} />
       </label>
-      {unfilled && <p className="muted" style={{ margin: 0, fontSize: 12 }}>Replace [day, time] with the slots you can offer.</p>}
+      {unfilled && (
+        <div className="alert alert-error" role="note">
+          Replace both <strong>[day, time]</strong> in the message with real slots (e.g. Tue 14 Oct, 11:00 am), or remove that
+          sentence. The WhatsApp buttons switch on once it’s done.
+        </div>
+      )}
       <table className="send-list" aria-label="WhatsApp recipients">
         <tbody>
           {recipients.map((r) => (
@@ -105,6 +110,7 @@ export function BulkWhatsApp({
                   disabled={!r.phone || busy !== null || unfilled || !text.trim()}
                   onClick={() => void open(r)}
                   aria-label={`WhatsApp ${r.name}`}
+                  title={!r.phone ? 'No mobile number on file' : unfilled ? 'Fill in the [day, time] slots first' : undefined}
                 >
                   {busy === r.applicationId ? 'Opening…' : apiEnabled ? 'Send' : 'Open WhatsApp'}
                 </Button>
