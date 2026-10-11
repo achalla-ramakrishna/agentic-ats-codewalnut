@@ -89,6 +89,21 @@ export interface ApplicationRow {
   updatedAt: string
   lastNote: string | null
   documents: DocumentKind[]
+  /** Details from a job-portal import (Naukri), or null (ADR-0026). */
+  portal: PortalProfile | null
+}
+
+export interface PortalProfile {
+  source: string
+  experience: string | null
+  experienceYears: number | null
+  currentRole: string | null
+  skills: string[]
+  headline: string | null
+  noticePeriod: string | null
+  location: string | null
+  matchPercent: number | null
+  summary: string | null
 }
 
 export type ImportOutcome = 'NEW' | 'EXISTING_CANDIDATE' | 'ALREADY_IN_OPENING' | 'DUPLICATE_IN_PASTE' | 'ERROR'

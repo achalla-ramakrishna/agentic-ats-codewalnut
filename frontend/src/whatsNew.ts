@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-11-candidate-columns',
+    date: '2026-10-11',
+    title: 'More columns in the candidate list',
+    summary: 'Each opening’s list now shows Experience, Current role, Key skills, AI summary and Notice period next to Match, from the AI résumé reading or the Naukri import. Long notes no longer stretch rows: text stays two lines, hover to read all. Choose which columns you want under Columns.',
+    steps: ['Open any opening and scroll to the candidate list.', 'Click Columns above the list to show or hide columns.', 'Search “kafka” or “senior” to find people by skill or role.'],
+    capability: 'VIEW_CANDIDATES',
+  },
+  {
     id: '2026-10-11-naukri-import',
     date: '2026-10-11',
     title: 'Import from Naukri, best matches first',

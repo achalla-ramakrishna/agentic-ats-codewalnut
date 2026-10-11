@@ -45,6 +45,38 @@ public final class RuleRanker {
         return found;
     }
 
+    private static final java.util.Map<String, String> LABELS = java.util.Map.ofEntries(
+            java.util.Map.entry("j2ee", "J2EE"), java.util.Map.entry("jpa", "JPA"), java.util.Map.entry("rest", "REST APIs"),
+            java.util.Map.entry("sql", "SQL"), java.util.Map.entry("mysql", "MySQL"), java.util.Map.entry("postgresql", "PostgreSQL"),
+            java.util.Map.entry("mongodb", "MongoDB"), java.util.Map.entry("aws", "AWS"), java.util.Map.entry("gcp", "GCP"),
+            java.util.Map.entry("ci/cd", "CI/CD"), java.util.Map.entry("javascript", "JavaScript"), java.util.Map.entry("typescript", "TypeScript"),
+            java.util.Map.entry("node", "Node.js"), java.util.Map.entry("next.js", "Next.js"), java.util.Map.entry("html", "HTML"),
+            java.util.Map.entry("css", "CSS"), java.util.Map.entry("graphql", "GraphQL"), java.util.Map.entry("c#", "C#"),
+            java.util.Map.entry(".net", ".NET"), java.util.Map.entry("php", "PHP"), java.util.Map.entry("fastapi", "FastAPI"),
+            java.util.Map.entry("junit", "JUnit"), java.util.Map.entry("rabbitmq", "RabbitMQ"), java.util.Map.entry("oops", "OOPs"),
+            java.util.Map.entry("solid", "SOLID"), java.util.Map.entry("jms", "JMS"), java.util.Map.entry("power bi", "Power BI"),
+            java.util.Map.entry("golang", "Go"));
+
+    /** Known skills named in a portal profile's headline and role, nicely written ("Spring Boot", "AWS"). */
+    public static List<String> skillLabels(String text) {
+        String t = " " + (text == null ? "" : text.toLowerCase(Locale.ROOT)) + " ";
+        List<String> found = new ArrayList<>();
+        for (String s : SKILLS) {
+            if (contains(t, s) && found.stream().noneMatch(f -> f.toLowerCase(Locale.ROOT).contains(s))) {
+                found.add(LABELS.getOrDefault(s, titleCase(s)));
+            }
+        }
+        return found;
+    }
+
+    private static String titleCase(String s) {
+        StringBuilder b = new StringBuilder();
+        for (String w : s.split(" ")) {
+            b.append(b.length() == 0 ? "" : " ").append(Character.toUpperCase(w.charAt(0))).append(w.substring(1));
+        }
+        return b.toString();
+    }
+
     /** Years asked for: [min, max]; max is null for "5+ years"; null when not stated. */
     public static int[] yearsIn(String jobText) {
         Matcher r = RANGE.matcher(jobText);

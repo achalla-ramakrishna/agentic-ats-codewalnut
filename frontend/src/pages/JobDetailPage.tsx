@@ -43,7 +43,61 @@ export function matchesSearch(row: ApplicationRow, query: string): boolean {
   }
   return q
     .split(/\s+/)
-    .every((word) => row.name.toLowerCase().includes(word) || (row.email ?? '').toLowerCase().includes(word))
+    .every(
+      (word) =>
+        row.name.toLowerCase().includes(word) ||
+        (row.email ?? '').toLowerCase().includes(word) ||
+        (row.portal?.skills ?? []).some((s) => s.toLowerCase().includes(word)) ||
+        (row.portal?.currentRole ?? '').toLowerCase().includes(word),
+    )
+}
+
+/** Optional columns in the candidate table; the choice is remembered in this browser. */
+const OPTIONAL_COLUMNS = [
+  { key: 'email', label: 'Email' },
+  { key: 'phone', label: 'Phone' },
+  { key: 'resumes', label: 'Résumés' },
+  { key: 'experience', label: 'Experience' },
+  { key: 'role', label: 'Current role' },
+  { key: 'skills', label: 'Key skills' },
+  { key: 'summary', label: 'AI summary' },
+  { key: 'notice', label: 'Notice' },
+  { key: 'note', label: 'Latest note' },
+  { key: 'updated', label: 'Updated' },
+] as const
+type ColumnKey = (typeof OPTIONAL_COLUMNS)[number]['key']
+const DEFAULT_COLUMNS: ColumnKey[] = ['email', 'phone', 'resumes', 'experience', 'role', 'skills', 'summary', 'notice', 'note', 'updated']
+const COLUMNS_KEY = 'ats.jobColumns'
+
+function loadColumns(): ColumnKey[] {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(COLUMNS_KEY) ?? 'null') as unknown
+    if (Array.isArray(saved)) return saved.filter((k): k is ColumnKey => OPTIONAL_COLUMNS.some((c) => c.key === k))
+  } catch {
+    // private window or blocked storage: use the defaults
+  }
+  return DEFAULT_COLUMNS
+}
+
+function years(months: number) {
+  if (months <= 0) return 'Fresher'
+  const y = Math.floor(months / 12)
+  const m = months % 12
+  return y === 0 ? `${m} mo` : m === 0 ? `${y} yr${y === 1 ? '' : 's'}` : `${y} yr${y === 1 ? '' : 's'} ${m} mo`
+}
+
+/** Résumé reading first (AI), else what the job portal said. */
+function details(row: ApplicationRow, insight: InsightSummary | undefined) {
+  const read = insight?.status === 'DONE' ? insight : undefined
+  const p = row.portal
+  return {
+    experience: read ? years(read.experienceMonths) : p?.experienceYears != null ? years(Math.round(p.experienceYears * 12)) : null,
+    role: p?.currentRole ?? null,
+    skills: read && read.skills.length ? read.skills : (p?.skills ?? []),
+    summary: read?.headline ?? p?.summary ?? p?.headline ?? null,
+    summarySource: read?.headline ? 'From the AI reading of the résumé' : p?.summary ? `AI, from the ${p.source} profile` : p ? `The candidate’s ${p.source} headline` : '',
+    notice: p?.noticePeriod ?? null,
+  }
 }
 
 export type Category = 'strong' | 'good' | 'projects' | 'experience' | 'fresher'
@@ -144,6 +198,17 @@ export function JobDetailPage() {
   const [asking, setAsking] = useState(false)
   const [askError, setAskError] = useState<string | null>(null)
   const [panel, setPanel] = useState<'none' | 'add' | 'import' | 'naukri' | 'resumes' | 'edit'>('none')
+  const [columns, setColumns] = useState<ColumnKey[]>(loadColumns)
+  const toggleColumn = (k: ColumnKey) =>
+    setColumns((c) => {
+      const next = c.includes(k) ? c.filter((x) => x !== k) : [...c, k]
+      try {
+        window.localStorage.setItem(COLUMNS_KEY, JSON.stringify(next))
+      } catch {
+        // not remembered; still applies now
+      }
+      return next
+    })
   const [insights, setInsights] = useState<InsightsResponse | null>(null)
   const [sort, setSort] = useState<'name' | 'match' | 'recent'>('name')
   const [categories, setCategories] = useState<Category[]>([])
@@ -242,6 +307,7 @@ export function JobDetailPage() {
   if (!job) return <p className="muted">Loading…</p>
 
   const byApplication = new Map((insights?.insights ?? []).map((i) => [i.applicationId, i]))
+  const show = (k: ColumnKey) => columns.includes(k)
   // Newest first from the server: keep each candidate's latest test.
   const latestTest = new Map<string, InviteView>()
   for (const t of tests) if (t.status !== 'CANCELLED' && !latestTest.has(t.applicationId)) latestTest.set(t.applicationId, t)
@@ -256,8 +322,8 @@ export function JobDetailPage() {
     )
     .sort((a, b) => {
       if (sort === 'match') {
-        const fa = byApplication.get(a.id)?.fitPercent ?? -1
-        const fb = byApplication.get(b.id)?.fitPercent ?? -1
+        const fa = byApplication.get(a.id)?.fitPercent ?? a.portal?.matchPercent ?? -1
+        const fb = byApplication.get(b.id)?.fitPercent ?? b.portal?.matchPercent ?? -1
         return fb - fa || a.name.localeCompare(b.name)
       }
       if (sort === 'recent') return b.updatedAt.localeCompare(a.updatedAt)
@@ -269,7 +335,8 @@ export function JobDetailPage() {
     read.flatMap((i) => i.skills).reduce((m, s) => m.set(s.toLowerCase(), m.get(s.toLowerCase()) ?? s), new Map<string, string>()).values(),
   ).sort((a, b) => a.localeCompare(b))
   const yearOptions = Array.from(new Set(read.map((i) => i.graduationYear).filter((y): y is number => y != null))).sort()
-  const showMatch = !!insights && (insights.available || insights.insights.length > 0)
+  const aiMatch = !!insights && (insights.available || insights.insights.length > 0)
+  const showMatch = aiMatch || (rows ?? []).some((r) => r.portal?.matchPercent != null)
   const openById = (applicationId: string) => {
     const row = rows?.find((r) => r.id === applicationId)
     if (row) openDrawer(row)
@@ -394,7 +461,7 @@ export function JobDetailPage() {
       {panel === 'resumes' && (
         <ResumeUpload jobId={job.id} onProgress={load} onClose={() => setPanel('none')} />
       )}
-      {insights && showMatch && (rows?.length ?? 0) > 0 && (
+      {insights && aiMatch && (rows?.length ?? 0) > 0 && (
         <InsightsPanel jobId={job.id} data={insights} canEdit={canEdit} onOpen={openById} onChanged={load} />
       )}
       {panel === 'naukri' && (
@@ -547,64 +614,136 @@ export function JobDetailPage() {
           </div>
         )}
         {visible.length > 0 && (
+          <details className="columns-menu">
+            <summary>Columns</summary>
+            <div className="row" role="group" aria-label="Columns to show" style={{ gap: 12, flexWrap: 'wrap', marginTop: 6 }}>
+              {OPTIONAL_COLUMNS.map((c) => (
+                <label key={c.key} className="row" style={{ gap: 4, fontSize: 13 }}>
+                  <input type="checkbox" checked={show(c.key)} onChange={() => toggleColumn(c.key)} /> {c.label}
+                </label>
+              ))}
+            </div>
+          </details>
+        )}
+        {visible.length > 0 && (
           <div className="table-wrap">
             <table className="table">
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Résumés</th>
-                  {showMatch && <th title="Share of the opening’s requirements the résumé shows (AI, advisory)">Match</th>}
+                  {show('email') && <th>Email</th>}
+                  {show('phone') && <th>Phone</th>}
+                  {show('resumes') && <th>Résumés</th>}
+                  {showMatch && <th title="Share of the opening’s requirements the résumé shows, or the job-portal ranking (AI, advisory)">Match</th>}
+                  {show('experience') && <th>Experience</th>}
+                  {show('role') && <th>Current role</th>}
+                  {show('skills') && <th title="From the AI reading of the résumé, or from the Naukri profile">Key skills</th>}
+                  {show('summary') && <th title="The AI’s summary of the résumé, or the candidate’s own Naukri headline until a résumé is read">AI summary</th>}
+                  {show('notice') && <th>Notice</th>}
                   {tests.length > 0 && <th>Test</th>}
                   <th>Stage</th>
-                  <th>Latest note</th>
-                  <th>Updated</th>
+                  {show('note') && <th>Latest note</th>}
+                  {show('updated') && <th>Updated</th>}
                 </tr>
               </thead>
               <tbody>
-                {visible.map((r) => (
-                  <tr key={r.id}>
-                    <td>
-                      <button type="button" className="row-link" onClick={() => openDrawer(r)}>
-                        {r.name}
-                      </button>
-                    </td>
-                    <td>{r.email ?? <span className="muted">—</span>}</td>
-                    <td>{r.phone ?? <span className="muted">—</span>}</td>
-                    <td>
-                      <span className="doc-dots">
-                        <span className={`doc-dot${r.documents.includes('ORIGINAL_RESUME') ? ' has' : ''}`} title="Original résumé">
-                          Orig
-                        </span>
-                        <span className={`doc-dot${r.documents.includes('CODEWALNUT_RESUME') ? ' has' : ''}`} title="CodeWalnut résumé">
-                          CW
-                        </span>
-                      </span>
-                    </td>
-                    {showMatch && (
+                {visible.map((r) => {
+                  const insight = byApplication.get(r.id)
+                  const d = details(r, insight)
+                  return (
+                    <tr key={r.id}>
                       <td>
-                        <FitBadge insight={byApplication.get(r.id)} />
+                        <button type="button" className="row-link" onClick={() => openDrawer(r)}>
+                          {r.name}
+                        </button>
                       </td>
-                    )}
-                    {tests.length > 0 && (
-                      <td className={latestTest.get(r.id)?.needsNudge ? 'test-nudge' : 'muted'} title={latestTest.get(r.id)?.title}>
-                        {latestTest.has(r.id) ? testStatusLabel(latestTest.get(r.id)!) : '—'}
-                      </td>
-                    )}
-                    <td>
-                      {canEdit ? (
-                        <StageSelect label={`Stage for ${r.name}`} value={r.stage} onChange={(s) => void onStage(r, s)} />
-                      ) : (
-                        r.stageLabel
+                      {show('email') && <td>{r.email ?? <span className="muted">—</span>}</td>}
+                      {show('phone') && <td style={{ whiteSpace: 'nowrap' }}>{r.phone ?? <span className="muted">—</span>}</td>}
+                      {show('resumes') && (
+                        <td>
+                          <span className="doc-dots">
+                            <span className={`doc-dot${r.documents.includes('ORIGINAL_RESUME') ? ' has' : ''}`} title="Original résumé">
+                              Orig
+                            </span>
+                            <span className={`doc-dot${r.documents.includes('CODEWALNUT_RESUME') ? ' has' : ''}`} title="CodeWalnut résumé">
+                              CW
+                            </span>
+                          </span>
+                        </td>
                       )}
-                    </td>
-                    <td className="muted" style={{ maxWidth: 260 }}>
-                      {r.lastNote ?? ''}
-                    </td>
-                    <td className="muted">{new Date(r.updatedAt).toLocaleDateString()}</td>
-                  </tr>
-                ))}
+                      {showMatch && (
+                        <td>
+                          {insight || r.portal?.matchPercent == null ? (
+                            <FitBadge insight={insight} />
+                          ) : (
+                            <span
+                              className={`fit ${r.portal.matchPercent >= 75 ? 'fit-high' : r.portal.matchPercent >= 50 ? 'fit-mid' : 'fit-low'}`}
+                              title={`${r.portal.source} profile ranked against this opening at import`}
+                            >
+                              {r.portal.matchPercent}%
+                            </span>
+                          )}
+                        </td>
+                      )}
+                      {show('experience') && <td style={{ whiteSpace: 'nowrap' }}>{d.experience ?? <span className="muted">—</span>}</td>}
+                      {show('role') && (
+                        <td className="cell-wide">
+                          <span className="cell-clamp" title={d.role ?? ''}>
+                            {d.role ?? <span className="muted">—</span>}
+                          </span>
+                        </td>
+                      )}
+                      {show('skills') && (
+                        <td className="cell-wide">
+                          {d.skills.length ? (
+                            <span className="cell-clamp" title={d.skills.join(', ')}>
+                              {d.skills.slice(0, 8).join(', ')}
+                            </span>
+                          ) : (
+                            <span className="muted">—</span>
+                          )}
+                        </td>
+                      )}
+                      {show('summary') && (
+                        <td className="cell-wide">
+                          {d.summary ? (
+                            <span className="cell-clamp" title={`${d.summary}\n\n${d.summarySource}`}>
+                              {d.summary}
+                            </span>
+                          ) : (
+                            <span className="muted">—</span>
+                          )}
+                        </td>
+                      )}
+                      {show('notice') && (
+                        <td className="muted" style={{ whiteSpace: 'nowrap' }}>
+                          {d.notice ?? '—'}
+                        </td>
+                      )}
+                      {tests.length > 0 && (
+                        <td className={latestTest.get(r.id)?.needsNudge ? 'test-nudge' : 'muted'} title={latestTest.get(r.id)?.title}>
+                          {latestTest.has(r.id) ? testStatusLabel(latestTest.get(r.id)!) : '—'}
+                        </td>
+                      )}
+                      <td>
+                        {canEdit ? (
+                          <StageSelect label={`Stage for ${r.name}`} value={r.stage} onChange={(s) => void onStage(r, s)} />
+                        ) : (
+                          r.stageLabel
+                        )}
+                      </td>
+                      {show('note') && (
+                        <td className="muted cell-wide">
+                          {/* Long notes (e.g. imported details) stay two lines here; hover or open the candidate for all of it. */}
+                          <span className="cell-clamp" title={r.lastNote ?? ''}>
+                            {r.lastNote ?? ''}
+                          </span>
+                        </td>
+                      )}
+                      {show('updated') && <td className="muted">{new Date(r.updatedAt).toLocaleDateString()}</td>}
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

@@ -59,6 +59,10 @@ public class Application {
     @Column(name = "candidate_read_at")
     private Instant candidateReadAt;
 
+    /** Details from a job portal export (Naukri), as JSON; see TrackerDtos.PortalProfile (ADR-0026). */
+    @Column(name = "portal_profile", columnDefinition = "TEXT")
+    private String portalProfile;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

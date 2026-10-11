@@ -83,9 +83,11 @@ public final class TrackerDtos {
     /** id: the candidate's own application, for their messages. newMessages: unread from CodeWalnut. */
     public record MyApplicationResponse(UUID id, String slug, String jobTitle, String status, Instant appliedAt, long newMessages) {}
 
+    /** portal: details from a job-portal import (Naukri), or null; the AI résumé reading comes from /insights. */
     public record ApplicationResponse(
             UUID id, UUID jobId, String jobTitle, String clientName, UUID candidateId, String name, String email,
-            String phone, Stage stage, String stageLabel, Instant updatedAt, String lastNote, Set<DocumentKind> documents) {
+            String phone, Stage stage, String stageLabel, Instant updatedAt, String lastNote, Set<DocumentKind> documents,
+            PortalProfile portal) {
 
         public static ApplicationResponse from(Application a, String lastNote) {
             return from(a, lastNote, Set.of());
@@ -95,7 +97,38 @@ public final class TrackerDtos {
             return new ApplicationResponse(a.getId(), a.getJob().getId(), a.getJob().getTitle(),
                     a.getJob().getClient() != null ? a.getJob().getClient().getName() : null, a.getCandidate().getId(), a.getCandidate().getName(), a.getCandidate().getEmail(),
                     a.getCandidate().getPhone(), a.getStage(), a.getStage().getLabel(), a.getUpdatedAt(), lastNote,
-                    documents);
+                    documents, PortalProfile.read(a.getPortalProfile()));
+        }
+    }
+
+    /**
+     * What a job portal told us about a candidate (ADR-0026). source: e.g. "Naukri"; matchPercent and
+     * summary: the ranking against the opening at import time (AI or rules, advisory).
+     */
+    public record PortalProfile(String source, String experience, Double experienceYears, String currentRole,
+            List<String> skills, String headline, String noticePeriod, String location, Integer matchPercent,
+            String summary) {
+
+        private static final com.fasterxml.jackson.databind.ObjectMapper JSON = new com.fasterxml.jackson.databind.ObjectMapper()
+                .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        public static PortalProfile read(String json) {
+            if (json == null || json.isBlank()) {
+                return null;
+            }
+            try {
+                return JSON.readValue(json, PortalProfile.class);
+            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                return null;
+            }
+        }
+
+        public String write() {
+            try {
+                return JSON.writeValueAsString(this);
+            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                throw new IllegalStateException(e);
+            }
         }
     }
 

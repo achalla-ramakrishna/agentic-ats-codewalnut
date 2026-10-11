@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface ApplicationRepository extends JpaRepository<Application, UUID> {
 
+    List<Application> findBySourceAndPortalProfileIsNull(com.codewalnut.ats.domain.ApplicationSource source);
+
     List<Application> findByJobIdOrderByCandidateNameAsc(UUID jobId);
 
     boolean existsByJobIdAndCandidateId(UUID jobId, UUID candidateId);

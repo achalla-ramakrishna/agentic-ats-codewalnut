@@ -15,6 +15,7 @@ import com.codewalnut.ats.dto.NaukriDtos.ImportResult;
 import com.codewalnut.ats.dto.NaukriDtos.RankResult;
 import com.codewalnut.ats.dto.NaukriDtos.RankedRow;
 import com.codewalnut.ats.dto.NaukriDtos.RowStatus;
+import com.codewalnut.ats.dto.TrackerDtos.PortalProfile;
 import com.codewalnut.ats.naukri.NaukriProfile;
 import com.codewalnut.ats.naukri.NaukriSheet;
 import com.codewalnut.ats.naukri.RuleRanker;
@@ -206,6 +207,7 @@ public class NaukriImportService {
             fillMissingContact(candidate, email, phone);
             Application application = trackerService.createApplication(actor.getEmail(), job, candidate, request.stage(),
                     note(p, item), ApplicationSource.NAUKRI, null);
+            application.setPortalProfile(portalProfile(p, item).write());
             added.add(new AddedRow(application.getId(), candidate.getName(), candidate.getEmail(), candidate.getEmail() != null));
         }
         if (!added.isEmpty()) {
@@ -223,6 +225,25 @@ public class NaukriImportService {
         if (candidate.getPhone() == null && phone != null) {
             candidate.setPhone(phone);
         }
+    }
+
+    /** The structured details shown as columns in the opening (key skills, experience, role, summary…). */
+    static PortalProfile portalProfile(NaukriProfile p, ImportItem item) {
+        List<String> skills = p.keySkills() != null
+                ? java.util.Arrays.stream(p.keySkills().split("[,;|]")).map(String::strip).filter(StringUtils::hasText).limit(20).toList()
+                : RuleRanker.skillLabels(String.join(" ", p.headline() == null ? "" : p.headline(), p.designation() == null ? "" : p.designation()));
+        String role = p.designation() == null ? null : p.designation() + (p.company() == null ? "" : " at " + p.company());
+        return new PortalProfile("Naukri", p.experience(), p.experienceYears(), role, skills, p.headline(), p.noticePeriod(),
+                p.currentLocation(), item.matchPercent(), aiSummary(item.summary()));
+    }
+
+    /** The AI's one-line summary; the rules' "Mentions java, …" adds nothing to the skills column, so it is dropped. */
+    static String aiSummary(String summary) {
+        if (!StringUtils.hasText(summary)) {
+            return null;
+        }
+        String s = summary.strip();
+        return s.startsWith("Mentions ") || s.startsWith("Few of the opening") ? null : s;
     }
 
     /** The first note on the candidate: where they came from, the match and the job-related details. */

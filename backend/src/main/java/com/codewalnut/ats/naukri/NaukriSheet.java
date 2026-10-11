@@ -128,7 +128,7 @@ public final class NaukriSheet {
     }
 
     /** "6 Year(s) 5 Month(s)" → 6.4; "4" → 4.0; "Fresher" → 0. */
-    static Double years(String experience) {
+    public static Double years(String experience) {
         if (experience == null) {
             return null;
         }

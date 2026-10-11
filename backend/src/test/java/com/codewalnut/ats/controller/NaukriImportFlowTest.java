@@ -64,6 +64,7 @@ class NaukriImportFlowTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void rankThenImportTheChosenRows() throws Exception {
         String jobId = JsonPath.read(json(ADMIN, "/api/v1/jobs", Map.of("title", "Senior Java Developer " + tag,
                 "hiringType", "INTERNAL", "openings", 2), 201), "$.id");
@@ -96,6 +97,12 @@ class NaukriImportFlowTest {
         assertThat(names).containsExactly("Strong " + tag);
         assertThat((String) JsonPath.read(list, "$[0].lastNote")).startsWith("From Naukri (applied 09-Oct-2026) · Match ")
                 .contains("Notice: 15 Days or less");
+        // The details become columns: key skills from the headline, experience, current role, match and summary.
+        assertThat((List<String>) JsonPath.read(list, "$[0].portal.skills")).contains("Java", "Spring Boot", "Microservices", "Kafka");
+        assertThat((String) JsonPath.read(list, "$[0].portal.source")).isEqualTo("Naukri");
+        assertThat((String) JsonPath.read(list, "$[0].portal.currentRole")).isEqualTo("Senior Software Engineer at Example Tech");
+        assertThat((String) JsonPath.read(list, "$[0].portal.noticePeriod")).isEqualTo("15 Days or less");
+        assertThat((Integer) JsonPath.read(list, "$[0].portal.matchPercent")).isEqualTo(top.get("matchPercent"));
 
         // Ranking again shows them as already in the opening; importing again adds nobody.
         String again = mockMvc.perform(multipart("/api/v1/jobs/" + jobId + "/naukri/rank").file(file).with(ADMIN).with(csrf()))

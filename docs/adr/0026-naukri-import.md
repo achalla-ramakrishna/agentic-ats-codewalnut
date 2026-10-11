@@ -38,6 +38,12 @@ email asking for the résumé; whoever replies is scheduled.
   one by one through the existing candidate message endpoint from the recruiter's
   Gmail. Replies flow into Messages and the Workflow view as for any email.
 
+- **Details as fields.** Besides the note, the import stores experience, current role, key
+  skills (the Key Skills column, or known skills found in the headline), headline, notice,
+  location, match and the AI summary as JSON in `application.portal_profile` (V24), shown
+  as columns in the opening. Rule-based reasons are not kept as a summary. Rows imported
+  before V24 are filled from their first note at start-up (`PortalProfileBackfill`).
+
 ## Consequences
 
 - Ranking a 160-row file with the AI takes up to about a minute; the page shows progress text.
