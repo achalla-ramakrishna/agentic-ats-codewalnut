@@ -54,8 +54,7 @@ export function matchesSearch(row: ApplicationRow, query: string): boolean {
 
 /** Optional columns in the candidate table; the choice is remembered in this browser. */
 const OPTIONAL_COLUMNS = [
-  { key: 'email', label: 'Email' },
-  { key: 'phone', label: 'Phone' },
+  { key: 'contact', label: 'Email & phone' },
   { key: 'resumes', label: 'Résumés' },
   { key: 'experience', label: 'Experience' },
   { key: 'role', label: 'Current role' },
@@ -66,8 +65,8 @@ const OPTIONAL_COLUMNS = [
   { key: 'updated', label: 'Updated' },
 ] as const
 type ColumnKey = (typeof OPTIONAL_COLUMNS)[number]['key']
-const DEFAULT_COLUMNS: ColumnKey[] = ['email', 'phone', 'resumes', 'experience', 'role', 'skills', 'summary', 'notice', 'note', 'updated']
-const COLUMNS_KEY = 'ats.jobColumns'
+const DEFAULT_COLUMNS: ColumnKey[] = ['contact', 'resumes', 'experience', 'role', 'skills', 'summary', 'notice', 'note']
+const COLUMNS_KEY = 'ats.jobColumns.v2'
 
 function loadColumns(): ColumnKey[] {
   try {
@@ -627,21 +626,19 @@ export function JobDetailPage() {
         )}
         {visible.length > 0 && (
           <div className="table-wrap">
-            <table className="table">
+            <table className="table cand-table">
               <thead>
                 <tr>
                   <th>Name</th>
-                  {show('email') && <th>Email</th>}
-                  {show('phone') && <th>Phone</th>}
-                  {show('resumes') && <th>Résumés</th>}
                   {showMatch && <th title="Share of the opening’s requirements the résumé shows, or the job-portal ranking (AI, advisory)">Match</th>}
-                  {show('experience') && <th>Experience</th>}
+                  <th>Stage</th>
+                  {show('experience') && <th>Exp.</th>}
                   {show('role') && <th>Current role</th>}
                   {show('skills') && <th title="From the AI reading of the résumé, or from the Naukri profile">Key skills</th>}
                   {show('summary') && <th title="The AI’s summary of the résumé, or the candidate’s own Naukri headline until a résumé is read">AI summary</th>}
                   {show('notice') && <th>Notice</th>}
                   {tests.length > 0 && <th>Test</th>}
-                  <th>Stage</th>
+                  {show('resumes') && <th>Résumés</th>}
                   {show('note') && <th>Latest note</th>}
                   {show('updated') && <th>Updated</th>}
                 </tr>
@@ -652,25 +649,17 @@ export function JobDetailPage() {
                   const d = details(r, insight)
                   return (
                     <tr key={r.id}>
-                      <td>
+                      <td className="cell-name">
                         <button type="button" className="row-link" onClick={() => openDrawer(r)}>
                           {r.name}
                         </button>
+                        {show('contact') && (r.email || r.phone) && (
+                          <div className="cell-contact">
+                            {r.email && <div title={r.email}>{r.email}</div>}
+                            {r.phone && <div>{r.phone}</div>}
+                          </div>
+                        )}
                       </td>
-                      {show('email') && <td>{r.email ?? <span className="muted">—</span>}</td>}
-                      {show('phone') && <td style={{ whiteSpace: 'nowrap' }}>{r.phone ?? <span className="muted">—</span>}</td>}
-                      {show('resumes') && (
-                        <td>
-                          <span className="doc-dots">
-                            <span className={`doc-dot${r.documents.includes('ORIGINAL_RESUME') ? ' has' : ''}`} title="Original résumé">
-                              Orig
-                            </span>
-                            <span className={`doc-dot${r.documents.includes('CODEWALNUT_RESUME') ? ' has' : ''}`} title="CodeWalnut résumé">
-                              CW
-                            </span>
-                          </span>
-                        </td>
-                      )}
                       {showMatch && (
                         <td>
                           {insight || r.portal?.matchPercent == null ? (
@@ -685,6 +674,13 @@ export function JobDetailPage() {
                           )}
                         </td>
                       )}
+                      <td>
+                        {canEdit ? (
+                          <StageSelect label={`Stage for ${r.name}`} value={r.stage} onChange={(s) => void onStage(r, s)} />
+                        ) : (
+                          r.stageLabel
+                        )}
+                      </td>
                       {show('experience') && <td style={{ whiteSpace: 'nowrap' }}>{d.experience ?? <span className="muted">—</span>}</td>}
                       {show('role') && (
                         <td className="cell-wide">
@@ -716,22 +712,25 @@ export function JobDetailPage() {
                         </td>
                       )}
                       {show('notice') && (
-                        <td className="muted" style={{ whiteSpace: 'nowrap' }}>
-                          {d.notice ?? '—'}
-                        </td>
+                        <td className="muted cell-notice">{d.notice ?? '—'}</td>
                       )}
                       {tests.length > 0 && (
                         <td className={latestTest.get(r.id)?.needsNudge ? 'test-nudge' : 'muted'} title={latestTest.get(r.id)?.title}>
                           {latestTest.has(r.id) ? testStatusLabel(latestTest.get(r.id)!) : '—'}
                         </td>
                       )}
-                      <td>
-                        {canEdit ? (
-                          <StageSelect label={`Stage for ${r.name}`} value={r.stage} onChange={(s) => void onStage(r, s)} />
-                        ) : (
-                          r.stageLabel
-                        )}
-                      </td>
+                      {show('resumes') && (
+                        <td>
+                          <span className="doc-dots">
+                            <span className={`doc-dot${r.documents.includes('ORIGINAL_RESUME') ? ' has' : ''}`} title="Original résumé">
+                              Orig
+                            </span>
+                            <span className={`doc-dot${r.documents.includes('CODEWALNUT_RESUME') ? ' has' : ''}`} title="CodeWalnut résumé">
+                              CW
+                            </span>
+                          </span>
+                        </td>
+                      )}
                       {show('note') && (
                         <td className="muted cell-wide">
                           {/* Long notes (e.g. imported details) stay two lines here; hover or open the candidate for all of it. */}

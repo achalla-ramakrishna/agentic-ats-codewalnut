@@ -547,3 +547,43 @@
   font-size: 13px;
   color: var(--color-muted, #5b6560);
 }
+
+/* The opening's candidate list: compact, so the useful columns fit without scrolling sideways. */
+.cand-table {
+  font-size: 13px;
+}
+.cand-table th,
+.cand-table td {
+  padding: 8px 10px;
+}
+.cand-table .cell-name {
+  min-width: 190px;
+  max-width: 220px;
+}
+.cand-table .cell-contact {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+.cand-table .cell-contact div {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cand-table .cell-wide {
+  min-width: 150px;
+  max-width: 220px;
+}
+.cand-table select {
+  font-size: 13px;
+  padding: 4px 6px;
+}
+.cand-table .cell-name .row-link {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.cand-table .cell-notice {
+  min-width: 90px;
+  max-width: 120px;
+}
