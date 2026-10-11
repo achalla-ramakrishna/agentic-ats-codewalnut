@@ -37,6 +37,9 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
   Tick Hide people already emailed → Select this page → Email selected → pick a template (Ask for
   résumé) → Send. Next time, page 1 is the next 30. Per page changes the page size.
 
+- WhatsApp people who sent their résumé: open the opening → Résumé uploaded → Select this page →
+  WhatsApp selected → fill in the [day, time] slots → Open WhatsApp for each person → Send there.
+
 ## Ask ATS
 - Ask questions in plain words. It can also prepare changes: move stages, add notes, log a call,
   remind about a test, message candidates (email, WhatsApp, candidate page) and share with a client.

@@ -54,6 +54,7 @@ view, and every move is recorded for reporting.
 | PIPE-17 | **More columns in an opening's candidate list**: Experience, Current role, Key skills, AI summary and Notice, next to Match. Values come from the AI résumé reading when there is one, otherwise from the job-portal import (stored on the application as `portal_profile`; Match then shows the import ranking). Long text stays two lines (hover for all), so rows keep an even height. Email and phone sit under the name; Stage comes right after Match; Updated is off by default. *Columns* chooses which optional columns show, remembered per browser. The search box also finds portal skills and current role. Candidates imported from Naukri before this change get their details from their first note at start-up. | Done |
 | PIPE-18 | **Batches for bulk email**: Import from Naukri and Send to candidates have a *Batch size* (default 30, 1–200, remembered per browser). *Select top N* / *Select next N* ticks one batch; people already added or already sent the test are skipped, so repeating picks the next batch. Emails still go one per person from the sender's Gmail (about 2,000 a day on Google Workspace). | Done |
 | PIPE-19 | **Email from an opening's list, a page at a time** (recruiters and admins): the list shows one page of *Per page* candidates (default 30, remembered per browser), best match first until another sort is chosen; *Previous / Next* move between pages and any search, filter or sort change returns to page 1. *Select this page* (or the tick box in the header) ticks everyone on the page who has an email and isn't Rejected; *Hide people already emailed* drops anyone emailed from this opening, so page 1 is always the next people to contact. *Email selected* opens one editable email (any template, default *Ask for résumé*) sent one by one from the sender's Gmail, best match first. *Emailed 11 Oct* shows under each person's contact details (`lastEmailedAt` in the opening's list). | Done |
+| PIPE-20 | **Résumé uploaded filter and WhatsApp selected**: a *Résumé uploaded* chip lists only people with an original résumé on file (e.g. those who replied with one). *WhatsApp selected* opens a panel with an editable message (default asks for interview slots; *[day, time]* must be filled in first) and one button per person. Without the WhatsApp Business API each click opens WhatsApp with the message ready and the recruiter presses Send; with the API it sends. Every message is saved in the candidate's conversation. Meant for people who already replied, never cold bulk outreach from a personal number. | Done |
 
 ## Business rules
 
@@ -88,6 +89,7 @@ view, and every move is recorded for reporting.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-11 | PIPE-20: Résumé uploaded filter; WhatsApp selected candidates one click each |
 | 2026-10-11 | PIPE-19: pages of 30 ranked by match; select a page and email it |
 | 2026-10-11 | PIPE-18: batch size (default 30) for bulk emails |
 | 2026-10-11 | PIPE-17: experience, current role, key skills, AI summary and notice columns; even row heights; column chooser |

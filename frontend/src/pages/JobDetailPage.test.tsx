@@ -172,6 +172,45 @@ describe('JobDetailPage', () => {
     expect(JSON.parse(sent[0][1]!.body as string).body).toContain('Hi Person,')
   })
 
+  it('filters to people who sent a résumé and WhatsApps them one click each (PIPE-20)', async () => {
+    const people = [
+      { ...row, id: 'a1', name: 'Asha Rao', documents: ['ORIGINAL_RESUME'], portal: null },
+      { ...row, id: 'a2', name: 'Bala Test', documents: [], portal: null },
+    ]
+    const fetchMock = fakeFetch([
+      { path: '/auth/session', body: { type: 'STAFF' } },
+      { path: '/me', body: recruiter },
+      { path: '/stages', body: stages },
+      { path: '/jobs/j1/applications', body: people },
+      { path: '/jobs/j1/insights', body: noInsights },
+      { path: '/jobs/j1/tests', body: [] },
+      { path: '/jobs/j1', body: { ...job, total: 2 } },
+      { path: '/whatsapp/status', body: { apiEnabled: false, repliesEnabled: false } },
+      { path: '/applications/a1/messages', method: 'POST', status: 201, body: { id: 'm1', whatsappLink: 'https://wa.me/919000000001?text=hi' } },
+    ])
+    const tab = { location: { href: '' }, close: vi.fn() }
+    vi.stubGlobal('open', vi.fn(() => tab))
+    renderJob()
+
+    await userEvent.click(await screen.findByRole('button', { name: /Résumé uploaded 1/ }))
+    expect(screen.queryByRole('button', { name: 'Bala Test' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Select this page (1)' }))
+    await userEvent.click(screen.getByRole('button', { name: 'WhatsApp selected (1)' }))
+
+    const open = screen.getByRole('button', { name: 'WhatsApp Asha Rao' })
+    expect(open).toBeDisabled() // the [day, time] slots must be filled in first
+    const box = screen.getByLabelText('Message')
+    await userEvent.clear(box)
+    await userEvent.click(box)
+    await userEvent.paste('Hi {firstName}, are you free on Thursday at 11?')
+    await userEvent.click(open)
+
+    expect(await screen.findByText('Opened')).toBeInTheDocument()
+    expect(tab.location.href).toBe('https://wa.me/919000000001?text=hi')
+    const call = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/applications/a1/messages'))!
+    expect(JSON.parse(call[1]!.body as string)).toMatchObject({ body: 'Hi Asha, are you free on Thursday at 11?', sendEmail: false, sendWhatsApp: true })
+  })
+
   it('previews a pasted table before importing', async () => {
     const fetchMock = fakeFetch([
       { path: '/auth/session', body: { type: 'STAFF' } },

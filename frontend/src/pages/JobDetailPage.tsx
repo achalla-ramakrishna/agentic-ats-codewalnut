@@ -20,6 +20,7 @@ import { TEMPLATE_FOR_STAGE } from '../components/emailTemplates'
 import { NaukriImport } from '../components/NaukriImport'
 import { BatchSizeInput, useBatchSize } from '../components/BatchSize'
 import { BulkEmail, type BulkRecipient } from '../components/BulkEmail'
+import { BulkWhatsApp, type WhatsAppRecipient } from '../components/BulkWhatsApp'
 import { ImportCandidates } from '../components/ImportCandidates'
 import { FitBadge, InsightsPanel } from '../components/InsightsPanel'
 import { JobDetailsEditor } from '../components/JobDetailsEditor'
@@ -223,6 +224,8 @@ export function JobDetailPage() {
   const [year, setYear] = useState('')
   const [tests, setTests] = useState<InviteView[]>([])
   const [passedOnly, setPassedOnly] = useState(false)
+  const [resumeOnly, setResumeOnly] = useState(false)
+  const [whatsApping, setWhatsApping] = useState<WhatsAppRecipient[] | null>(null)
   const [open, setOpen] = useState<ApplicationRow | null>(null)
   const [openTab, setOpenTab] = useState<DrawerTab>('profile')
   const [openTemplate, setOpenTemplate] = useState<string | undefined>()
@@ -311,7 +314,7 @@ export function JobDetailPage() {
   }, [])
 
   // Back to the first page whenever what's listed changes.
-  useEffect(() => setPage(0), [filter, query, categories, skill, year, passedOnly, sortChoice, batch, hideEmailed])
+  useEffect(() => setPage(0), [filter, query, categories, skill, year, passedOnly, resumeOnly, sortChoice, batch, hideEmailed])
 
   if (error && !job) return <p role="alert" className="alert alert-error">{error}</p>
   if (!job) return <p className="muted">Loading…</p>
@@ -340,6 +343,7 @@ export function JobDetailPage() {
         matchesSearch(r, query) &&
         matchesInsight(byApplication.get(r.id), categories, skill, year) &&
         (!passedOnly || passed.has(r.id)) &&
+        (!resumeOnly || r.documents.includes('ORIGINAL_RESUME')) &&
         (!hideEmailed || !r.lastEmailedAt),
     )
     .sort((a, b) => {
@@ -351,8 +355,9 @@ export function JobDetailPage() {
       if (sort === 'recent') return b.updatedAt.localeCompare(a.updatedAt)
       return 0
     })
-  const filtering = query.trim() !== '' || filter !== null || categories.length > 0 || skill !== '' || year !== '' || passedOnly
+  const filtering = query.trim() !== '' || filter !== null || categories.length > 0 || skill !== '' || year !== '' || passedOnly || resumeOnly
   const read = (insights?.insights ?? []).filter((i) => i.status === 'DONE')
+  const withResume = (rows ?? []).filter((r) => r.documents.includes('ORIGINAL_RESUME')).length
   const skillOptions = Array.from(
     read.flatMap((i) => i.skills).reduce((m, s) => m.set(s.toLowerCase(), m.get(s.toLowerCase()) ?? s), new Map<string, string>()).values(),
   ).sort((a, b) => a.localeCompare(b))
@@ -581,8 +586,13 @@ export function JobDetailPage() {
           )
         })}
       </div>
-      {(read.length > 0 || passed.size > 0) && (
+      {(read.length > 0 || passed.size > 0 || withResume > 0) && (
         <div className="row" role="group" aria-label="Filter by résumé" style={{ gap: 8, flexWrap: 'wrap' }}>
+          {withResume > 0 && (
+            <button type="button" className="stage-chip" aria-pressed={resumeOnly} onClick={() => setResumeOnly(!resumeOnly)}>
+              Résumé uploaded <strong>{withResume}</strong>
+            </button>
+          )}
           {passed.size > 0 && (
             <button type="button" className="stage-chip" aria-pressed={passedOnly} onClick={() => setPassedOnly(!passedOnly)}>
               Passed a test <strong>{passed.size}</strong>
@@ -662,11 +672,31 @@ export function JobDetailPage() {
                 <Button size="sm" onClick={() => setEmailing(pickedRows.map((r) => ({ applicationId: r.id, name: r.name, hasEmail: !!r.email })))}>
                   Email selected ({picked.size})
                 </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setWhatsApping(pickedRows.map((r) => ({ applicationId: r.id, name: r.name, phone: r.phone })))}
+                >
+                  WhatsApp selected ({picked.size})
+                </Button>
                 <Button size="sm" variant="ghost" onClick={() => setPicked(new Set())}>
                   Clear
                 </Button>
               </>
             )}
+          </div>
+        )}
+        {whatsApping && (
+          <div className="card" style={{ marginBottom: 12 }}>
+            <BulkWhatsApp
+              recipients={whatsApping}
+              jobTitle={job.title}
+              senderName={me.name}
+              onClose={() => {
+                setWhatsApping(null)
+                load()
+              }}
+            />
           </div>
         )}
         {emailing && (

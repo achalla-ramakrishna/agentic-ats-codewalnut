@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-11-resume-filter-whatsapp',
+    date: '2026-10-11',
+    title: 'Filter by “Résumé uploaded” and WhatsApp them',
+    summary: 'A new Résumé uploaded chip shows only candidates whose résumé is in the ATS, such as people who replied to your email. Select them and click WhatsApp selected: write one message (it suggests asking for interview slots), then click Open WhatsApp next to each person and press Send in WhatsApp. Each message is saved in their conversation.',
+    steps: [
+      'Upload the résumés you received (opening → Upload résumés).',
+      'Click Résumé uploaded → Select this page → WhatsApp selected.',
+      'Fill in the [day, time] slots → Open WhatsApp for each person → Send.',
+    ],
+    capability: 'MESSAGE_CANDIDATES',
+  },
+  {
     id: '2026-10-11-email-top-matches',
     date: '2026-10-11',
     title: 'Candidates 30 per page, best match first; email a page at a time',
