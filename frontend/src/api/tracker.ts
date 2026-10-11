@@ -91,6 +91,8 @@ export interface ApplicationRow {
   documents: DocumentKind[]
   /** Details from a job-portal import (Naukri), or null (ADR-0026). */
   portal: PortalProfile | null
+  /** When staff last emailed them about this opening (only in an opening's list). */
+  lastEmailedAt?: string | null
 }
 
 export interface PortalProfile {

@@ -51,9 +51,12 @@ class MessageFlowTest {
         return mockMvc.perform(post(url).with(who).with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body));
     }
 
+    /** The opening of the last {@link #application} call. */
+    private String job;
+
     /** A new candidate in a new opening; returns the application id. */
     private String application(String email) throws Exception {
-        String job = JsonPath.read(send(ADMIN, "/api/v1/jobs", "{\"title\":\"Intern " + tag + "\",\"hiringType\":\"INTERNAL\"}")
+        job = JsonPath.read(send(ADMIN, "/api/v1/jobs", "{\"title\":\"Intern " + tag + "\",\"hiringType\":\"INTERNAL\"}")
                 .andReturn().getResponse().getContentAsString(), "$.id");
         String body = "{\"name\":\"Meera Iyer\",\"stage\":\"SCREENING\"" + (email != null ? ",\"email\":\"" + email + "\"" : "") + "}";
         return JsonPath.read(send(ADMIN, "/api/v1/jobs/" + job + "/applications", body)
@@ -92,6 +95,9 @@ class MessageFlowTest {
         mockMvc.perform(get("/api/v1/applications/" + app + "/messages").param("channel", "CANDIDATE").with(ADMIN))
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].authorType").value("STAFF"));
+        // The opening's list shows they were emailed, so a bulk email can skip them.
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/applications").with(ADMIN))
+                .andExpect(jsonPath("$[0].lastEmailedAt").isNotEmpty());
     }
 
     @Test

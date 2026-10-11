@@ -117,6 +117,47 @@ describe('JobDetailPage', () => {
     expect(screen.getByRole('button', { name: /Interviewed 1/ })).toBeInTheDocument()
   })
 
+  it('selects the best matches who have not been emailed and emails them in one go (PIPE-19)', async () => {
+    const portal = (match: number) => ({
+      source: 'Naukri', experience: '5 Year(s)', experienceYears: 5, currentRole: 'Engineer at Example', skills: ['Java'],
+      headline: 'Java developer', noticePeriod: '15 Days or less', location: 'Bengaluru', matchPercent: match, summary: null,
+    })
+    const people = [
+      { ...row, id: 'a1', name: 'Asha Rao', email: 'asha@example.com', portal: portal(60), lastEmailedAt: null },
+      { ...row, id: 'a2', name: 'Bala Test', email: 'bala@example.com', portal: portal(90), lastEmailedAt: '2026-10-10T10:00:00Z' },
+      { ...row, id: 'a3', name: 'Chitra Test', email: 'chitra@example.com', portal: portal(80), lastEmailedAt: null },
+      { ...row, id: 'a4', name: 'Dev NoMail', email: null, portal: portal(99), lastEmailedAt: null },
+    ]
+    const fetchMock = fakeFetch([
+      { path: '/auth/session', body: { type: 'STAFF' } },
+      { path: '/me', body: recruiter },
+      { path: '/stages', body: stages },
+      { path: '/jobs/j1/applications', body: people },
+      { path: '/jobs/j1/insights', body: noInsights },
+      { path: '/jobs/j1/tests', body: [] },
+      { path: '/jobs/j1', body: { ...job, total: 4 } },
+      { path: '/google/status', body: { available: true, calendarConnected: true, mailConnected: true, redirectUri: 'x' } },
+      { path: '/applications/a3/messages', method: 'POST', status: 201, body: {} },
+      { path: '/applications/a1/messages', method: 'POST', status: 201, body: {} },
+    ])
+    renderJob()
+
+    expect(await screen.findByText(/Emailed (10 Oct|Oct 10)/)).toBeInTheDocument()
+    // Bala was already emailed and Dev has no email: the top 2 are Chitra (80%) then Asha (60%).
+    await userEvent.click(screen.getByRole('button', { name: 'Select top 2 by match' }))
+    expect(screen.getByRole('checkbox', { name: 'Select Chitra Test' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Select Asha Rao' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Select Bala Test' })).not.toBeChecked()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Email selected (2)' }))
+    expect(screen.getByLabelText('Template')).toHaveValue('resume_request')
+    await userEvent.click(await screen.findByRole('button', { name: 'Send email to 2' }))
+    expect(await screen.findByText(/Emailed 2 candidates/)).toBeInTheDocument()
+    const sent = fetchMock.mock.calls.filter(([url, init]) => String(url).includes('/messages') && init?.method === 'POST')
+    expect(sent.map(([url]) => String(url))).toEqual(['/api/v1/applications/a3/messages', '/api/v1/applications/a1/messages'])
+    expect(JSON.parse(sent[0][1]!.body as string).body).toContain('Hi Chitra,')
+  })
+
   it('previews a pasted table before importing', async () => {
     const fetchMock = fakeFetch([
       { path: '/auth/session', body: { type: 'STAFF' } },

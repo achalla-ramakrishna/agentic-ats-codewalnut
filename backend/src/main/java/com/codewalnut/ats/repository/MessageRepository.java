@@ -37,4 +37,10 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
     List<Message> findByApplicationIdInAndChannel(java.util.Collection<UUID> applicationIds, MessageChannel channel);
 
     List<Message> findByApplicationIdOrderByCreatedAtAsc(UUID applicationId);
+
+    /** When each candidate in an opening was last emailed by staff: rows of [applicationId, Instant]. */
+    @org.springframework.data.jpa.repository.Query("select m.application.id, max(m.createdAt) from Message m"
+            + " where m.application.job.id = :jobId and m.emailed = true"
+            + " and m.authorType = com.codewalnut.ats.domain.MessageAuthorType.STAFF group by m.application.id")
+    List<Object[]> lastEmailedByJob(@org.springframework.data.repository.query.Param("jobId") UUID jobId);
 }

@@ -18,6 +18,8 @@ import { AssistantPlanCard } from '../components/AssistantPlanCard'
 import { CandidateDrawer, type DrawerTab } from '../components/CandidateDrawer'
 import { TEMPLATE_FOR_STAGE } from '../components/emailTemplates'
 import { NaukriImport } from '../components/NaukriImport'
+import { BatchSizeInput, useBatchSize } from '../components/BatchSize'
+import { BulkEmail, type BulkRecipient } from '../components/BulkEmail'
 import { ImportCandidates } from '../components/ImportCandidates'
 import { FitBadge, InsightsPanel } from '../components/InsightsPanel'
 import { JobDetailsEditor } from '../components/JobDetailsEditor'
@@ -198,6 +200,10 @@ export function JobDetailPage() {
   const [askError, setAskError] = useState<string | null>(null)
   const [panel, setPanel] = useState<'none' | 'add' | 'import' | 'naukri' | 'resumes' | 'edit'>('none')
   const [columns, setColumns] = useState<ColumnKey[]>(loadColumns)
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [skipEmailed, setSkipEmailed] = useState(true)
+  const [emailing, setEmailing] = useState<BulkRecipient[] | null>(null)
+  const [batch, setBatch] = useBatchSize()
   const toggleColumn = (k: ColumnKey) =>
     setColumns((c) => {
       const next = c.includes(k) ? c.filter((x) => x !== k) : [...c, k]
@@ -307,6 +313,14 @@ export function JobDetailPage() {
 
   const byApplication = new Map((insights?.insights ?? []).map((i) => [i.applicationId, i]))
   const show = (k: ColumnKey) => columns.includes(k)
+  const matchOf = (r: ApplicationRow) => byApplication.get(r.id)?.fitPercent ?? r.portal?.matchPercent ?? -1
+  const togglePick = (id: string, on: boolean) =>
+    setPicked((p) => {
+      const next = new Set(p)
+      if (on) next.add(id)
+      else next.delete(id)
+      return next
+    })
   // Newest first from the server: keep each candidate's latest test.
   const latestTest = new Map<string, InviteView>()
   for (const t of tests) if (t.status !== 'CANCELLED' && !latestTest.has(t.applicationId)) latestTest.set(t.applicationId, t)
@@ -336,6 +350,12 @@ export function JobDetailPage() {
   const yearOptions = Array.from(new Set(read.map((i) => i.graduationYear).filter((y): y is number => y != null))).sort()
   const aiMatch = !!insights && (insights.available || insights.insights.length > 0)
   const showMatch = aiMatch || (rows ?? []).some((r) => r.portal?.matchPercent != null)
+  // Best match first among the rows on screen (search and filters apply), with an email, still in the running.
+  const emailable = visible
+    .filter((r) => r.email && r.stage !== 'REJECTED' && (!skipEmailed || !r.lastEmailedAt))
+    .sort((a, b) => matchOf(b) - matchOf(a) || a.name.localeCompare(b.name))
+  // Best match first, so if Gmail stops part-way the strongest people already have their email.
+  const pickedRows = (rows ?? []).filter((r) => picked.has(r.id)).sort((a, b) => matchOf(b) - matchOf(a))
   const openById = (applicationId: string) => {
     const row = rows?.find((r) => r.id === applicationId)
     if (row) openDrawer(row)
@@ -612,6 +632,41 @@ export function JobDetailPage() {
             </Button>
           </div>
         )}
+        {canEdit && visible.length > 0 && (
+          <div className="row" role="group" aria-label="Email candidates" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
+            <BatchSizeInput value={batch} onChange={setBatch} />
+            <Button size="sm" variant="secondary" disabled={emailable.length === 0} onClick={() => setPicked(new Set(emailable.slice(0, batch).map((r) => r.id)))}>
+              Select top {Math.min(batch, emailable.length)} by match
+            </Button>
+            <label className="row" style={{ gap: 4, fontSize: 13 }}>
+              <input type="checkbox" checked={skipEmailed} onChange={(e) => setSkipEmailed(e.target.checked)} /> Skip people already emailed
+            </label>
+            {picked.size > 0 && (
+              <>
+                <Button size="sm" onClick={() => setEmailing(pickedRows.map((r) => ({ applicationId: r.id, name: r.name, hasEmail: !!r.email })))}>
+                  Email selected ({picked.size})
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setPicked(new Set())}>
+                  Clear
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+        {emailing && (
+          <div className="card" style={{ marginBottom: 12 }}>
+            <BulkEmail
+              recipients={emailing}
+              jobTitle={job.title}
+              senderName={me.name}
+              onSent={() => {
+                setPicked(new Set())
+                load()
+              }}
+              onClose={() => setEmailing(null)}
+            />
+          </div>
+        )}
         {visible.length > 0 && (
           <details className="columns-menu">
             <summary>Columns</summary>
@@ -629,6 +684,7 @@ export function JobDetailPage() {
             <table className="table cand-table">
               <thead>
                 <tr>
+                  {canEdit && <th aria-label="Select" />}
                   <th>Name</th>
                   {showMatch && <th title="Share of the opening’s requirements the résumé shows, or the job-portal ranking (AI, advisory)">Match</th>}
                   <th>Stage</th>
@@ -649,6 +705,11 @@ export function JobDetailPage() {
                   const d = details(r, insight)
                   return (
                     <tr key={r.id}>
+                      {canEdit && (
+                        <td>
+                          <input type="checkbox" aria-label={`Select ${r.name}`} checked={picked.has(r.id)} onChange={(e) => togglePick(r.id, e.target.checked)} />
+                        </td>
+                      )}
                       <td className="cell-name">
                         <button type="button" className="row-link" onClick={() => openDrawer(r)}>
                           {r.name}
@@ -657,6 +718,11 @@ export function JobDetailPage() {
                           <div className="cell-contact">
                             {r.email && <div title={r.email}>{r.email}</div>}
                             {r.phone && <div>{r.phone}</div>}
+                            {r.lastEmailedAt && (
+                              <div className="cell-emailed" title={new Date(r.lastEmailedAt).toLocaleString()}>
+                                Emailed {new Date(r.lastEmailedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                              </div>
+                            )}
                           </div>
                         )}
                       </td>

@@ -33,6 +33,10 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
 - Search inside an opening: the search box above the stage buttons (press /). Questions like "who
   knows React?" → ✨ Ask AI.
 
+- Email many candidates by ranking: open the opening → above the list, set Batch size (30) → Select
+  top 30 by match (skips people already emailed) → Email selected → pick a template (Ask for résumé)
+  → Send. Repeat later for the next 30.
+
 ## Ask ATS
 - Ask questions in plain words. It can also prepare changes: move stages, add notes, log a call,
   remind about a test, message candidates (email, WhatsApp, candidate page) and share with a client.

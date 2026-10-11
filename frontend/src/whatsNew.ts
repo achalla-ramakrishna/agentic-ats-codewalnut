@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-11-email-top-matches',
+    date: '2026-10-11',
+    title: 'Email the top 30 matches from an opening',
+    summary: 'In an opening’s candidate list, Select top 30 by match ticks the best-matching people who haven’t been emailed yet; Email selected sends each of them their own email from your Gmail (Ask for résumé, or any template). Everyone emailed shows “Emailed <date>” under their contact details, so the next click picks the next 30.',
+    steps: ['Open the opening → above the list, Select top 30 by match.', 'Email selected → check the text → Send.', 'Later, Select top 30 by match again for the next batch.'],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-11-batch-size',
     date: '2026-10-11',
     title: 'Send in batches of 30',

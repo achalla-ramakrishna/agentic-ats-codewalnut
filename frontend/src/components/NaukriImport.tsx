@@ -1,15 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
-import { getGoogleStatus, type GoogleStatus } from '../api/interviews'
-import { postMessage } from '../api/messages'
+import { useMemo, useState } from 'react'
 import { canAdd, importNaukri, rankNaukri, STATUS_LABEL, type NaukriImportResult, type RankResult } from '../api/naukri'
 import type { Stage } from '../api/tracker'
-import { ConnectGoogle } from './ConnectGoogle'
-import { EMAIL_TEMPLATES, fillTemplate } from './emailTemplates'
 import { BatchSizeInput, useBatchSize } from './BatchSize'
+import { BulkEmail } from './BulkEmail'
 import { StageSelect } from './StageSelect'
 import { Badge, Button, Card } from './ui'
-
-const REQUEST = EMAIL_TEMPLATES.find((t) => t.key === 'resume_request')!
 
 /**
  * Naukri applicant export → ranked against the opening → chosen rows become candidates → one email
@@ -212,106 +207,16 @@ export function NaukriImport({
         </>
       )}
 
-      {added && <AskForResumes added={added} jobTitle={jobTitle} senderName={senderName} onClose={onClose} />}
-    </Card>
-  )
-}
-
-/** Step 3: one email to everyone just added, asking for their résumé and times for a call. */
-function AskForResumes({
-  added,
-  jobTitle,
-  senderName,
-  onClose,
-}: {
-  added: NaukriImportResult
-  jobTitle: string
-  senderName: string | null
-  onClose: () => void
-}) {
-  const sender = senderName ?? 'CodeWalnut Talent Team'
-  const withEmail = added.rows.filter((r) => r.hasEmail)
-  const [subject, setSubject] = useState(REQUEST.subject.replaceAll('{jobTitle}', jobTitle))
-  const [body, setBody] = useState(REQUEST.body.replaceAll('{jobTitle}', jobTitle).replaceAll('{senderName}', sender))
-  const [google, setGoogle] = useState<GoogleStatus | null>(null)
-  const [busy, setBusy] = useState<string | null>(null)
-  const [outcome, setOutcome] = useState<{ sent: number; failed: string[] } | null>(null)
-
-  useEffect(() => {
-    getGoogleStatus()
-      .then(setGoogle)
-      .catch(() => setGoogle(null))
-  }, [])
-  const needsGoogle = google !== null && (!google.available || !google.mailConnected)
-
-  async function send() {
-    let sent = 0
-    const failed: string[] = []
-    for (const [n, r] of withEmail.entries()) {
-      setBusy(`Sending ${n + 1} of ${withEmail.length}…`)
-      try {
-        const values = { candidateName: r.name, jobTitle, senderName: sender }
-        await postMessage(r.applicationId, {
-          channel: 'CANDIDATE',
-          subject: fillTemplate(subject, values),
-          body: fillTemplate(body, values),
-          sendEmail: true,
-        })
-        sent++
-      } catch (e) {
-        failed.push(`${r.name}: ${e instanceof Error ? e.message : 'not sent'}`)
-      }
-    }
-    setBusy(null)
-    setOutcome({ sent, failed })
-  }
-
-  return (
-    <div className="stack" style={{ gap: 10 }}>
-      <div className="alert alert-info" role="status">
-        Added {added.added} candidate{added.added === 1 ? '' : 's'} to this opening.
-        {added.skipped.length > 0 && ` Skipped ${added.skipped.length}: ${added.skipped.join('; ')}.`}
-      </div>
-      {outcome ? (
+      {added && (
         <>
-          <div className={`alert ${outcome.failed.length ? 'alert-error' : 'alert-info'}`} role="status">
-            Emailed {outcome.sent} candidate{outcome.sent === 1 ? '' : 's'}.
-            {outcome.failed.length > 0 && ` Not sent: ${outcome.failed.join('; ')}.`} Replies come to your Gmail and show under Messages
-            and Workflow → Waiting for our reply. When someone sends their résumé, open them and Schedule interview. For the next batch,
-            open Import from Naukri again with the same file: people already added can’t be picked twice.
+          <div className="alert alert-info" role="status">
+            Added {added.added} candidate{added.added === 1 ? '' : 's'} to this opening.
+            {added.skipped.length > 0 && ` Skipped ${added.skipped.length}: ${added.skipped.join('; ')}.`} For the next batch, open Import from
+            Naukri again with the same file: people already added can’t be picked twice.
           </div>
-          <div className="row">
-            <Button onClick={onClose}>Done</Button>
-          </div>
-        </>
-      ) : (
-        <>
-          <h3 style={{ margin: 0 }}>Ask them for their résumé</h3>
-          <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-            Each person gets their own email from your Gmail ({'{firstName}'} becomes their first name). Check the text, then send.
-            {withEmail.length < added.rows.length && ` ${added.rows.length - withEmail.length} without an email won’t get it.`}
-          </p>
-          <label className="field">
-            Subject
-            <input className="input" value={subject} onChange={(e) => setSubject(e.target.value)} />
-          </label>
-          <label className="field">
-            Message
-            <textarea className="input" rows={12} value={body} onChange={(e) => setBody(e.target.value)} />
-          </label>
-          {needsGoogle && (
-            <ConnectGoogle status={google} purpose="Emails are sent from your own Gmail, so replies come back to your inbox." returnTo={window.location.pathname} />
-          )}
-          <div className="row" style={{ gap: 8 }}>
-            <Button onClick={send} disabled={!!busy || withEmail.length === 0 || needsGoogle || !subject.trim() || !body.trim()}>
-              {busy ?? `Send email to ${withEmail.length}`}
-            </Button>
-            <Button variant="ghost" onClick={onClose}>
-              Not now
-            </Button>
-          </div>
+          <BulkEmail recipients={added.rows} jobTitle={jobTitle} senderName={senderName} title="Ask them for their résumé" onClose={onClose} />
         </>
       )}
-    </div>
+    </Card>
   )
 }

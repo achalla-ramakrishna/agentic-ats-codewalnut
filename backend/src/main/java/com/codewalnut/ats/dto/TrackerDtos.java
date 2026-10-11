@@ -83,21 +83,29 @@ public final class TrackerDtos {
     /** id: the candidate's own application, for their messages. newMessages: unread from CodeWalnut. */
     public record MyApplicationResponse(UUID id, String slug, String jobTitle, String status, Instant appliedAt, long newMessages) {}
 
-    /** portal: details from a job-portal import (Naukri), or null; the AI résumé reading comes from /insights. */
+    /**
+     * portal: details from a job-portal import (Naukri), or null; the AI résumé reading comes from /insights.
+     * lastEmailedAt: only filled in an opening's list, so bulk emails can skip people already emailed.
+     */
     public record ApplicationResponse(
             UUID id, UUID jobId, String jobTitle, String clientName, UUID candidateId, String name, String email,
             String phone, Stage stage, String stageLabel, Instant updatedAt, String lastNote, Set<DocumentKind> documents,
-            PortalProfile portal) {
+            PortalProfile portal, Instant lastEmailedAt) {
 
         public static ApplicationResponse from(Application a, String lastNote) {
             return from(a, lastNote, Set.of());
         }
 
         public static ApplicationResponse from(Application a, String lastNote, Set<DocumentKind> documents) {
+            return from(a, lastNote, documents, null);
+        }
+
+        /** lastEmailedAt: when staff last emailed this candidate about this opening, or null. */
+        public static ApplicationResponse from(Application a, String lastNote, Set<DocumentKind> documents, Instant lastEmailedAt) {
             return new ApplicationResponse(a.getId(), a.getJob().getId(), a.getJob().getTitle(),
                     a.getJob().getClient() != null ? a.getJob().getClient().getName() : null, a.getCandidate().getId(), a.getCandidate().getName(), a.getCandidate().getEmail(),
                     a.getCandidate().getPhone(), a.getStage(), a.getStage().getLabel(), a.getUpdatedAt(), lastNote,
-                    documents, PortalProfile.read(a.getPortalProfile()));
+                    documents, PortalProfile.read(a.getPortalProfile()), lastEmailedAt);
         }
     }
 

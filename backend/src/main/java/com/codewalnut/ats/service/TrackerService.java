@@ -70,6 +70,7 @@ public class TrackerService {
     private final CandidateDocumentRepository documentRepository;
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
+    private final com.codewalnut.ats.repository.MessageRepository messageRepository;
     private final AdminUpdateService adminUpdates;
     private final ClientShareRepository shareRepository;
 
@@ -217,9 +218,13 @@ public class TrackerService {
         job(jobId);
         List<Application> applications = applicationRepository.findByJobIdOrderByCandidateNameAsc(jobId);
         Map<UUID, Set<DocumentKind>> documents = documentKinds(applications);
+        Map<UUID, java.time.Instant> emailed = new java.util.HashMap<>();
+        for (Object[] row : messageRepository.lastEmailedByJob(jobId)) {
+            emailed.put((UUID) row[0], (java.time.Instant) row[1]);
+        }
         return applications.stream()
                 .map(a -> ApplicationResponse.from(a, lastNote(a.getId()),
-                        documents.getOrDefault(a.getCandidate().getId(), Set.of())))
+                        documents.getOrDefault(a.getCandidate().getId(), Set.of()), emailed.get(a.getId())))
                 .toList();
     }
 
