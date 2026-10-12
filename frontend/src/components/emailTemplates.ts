@@ -98,6 +98,30 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
   },
 ]
 
+/** Short names for the Workflow view's "Emails sent" column (PIPE-23); tests send their own. */
+export const TEMPLATE_SHORT: Record<string, string> = {
+  resume_request: 'Résumé request',
+  interview_slots: 'Interview slots',
+  follow_up: 'Follow-up',
+  received: 'Application received',
+  screening: 'Screening call',
+  shortlisted: 'Shortlisted',
+  documents: 'Documents',
+  selected: 'Selected',
+  rejected: 'Rejected',
+  test_invite: 'Test sent',
+  test_reminder: 'Test reminder',
+}
+
+/** The template key to record with a message, or undefined for a free-form one. */
+export const templateKeyFor = (key: string | undefined | null) => (key && key !== 'custom' && TEMPLATE_SHORT[key] ? key : undefined)
+
+/** Sending these also moves the candidate to the stage they announce, when the recruiter ticks it. */
+export const STAGE_FOR_TEMPLATE: Partial<Record<string, Stage>> = {
+  shortlisted: 'SHORTLISTED',
+  selected: 'OFFER_SENT',
+}
+
 /** Which template to suggest after moving a candidate to a stage. */
 export const TEMPLATE_FOR_STAGE: Partial<Record<Stage, string>> = {
   SHORTLISTED: 'shortlisted',

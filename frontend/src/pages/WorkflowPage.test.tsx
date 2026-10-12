@@ -159,6 +159,54 @@ describe('WorkflowPage (WF-01…WF-05)', () => {
     expect(screen.getByLabelText('Template')).toHaveValue('resume_request')
   })
 
+  it('works by stage: shows emails sent, finds who has not had the shortlisted email, sends it and moves them (PIPE-23)', async () => {
+    const people = [
+      {
+        ...rows[0],
+        applicationId: 's1',
+        candidateName: 'Asha Rao',
+        stage: 'SHORTLISTED',
+        stageLabel: 'Shortlisted',
+        awaitingReply: false,
+        nextStep: null,
+        emails: [
+          { templateKey: 'shortlisted', subject: "You're shortlisted", at: '2026-10-11T10:00:00Z', by: 'priya@codewalnut.test' },
+          { templateKey: 'resume_request', subject: 'Résumé', at: '2026-10-09T10:00:00Z', by: 'priya@codewalnut.test' },
+        ],
+      },
+      { ...rows[1], applicationId: 's2', candidateName: 'Bala Test', stage: 'SHORTLISTED', stageLabel: 'Shortlisted', emails: [] },
+      { ...rows[1], applicationId: 's3', candidateName: 'Chitra Test', emails: [] },
+    ]
+    const fetchMock = fakeFetch([
+      ...signedIn,
+      { path: '/whatsapp/status', body: { apiEnabled: false } },
+      { path: '/google/status', body: { available: true, calendarConnected: true, mailConnected: true, redirectUri: 'x' } },
+      { path: '/workflow', body: { ...board, rows: people } },
+      { path: '/applications/s2/messages', method: 'POST', status: 201, body: {} },
+      { path: '/applications/s2/stage', method: 'PATCH', body: {} },
+    ])
+    renderPage()
+
+    expect(await screen.findByText('Asha Rao')).toBeInTheDocument()
+    expect(screen.getByText('Shortlisted', { selector: '.wf-email-chip' })).toBeInTheDocument()
+    expect(screen.getByText('Résumé request', { selector: '.wf-email-chip' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /^Shortlisted 2/ }))
+    expect(screen.queryByText('Chitra Test')).not.toBeInTheDocument()
+    await userEvent.selectOptions(screen.getByLabelText('Filter by email sent'), 'not:shortlisted')
+    expect(screen.queryByText('Asha Rao')).not.toBeInTheDocument()
+    expect(screen.getByText('Bala Test')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Select first 1' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Email selected (1)' }))
+    expect(screen.getByLabelText('Template')).toHaveValue('shortlisted')
+    expect(screen.getByLabelText(/Also move them to Shortlisted/)).toBeChecked()
+    await userEvent.click(await screen.findByRole('button', { name: 'Send email to 1' }))
+    expect(await screen.findByText(/Emailed 1 candidate/)).toBeInTheDocument()
+    const sent = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/applications/s2/messages'))!
+    expect(JSON.parse(sent[1]!.body as string)).toMatchObject({ templateKey: 'shortlisted', sendEmail: true })
+  })
+
   it('opens the history and logs a call', async () => {
     const fetch = fakeFetch([
       ...signedIn,

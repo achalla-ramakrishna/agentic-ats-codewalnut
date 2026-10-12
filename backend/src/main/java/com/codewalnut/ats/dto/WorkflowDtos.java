@@ -31,7 +31,13 @@ public final class WorkflowDtos {
             String stage, String stageLabel, boolean closed, Instant inStageSince, Instant addedAt,
             Contact lastContact, int contacts, boolean awaitingReply, Instant candidateWroteAt,
             TestStatus test, InterviewStatus interview, ClientStatus client, int documentsPending,
-            NextStep nextStep, Instant lastActivityAt) {}
+            NextStep nextStep, Instant lastActivityAt, List<EmailSent> emails) {}
+
+    /**
+     * An email sent to the candidate (PIPE-23): templateKey is the template it was written from, or null
+     * for a free-form email; newest first.
+     */
+    public record EmailSent(String templateKey, String subject, Instant at, String by) {}
 
     public record Opening(UUID id, String title, String clientName, String status) {}
 

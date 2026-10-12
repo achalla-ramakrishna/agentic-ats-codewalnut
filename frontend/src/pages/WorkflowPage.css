@@ -102,3 +102,17 @@
     color: #5fd38d;
   }
 }
+
+/* Emails sent (PIPE-23): one small chip per template, newest first. */
+.wf-emails {
+  max-width: 220px;
+}
+.wf-email-chip {
+  display: inline-block;
+  margin: 0 4px 4px 0;
+  padding: 1px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+}

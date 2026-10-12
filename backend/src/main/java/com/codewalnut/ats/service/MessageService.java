@@ -137,6 +137,7 @@ public class MessageService {
                 .subject(subject)
                 .body(body)
                 .emailed(email)
+                .templateKey(toCandidate ? request.templateKey() : null)
                 .emailMessageId(providerId)
                 .whatsappStatus(whatsappStatus)
                 .whatsappMessageId(whatsappId)

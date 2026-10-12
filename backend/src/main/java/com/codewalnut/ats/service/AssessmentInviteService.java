@@ -140,7 +140,7 @@ public class AssessmentInviteService {
                 + " quiet minutes. Please finish it by " + DUE.format(invite.getDueAt()) + ".\n\nAll the best!";
         MessageResponse message = messageService.post(actor, applicationId, new PostMessageRequest(MessageChannel.CANDIDATE,
                 body, "Your " + assessment.getTitle() + " test for " + application.getJob().getTitle(),
-                request.sendEmail(), request.sendWhatsApp()), baseUrl);
+                request.sendEmail(), request.sendWhatsApp(), "test_invite"), baseUrl);
         history(application, ApplicationEventType.TEST_SENT, "Test sent: " + assessment.getTitle()
                 + " (due " + DUE.format(invite.getDueAt()) + ")", actor.getEmail());
         auditService.record(actor, AuditAction.ASSESSMENT_SENT, "AssessmentInvite", invite.getId(),
@@ -172,7 +172,7 @@ public class AssessmentInviteService {
                 + "). Reply here if you need more time.";
         MessageResponse message = messageService.post(actor, application.getId(), new PostMessageRequest(MessageChannel.CANDIDATE,
                 body, "Reminder: your " + invite.getAssessment().getTitle() + " test", request.sendEmail(),
-                request.sendWhatsApp()), baseUrl);
+                request.sendWhatsApp(), "test_reminder"), baseUrl);
         auditService.record(actor, AuditAction.ASSESSMENT_REMINDED, "AssessmentInvite", inviteId,
                 Map.of("reminders", invite.getReminderCount()));
         return new SendResult(view(invite), message);

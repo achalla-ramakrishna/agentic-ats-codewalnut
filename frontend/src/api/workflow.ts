@@ -39,6 +39,8 @@ export interface WorkflowRow {
   documentsPending: number
   nextStep: NextStep | null
   lastActivityAt: string
+  /** Emails we sent, newest first; templateKey says which template (PIPE-23). */
+  emails: { templateKey: string | null; subject: string | null; at: string; by: string }[]
 }
 
 export type WorkflowFilter = 'active' | 'urgent' | 'reply' | 'never' | 'quiet' | 'closed'

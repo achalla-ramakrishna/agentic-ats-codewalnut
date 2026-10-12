@@ -15,6 +15,7 @@ import { getWhatsAppStatus, postMessage } from '../api/messages'
 import { useMe } from '../auth/AuthContext'
 import { BatchSizeInput, useBatchSize } from '../components/BatchSize'
 import { BulkEmail, type BulkRecipient } from '../components/BulkEmail'
+import { EMAIL_TEMPLATES, TEMPLATE_SHORT } from '../components/emailTemplates'
 import { Badge, Button, PageHeader } from '../components/ui'
 import '../components/tracker.css'
 import './WorkflowPage.css'
@@ -36,6 +37,46 @@ const TEMPLATE_FOR: Record<WorkflowFilter, string> = {
   never: 'resume_request',
   quiet: 'follow_up',
   closed: 'custom',
+}
+
+/** Stages in pipeline order, for the stage chips (PIPE-23). */
+const STAGES: { key: string; label: string }[] = [
+  { key: 'SOURCED', label: 'Applied / Sourced' },
+  { key: 'INTERVIEWED', label: 'Interviewed' },
+  { key: 'SHORTLISTED', label: 'Shortlisted' },
+  { key: 'OFFER_SENT', label: 'Offer sent' },
+  { key: 'JOINED', label: 'Joined' },
+  { key: 'ON_HOLD', label: 'On hold' },
+  { key: 'REJECTED', label: 'Rejected' },
+]
+
+/** The email a stage usually needs next, when the tab doesn't say. */
+const TEMPLATE_FOR_STAGE_TAB: Record<string, string> = {
+  SOURCED: 'resume_request',
+  INTERVIEWED: 'custom',
+  SHORTLISTED: 'shortlisted',
+  OFFER_SENT: 'selected',
+  REJECTED: 'rejected',
+}
+
+/** Templates a recruiter can filter on ("got it" / "hasn't got it yet"). */
+const TRACKED = EMAIL_TEMPLATES.filter((t) => TEMPLATE_SHORT[t.key]).map((t) => t.key).concat(['test_invite'])
+
+function shortDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+}
+
+/** One chip per template (latest send), then free-form emails as "Email". */
+function emailChips(row: WorkflowRow) {
+  const seen = new Set<string>()
+  const chips: { key: string; label: string; at: string; title: string }[] = []
+  for (const e of row.emails ?? []) {
+    const k = e.templateKey ?? 'free'
+    if (seen.has(k)) continue
+    seen.add(k)
+    chips.push({ key: k, label: e.templateKey ? (TEMPLATE_SHORT[e.templateKey] ?? e.templateKey) : 'Email', at: e.at, title: e.subject ?? '' })
+  }
+  return chips
 }
 
 const QUIET_MS = 7 * 24 * 3600 * 1000
@@ -217,6 +258,9 @@ export function WorkflowPage() {
   const [params, setParams] = useSearchParams()
   const jobId = params.get('job') ?? ''
   const filter = (params.get('show') as WorkflowFilter | null) ?? 'active'
+  const stage = params.get('stage') ?? ''
+  // "got:shortlisted" = received that email; "not:shortlisted" = hasn't yet.
+  const emailFilter = params.get('email') ?? ''
   const [board, setBoard] = useState<WorkflowBoard | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -277,14 +321,33 @@ export function WorkflowPage() {
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load the workflow'))
   }, [jobId, reload])
 
+  const [emailMode, emailKey] = emailFilter.split(':')
+  const received = (r: WorkflowRow, key: string) => (r.emails ?? []).some((e) => e.templateKey === key)
+  const inStage = (r: WorkflowRow) => !stage || r.stage === stage
+  const byEmail = (r: WorkflowRow) =>
+    !emailKey || (emailMode === 'got' ? received(r, emailKey) : emailMode === 'not' ? !received(r, emailKey) : true)
   const rows = useMemo(() => {
     if (!board) return []
     const q = query.trim().toLowerCase()
     return board.rows.filter(
-      (r) => matches(r, filter, now) && (!q || r.candidateName.toLowerCase().includes(q) || r.jobTitle.toLowerCase().includes(q)),
+      (r) =>
+        inStage(r) &&
+        byEmail(r) &&
+        matches(r, filter, now) &&
+        (!q || r.candidateName.toLowerCase().includes(q) || r.jobTitle.toLowerCase().includes(q)),
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, filter, query])
+  }, [board, filter, query, stage, emailFilter])
+  // Counts follow the other choices: stage chips count within the tab, tabs within the stage.
+  const stageCount = (key: string) =>
+    (board?.rows ?? []).filter((r) => r.stage === key && byEmail(r) && matches(r, filter, now)).length
+  const tabCount = (f: WorkflowFilter) => (board?.rows ?? []).filter((r) => inStage(r) && byEmail(r) && matches(r, f, now)).length
+  const suggestedTemplate =
+    emailMode === 'not' && emailKey && emailKey !== 'test_invite'
+      ? emailKey
+      : TEMPLATE_FOR[filter] !== 'custom'
+        ? TEMPLATE_FOR[filter]
+        : (TEMPLATE_FOR_STAGE_TAB[stage] ?? 'custom')
 
   // Bulk email: people on this tab with an email who are still in the running.
   const emailable = rows.filter((r) => r.hasEmail && !r.closed)
@@ -340,6 +403,39 @@ export function WorkflowPage() {
           onChange={(e) => setQuery(e.target.value)}
           style={{ width: 260 }}
         />
+        <select className="input" aria-label="Filter by email sent" value={emailFilter} onChange={(e) => set('email', e.target.value)} style={{ width: 'auto' }}>
+          <option value="">Any emails</option>
+          <optgroup label="Hasn't received yet">
+            {TRACKED.map((k) => (
+              <option key={`not:${k}`} value={`not:${k}`}>
+                No “{TEMPLATE_SHORT[k]}” yet
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Has received">
+            {TRACKED.map((k) => (
+              <option key={`got:${k}`} value={`got:${k}`}>
+                Got “{TEMPLATE_SHORT[k]}”
+              </option>
+            ))}
+          </optgroup>
+        </select>
+      </div>
+      <div className="row wf-filters" role="group" aria-label="Stage">
+        <button type="button" className={`chip${!stage ? ' chip-on' : ''}`} aria-pressed={!stage} onClick={() => set('stage', '')}>
+          All stages
+        </button>
+        {STAGES.map((st) => (
+          <button
+            key={st.key}
+            type="button"
+            className={`chip${stage === st.key ? ' chip-on' : ''}`}
+            aria-pressed={stage === st.key}
+            onClick={() => set('stage', stage === st.key ? '' : st.key)}
+          >
+            {st.label} {board ? <span className="wf-count">{stageCount(st.key)}</span> : null}
+          </button>
+        ))}
       </div>
       <div className="row wf-filters" role="tablist" aria-label="Show">
         {FILTERS.map((f) => (
@@ -351,7 +447,7 @@ export function WorkflowPage() {
             className={`chip${filter === f.key ? ' chip-on' : ''}`}
             onClick={() => set('show', f.key === 'active' ? '' : f.key)}
           >
-            {f.label} {board ? <span className="wf-count">{board.counts[f.key] ?? 0}</span> : null}
+            {f.label} {board ? <span className="wf-count">{tabCount(f.key)}</span> : null}
           </button>
         ))}
       </div>
@@ -382,11 +478,11 @@ export function WorkflowPage() {
       {emailing && (
         <div className="card">
           <BulkEmail
-            key={filter}
+            key={`${filter}-${stage}-${emailFilter}`}
             recipients={emailing}
             jobTitle={emailing[0]?.jobTitle ?? ''}
             senderName={me.name}
-            initialTemplate={TEMPLATE_FOR[filter]}
+            initialTemplate={suggestedTemplate}
             onSent={() => {
               setPicked(new Set())
               setReload((n) => n + 1)
@@ -422,6 +518,7 @@ export function WorkflowPage() {
                 <th>Candidate</th>
                 <th>Stage</th>
                 <th>Last contact</th>
+                <th>Emails sent</th>
                 <th>Test</th>
                 <th>Interview</th>
                 <th>Client</th>
@@ -497,6 +594,17 @@ export function WorkflowPage() {
                         </div>
                       )}
                     </td>
+                    <td className="wf-emails">
+                      {emailChips(r).length === 0 ? (
+                        <span className="muted">—</span>
+                      ) : (
+                        emailChips(r).map((c) => (
+                          <span key={c.key} className="wf-email-chip" title={c.title}>
+                            {c.label} <span className="muted">{shortDate(c.at)}</span>
+                          </span>
+                        ))
+                      )}
+                    </td>
                     <td>
                       {r.test ? (
                         <>
@@ -556,7 +664,7 @@ export function WorkflowPage() {
                   </tr>
                   {compose?.applicationId === r.applicationId && (
                     <tr className="wf-expanded">
-                      <td colSpan={board.canLog ? 9 : 8}>
+                      <td colSpan={board.canLog ? 10 : 9}>
                         <form
                           className="stack"
                           style={{ gap: 8 }}
@@ -588,7 +696,7 @@ export function WorkflowPage() {
                   )}
                   {open === r.applicationId && (
                     <tr className="wf-expanded">
-                      <td colSpan={board.canLog ? 9 : 8}>
+                      <td colSpan={board.canLog ? 10 : 9}>
                         <TimelinePanel row={r} canLog={board.canLog} onLogged={() => setReload((n) => n + 1)} />
                       </td>
                     </tr>

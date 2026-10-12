@@ -48,7 +48,7 @@ export const listMessages = (applicationId: string, channel: MessageChannel) =>
   api<Message[]>(`/applications/${applicationId}/messages?channel=${channel}`)
 export const postMessage = (
   applicationId: string,
-  input: { channel: MessageChannel; body: string; subject?: string; sendEmail: boolean; sendWhatsApp?: boolean },
+  input: { channel: MessageChannel; body: string; subject?: string; sendEmail: boolean; sendWhatsApp?: boolean; templateKey?: string },
 ) => api<Message>(`/applications/${applicationId}/messages`, { method: 'POST', body: json(input) })
 export const getInbox = () => api<InboxItem[]>('/messages/inbox')
 export const getWhatsAppStatus = () => api<{ apiEnabled: boolean; repliesEnabled: boolean }>('/whatsapp/status')

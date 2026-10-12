@@ -3,7 +3,7 @@ import { ApiError } from '../api/client'
 import { getGoogleStatus, type GoogleStatus } from '../api/interviews'
 import { getWhatsAppStatus, listMessages, postMessage, whatsappLabel, type Message, type MessageChannel } from '../api/messages'
 import { ConnectGoogle } from './ConnectGoogle'
-import { EMAIL_TEMPLATES, fillTemplate } from './emailTemplates'
+import { EMAIL_TEMPLATES, fillTemplate, templateKeyFor } from './emailTemplates'
 import { Button } from './ui'
 import './chat.css'
 
@@ -106,6 +106,7 @@ export function Conversation({
         subject: sendEmail ? subject : undefined,
         sendEmail: isCandidate && sendEmail,
         sendWhatsApp: whatsApp,
+        templateKey: templateKeyFor(template),
       })
       if (sent.whatsappLink) {
         if (waWindow) waWindow.location.href = sent.whatsappLink

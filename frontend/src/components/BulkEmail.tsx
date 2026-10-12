@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { getGoogleStatus, type GoogleStatus } from '../api/interviews'
 import { postMessage } from '../api/messages'
 import { ConnectGoogle } from './ConnectGoogle'
-import { EMAIL_TEMPLATES, fillTemplate } from './emailTemplates'
+import { moveStage } from '../api/tracker'
+import { EMAIL_TEMPLATES, fillTemplate, STAGE_FOR_TEMPLATE, templateKeyFor } from './emailTemplates'
 import { Button } from './ui'
 
 export interface BulkRecipient {
@@ -46,6 +47,8 @@ export function BulkEmail({
   const [body, setBody] = useState(prepare(start.body))
   const [google, setGoogle] = useState<GoogleStatus | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
+  const [alsoMove, setAlsoMove] = useState(true)
+  const moveTo = STAGE_FOR_TEMPLATE[template]
   const [outcome, setOutcome] = useState<{ sent: number; failed: string[] } | null>(null)
 
   useEffect(() => {
@@ -75,8 +78,15 @@ export function BulkEmail({
           subject: fillTemplate(subject, values),
           body: fillTemplate(body, values),
           sendEmail: true,
+          templateKey: templateKeyFor(template),
         })
         sent++
+        if (moveTo && alsoMove) {
+          // The email went out; a failed stage move is reported but doesn't count as not sent.
+          await moveStage(r.applicationId, moveTo).catch((e: unknown) =>
+            failed.push(`${r.name}: emailed, but couldn't move the stage (${e instanceof Error ? e.message : 'error'})`),
+          )
+        }
       } catch (e) {
         failed.push(`${r.name}: ${e instanceof Error ? e.message : 'not sent'}`)
       }
@@ -127,6 +137,12 @@ export function BulkEmail({
         Message
         <textarea className="input" rows={12} value={body} onChange={(e) => setBody(e.target.value)} />
       </label>
+      {moveTo && (
+        <label className="row" style={{ gap: 6, fontSize: 13 }}>
+          <input type="checkbox" checked={alsoMove} onChange={(e) => setAlsoMove(e.target.checked)} /> Also move them to{' '}
+          {moveTo === 'SHORTLISTED' ? 'Shortlisted' : 'Offer sent'}
+        </label>
+      )}
       {needsGoogle && (
         <ConnectGoogle status={google} purpose="Emails are sent from your own Gmail, so replies come back to your inbox." returnTo={window.location.pathname} />
       )}

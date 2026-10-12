@@ -98,6 +98,19 @@ class MessageFlowTest {
         // The opening's list shows they were emailed, so a bulk email can skip them.
         mockMvc.perform(get("/api/v1/jobs/" + job + "/applications").with(ADMIN))
                 .andExpect(jsonPath("$[0].lastEmailedAt").isNotEmpty());
+
+        // PIPE-23: an email written from a template is remembered as that template in the Workflow view.
+        send(ADMIN, "/api/v1/applications/" + app + "/messages",
+                "{\"channel\":\"CANDIDATE\",\"body\":\"Hi Meera, please share your résumé.\",\"subject\":\"Résumé\","
+                        + "\"sendEmail\":true,\"templateKey\":\"resume_request\"}")
+                .andExpect(status().isCreated());
+        mockMvc.perform(get("/api/v1/workflow").param("jobId", job).with(ADMIN))
+                .andExpect(jsonPath("$.rows[0].emails.length()").value(2))
+                .andExpect(jsonPath("$.rows[0].emails[0].templateKey").value("resume_request"))
+                .andExpect(jsonPath("$.rows[0].emails[1].templateKey").doesNotExist());
+        send(ADMIN, "/api/v1/applications/" + app + "/messages",
+                "{\"channel\":\"CANDIDATE\",\"body\":\"x\",\"sendEmail\":false,\"templateKey\":\"Bad Key!\"}")
+                .andExpect(status().isBadRequest());
     }
 
     @Test

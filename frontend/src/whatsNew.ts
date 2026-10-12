@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-12-workflow-stages',
+    date: '2026-10-12',
+    title: 'Workflow by stage, and which email each person got',
+    summary: 'The Workflow page now starts with the stages (Applied, Interviewed, Shortlisted, Offer sent…). A new Emails sent column shows every template a person received, with the date (Résumé request 11 Oct, Interview slots 12 Oct, Shortlisted…). Use the email filter, e.g. No “Shortlisted” yet, to email exactly the people who still need it; sending the Shortlisted or Selected email can also move them to that stage.',
+    steps: [
+      'Workflow → click a stage, e.g. Shortlisted.',
+      'Email filter → No “Shortlisted” yet → Select first 30 → Email selected → Send.',
+      'The Emails sent column now shows “Shortlisted” for them, and they drop out of that filter.',
+    ],
+    capability: 'MESSAGE_CANDIDATES',
+  },
+  {
     id: '2026-10-12-workflow-email',
     date: '2026-10-12',
     title: 'Email a whole Workflow tab, 30 at a time',

@@ -61,6 +61,10 @@ public class Message {
     @Column(nullable = false)
     private boolean emailed;
 
+    /** The template a staff message was written from, e.g. resume_request (PIPE-23); null when written freely. */
+    @Column(name = "template_key", length = 40)
+    private String templateKey;
+
     @Column(name = "email_message_id", length = 255)
     private String emailMessageId;
 

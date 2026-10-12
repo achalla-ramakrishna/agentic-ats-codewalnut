@@ -17,12 +17,19 @@ public final class MessageDtos {
      * sendEmail: also email it from the sender's Gmail; sendWhatsApp: also WhatsApp it to the
      * candidate's mobile (both CANDIDATE channel only).
      */
+    /** templateKey: the email template it was written from (PIPE-23), shown in the Workflow view; optional. */
     public record PostMessageRequest(
             @NotNull MessageChannel channel,
             @NotBlank @Size(max = 10_000) String body,
             @Size(max = 300) String subject,
             boolean sendEmail,
-            boolean sendWhatsApp) {}
+            boolean sendWhatsApp,
+            @jakarta.validation.constraints.Pattern(regexp = "[a-z_]{1,40}") String templateKey) {
+
+        public PostMessageRequest(MessageChannel channel, String body, String subject, boolean sendEmail, boolean sendWhatsApp) {
+            this(channel, body, subject, sendEmail, sendWhatsApp, null);
+        }
+    }
 
     public record CandidatePostRequest(@NotBlank @Size(max = 5_000) String body) {}
 

@@ -236,7 +236,18 @@ public class WorkflowService {
                 StringUtils.hasText(a.getCandidate().getEmail()), stage.name(), stage.getLabel(), closed, inStageSince,
                 a.getCreatedAt(), last, contacts.size(), awaitingReply,
                 lastCandidateMessage == null ? null : lastCandidateMessage.getCreatedAt(), test, interviewStatus, client,
-                pendingDocs.size(), next, lastActivity);
+                pendingDocs.size(), next, lastActivity, emailsSent(messages));
+    }
+
+    /** Emails we sent, newest first (at most 8), with the template each came from (PIPE-23). */
+    static List<com.codewalnut.ats.dto.WorkflowDtos.EmailSent> emailsSent(List<Message> messages) {
+        return messages.stream()
+                .filter(m -> m.getAuthorType() == MessageAuthorType.STAFF && m.isEmailed())
+                .sorted(Comparator.comparing(Message::getCreatedAt).reversed())
+                .limit(8)
+                .map(m -> new com.codewalnut.ats.dto.WorkflowDtos.EmailSent(m.getTemplateKey(), m.getSubject(), m.getCreatedAt(),
+                        m.getAuthorEmail()))
+                .toList();
     }
 
     /** The suggested next step: the first rule that applies. */
