@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-12-workflow-email',
+    date: '2026-10-12',
+    title: 'Email a whole Workflow tab, 30 at a time',
+    summary: 'On the Workflow page, tick people (or Select first 30) and click Email selected. The email that fits the tab is ready: Waiting for our reply → thanks for your résumé, please share interview times; Never contacted → please share your résumé; No contact for 7+ days → a polite follow-up. Safer than WhatsApp for many people.',
+    steps: ['Workflow → pick a tab (e.g. Waiting for our reply).', 'Select first 30 → Email selected → check the text → Send.'],
+    capability: 'MESSAGE_CANDIDATES',
+  },
+  {
     id: '2026-10-11-resume-filter-whatsapp',
     date: '2026-10-11',
     title: 'Filter by “Résumé uploaded” and WhatsApp them',

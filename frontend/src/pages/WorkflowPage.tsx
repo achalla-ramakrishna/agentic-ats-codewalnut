@@ -13,6 +13,8 @@ import {
 } from '../api/workflow'
 import { getWhatsAppStatus, postMessage } from '../api/messages'
 import { useMe } from '../auth/AuthContext'
+import { BatchSizeInput, useBatchSize } from '../components/BatchSize'
+import { BulkEmail, type BulkRecipient } from '../components/BulkEmail'
 import { Badge, Button, PageHeader } from '../components/ui'
 import '../components/tracker.css'
 import './WorkflowPage.css'
@@ -25,6 +27,16 @@ const FILTERS: { key: WorkflowFilter; label: string }[] = [
   { key: 'quiet', label: 'No contact for 7+ days' },
   { key: 'closed', label: 'Joined / rejected / withdrawn' },
 ]
+
+/** The email that fits each tab, ready in the bulk email panel (PIPE-22). */
+const TEMPLATE_FOR: Record<WorkflowFilter, string> = {
+  active: 'custom',
+  urgent: 'custom',
+  reply: 'interview_slots',
+  never: 'resume_request',
+  quiet: 'follow_up',
+  closed: 'custom',
+}
 
 const QUIET_MS = 7 * 24 * 3600 * 1000
 /** Past screening someone has clearly been in touch, even if it isn't recorded in the app. */
@@ -217,6 +229,9 @@ export function WorkflowPage() {
   const [waBusy, setWaBusy] = useState<string | null>(null)
   const me = useMe()
   const sender = firstName(me.name ?? me.email.split('@')[0])
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [emailing, setEmailing] = useState<BulkRecipient[] | null>(null)
+  const [batch, setBatch] = useBatchSize()
   const now = Date.now()
 
   useEffect(() => {
@@ -271,11 +286,25 @@ export function WorkflowPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [board, filter, query])
 
+  // Bulk email: people on this tab with an email who are still in the running.
+  const emailable = rows.filter((r) => r.hasEmail && !r.closed)
+  const pickedRows = rows.filter((r) => picked.has(r.applicationId))
+  const allPicked = emailable.length > 0 && emailable.every((r) => picked.has(r.applicationId))
+  const togglePick = (id: string, on: boolean) =>
+    setPicked((p) => {
+      const next = new Set(p)
+      if (on) next.add(id)
+      else next.delete(id)
+      return next
+    })
+
   function set(key: string, value: string) {
     const next = new URLSearchParams(params)
     if (value) next.set(key, value)
     else next.delete(key)
     setParams(next, { replace: true })
+    setPicked(new Set())
+    setEmailing(null)
   }
 
   if (error) {
@@ -327,6 +356,45 @@ export function WorkflowPage() {
         ))}
       </div>
 
+      {board?.canLog && emailable.length > 0 && (
+        <div className="row" role="group" aria-label="Email candidates" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <BatchSizeInput value={batch} onChange={setBatch} />
+          <Button size="sm" variant="secondary" onClick={() => setPicked(new Set(emailable.slice(0, batch).map((r) => r.applicationId)))}>
+            Select first {Math.min(batch, emailable.length)}
+          </Button>
+          {picked.size > 0 && (
+            <>
+              <Button
+                size="sm"
+                onClick={() =>
+                  setEmailing(pickedRows.map((r) => ({ applicationId: r.applicationId, name: r.candidateName, hasEmail: r.hasEmail, jobTitle: r.jobTitle })))
+                }
+              >
+                Email selected ({picked.size})
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setPicked(new Set())}>
+                Clear
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+      {emailing && (
+        <div className="card">
+          <BulkEmail
+            key={filter}
+            recipients={emailing}
+            jobTitle={emailing[0]?.jobTitle ?? ''}
+            senderName={me.name}
+            initialTemplate={TEMPLATE_FOR[filter]}
+            onSent={() => {
+              setPicked(new Set())
+              setReload((n) => n + 1)
+            }}
+            onClose={() => setEmailing(null)}
+          />
+        </div>
+      )}
       {notice && <div className="alert alert-info">{notice}</div>}
       {waError && (
         <div role="alert" className="alert alert-error">
@@ -340,6 +408,17 @@ export function WorkflowPage() {
           <table className="table wf-table">
             <thead>
               <tr>
+                {board.canLog && (
+                  <th>
+                    <input
+                      type="checkbox"
+                      aria-label="Select everyone shown"
+                      disabled={emailable.length === 0}
+                      checked={allPicked}
+                      onChange={(e) => setPicked(e.target.checked ? new Set(emailable.map((r) => r.applicationId)) : new Set())}
+                    />
+                  </th>
+                )}
                 <th>Candidate</th>
                 <th>Stage</th>
                 <th>Last contact</th>
@@ -354,6 +433,18 @@ export function WorkflowPage() {
               {rows.map((r) => (
                 <Fragment key={r.applicationId}>
                   <tr className={r.awaitingReply ? 'wf-waiting' : undefined}>
+                    {board.canLog && (
+                      <td>
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${r.candidateName}`}
+                          disabled={!r.hasEmail || r.closed}
+                          title={!r.hasEmail ? 'No email on file' : undefined}
+                          checked={picked.has(r.applicationId)}
+                          onChange={(e) => togglePick(r.applicationId, e.target.checked)}
+                        />
+                      </td>
+                    )}
                     <td>
                       <Link to={`/jobs/${r.jobId}?candidate=${r.applicationId}`}>
                         <strong>{r.candidateName}</strong>
@@ -465,7 +556,7 @@ export function WorkflowPage() {
                   </tr>
                   {compose?.applicationId === r.applicationId && (
                     <tr className="wf-expanded">
-                      <td colSpan={8}>
+                      <td colSpan={board.canLog ? 9 : 8}>
                         <form
                           className="stack"
                           style={{ gap: 8 }}
@@ -497,7 +588,7 @@ export function WorkflowPage() {
                   )}
                   {open === r.applicationId && (
                     <tr className="wf-expanded">
-                      <td colSpan={8}>
+                      <td colSpan={board.canLog ? 9 : 8}>
                         <TimelinePanel row={r} canLog={board.canLog} onLogged={() => setReload((n) => n + 1)} />
                       </td>
                     </tr>

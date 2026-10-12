@@ -232,7 +232,8 @@ public class WorkflowService {
                 interview, client, pendingDocs, inStageSince, a.getCreatedAt(), now);
 
         return new WorkflowRow(a.getId(), job.getId(), job.getTitle(), job.getClient() == null ? null : job.getClient().getName(),
-                a.getCandidate().getId(), a.getCandidate().getName(), StringUtils.hasText(a.getCandidate().getPhone()), stage.name(), stage.getLabel(), closed, inStageSince,
+                a.getCandidate().getId(), a.getCandidate().getName(), StringUtils.hasText(a.getCandidate().getPhone()),
+                StringUtils.hasText(a.getCandidate().getEmail()), stage.name(), stage.getLabel(), closed, inStageSince,
                 a.getCreatedAt(), last, contacts.size(), awaitingReply,
                 lastCandidateMessage == null ? null : lastCandidateMessage.getCreatedAt(), test, interviewStatus, client,
                 pendingDocs.size(), next, lastActivity);

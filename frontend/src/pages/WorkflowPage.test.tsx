@@ -26,6 +26,7 @@ const base = {
   clientName: null,
   candidateId: 'p',
   hasPhone: true,
+  hasEmail: true,
   closed: false,
   inStageSince: '2026-10-01T00:00:00Z',
   addedAt: '2026-10-01T00:00:00Z',
@@ -115,6 +116,47 @@ describe('WorkflowPage (WF-01…WF-05)', () => {
 
     await userEvent.click(screen.getByRole('tab', { name: /Joined \/ rejected/ }))
     expect(screen.getByText('Om Prakash')).toBeInTheDocument()
+  })
+
+  it('emails everyone on a tab with the template that fits it (PIPE-22)', async () => {
+    const fetchMock = fakeFetch([
+      ...signedIn,
+      { path: '/whatsapp/status', body: { apiEnabled: false } },
+      { path: '/google/status', body: { available: true, calendarConnected: true, mailConnected: true, redirectUri: 'x' } },
+      { path: '/workflow', body: board },
+      { path: '/applications/a1/messages', method: 'POST', status: 201, body: {} },
+    ])
+    renderPage('/workflow?show=reply')
+
+    expect(await screen.findByText('Rekha Rao')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Select first 1' }))
+    expect(screen.getByRole('checkbox', { name: 'Select Rekha Rao' })).toBeChecked()
+    await userEvent.click(screen.getByRole('button', { name: 'Email selected (1)' }))
+
+    // Waiting for our reply → the interview-slots email.
+    expect(screen.getByLabelText('Template')).toHaveValue('interview_slots')
+    await userEvent.click(await screen.findByRole('button', { name: 'Send email to 1' }))
+    expect(await screen.findByText(/Emailed 1 candidate/)).toBeInTheDocument()
+    const sent = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/applications/a1/messages'))!
+    const body = JSON.parse(sent[1]!.body as string)
+    expect(body).toMatchObject({ channel: 'CANDIDATE', sendEmail: true })
+    expect(body.body).toContain('Hi Rekha,')
+    expect(body.body).toContain('Java Intern role')
+    expect(body.subject).toBe('Interview for Java Intern at CodeWalnut')
+  })
+
+  it('offers the résumé request on "Never contacted"', async () => {
+    fakeFetch([
+      ...signedIn,
+      { path: '/whatsapp/status', body: { apiEnabled: false } },
+      { path: '/google/status', body: { available: true, calendarConnected: true, mailConnected: true, redirectUri: 'x' } },
+      { path: '/workflow', body: board },
+    ])
+    renderPage('/workflow?show=never')
+    expect(await screen.findByText('Nina Shah')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Select Nina Shah' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Email selected (1)' }))
+    expect(screen.getByLabelText('Template')).toHaveValue('resume_request')
   })
 
   it('opens the history and logs a call', async () => {

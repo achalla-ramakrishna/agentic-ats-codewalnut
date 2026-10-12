@@ -9,6 +9,8 @@ export interface BulkRecipient {
   applicationId: string
   name: string
   hasEmail: boolean
+  /** Their opening, when recipients come from different openings (the Workflow page). */
+  jobTitle?: string
 }
 
 /**
@@ -34,7 +36,10 @@ export function BulkEmail({
 }) {
   const sender = senderName ?? 'CodeWalnut Talent Team'
   const withEmail = recipients.filter((r) => r.hasEmail)
-  const prepare = (text: string) => text.replaceAll('{jobTitle}', jobTitle).replaceAll('{senderName}', sender)
+  // One opening for everyone: show its title in the text. Several: keep {jobTitle}, filled per person.
+  const titles = new Set(recipients.map((r) => r.jobTitle ?? jobTitle))
+  const oneTitle = titles.size === 1 ? [...titles][0] : null
+  const prepare = (text: string) => (oneTitle ? text.replaceAll('{jobTitle}', oneTitle) : text).replaceAll('{senderName}', sender)
   const start = EMAIL_TEMPLATES.find((t) => t.key === initialTemplate) ?? EMAIL_TEMPLATES[0]
   const [template, setTemplate] = useState(start.key)
   const [subject, setSubject] = useState(prepare(start.subject))
@@ -64,7 +69,7 @@ export function BulkEmail({
     for (const [n, r] of withEmail.entries()) {
       setBusy(`Sending ${n + 1} of ${withEmail.length}…`)
       try {
-        const values = { candidateName: r.name, jobTitle, senderName: sender }
+        const values = { candidateName: r.name, jobTitle: r.jobTitle ?? jobTitle, senderName: sender }
         await postMessage(r.applicationId, {
           channel: 'CANDIDATE',
           subject: fillTemplate(subject, values),
@@ -101,7 +106,7 @@ export function BulkEmail({
       <h3 style={{ margin: 0 }}>{title}</h3>
       <p className="muted" style={{ margin: 0, fontSize: 13 }}>
         {withEmail.length} candidate{withEmail.length === 1 ? '' : 's'} each get their own email from your Gmail ({'{firstName}'} becomes
-        their first name). Check the text, then send.
+        their first name{oneTitle ? '' : ', {jobTitle} their opening'}). Check the text, then send.
         {withEmail.length < recipients.length && ` ${recipients.length - withEmail.length} without an email won’t get it.`}
       </p>
       <label className="field" style={{ maxWidth: 420 }}>

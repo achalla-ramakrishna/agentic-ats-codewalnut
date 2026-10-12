@@ -22,6 +22,8 @@ export interface WorkflowRow {
   candidateName: string
   /** A mobile number is on file, so WhatsApp can be opened. */
   hasPhone: boolean
+  /** An email is on file, so they can be included in a bulk email. */
+  hasEmail: boolean
   stage: string
   stageLabel: string
   closed: boolean

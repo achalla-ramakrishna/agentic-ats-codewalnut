@@ -28,6 +28,22 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
       'Once we have your résumé, we will set up the first conversation.\n\nBest regards,\n{senderName}\nCodeWalnut',
   },
   {
+    key: 'interview_slots',
+    label: 'Thanks for résumé – interview slots',
+    subject: 'Interview for {jobTitle} at CodeWalnut',
+    body:
+      'Hi {firstName},\n\nThank you for sending your résumé for the {jobTitle} role. We would like to invite you to a short interview on Google Meet (about 30–45 minutes).\n\n' +
+      'Could you reply with two or three times over the next few days that suit you? Once you confirm, I will send a calendar invite with the Meet link.\n\nBest regards,\n{senderName}\nCodeWalnut',
+  },
+  {
+    key: 'follow_up',
+    label: 'Follow-up (no reply yet)',
+    subject: 'Following up – {jobTitle} at CodeWalnut',
+    body:
+      'Hi {firstName},\n\nI am following up on my earlier email about the {jobTitle} role at CodeWalnut. If you are still interested, please reply with your latest résumé and your notice period, and we will take it from there.\n\n' +
+      'If you are no longer looking, a quick reply letting me know would be appreciated.\n\nBest regards,\n{senderName}\nCodeWalnut',
+  },
+  {
     key: 'received',
     label: 'Application received',
     subject: 'We received your application – {jobTitle}',

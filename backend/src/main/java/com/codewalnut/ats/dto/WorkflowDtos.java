@@ -27,6 +27,7 @@ public final class WorkflowDtos {
 
     public record WorkflowRow(
             UUID applicationId, UUID jobId, String jobTitle, String clientName, UUID candidateId, String candidateName, boolean hasPhone,
+            boolean hasEmail,
             String stage, String stageLabel, boolean closed, Instant inStageSince, Instant addedAt,
             Contact lastContact, int contacts, boolean awaitingReply, Instant candidateWroteAt,
             TestStatus test, InterviewStatus interview, ClientStatus client, int documentsPending,

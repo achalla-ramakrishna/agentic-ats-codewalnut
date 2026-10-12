@@ -54,6 +54,9 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
 - WhatsApp a candidate from the Workflow page: click WhatsApp on their row; it opens with a suggested
   message ready to send.
 - Called or messaged someone outside the app? Click History on the row → Log a call or message.
+- Email a whole tab (30 at a time): Workflow → pick a tab → Select first 30 → Email selected → Send. The
+  template matches the tab (interview slots for people waiting on us, résumé request for never
+  contacted, follow-up for no contact in 7+ days).
 
 ## Clients
 - Add a client: Clients → New client. Rename: Clients → Rename.
