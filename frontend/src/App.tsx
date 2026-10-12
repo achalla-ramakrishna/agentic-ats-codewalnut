@@ -20,6 +20,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { LoginPage } from './pages/LoginPage'
 import { NoAccessPage } from './pages/NoAccessPage'
 import { PublicJobPage, RETURN_TO_KEY } from './pages/PublicJobPage'
+import { BookingPage } from './pages/BookingPage'
 import { CodingRoomPage } from './pages/CodingRoomPage'
 import { TakeTestPage } from './pages/TakeTestPage'
 import { AskPage } from './pages/AskPage'
@@ -81,6 +82,15 @@ function LoginForTest() {
 }
 
 export function App() {
+  // A candidate's booking link (PIPE-24) works for anyone, signed in or not.
+  const location = useLocation()
+  if (location.pathname.startsWith('/book/')) {
+    return (
+      <Routes>
+        <Route path="/book/:token" element={<BookingPage />} />
+      </Routes>
+    )
+  }
   return (
     <>
       <ViewAsBanner />

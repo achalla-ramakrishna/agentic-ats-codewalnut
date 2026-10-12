@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getGoogleStatus, type GoogleStatus } from '../api/interviews'
 import { postMessage } from '../api/messages'
 import { ConnectGoogle } from './ConnectGoogle'
+import { getBookingLinks } from '../api/booking'
 import { moveStage } from '../api/tracker'
 import { EMAIL_TEMPLATES, fillTemplate, STAGE_FOR_TEMPLATE, templateKeyFor } from './emailTemplates'
 import { Button } from './ui'
@@ -66,17 +67,39 @@ export function BulkEmail({
     setBody(prepare(t.body))
   }
 
+  const usesBookingLink = (subject + body).includes('{bookingLink}')
+
   async function send() {
     let sent = 0
     const failed: string[] = []
+    // PIPE-24: each person's own "pick a time" link.
+    let links: Record<string, string> = {}
+    let linkProblems: Record<string, string> = {}
+    if (usesBookingLink) {
+      setBusy('Preparing booking links…')
+      try {
+        const r = await getBookingLinks(withEmail.map((x) => x.applicationId))
+        links = r.links
+        linkProblems = r.problems
+      } catch (e) {
+        setBusy(null)
+        setOutcome({ sent: 0, failed: [e instanceof Error ? e.message : 'Could not prepare the booking links'] })
+        return
+      }
+    }
     for (const [n, r] of withEmail.entries()) {
+      if (usesBookingLink && !links[r.applicationId]) {
+        failed.push(`${r.name}: ${linkProblems[r.applicationId] ?? 'no booking link'}`)
+        continue
+      }
+      const withLink = (text: string) => (usesBookingLink ? text.replaceAll('{bookingLink}', links[r.applicationId]) : text)
       setBusy(`Sending ${n + 1} of ${withEmail.length}…`)
       try {
         const values = { candidateName: r.name, jobTitle: r.jobTitle ?? jobTitle, senderName: sender }
         await postMessage(r.applicationId, {
           channel: 'CANDIDATE',
-          subject: fillTemplate(subject, values),
-          body: fillTemplate(body, values),
+          subject: withLink(fillTemplate(subject, values)),
+          body: withLink(fillTemplate(body, values)),
           sendEmail: true,
           templateKey: templateKeyFor(template),
         })
@@ -102,7 +125,9 @@ export function BulkEmail({
         <div className={`alert ${outcome.failed.length ? 'alert-error' : 'alert-info'}`} role="status">
           Emailed {outcome.sent} candidate{outcome.sent === 1 ? '' : 's'}.
           {outcome.failed.length > 0 && ` Not sent: ${outcome.failed.join('; ')}.`} Replies come to your Gmail and show under Messages
-          and Workflow → Waiting for our reply. When someone sends their résumé, open them and Schedule interview.
+          and Workflow → Waiting for our reply.{' '}
+          {(subject + body).includes('{bookingLink}') &&
+            'When people pick a time, the Workflow shows “Slot booked”: click Send invites to send their Google Meet invitations.'}
         </div>
         <div className="row">
           <Button onClick={onClose}>Done</Button>
@@ -118,6 +143,7 @@ export function BulkEmail({
         {withEmail.length} candidate{withEmail.length === 1 ? '' : 's'} each get their own email from your Gmail ({'{firstName}'} becomes
         their first name{oneTitle ? '' : ', {jobTitle} their opening'}). Check the text, then send.
         {withEmail.length < recipients.length && ` ${recipients.length - withEmail.length} without an email won’t get it.`}
+        {usesBookingLink && ' {bookingLink} becomes each person’s own “pick a time” link (add interview slots to the opening first).'}
       </p>
       <label className="field" style={{ maxWidth: 420 }}>
         Template

@@ -3,6 +3,7 @@ import { ApiError } from '../api/client'
 import { getGoogleStatus, type GoogleStatus } from '../api/interviews'
 import { getWhatsAppStatus, listMessages, postMessage, whatsappLabel, type Message, type MessageChannel } from '../api/messages'
 import { ConnectGoogle } from './ConnectGoogle'
+import { getBookingLinks } from '../api/booking'
 import { EMAIL_TEMPLATES, fillTemplate, templateKeyFor } from './emailTemplates'
 import { Button } from './ui'
 import './chat.css'
@@ -100,10 +101,20 @@ export function Conversation({
     // counts as the user's action (browsers block pop-ups opened after a network call).
     const waWindow = whatsApp && !whatsAppApi?.apiEnabled ? window.open('about:blank', '_blank') : null
     try {
+      // PIPE-24: the candidate's own "pick a time" link.
+      let text = body
+      let title = subject
+      if ((body + subject).includes('{bookingLink}')) {
+        const { links, problems } = await getBookingLinks([applicationId])
+        const link = links[applicationId]
+        if (!link) throw new Error(problems[applicationId] ?? 'No booking link: add interview slots to the opening first')
+        text = body.replaceAll('{bookingLink}', link)
+        title = subject.replaceAll('{bookingLink}', link)
+      }
       const sent = await postMessage(applicationId, {
         channel,
-        body,
-        subject: sendEmail ? subject : undefined,
+        body: text,
+        subject: sendEmail ? title : undefined,
         sendEmail: isCandidate && sendEmail,
         sendWhatsApp: whatsApp,
         templateKey: templateKeyFor(template),

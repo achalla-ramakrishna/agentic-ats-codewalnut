@@ -15,6 +15,8 @@ import { getWhatsAppStatus, postMessage } from '../api/messages'
 import { useMe } from '../auth/AuthContext'
 import { BatchSizeInput, useBatchSize } from '../components/BatchSize'
 import { BulkEmail, type BulkRecipient } from '../components/BulkEmail'
+import { sendSlotInvites } from '../api/booking'
+import { ApiError } from '../api/client'
 import { EMAIL_TEMPLATES, TEMPLATE_SHORT } from '../components/emailTemplates'
 import { Badge, Button, PageHeader } from '../components/ui'
 import '../components/tracker.css'
@@ -33,7 +35,7 @@ const FILTERS: { key: WorkflowFilter; label: string }[] = [
 const TEMPLATE_FOR: Record<WorkflowFilter, string> = {
   active: 'custom',
   urgent: 'custom',
-  reply: 'interview_slots',
+  reply: 'book_slot',
   never: 'resume_request',
   quiet: 'follow_up',
   closed: 'custom',
@@ -349,6 +351,32 @@ export function WorkflowPage() {
         ? TEMPLATE_FOR[filter]
         : (TEMPLATE_FOR_STAGE_TAB[stage] ?? 'custom')
 
+  // PIPE-24: booked slots still waiting for their calendar invite, per opening.
+  const pendingInvites = rows.filter((r) => r.booking && !r.booking.scheduled && new Date(r.booking.startAt).getTime() > now)
+  async function sendInvites() {
+    setNotice(null)
+    setWaError(null)
+    let sent = 0
+    const failed: string[] = []
+    try {
+      for (const job of new Set(pendingInvites.map((r) => r.jobId))) {
+        const r = await sendSlotInvites(job)
+        sent += r.scheduled
+        failed.push(...r.failed)
+      }
+      setNotice(`Sent ${sent} calendar invite${sent === 1 ? '' : 's'} with Google Meet links.${failed.length ? ` Not sent: ${failed.join('; ')}.` : ''}`)
+    } catch (e) {
+      setWaError(
+        e instanceof ApiError && e.status === 428
+          ? 'Connect Google first: open any candidate → Schedule interview → Connect Google, then click Send invites again.'
+          : e instanceof Error
+            ? e.message
+            : 'Could not send the invites',
+      )
+    }
+    setReload((n) => n + 1)
+  }
+
   // Bulk email: people on this tab with an email who are still in the running.
   const emailable = rows.filter((r) => r.hasEmail && !r.closed)
   const pickedRows = rows.filter((r) => picked.has(r.applicationId))
@@ -455,6 +483,11 @@ export function WorkflowPage() {
       {board?.canLog && emailable.length > 0 && (
         <div className="row" role="group" aria-label="Email candidates" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
           <BatchSizeInput value={batch} onChange={setBatch} />
+          {pendingInvites.length > 0 && (
+            <Button size="sm" onClick={() => void sendInvites()}>
+              Send invites for {pendingInvites.length} booked
+            </Button>
+          )}
           <Button size="sm" variant="secondary" onClick={() => setPicked(new Set(emailable.slice(0, batch).map((r) => r.applicationId)))}>
             Select first {Math.min(batch, emailable.length)}
           </Button>
@@ -617,7 +650,12 @@ export function WorkflowPage() {
                       )}
                     </td>
                     <td>
-                      {r.interview ? (
+                      {r.booking && !r.booking.scheduled ? (
+                        <>
+                          <span className="wf-booked">Booked {when(r.booking.startAt)}</span>
+                          <div className="muted wf-sub">invite to send</div>
+                        </>
+                      ) : r.interview ? (
                         <>
                           {r.interview.status === 'UPCOMING' ? when(r.interview.startAt) : r.interview.status === 'DONE' ? 'Held' : 'Cancelled'}
                           {r.interview.status === 'DONE' && (

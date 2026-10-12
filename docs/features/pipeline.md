@@ -57,6 +57,7 @@ view, and every move is recorded for reporting.
 | PIPE-20 | **Résumé uploaded filter and WhatsApp selected**: a *Résumé uploaded* chip lists only people with an original résumé on file (e.g. those who replied with one). *WhatsApp selected* opens a panel with an editable message (default asks for interview slots; *[day, time]* must be filled in first) and one button per person. Without the WhatsApp Business API each click opens WhatsApp with the message ready and the recruiter presses Send; with the API it sends. Every message is saved in the candidate's conversation. Meant for people who already replied, never cold bulk outreach from a personal number. | Done |
 | PIPE-22 | **Email from the Workflow page, tab by tab**: tick candidates (or *Select first N*, batch size default 30; only people with an email who aren't closed) and *Email selected*. The email panel opens with the template that fits the tab: *Waiting for our reply* → *Thanks for résumé – interview slots*; *Never contacted* → *Ask for résumé*; *No contact for 7+ days* → *Follow-up*; others → blank. Works across openings: `{jobTitle}` is filled per person. Email rather than WhatsApp for bulk, to avoid WhatsApp blocking new numbers. | Done |
 | PIPE-23 | **Workflow by stage, with the emails each person got**: every email sent from a template records the template (`message.template_key`; tests record *test_invite* / *test_reminder*). The Workflow page adds stage chips (All, Applied / Sourced, Interviewed, Shortlisted, Offer sent, Joined, On hold, Rejected) above the follow-up tabs, with counts that follow each other; an *Emails sent* column with one chip per template and date; and a filter *No “X” yet* / *Got “X”*. Bulk email suggests the template from that filter, the tab, or the stage (Applied → résumé request, Shortlisted → shortlisted, Offer sent → selected, Rejected → rejected). Sending *Shortlisted* or *Selected* can also move the person to Shortlisted / Offer sent (ticked by default). | Done |
+| PIPE-24 | **Candidates book their own interview slot** (ADR-0028): *Interview slots* on an opening offers times (days, daily windows, 30-minute length, interviewers). The *Book a 30-minute call* email gives each candidate their own `{bookingLink}`; they pick a free time on `/book/{token}` without signing in (and can change it until invited). *Send invites for N booked* (opening panel or Workflow) creates all the Google Calendar + Meet invites at once. Workflow shows *Booked …* and the next step *Slot booked: send the interview invite*. | Done |
 
 ## Business rules
 
@@ -91,6 +92,7 @@ view, and every move is recorded for reporting.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-12 | PIPE-24: interview self-booking with personal links; invites in one click (ADR-0028) |
 | 2026-10-12 | PIPE-23: Workflow by stage; emails remember their template; "No X yet" filter |
 | 2026-10-12 | PIPE-22: bulk email from Workflow tabs with a matching template |
 | 2026-10-11 | PIPE-20: Résumé uploaded filter; WhatsApp selected candidates one click each |

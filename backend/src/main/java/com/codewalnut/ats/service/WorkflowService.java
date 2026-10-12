@@ -16,6 +16,7 @@ import com.codewalnut.ats.domain.Message;
 import com.codewalnut.ats.domain.MessageAuthorType;
 import com.codewalnut.ats.domain.MessageChannel;
 import com.codewalnut.ats.domain.Stage;
+import com.codewalnut.ats.dto.WorkflowDtos.Booking;
 import com.codewalnut.ats.dto.WorkflowDtos.ClientStatus;
 import com.codewalnut.ats.dto.WorkflowDtos.Contact;
 import com.codewalnut.ats.dto.WorkflowDtos.InterviewStatus;
@@ -104,6 +105,7 @@ public class WorkflowService {
     private final ClientShareRepository shareRepository;
     private final DocumentRequestRepository documentRequestRepository;
     private final JobOpeningRepository jobRepository;
+    private final com.codewalnut.ats.repository.InterviewSlotRepository slotRepository;
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
 
@@ -147,6 +149,8 @@ public class WorkflowService {
         Map<UUID, ClientShare> shares = shareRepository.findByApplicationIdIn(ids).stream()
                 .filter(s -> s.getRevokedAt() == null)
                 .collect(Collectors.toMap(s -> s.getApplication().getId(), s -> s, (a, b) -> a));
+        Map<UUID, com.codewalnut.ats.domain.InterviewSlot> slots = slotRepository.findByApplicationIdIn(ids).stream()
+                .collect(Collectors.toMap(com.codewalnut.ats.domain.InterviewSlot::getApplicationId, s -> s, (x, y) -> x));
         Map<UUID, List<DocumentRequest>> pendingDocs = documentRequestRepository
                 .findByCandidateIdIn(applications.stream().map(a -> a.getCandidate().getId()).distinct().toList()).stream()
                 .filter(d -> d.getFulfilledAt() == null)
@@ -156,7 +160,7 @@ public class WorkflowService {
         for (Application a : applications) {
             rows.add(row(a, events.getOrDefault(a.getId(), List.of()), messages.getOrDefault(a.getId(), List.of()),
                     invites.getOrDefault(a.getId(), List.of()), interviews.getOrDefault(a.getId(), List.of()), submitted,
-                    shares.get(a.getId()), pendingDocs.getOrDefault(a.getCandidate().getId(), List.of()), now));
+                    shares.get(a.getId()), pendingDocs.getOrDefault(a.getCandidate().getId(), List.of()), slots.get(a.getId()), now));
         }
         // Most pressing first: someone waiting on us, then urgent steps, then longest since contact.
         rows.sort(Comparator.comparing((WorkflowRow r) -> r.closed())
@@ -168,7 +172,8 @@ public class WorkflowService {
     }
 
     private WorkflowRow row(Application a, List<ApplicationEvent> events, List<Message> messages, List<AssessmentInvite> invites,
-            List<Interview> interviews, Map<UUID, Long> submitted, ClientShare share, List<DocumentRequest> pendingDocs, Instant now) {
+            List<Interview> interviews, Map<UUID, Long> submitted, ClientShare share, List<DocumentRequest> pendingDocs,
+            com.codewalnut.ats.domain.InterviewSlot slot, Instant now) {
         // Contacts: every way we reached the candidate.
         List<Contact> contacts = new ArrayList<>();
         Message lastCandidateMessage = null;
@@ -230,13 +235,18 @@ public class WorkflowService {
         boolean closed = CLOSED.contains(stage);
         NextStep next = closed ? null : nextStep(stage, job.getClient() != null, last, awaitingReply, invite, interviewStatus,
                 interview, client, pendingDocs, inStageSince, a.getCreatedAt(), now);
+        // PIPE-24: they picked a slot; the invite still has to go out (a reply to them still comes first).
+        Booking booking = slot == null ? null : new Booking(slot.getStartAt(), slot.getTimeZone(), slot.getInterviewId() != null);
+        if (!closed && booking != null && !booking.scheduled() && slot.getStartAt().isAfter(now) && !awaitingReply) {
+            next = new NextStep("SEND_INVITE", "Slot booked: send the interview invite", true);
+        }
 
         return new WorkflowRow(a.getId(), job.getId(), job.getTitle(), job.getClient() == null ? null : job.getClient().getName(),
                 a.getCandidate().getId(), a.getCandidate().getName(), StringUtils.hasText(a.getCandidate().getPhone()),
                 StringUtils.hasText(a.getCandidate().getEmail()), stage.name(), stage.getLabel(), closed, inStageSince,
                 a.getCreatedAt(), last, contacts.size(), awaitingReply,
                 lastCandidateMessage == null ? null : lastCandidateMessage.getCreatedAt(), test, interviewStatus, client,
-                pendingDocs.size(), next, lastActivity, emailsSent(messages));
+                pendingDocs.size(), next, lastActivity, emailsSent(messages), booking);
     }
 
     /** Emails we sent, newest first (at most 8), with the template each came from (PIPE-23). */
@@ -377,6 +387,7 @@ public class WorkflowService {
             case SHARED_WITH_CLIENT -> new TimelineItem(e.getCreatedAt(), "CLIENT", "Shared with the client", note, by);
             case DOCS_REQUESTED -> new TimelineItem(e.getCreatedAt(), "DOCUMENT", "Documents requested", note, by);
             case DOC_UPLOADED -> new TimelineItem(e.getCreatedAt(), "DOCUMENT", "Document uploaded", note, by);
+            case SLOT_BOOKED -> new TimelineItem(e.getCreatedAt(), "INTERVIEW", "Interview slot booked", note, by);
             case CONTACT_LOGGED -> new TimelineItem(e.getCreatedAt(), "CONTACT", loggedHow(note) + " (logged)",
                     note != null && note.contains(": ") ? note.substring(note.indexOf(": ") + 2) : null, by);
             // Emails and WhatsApps appear as their messages.

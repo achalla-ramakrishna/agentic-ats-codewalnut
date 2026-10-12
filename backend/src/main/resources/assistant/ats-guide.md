@@ -60,6 +60,10 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
   template matches the tab (interview slots for people waiting on us, résumé request for never
   contacted, follow-up for no contact in 7+ days).
 
+- Let candidates pick their own interview time: open the opening → Interview slots → Add slots. Then email
+  them the "Book a 30-minute call" template (each gets their own link). When they've booked: Interview
+  slots (or Workflow) → Send invites for N booked; Google Meet invites go out from your calendar.
+
 ## Clients
 - Add a client: Clients → New client. Rename: Clients → Rename.
 - Client contacts sign in with their own email: Clients → add a contact.

@@ -591,3 +591,31 @@
   color: var(--color-primary);
   font-weight: 500;
 }
+
+/* Interview slots (PIPE-24) */
+.slot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 13px;
+}
+.slot-booked {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+.slot-sent {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-text, #fff);
+}
+.slot-x {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 0 2px;
+}

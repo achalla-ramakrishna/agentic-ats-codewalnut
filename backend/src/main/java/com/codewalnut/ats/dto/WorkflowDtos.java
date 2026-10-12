@@ -31,7 +31,10 @@ public final class WorkflowDtos {
             String stage, String stageLabel, boolean closed, Instant inStageSince, Instant addedAt,
             Contact lastContact, int contacts, boolean awaitingReply, Instant candidateWroteAt,
             TestStatus test, InterviewStatus interview, ClientStatus client, int documentsPending,
-            NextStep nextStep, Instant lastActivityAt, List<EmailSent> emails) {}
+            NextStep nextStep, Instant lastActivityAt, List<EmailSent> emails, Booking booking) {}
+
+    /** The interview slot they picked from their booking link (PIPE-24); scheduled once the invite is sent. */
+    public record Booking(Instant startAt, String timeZone, boolean scheduled) {}
 
     /**
      * An email sent to the candidate (PIPE-23): templateKey is the template it was written from, or null

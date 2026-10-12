@@ -16,6 +16,19 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-12-self-booking',
+    date: '2026-10-12',
+    title: 'Candidates pick their own interview time',
+    summary: 'Offer 30-minute slots on an opening, email candidates the “Book a 30-minute call” template and each gets their own link to pick a time — no sign-in, in their time zone. When people have booked, one click sends all the Google Calendar invites with Meet links. The Workflow shows who booked and who still needs a nudge.',
+    steps: [
+      'Open the opening → Interview slots → Add slots (e.g. weekdays 10:00–13:00 and 15:00–18:00, 30 minutes).',
+      'Select the candidates (e.g. Résumé uploaded → Select this page) → Email selected → template “Book a 30-minute call” → Send.',
+      'Once or twice a day: Workflow or Interview slots → Send invites for N booked.',
+      'Nudge people who haven’t booked: Workflow → email filter Got “Booking link” → Needs action, or send a follow-up.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-12-workflow-stages',
     date: '2026-10-12',
     title: 'Workflow by stage, and which email each person got',

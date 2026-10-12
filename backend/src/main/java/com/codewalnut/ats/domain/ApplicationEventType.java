@@ -16,5 +16,7 @@ public enum ApplicationEventType {
     TEST_SENT,
     TEST_SUBMITTED,
     /** A call, WhatsApp or meeting outside the app, logged by a recruiter. */
-    CONTACT_LOGGED
+    CONTACT_LOGGED,
+    /** The candidate picked an interview slot from their booking link (PIPE-24). */
+    SLOT_BOOKED
 }

@@ -107,6 +107,12 @@ scores every row with `naukri/RuleRanker` and, when `client/ProfileRanker` is
 Claude, re-scores them with the AI in parallel batches. Nothing is stored until
 `POST /jobs/{id}/naukri/import` adds the chosen rows through `TrackerService`.
 
+Interview self-booking (ADR-0028): `BookingService` keeps an opening's `interview_slot`s and each
+application's `booking_link`; the public `/api/v1/public/booking/{token}` endpoints serve the
+candidate's page (`pages/BookingPage`) and book atomically; *send invites* calls
+`InterviewService.schedule` for each booked slot (Google Calendar + Meet). `WorkflowService` adds the
+booking to rows and the *send the invite* next step.
+
 Coding questions (ADR-0016): `client/CodeRunner` sends candidate code to a
 self-hosted Judge0 (`Judge0CodeRunner`; `DisabledCodeRunner` when
 `ATS_CODE_RUNNER_URL` is unset). `CodeRunService` runs samples while a test is

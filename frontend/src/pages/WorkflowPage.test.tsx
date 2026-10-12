@@ -125,6 +125,7 @@ describe('WorkflowPage (WF-01…WF-05)', () => {
       { path: '/google/status', body: { available: true, calendarConnected: true, mailConnected: true, redirectUri: 'x' } },
       { path: '/workflow', body: board },
       { path: '/applications/a1/messages', method: 'POST', status: 201, body: {} },
+      { path: '/booking-links', method: 'POST', body: { links: { a1: 'https://ats.example/book/tok123' }, problems: {} } },
     ])
     renderPage('/workflow?show=reply')
 
@@ -133,8 +134,8 @@ describe('WorkflowPage (WF-01…WF-05)', () => {
     expect(screen.getByRole('checkbox', { name: 'Select Rekha Rao' })).toBeChecked()
     await userEvent.click(screen.getByRole('button', { name: 'Email selected (1)' }))
 
-    // Waiting for our reply → the interview-slots email.
-    expect(screen.getByLabelText('Template')).toHaveValue('interview_slots')
+    // Waiting for our reply → the "pick a time" email with each person's own booking link (PIPE-24).
+    expect(screen.getByLabelText('Template')).toHaveValue('book_slot')
     await userEvent.click(await screen.findByRole('button', { name: 'Send email to 1' }))
     expect(await screen.findByText(/Emailed 1 candidate/)).toBeInTheDocument()
     const sent = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/applications/a1/messages'))!
@@ -142,7 +143,10 @@ describe('WorkflowPage (WF-01…WF-05)', () => {
     expect(body).toMatchObject({ channel: 'CANDIDATE', sendEmail: true })
     expect(body.body).toContain('Hi Rekha,')
     expect(body.body).toContain('Java Intern role')
-    expect(body.subject).toBe('Interview for Java Intern at CodeWalnut')
+    expect(body.body).toContain('https://ats.example/book/tok123')
+    expect(body.body).not.toContain('{bookingLink}')
+    expect(body.subject).toBe('Pick a time for a 30-minute call – Java Intern at CodeWalnut')
+    expect(body.templateKey).toBe('book_slot')
   })
 
   it('offers the résumé request on "Never contacted"', async () => {

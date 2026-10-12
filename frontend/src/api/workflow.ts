@@ -41,6 +41,8 @@ export interface WorkflowRow {
   lastActivityAt: string
   /** Emails we sent, newest first; templateKey says which template (PIPE-23). */
   emails: { templateKey: string | null; subject: string | null; at: string; by: string }[]
+  /** The slot they picked from their booking link (PIPE-24); scheduled once the invite is sent. */
+  booking?: { startAt: string; timeZone: string; scheduled: boolean } | null
 }
 
 export type WorkflowFilter = 'active' | 'urgent' | 'reply' | 'never' | 'quiet' | 'closed'

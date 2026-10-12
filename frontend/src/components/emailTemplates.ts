@@ -28,6 +28,15 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
       'Once we have your résumé, we will set up the first conversation.\n\nBest regards,\n{senderName}\nCodeWalnut',
   },
   {
+    key: 'book_slot',
+    label: 'Book a 30-minute call (booking link)',
+    subject: 'Pick a time for a 30-minute call – {jobTitle} at CodeWalnut',
+    body:
+      'Hi {firstName},\n\nThank you for sending your résumé for the {jobTitle} role. We would like to have a 30-minute conversation on Google Meet to get to know you and talk about the role.\n\n' +
+      'Please pick a time that suits you here (it takes a few seconds, no sign-in needed):\n{bookingLink}\n\n' +
+      'Once you have picked a time, you will receive a calendar invitation with the Google Meet link.\n\nBest regards,\n{senderName}\nCodeWalnut',
+  },
+  {
     key: 'interview_slots',
     label: 'Thanks for résumé – interview slots',
     subject: 'Interview for {jobTitle} at CodeWalnut',
@@ -101,6 +110,7 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
 /** Short names for the Workflow view's "Emails sent" column (PIPE-23); tests send their own. */
 export const TEMPLATE_SHORT: Record<string, string> = {
   resume_request: 'Résumé request',
+  book_slot: 'Booking link',
   interview_slots: 'Interview slots',
   follow_up: 'Follow-up',
   received: 'Application received',

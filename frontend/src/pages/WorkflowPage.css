@@ -116,3 +116,7 @@
   font-size: 12px;
   white-space: nowrap;
 }
+.wf-booked {
+  color: var(--color-primary);
+  font-weight: 600;
+}
