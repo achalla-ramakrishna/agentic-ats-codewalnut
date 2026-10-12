@@ -106,6 +106,7 @@ public class WorkflowService {
     private final DocumentRequestRepository documentRequestRepository;
     private final JobOpeningRepository jobRepository;
     private final com.codewalnut.ats.repository.InterviewSlotRepository slotRepository;
+    private final com.codewalnut.ats.repository.CandidateDocumentRepository documentRepository;
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
 
@@ -149,6 +150,12 @@ public class WorkflowService {
         Map<UUID, ClientShare> shares = shareRepository.findByApplicationIdIn(ids).stream()
                 .filter(s -> s.getRevokedAt() == null)
                 .collect(Collectors.toMap(s -> s.getApplication().getId(), s -> s, (a, b) -> a));
+        Set<UUID> withResume = new java.util.HashSet<>();
+        for (Object[] r : documentRepository.kindsFor(applications.stream().map(a -> a.getCandidate().getId()).distinct().toList())) {
+            if (r[1] == com.codewalnut.ats.domain.DocumentKind.ORIGINAL_RESUME) {
+                withResume.add((UUID) r[0]);
+            }
+        }
         Map<UUID, com.codewalnut.ats.domain.InterviewSlot> slots = slotRepository.findByApplicationIdIn(ids).stream()
                 .collect(Collectors.toMap(com.codewalnut.ats.domain.InterviewSlot::getApplicationId, s -> s, (x, y) -> x));
         Map<UUID, List<DocumentRequest>> pendingDocs = documentRequestRepository
@@ -160,7 +167,8 @@ public class WorkflowService {
         for (Application a : applications) {
             rows.add(row(a, events.getOrDefault(a.getId(), List.of()), messages.getOrDefault(a.getId(), List.of()),
                     invites.getOrDefault(a.getId(), List.of()), interviews.getOrDefault(a.getId(), List.of()), submitted,
-                    shares.get(a.getId()), pendingDocs.getOrDefault(a.getCandidate().getId(), List.of()), slots.get(a.getId()), now));
+                    shares.get(a.getId()), pendingDocs.getOrDefault(a.getCandidate().getId(), List.of()), slots.get(a.getId()),
+                    withResume.contains(a.getCandidate().getId()), now));
         }
         // Most pressing first: someone waiting on us, then urgent steps, then longest since contact.
         rows.sort(Comparator.comparing((WorkflowRow r) -> r.closed())
@@ -173,7 +181,7 @@ public class WorkflowService {
 
     private WorkflowRow row(Application a, List<ApplicationEvent> events, List<Message> messages, List<AssessmentInvite> invites,
             List<Interview> interviews, Map<UUID, Long> submitted, ClientShare share, List<DocumentRequest> pendingDocs,
-            com.codewalnut.ats.domain.InterviewSlot slot, Instant now) {
+            com.codewalnut.ats.domain.InterviewSlot slot, boolean hasResume, Instant now) {
         // Contacts: every way we reached the candidate.
         List<Contact> contacts = new ArrayList<>();
         Message lastCandidateMessage = null;
@@ -237,6 +245,8 @@ public class WorkflowService {
                 interview, client, pendingDocs, inStageSince, a.getCreatedAt(), now);
         // PIPE-24: they picked a slot; the invite still has to go out (a reply to them still comes first).
         Booking booking = slot == null ? null : new Booking(slot.getStartAt(), slot.getTimeZone(), slot.getInterviewId() != null);
+        com.codewalnut.ats.dto.WorkflowDtos.Communication comm = communication(stage, CLOSED.contains(stage),
+                StringUtils.hasText(a.getCandidate().getEmail()), hasResume, messages, booking, interviewStatus, awaitingReply, now);
         if (!closed && booking != null && !booking.scheduled() && slot.getStartAt().isAfter(now) && !awaitingReply) {
             next = new NextStep("SEND_INVITE", "Slot booked: send the interview invite", true);
         }
@@ -246,7 +256,53 @@ public class WorkflowService {
                 StringUtils.hasText(a.getCandidate().getEmail()), stage.name(), stage.getLabel(), closed, inStageSince,
                 a.getCreatedAt(), last, contacts.size(), awaitingReply,
                 lastCandidateMessage == null ? null : lastCandidateMessage.getCreatedAt(), test, interviewStatus, client,
-                pendingDocs.size(), next, lastActivity, emailsSent(messages), booking);
+                pendingDocs.size(), next, lastActivity, emailsSent(messages), booking, hasResume,
+                comm.step(), comm.due());
+    }
+
+    static final Duration NUDGE_AFTER = Duration.ofDays(3);
+
+    /**
+     * The outreach sequence (PIPE-25): résumé request → résumé → booking link → booked → invite →
+     * screening call, with one nudge after three days at each wait. Only Applied candidates get the
+     * first emails; anyone who wrote to us is left for a person to answer.
+     */
+    static com.codewalnut.ats.dto.WorkflowDtos.Communication communication(Stage stage, boolean closed, boolean hasEmail,
+            boolean hasResume, List<Message> messages, Booking booking, InterviewStatus interview, boolean awaitingReply, Instant now) {
+        Map<String, Instant> sent = new java.util.HashMap<>();
+        for (Message m : messages) {
+            if (m.getAuthorType() == MessageAuthorType.STAFF && m.isEmailed()) {
+                // An email without a template (written freely, or before templates were recorded) counts as
+                // having asked, so nobody gets the first email twice.
+                String key = m.getTemplateKey() != null ? m.getTemplateKey() : "resume_request";
+                sent.merge(key, m.getCreatedAt(), (x, y) -> x.isAfter(y) ? x : y);
+            }
+        }
+        boolean screened = interview != null && "DONE".equals(interview.status());
+        boolean scheduled = (booking != null && booking.scheduled()) || (interview != null && "UPCOMING".equals(interview.status()));
+        String step = screened ? "SCREENED"
+                : scheduled ? "SCHEDULED"
+                : booking != null ? "BOOKED"
+                : sent.containsKey("book_slot") ? "INVITED_TO_BOOK"
+                : hasResume ? "RESUME_RECEIVED"
+                : sent.containsKey("resume_request") || sent.containsKey("follow_up") ? "RESUME_ASKED"
+                : "NEW";
+        String due = null;
+        if (!closed && hasEmail && !awaitingReply) {
+            boolean applied = stage == Stage.SOURCED;
+            Instant nudge = now.minus(NUDGE_AFTER);
+            due = switch (step) {
+                case "BOOKED" -> booking.startAt().isAfter(now) ? "SEND_INVITE" : null;
+                case "NEW" -> applied ? "RESUME_REQUEST" : null;
+                case "RESUME_RECEIVED" -> applied ? "BOOKING_LINK" : null;
+                case "RESUME_ASKED" -> applied && !sent.containsKey("follow_up") && sent.containsKey("resume_request")
+                        && sent.get("resume_request").isBefore(nudge) ? "RESUME_FOLLOW_UP" : null;
+                case "INVITED_TO_BOOK" -> !sent.containsKey("booking_reminder") && sent.get("book_slot").isBefore(nudge)
+                        ? "BOOKING_REMINDER" : null;
+                default -> null;
+            };
+        }
+        return new com.codewalnut.ats.dto.WorkflowDtos.Communication(step, due);
     }
 
     /** Emails we sent, newest first (at most 8), with the template each came from (PIPE-23). */

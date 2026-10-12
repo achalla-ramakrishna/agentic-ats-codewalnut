@@ -43,6 +43,12 @@ export interface WorkflowRow {
   emails: { templateKey: string | null; subject: string | null; at: string; by: string }[]
   /** The slot they picked from their booking link (PIPE-24); scheduled once the invite is sent. */
   booking?: { startAt: string; timeZone: string; scheduled: boolean } | null
+  /** An original résumé is on file. */
+  hasResume?: boolean
+  /** Outreach step (PIPE-25): NEW, RESUME_ASKED, RESUME_RECEIVED, INVITED_TO_BOOK, BOOKED, SCHEDULED, SCREENED. */
+  commStep?: string
+  /** What "Today's emails" would send: RESUME_REQUEST, BOOKING_LINK, RESUME_FOLLOW_UP, BOOKING_REMINDER, SEND_INVITE. */
+  due?: string | null
 }
 
 export type WorkflowFilter = 'active' | 'urgent' | 'reply' | 'never' | 'quiet' | 'closed'

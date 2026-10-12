@@ -58,6 +58,7 @@ view, and every move is recorded for reporting.
 | PIPE-22 | **Email from the Workflow page, tab by tab**: tick candidates (or *Select first N*, batch size default 30; only people with an email who aren't closed) and *Email selected*. The email panel opens with the template that fits the tab: *Waiting for our reply* → *Thanks for résumé – interview slots*; *Never contacted* → *Ask for résumé*; *No contact for 7+ days* → *Follow-up*; others → blank. Works across openings: `{jobTitle}` is filled per person. Email rather than WhatsApp for bulk, to avoid WhatsApp blocking new numbers. | Done |
 | PIPE-23 | **Workflow by stage, with the emails each person got**: every email sent from a template records the template (`message.template_key`; tests record *test_invite* / *test_reminder*). The Workflow page adds stage chips (All, Applied / Sourced, Interviewed, Shortlisted, Offer sent, Joined, On hold, Rejected) above the follow-up tabs, with counts that follow each other; an *Emails sent* column with one chip per template and date; and a filter *No “X” yet* / *Got “X”*. Bulk email suggests the template from that filter, the tab, or the stage (Applied → résumé request, Shortlisted → shortlisted, Offer sent → selected, Rejected → rejected). Sending *Shortlisted* or *Selected* can also move the person to Shortlisted / Offer sent (ticked by default). | Done |
 | PIPE-24 | **Candidates book their own interview slot** (ADR-0028): *Interview slots* on an opening offers times (days, daily windows, 30-minute length, interviewers). The *Book a 30-minute call* email gives each candidate their own `{bookingLink}`; they pick a free time on `/book/{token}` without signing in (and can change it until invited). *Send invites for N booked* (opening panel or Workflow) creates all the Google Calendar + Meet invites at once. Workflow shows *Booked …* and the next step *Slot booked: send the interview invite*. | Done |
+| PIPE-25 | **Outreach sequence and Today's emails** (ADR-0029): each candidate's step is worked out (New → Résumé asked → Résumé received → Booking link sent → Booked → Call scheduled → Screened), shown as chips and under Applied in the Workflow. *Today's emails* sends everything due in one click within a daily limit: invites for booked slots, booking links to people who sent a résumé, one booking reminder after 3 days, résumé requests to new Applied people, one résumé follow-up after 3 days. People who wrote to us are left to a person. | Done |
 
 ## Business rules
 
@@ -92,6 +93,7 @@ view, and every move is recorded for reporting.
 
 | Date | Change |
 | --- | --- |
+| 2026-10-12 | PIPE-25: outreach steps and one-click Today's emails (ADR-0029) |
 | 2026-10-12 | PIPE-24: interview self-booking with personal links; invites in one click (ADR-0028) |
 | 2026-10-12 | PIPE-23: Workflow by stage; emails remember their template; "No X yet" filter |
 | 2026-10-12 | PIPE-22: bulk email from Workflow tabs with a matching template |

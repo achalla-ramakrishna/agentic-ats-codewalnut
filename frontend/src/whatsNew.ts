@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-10-12-todays-emails',
+    date: '2026-10-12',
+    title: 'Today’s emails: the ATS works out who needs what, you click once',
+    summary: 'Every candidate now has an outreach step: New → Résumé asked → Résumé received → Booking link sent → Booked → Call scheduled → Screened. On the Workflow page, Today’s emails lists what is due (résumé requests, booking links for people who sent a résumé, one reminder after 3 days, Meet invites for booked slots) and sends it all in one click, up to a daily limit. People who wrote to you are left for you to answer.',
+    steps: [
+      'Add interview slots to the opening first (for the booking links).',
+      'Workflow → Today’s emails → Review & send → Send.',
+      'Do it once a day; candidates move along by themselves as they send résumés and book.',
+    ],
+    capability: 'MESSAGE_CANDIDATES',
+  },
+  {
     id: '2026-10-12-self-booking',
     date: '2026-10-12',
     title: 'Candidates pick their own interview time',

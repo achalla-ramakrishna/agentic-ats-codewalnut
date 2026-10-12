@@ -15,6 +15,7 @@ import { getWhatsAppStatus, postMessage } from '../api/messages'
 import { useMe } from '../auth/AuthContext'
 import { BatchSizeInput, useBatchSize } from '../components/BatchSize'
 import { BulkEmail, type BulkRecipient } from '../components/BulkEmail'
+import { TodaysEmails } from '../components/TodaysEmails'
 import { sendSlotInvites } from '../api/booking'
 import { ApiError } from '../api/client'
 import { EMAIL_TEMPLATES, TEMPLATE_SHORT } from '../components/emailTemplates'
@@ -51,6 +52,18 @@ const STAGES: { key: string; label: string }[] = [
   { key: 'ON_HOLD', label: 'On hold' },
   { key: 'REJECTED', label: 'Rejected' },
 ]
+
+/** Outreach steps (PIPE-25), in order. */
+const STEPS: { key: string; label: string }[] = [
+  { key: 'NEW', label: 'New' },
+  { key: 'RESUME_ASKED', label: 'Résumé asked' },
+  { key: 'RESUME_RECEIVED', label: 'Résumé received' },
+  { key: 'INVITED_TO_BOOK', label: 'Booking link sent' },
+  { key: 'BOOKED', label: 'Booked' },
+  { key: 'SCHEDULED', label: 'Call scheduled' },
+  { key: 'SCREENED', label: 'Screened' },
+]
+const STEP_LABEL = Object.fromEntries(STEPS.map((x) => [x.key, x.label]))
 
 /** The email a stage usually needs next, when the tab doesn't say. */
 const TEMPLATE_FOR_STAGE_TAB: Record<string, string> = {
@@ -263,6 +276,7 @@ export function WorkflowPage() {
   const stage = params.get('stage') ?? ''
   // "got:shortlisted" = received that email; "not:shortlisted" = hasn't yet.
   const emailFilter = params.get('email') ?? ''
+  const step = params.get('step') ?? ''
   const [board, setBoard] = useState<WorkflowBoard | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -325,7 +339,7 @@ export function WorkflowPage() {
 
   const [emailMode, emailKey] = emailFilter.split(':')
   const received = (r: WorkflowRow, key: string) => (r.emails ?? []).some((e) => e.templateKey === key)
-  const inStage = (r: WorkflowRow) => !stage || r.stage === stage
+  const inStage = (r: WorkflowRow) => (!stage || r.stage === stage) && (!step || r.commStep === step)
   const byEmail = (r: WorkflowRow) =>
     !emailKey || (emailMode === 'got' ? received(r, emailKey) : emailMode === 'not' ? !received(r, emailKey) : true)
   const rows = useMemo(() => {
@@ -339,10 +353,12 @@ export function WorkflowPage() {
         (!q || r.candidateName.toLowerCase().includes(q) || r.jobTitle.toLowerCase().includes(q)),
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, filter, query, stage, emailFilter])
+  }, [board, filter, query, stage, emailFilter, step])
+  const stepCount = (key: string) =>
+    (board?.rows ?? []).filter((r) => (!stage || r.stage === stage) && r.commStep === key && byEmail(r) && matches(r, filter, now)).length
   // Counts follow the other choices: stage chips count within the tab, tabs within the stage.
   const stageCount = (key: string) =>
-    (board?.rows ?? []).filter((r) => r.stage === key && byEmail(r) && matches(r, filter, now)).length
+    (board?.rows ?? []).filter((r) => r.stage === key && (!step || r.commStep === step) && byEmail(r) && matches(r, filter, now)).length
   const tabCount = (f: WorkflowFilter) => (board?.rows ?? []).filter((r) => inStage(r) && byEmail(r) && matches(r, f, now)).length
   const suggestedTemplate =
     emailMode === 'not' && emailKey && emailKey !== 'test_invite'
@@ -449,6 +465,7 @@ export function WorkflowPage() {
           </optgroup>
         </select>
       </div>
+      {board?.canLog && <TodaysEmails rows={board.rows} senderName={me.name} onDone={() => setReload((n) => n + 1)} />}
       <div className="row wf-filters" role="group" aria-label="Stage">
         <button type="button" className={`chip${!stage ? ' chip-on' : ''}`} aria-pressed={!stage} onClick={() => set('stage', '')}>
           All stages
@@ -462,6 +479,22 @@ export function WorkflowPage() {
             onClick={() => set('stage', stage === st.key ? '' : st.key)}
           >
             {st.label} {board ? <span className="wf-count">{stageCount(st.key)}</span> : null}
+          </button>
+        ))}
+      </div>
+      <div className="row wf-filters" role="group" aria-label="Outreach step">
+        <button type="button" className={`chip${!step ? ' chip-on' : ''}`} aria-pressed={!step} onClick={() => set('step', '')}>
+          Any step
+        </button>
+        {STEPS.map((x) => (
+          <button
+            key={x.key}
+            type="button"
+            className={`chip${step === x.key ? ' chip-on' : ''}`}
+            aria-pressed={step === x.key}
+            onClick={() => set('step', step === x.key ? '' : x.key)}
+          >
+            {x.label} {board ? <span className="wf-count">{stepCount(x.key)}</span> : null}
           </button>
         ))}
       </div>
@@ -586,6 +619,7 @@ export function WorkflowPage() {
                     </td>
                     <td>
                       {r.stageLabel}
+                      {r.commStep && r.stage === 'SOURCED' && <div className="wf-step">{STEP_LABEL[r.commStep] ?? r.commStep}</div>}
                       <div className="muted wf-sub">{days(r.inStageSince, now)} days</div>
                     </td>
                     <td>

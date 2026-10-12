@@ -31,7 +31,16 @@ public final class WorkflowDtos {
             String stage, String stageLabel, boolean closed, Instant inStageSince, Instant addedAt,
             Contact lastContact, int contacts, boolean awaitingReply, Instant candidateWroteAt,
             TestStatus test, InterviewStatus interview, ClientStatus client, int documentsPending,
-            NextStep nextStep, Instant lastActivityAt, List<EmailSent> emails, Booking booking) {}
+            NextStep nextStep, Instant lastActivityAt, List<EmailSent> emails, Booking booking,
+            boolean hasResume, String commStep, String due) {}
+
+    /**
+     * Where a candidate is in the outreach sequence (PIPE-25), worked out from what happened:
+     * NEW, RESUME_ASKED, RESUME_RECEIVED, INVITED_TO_BOOK, BOOKED, SCHEDULED, SCREENED.
+     * Due (what "Today's emails" would send): RESUME_REQUEST, BOOKING_LINK, RESUME_FOLLOW_UP,
+     * BOOKING_REMINDER or SEND_INVITE; null when nothing is due or a person should answer them first.
+     */
+    public record Communication(String step, String due) {}
 
     /** The interview slot they picked from their booking link (PIPE-24); scheduled once the invite is sent. */
     public record Booking(Instant startAt, String timeZone, boolean scheduled) {}

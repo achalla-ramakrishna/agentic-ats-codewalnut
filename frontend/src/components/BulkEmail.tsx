@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react'
 import { getGoogleStatus, type GoogleStatus } from '../api/interviews'
-import { postMessage } from '../api/messages'
 import { ConnectGoogle } from './ConnectGoogle'
-import { getBookingLinks } from '../api/booking'
-import { moveStage } from '../api/tracker'
-import { EMAIL_TEMPLATES, fillTemplate, STAGE_FOR_TEMPLATE, templateKeyFor } from './emailTemplates'
+import { sendEach } from './bulkSend'
+import { EMAIL_TEMPLATES, STAGE_FOR_TEMPLATE } from './emailTemplates'
 import { Button } from './ui'
 
 export interface BulkRecipient {
@@ -70,53 +68,19 @@ export function BulkEmail({
   const usesBookingLink = (subject + body).includes('{bookingLink}')
 
   async function send() {
-    let sent = 0
-    const failed: string[] = []
-    // PIPE-24: each person's own "pick a time" link.
-    let links: Record<string, string> = {}
-    let linkProblems: Record<string, string> = {}
-    if (usesBookingLink) {
-      setBusy('Preparing booking links…')
-      try {
-        const r = await getBookingLinks(withEmail.map((x) => x.applicationId))
-        links = r.links
-        linkProblems = r.problems
-      } catch (e) {
-        setBusy(null)
-        setOutcome({ sent: 0, failed: [e instanceof Error ? e.message : 'Could not prepare the booking links'] })
-        return
-      }
+    try {
+      const r = await sendEach(
+        withEmail.map((x) => ({ applicationId: x.applicationId, name: x.name, jobTitle: x.jobTitle ?? jobTitle })),
+        { subject, body, templateKey: template, senderName: sender, moveTo: moveTo && alsoMove ? moveTo : undefined },
+        setBusy,
+      )
+      setOutcome({ sent: r.sent.length, failed: r.failed })
+      if (r.sent.length > 0) onSent?.()
+    } catch (e) {
+      setOutcome({ sent: 0, failed: [e instanceof Error ? e.message : 'Could not send'] })
+    } finally {
+      setBusy(null)
     }
-    for (const [n, r] of withEmail.entries()) {
-      if (usesBookingLink && !links[r.applicationId]) {
-        failed.push(`${r.name}: ${linkProblems[r.applicationId] ?? 'no booking link'}`)
-        continue
-      }
-      const withLink = (text: string) => (usesBookingLink ? text.replaceAll('{bookingLink}', links[r.applicationId]) : text)
-      setBusy(`Sending ${n + 1} of ${withEmail.length}…`)
-      try {
-        const values = { candidateName: r.name, jobTitle: r.jobTitle ?? jobTitle, senderName: sender }
-        await postMessage(r.applicationId, {
-          channel: 'CANDIDATE',
-          subject: withLink(fillTemplate(subject, values)),
-          body: withLink(fillTemplate(body, values)),
-          sendEmail: true,
-          templateKey: templateKeyFor(template),
-        })
-        sent++
-        if (moveTo && alsoMove) {
-          // The email went out; a failed stage move is reported but doesn't count as not sent.
-          await moveStage(r.applicationId, moveTo).catch((e: unknown) =>
-            failed.push(`${r.name}: emailed, but couldn't move the stage (${e instanceof Error ? e.message : 'error'})`),
-          )
-        }
-      } catch (e) {
-        failed.push(`${r.name}: ${e instanceof Error ? e.message : 'not sent'}`)
-      }
-    }
-    setBusy(null)
-    setOutcome({ sent, failed })
-    if (sent > 0) onSent?.()
   }
 
   if (outcome) {

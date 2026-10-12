@@ -37,6 +37,14 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
       'Once you have picked a time, you will receive a calendar invitation with the Google Meet link.\n\nBest regards,\n{senderName}\nCodeWalnut',
   },
   {
+    key: 'booking_reminder',
+    label: 'Reminder: pick a time (booking link)',
+    subject: 'Reminder: pick a time for your call – {jobTitle} at CodeWalnut',
+    body:
+      'Hi {firstName},\n\nA quick reminder to pick a time for our 30-minute call about the {jobTitle} role. It takes a few seconds:\n{bookingLink}\n\n' +
+      'If none of the times suit you, just reply to this email and we will find one together.\n\nBest regards,\n{senderName}\nCodeWalnut',
+  },
+  {
     key: 'interview_slots',
     label: 'Thanks for résumé – interview slots',
     subject: 'Interview for {jobTitle} at CodeWalnut',
@@ -111,6 +119,7 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
 export const TEMPLATE_SHORT: Record<string, string> = {
   resume_request: 'Résumé request',
   book_slot: 'Booking link',
+  booking_reminder: 'Booking reminder',
   interview_slots: 'Interview slots',
   follow_up: 'Follow-up',
   received: 'Application received',

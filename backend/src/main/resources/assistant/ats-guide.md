@@ -54,6 +54,9 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
 - WhatsApp a candidate from the Workflow page: click WhatsApp on their row; it opens with a suggested
   message ready to send.
 - Called or messaged someone outside the app? Click History on the row → Log a call or message.
+- Let the ATS do the outreach: Workflow → Today's emails → Review & send → Send (once a day). It asks new
+  people for their résumé, sends the booking link to people who sent one, reminds once after 3 days and
+  sends Meet invites for booked slots. People who wrote to you are left for you to answer.
 - Which email has each candidate had? Workflow → Emails sent column (one chip per template, with the
   date). Pick a stage chip and the email filter "No “Shortlisted” yet" to email exactly who still needs it.
 - Email a whole tab (30 at a time): Workflow → pick a tab → Select first 30 → Email selected → Send. The
