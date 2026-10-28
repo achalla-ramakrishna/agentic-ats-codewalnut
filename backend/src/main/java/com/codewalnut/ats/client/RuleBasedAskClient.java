@@ -158,9 +158,13 @@ public class RuleBasedAskClient implements AskClient {
             }
             int score = 0;
             String l = line.toLowerCase(Locale.ROOT);
+            String topic = l.contains(":") ? l.substring(0, l.indexOf(':')) : "";
             for (String word : question.split("\\W+")) {
                 if (word.length() > 3 && l.contains(word)) {
                     score++;
+                    if (topic.contains(word)) {
+                        score++; // the line is about this, not just mentioning it
+                    }
                 }
             }
             if (score > 0 && line.contains("→")) {
