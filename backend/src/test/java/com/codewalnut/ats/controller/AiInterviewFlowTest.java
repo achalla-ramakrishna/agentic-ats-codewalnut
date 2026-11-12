@@ -97,6 +97,12 @@ class AiInterviewFlowTest {
         assertThat(seconds).allMatch(s -> s >= 60 && s <= 180);
         List<Integer> openPoints = JsonPath.read(created, "$.interview.questions[?(@.kind == 'VIDEO' || @.kind == 'WRITTEN')].points");
         assertThat(openPoints).allMatch(p -> p == 0);
+        // A senior Java opening gets the hand-written lead set: code to read, reviewer notes, checked answers.
+        assertThat((List<String>) JsonPath.read(created, "$.notes")).anyMatch(n -> n.contains("hand-written senior Java"));
+        assertThat((List<String>) JsonPath.read(created, "$.interview.questions[?(@.kind == 'VIDEO' && @.code)].prompt"))
+                .anyMatch(p -> p.contains("reviewing this pull request"));
+        assertThat((List<String>) JsonPath.read(created, "$.interview.questions[?(@.kind == 'VIDEO')].explanation")).doesNotContainNull();
+        assertThat((List<Boolean>) JsonPath.read(created, "$.interview.questions[*].aiDrafted")).containsOnly(false);
 
         // AINT-02: staff add and edit video questions with a phase and a time limit.
         String test = JsonPath.read(created, "$.interview.summary.id");
@@ -143,6 +149,7 @@ class AiInterviewFlowTest {
                 .andExpect(jsonPath("$.questions[0].kind").value("VIDEO"))
                 .andExpect(jsonPath("$.questions[0].maxSeconds").value(60))
                 .andExpect(jsonPath("$.questions[0].section").value("INTRO")));
+        assertThat(taking).doesNotContain("Idempotency key with a unique constraint"); // reviewer notes stay with staff
         List<String> videos = JsonPath.read(taking, "$.questions[?(@.kind == 'VIDEO')].id");
         List<String> written = JsonPath.read(taking, "$.questions[?(@.kind == 'WRITTEN')].id");
 

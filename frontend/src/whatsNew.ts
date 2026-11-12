@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-12-senior-java-interview',
+    date: '2026-11-12',
+    title: 'AI interview for senior and lead Java roles: real production scenarios',
+    summary: 'For senior, lead or architect Java openings, Create an AI interview now uses a hand-written set: incidents, slowdowns under load, OutOfMemoryError, payments at scale, splitting a monolith, a code review on camera, tricky code-reading questions and leadership situations. Each spoken question has what a strong answer covers — you see it as “Look for” next to the answer, and the AI scores against it. Candidates never see it.',
+    steps: [
+      'Open the senior Java opening → 🎥 AI interview → Create an AI interview for this opening.',
+      'Check the questions under Tests → Mark ready → Send to candidates.',
+      'Already made one? Archive it and create it again to get the new questions.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-11-12-ai-interviews',
     date: '2026-11-12',
     title: 'AI interviews: candidates record answers, the AI ranks them',

@@ -166,7 +166,7 @@ public final class AssessmentDtos {
     public record AnswerReview(
             int position, AssessmentQuestion.Kind kind, String prompt, String code, List<String> options,
             List<String> given, List<Integer> correct, List<String> acceptedAnswers, int points, int earned,
-            String figure, List<String> optionFigures, String section, CodeResult codeResult) {}
+            String figure, List<String> optionFigures, String section, CodeResult codeResult, String explanation) {}
 
     /** Score per section, e.g. Numerical ability 14 / 20. */
     public record SectionScore(String section, String label, int score, int max, int questions) {}

@@ -112,6 +112,8 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
 - Ranking: open the opening → 🎥 AI interview: candidates by score with ratings for technical,
   design, communication, experience and readiness, notice period and salary. Click a name to watch the
   videos and read the review; tick the best → Shortlist selected; then send them the booking link.
+- Senior or lead Java openings get a hand-written set of production scenarios, a code review and
+  code-reading questions; under each answer, "Look for" shows what a strong answer covers.
 - The score is advice: the AI never moves or rejects anyone.
 
 ## Messages

@@ -120,7 +120,9 @@ otherwise) plus bank multiple choice; stores recordings via `VideoStorage` on di
 Railway volume) with `interview_video` rows (V28), the transcript in the invite's answers; on submit
 `AssessmentInviteService` marks the review PENDING and `AiInterviewReviewer` runs the agent after commit
 (retried by `AiInterviewSweeper`); `InterviewReviews` stores the review and works out the 0–100 score.
-`GET /jobs/{id}/ai-interviews` ranks an opening's candidates.
+`GET /jobs/{id}/ai-interviews` ranks an opening's candidates. Senior/lead Java openings use the
+hand-written set in `bank/InterviewSets`; a question's `explanation` holds what a strong answer covers
+and is passed to the review as `<expected>`.
 
 Coding questions (ADR-0016): `client/CodeRunner` sends candidate code to a
 self-hosted Judge0 (`Judge0CodeRunner`; `DisabledCodeRunner` when

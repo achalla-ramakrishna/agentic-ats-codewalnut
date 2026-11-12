@@ -316,6 +316,8 @@ export interface AnswerReview {
   optionFigures: string[] | null
   section: string | null
   codeResult: CodeResult | null
+  /** Notes for reviewers; for AI interview questions, what a strong answer covers. */
+  explanation?: string | null
 }
 
 export interface SectionScore {

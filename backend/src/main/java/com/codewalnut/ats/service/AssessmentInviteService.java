@@ -234,7 +234,7 @@ public class AssessmentInviteService {
                                 assessmentService.options(q), answers.getOrDefault(q.getId(), List.of()),
                                 assessmentService.correct(q), assessmentService.accepted(q), q.getPoints(),
                                 earned(q, answers, code), q.getFigure(),
-                                assessmentService.optionFigures(q), q.getSection(), staffCode(q, answers, code)))
+                                assessmentService.optionFigures(q), q.getSection(), staffCode(q, answers, code), q.getExplanation()))
                         .toList()
                 : List.of();
         return new InviteDetail(view(invite), review, sectionScores(review), activity(invite),

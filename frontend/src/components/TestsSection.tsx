@@ -135,6 +135,12 @@ function Review({
                 {a.section && <span className="muted">{sectionTitle(a.section)} · </span>}
                 {a.prompt}
               </span>
+              {a.code && <pre className="test-code">{a.code}</pre>}
+              {a.explanation && (
+                <span className="muted" style={{ fontSize: 12 }}>
+                  Look for: {a.explanation}
+                </span>
+              )}
               {a.kind === 'VIDEO' ? (
                 a.given[0] ? (
                   <>

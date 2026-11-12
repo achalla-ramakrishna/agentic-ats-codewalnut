@@ -100,7 +100,14 @@ public class BuiltInInterviewAgent implements InterviewAgent {
         List<Answer> marked = list.stream().filter(a -> a.correct() != null).toList();
         List<Answer> open = list.stream().filter(a -> a.correct() == null).toList();
         int words = open.stream().mapToInt(a -> words(a.answer())).sum();
-        long hits = open.stream().filter(a -> words(a.answer()) > 0).flatMap(a -> tokens(a.answer()).stream()).filter(keywords::contains).distinct().count();
+        // The opening's keywords, plus what the team expects a strong answer to cover, where they wrote it.
+        long hits = open.stream().filter(a -> words(a.answer()) > 0)
+                .flatMap(a -> {
+                    Set<String> expected = new java.util.HashSet<>(keywords);
+                    tokens(a.goodAnswer()).stream().filter(t -> t.length() > 3 && !COMMON.contains(t)).forEach(expected::add);
+                    return tokens(a.answer()).stream().filter(expected::contains);
+                })
+                .distinct().count();
         int rating = open.isEmpty() ? 0 : Math.min(5, lengthRating(words / open.size()) + (hits >= 3 ? 1 : 0));
         if (!marked.isEmpty()) {
             int right = (int) marked.stream().filter(Answer::correct).count();

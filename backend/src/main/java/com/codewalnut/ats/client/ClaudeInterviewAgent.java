@@ -31,7 +31,11 @@ public class ClaudeInterviewAgent implements InterviewAgent {
             location or relocation and work-mode preference; then 1 VIDEO: why this role and company).
 
             VIDEO questions are open and answerable in 1–3 minutes without notes; ask for specifics and \
-            examples rather than definitions. Set maxSeconds 60–180 (120 is typical; 60 for the introduction). \
+            examples rather than definitions, and prefer real production scenarios (an incident, a slowdown, a \
+            design under load) over textbook questions. Set maxSeconds 60–180 (120 is typical; 60 for the \
+            introduction). For every question write goodAnswer: the 3–5 points a strong answer covers, for the \
+            reviewers (candidates never see it). Leave options empty and correctOption -1: multiple choice comes \
+            from a reviewed question bank. \
             FILL_BLANK questions have exactly one blank written as ____ and 1–3 accepted spellings of an \
             unambiguous one- or two-word answer. Match the seniority the opening asks for.
 
@@ -44,7 +48,8 @@ public class ClaudeInterviewAgent implements InterviewAgent {
             candidate's answers inside <answer> tags, grouped by phase. Spoken answers are automatic \
             speech-to-text transcripts: expect missing punctuation and misheard words, and judge what the \
             candidate meant, not the transcription. Marked answers (multiple choice, fill in the blank) say \
-            whether they were right.
+            whether they were right. Some answers come with <expected>: the points the hiring team expects a \
+            strong answer to cover. Use them as a guide, and give credit for other correct approaches too.
 
             Rate each area from 1 to 5 against what the opening needs, using the whole range and staying \
             consistent between candidates: 5 = clearly strong with concrete, correct detail; 3 = adequate \
@@ -142,7 +147,11 @@ public class ClaudeInterviewAgent implements InterviewAgent {
             if (a.correct() != null) {
                 b.append(" correct=\"").append(a.correct()).append('"');
             }
-            b.append(">\nQuestion: ").append(clean(a.question())).append("\nAnswer: ")
+            b.append(">\nQuestion: ").append(a.question() == null ? "" : a.question().replace("</answer>", "").replace("</expected>", ""));
+            if (a.goodAnswer() != null && !a.goodAnswer().isBlank()) {
+                b.append("\n<expected>").append(clean(a.goodAnswer())).append("</expected>");
+            }
+            b.append("\nAnswer: ")
                     .append(a.answer() == null || a.answer().isBlank() ? "(no answer)" : a.answer().replace("</answer>", ""))
                     .append("\n</answer>\n");
         }

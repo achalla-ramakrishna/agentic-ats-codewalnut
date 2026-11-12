@@ -102,14 +102,26 @@ public class AiInterviewService {
         JobOpening job = jobRepository.findById(request.jobId()).orElseThrow(() -> new NotFoundException("Opening not found"));
         InterviewAgent.Job forAgent = new InterviewAgent.Job(job.getTitle(), job.getDescription());
         List<String> notes = new ArrayList<>();
+        String text = (job.getTitle() + " " + job.getDescription()).toLowerCase(Locale.ROOT);
+        Assessment.Category area = stack(text);
+        BankQuestion.Section band = text.matches("(?s).*\\b(senior|lead|architect|principal|staff)\\b.*")
+                ? BankQuestion.Section.ADVANCED : BankQuestion.Section.PRACTICAL;
+        // A hand-written set (marked answers checked by hand) beats a drafted one where it fits.
+        boolean handWritten = area == Assessment.Category.JAVA && band == BankQuestion.Section.ADVANCED;
         InterviewAgent.Draft draft;
-        boolean drafted = agent.usesAi();
-        try {
-            draft = agent.draft(forAgent);
-        } catch (CalendarException e) {
-            notes.add(e.getMessage() + " The standard question set was used instead — edit it to fit the opening.");
-            draft = new BuiltInInterviewAgent().draft(forAgent);
-            drafted = false;
+        boolean drafted = !handWritten && agent.usesAi();
+        if (handWritten) {
+            draft = new InterviewAgent.Draft(com.codewalnut.ats.bank.InterviewSets.seniorJavaLead());
+            notes.add("Used the hand-written senior Java / lead question set: production scenarios, code reading and "
+                    + "architecture, with what a strong answer covers for the reviewers. Edit anything you like.");
+        } else {
+            try {
+                draft = agent.draft(forAgent);
+            } catch (CalendarException e) {
+                notes.add(e.getMessage() + " The standard question set was used instead — edit it to fit the opening.");
+                draft = new BuiltInInterviewAgent().draft(forAgent);
+                drafted = false;
+            }
         }
         String title = "AI interview — " + job.getTitle();
         Assessment a = assessmentRepository.save(Assessment.builder()
@@ -130,7 +142,7 @@ public class AiInterviewService {
         }
         int dropped = 0;
         for (InterviewAgent.DraftQuestion d : draft.questions() == null ? List.<InterviewAgent.DraftQuestion>of() : draft.questions()) {
-            AssessmentQuestion q = fromDraft(a.getId(), d, drafted);
+            AssessmentQuestion q = fromDraft(a.getId(), d, drafted, handWritten);
             if (q == null) {
                 dropped++;
                 continue;
@@ -140,17 +152,17 @@ public class AiInterviewService {
         if (dropped > 0) {
             notes.add(dropped + " drafted question(s) were incomplete and left out.");
         }
-        String text = (job.getTitle() + " " + job.getDescription()).toLowerCase(Locale.ROOT);
-        Assessment.Category area = stack(text);
-        BankQuestion.Section band = text.matches("(?s).*\\b(senior|lead|architect|principal|staff)\\b.*")
-                ? BankQuestion.Section.ADVANCED : BankQuestion.Section.PRACTICAL;
-        if (area != null) {
+        if (handWritten) {
+            // its own multiple choice
+        } else if (area != null) {
             byPhase.get(InterviewPhase.TECHNICAL).addAll(0, fromBank(a.getId(), area, band, TECH_MCQS, InterviewPhase.TECHNICAL));
         } else {
             notes.add("No question bank matches this opening's stack, so the technical round has no multiple-choice questions. Add some if you like.");
         }
-        byPhase.get(InterviewPhase.ARCHITECTURE).addAll(fromBank(a.getId(), Assessment.Category.SYSTEM_DESIGN, band, DESIGN_MCQS,
-                InterviewPhase.ARCHITECTURE));
+        if (!handWritten) {
+            byPhase.get(InterviewPhase.ARCHITECTURE).addAll(fromBank(a.getId(), Assessment.Category.SYSTEM_DESIGN, band, DESIGN_MCQS,
+                    InterviewPhase.ARCHITECTURE));
+        }
         int position = 0;
         for (List<AssessmentQuestion> list : byPhase.values()) {
             for (AssessmentQuestion q : list) {
@@ -163,13 +175,17 @@ public class AiInterviewService {
         return new CreateInterviewResult(assessmentService.detail(a), notes);
     }
 
-    private AssessmentQuestion fromDraft(UUID assessmentId, InterviewAgent.DraftQuestion d, boolean aiDrafted) {
+    /** trusted: a hand-written set, whose multiple choice may be used as is (drafted multiple choice never is). */
+    private AssessmentQuestion fromDraft(UUID assessmentId, InterviewAgent.DraftQuestion d, boolean aiDrafted, boolean trusted) {
         InterviewPhase phase = d == null ? null : InterviewPhase.of(d.phase() == null ? null : d.phase().strip().toUpperCase(Locale.ROOT));
         String prompt = d == null || d.prompt() == null ? "" : d.prompt().strip();
         if (phase == null || prompt.isEmpty() || prompt.length() > 2000) {
             return null;
         }
+        String code = d.code() == null || d.code().isBlank() || d.code().length() > 5000 ? null : d.code().strip();
+        String good = d.goodAnswer() == null || d.goodAnswer().isBlank() ? null : d.goodAnswer().strip();
         AssessmentQuestion.AssessmentQuestionBuilder q = AssessmentQuestion.builder().assessmentId(assessmentId).prompt(prompt)
+                .code(code).explanation(good == null || good.length() > 2000 ? null : good)
                 .section(phase.name()).aiDrafted(aiDrafted);
         String kind = d.kind() == null ? "" : d.kind().strip().toUpperCase(Locale.ROOT);
         switch (kind) {
@@ -183,6 +199,14 @@ public class AiInterviewService {
                     return null;
                 }
                 q.kind(AssessmentQuestion.Kind.SHORT_ANSWER).points(1).answerJson(assessmentService.write(accepted));
+            }
+            case "MULTIPLE_CHOICE" -> {
+                List<String> options = d.options() == null ? List.of() : d.options().stream().filter(o -> o != null && !o.isBlank()).toList();
+                if (!trusted || options.size() < 2 || options.size() > 8 || d.correctOption() < 0 || d.correctOption() >= options.size()) {
+                    return null;
+                }
+                q.kind(AssessmentQuestion.Kind.SINGLE_CHOICE).points(2).optionsJson(assessmentService.write(options))
+                        .answerJson(assessmentService.write(List.of(d.correctOption())));
             }
             default -> {
                 return null;
@@ -338,15 +362,17 @@ public class AiInterviewService {
         for (AssessmentQuestion q : questionRepository.findByAssessmentIdOrderByPositionAsc(invite.getAssessment().getId())) {
             List<String> g = given.getOrDefault(q.getId(), List.of());
             String phase = q.getSection() == null ? "OTHER" : q.getSection();
+            String asked = q.getCode() == null ? q.getPrompt() : q.getPrompt() + "\nCode shown:\n" + q.getCode();
             switch (q.getKind()) {
                 case VIDEO -> {
                     boolean recorded = !g.isEmpty() && !g.get(0).isBlank();
                     String transcript = g.size() > 1 ? g.get(1) : "";
-                    answers.add(new InterviewAgent.Answer(phase, "VIDEO", q.getPrompt(),
+                    answers.add(new InterviewAgent.Answer(phase, "VIDEO", asked,
                             !recorded ? "" : transcript.isBlank() ? "(answered on video; no transcript available)" : transcript,
-                            seconds.get(q.getId()), null));
+                            seconds.get(q.getId()), null, q.getExplanation()));
                 }
-                case WRITTEN -> answers.add(new InterviewAgent.Answer(phase, "WRITTEN", q.getPrompt(), g.isEmpty() ? "" : g.get(0), null, null));
+                case WRITTEN -> answers.add(new InterviewAgent.Answer(phase, "WRITTEN", asked, g.isEmpty() ? "" : g.get(0), null, null,
+                        q.getExplanation()));
                 case SHORT_ANSWER -> answers.add(new InterviewAgent.Answer(phase, "FILL_BLANK", q.getPrompt(), g.isEmpty() ? "" : g.get(0), null,
                         assessmentService.earned(q, g) > 0));
                 case SINGLE_CHOICE, MULTI_CHOICE -> {
@@ -359,7 +385,7 @@ public class AiInterviewService {
                             return "";
                         }
                     }).filter(s -> !s.isEmpty()).collect(Collectors.joining("; "));
-                    answers.add(new InterviewAgent.Answer(phase, "MULTIPLE_CHOICE", q.getPrompt(), picked, null, assessmentService.earned(q, g) > 0));
+                    answers.add(new InterviewAgent.Answer(phase, "MULTIPLE_CHOICE", asked, picked, null, assessmentService.earned(q, g) > 0));
                 }
                 default -> {
                     // coding answers are graded by the sandbox, not reviewed here

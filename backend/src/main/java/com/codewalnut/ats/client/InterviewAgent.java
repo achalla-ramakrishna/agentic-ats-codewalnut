@@ -45,13 +45,31 @@ public interface InterviewAgent {
             @JsonPropertyDescription("Phase: INTRO, EXPERIENCE, SKILLS, PROJECTS, ARCHITECTURE, TECHNICAL, SOFT_SKILLS or READINESS") String phase,
             @JsonPropertyDescription("VIDEO (spoken answer on camera), WRITTEN (short typed answer) or FILL_BLANK (one word or phrase)") String kind,
             @JsonPropertyDescription("The question as the candidate reads it. For FILL_BLANK, mark the blank as ____") String prompt,
+            @JsonPropertyDescription("Optional code the candidate reads with the question (e.g. a snippet to review); empty if none") String code,
+            @JsonPropertyDescription("Leave empty") List<String> options,
+            @JsonPropertyDescription("Leave as -1") int correctOption,
             @JsonPropertyDescription("FILL_BLANK only: the accepted answers (1 to 3 spellings); empty otherwise") List<String> acceptedAnswers,
-            @JsonPropertyDescription("VIDEO only: the longest answer in seconds, 60 to 180; 0 otherwise") int maxSeconds) {}
+            @JsonPropertyDescription("VIDEO only: the longest answer in seconds, 60 to 180; 0 otherwise") int maxSeconds,
+            @JsonPropertyDescription("For reviewers only, never shown to candidates: the 3 to 5 points a strong answer covers") String goodAnswer) {
+
+        /** A question without code, options or reviewer notes. */
+        public DraftQuestion(String phase, String kind, String prompt, List<String> acceptedAnswers, int maxSeconds) {
+            this(phase, kind, prompt, "", List.of(), -1, acceptedAnswers, maxSeconds, "");
+        }
+    }
 
     // ---- reviewing ----
 
-    /** One answer as the reviewer sees it. answer: the transcript, the typed text, or the option picked; correct: marked answers only. */
-    record Answer(String phase, String kind, String question, String answer, Integer seconds, Boolean correct) {}
+    /**
+     * One answer as the reviewer sees it. answer: the transcript, the typed text, or the option picked; correct:
+     * marked answers only; goodAnswer: what the hiring team expects a strong answer to cover, if they wrote it.
+     */
+    record Answer(String phase, String kind, String question, String answer, Integer seconds, Boolean correct, String goodAnswer) {
+
+        public Answer(String phase, String kind, String question, String answer, Integer seconds, Boolean correct) {
+            this(phase, kind, question, answer, seconds, correct, null);
+        }
+    }
 
     record Review(
             @JsonPropertyDescription("One rating per area: TECHNICAL, ARCHITECTURE, COMMUNICATION, EXPERIENCE, READINESS") List<AreaRating> areas,
