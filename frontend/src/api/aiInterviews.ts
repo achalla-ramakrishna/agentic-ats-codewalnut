@@ -48,6 +48,10 @@ export const createAiInterview = (jobId: string, durationMinutes?: number) =>
 
 export const jobInterviews = (jobId: string) => api<JobInterviews>(`/jobs/${jobId}/ai-interviews`)
 
+/** Let the candidate finish a submitted interview: reopens it for the minutes given, keeping saved answers. */
+export const reopenInterview = (inviteId: string, minutes: number) =>
+  api<void>(`/tests/${inviteId}/reopen?minutes=${minutes}`, { method: 'POST' })
+
 export const reviewAgain = (inviteId: string) => api<void>(`/tests/${inviteId}/review-again`, { method: 'POST' })
 
 /** Where staff play a recorded answer (the browser streams it, so seeking works). */

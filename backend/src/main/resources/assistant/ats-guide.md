@@ -115,6 +115,8 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
 - Senior Java openings get a hand-written set (Java 17, Spring Boot, MongoDB, Redis caching, JWT,
   testing and CI, airline booking): production scenarios, a code review and code-reading questions;
   under each answer, "Look for" shows what a strong answer covers.
+- A candidate couldn't finish (videos failed, time ran out): open the candidate → Tests → Let them
+  finish → minutes. Their saved answers stay; send them the same link (Copy link).
 - The score is advice: the AI never moves or rejects anyone.
 
 ## Messages

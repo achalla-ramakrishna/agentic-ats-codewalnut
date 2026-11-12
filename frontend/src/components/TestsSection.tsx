@@ -19,7 +19,7 @@ import {
   type InviteView,
   type SendResult,
 } from '../api/assessments'
-import { reviewAgain, videoUrl } from '../api/aiInterviews'
+import { reopenInterview, reviewAgain, videoUrl } from '../api/aiInterviews'
 import { sectionTitle } from '../api/questionBank'
 import { InterviewReviewCard } from './InterviewReviewCard'
 import { RecordedVideo } from './VideoAnswer'
@@ -313,6 +313,27 @@ export function TestsSection({
     }
   }
 
+  async function onReopen(invite: InviteView) {
+    const answer = window.prompt(
+      'Let them finish: the interview opens again with their saved answers kept, and is reviewed again when they submit. How many minutes should they have?',
+      '60',
+    )
+    if (answer === null) return
+    const minutes = Number(answer)
+    setError(null)
+    try {
+      await reopenInterview(invite.id, Number.isFinite(minutes) ? Math.round(minutes) : 60)
+      setReview((all) => {
+        const rest = { ...all }
+        delete rest[invite.id]
+        return rest
+      })
+      setInvites(await listApplicationTests(applicationId))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not reopen the interview')
+    }
+  }
+
   async function onReviewAgain(invite: InviteView) {
     setError(null)
     try {
@@ -436,6 +457,11 @@ export function TestsSection({
                   {canSend && i.grading === 'FAILED' && (
                     <Button size="sm" variant="secondary" onClick={() => void onRegrade(i)}>
                       Grade again
+                    </Button>
+                  )}
+                  {canSend && i.category === 'INTERVIEW' && i.status === 'SUBMITTED' && (
+                    <Button size="sm" variant="ghost" onClick={() => void onReopen(i)}>
+                      Let them finish
                     </Button>
                   )}
                   {canSend && i.category === 'INTERVIEW' && i.status === 'SUBMITTED' && i.evaluation !== 'PENDING' && (

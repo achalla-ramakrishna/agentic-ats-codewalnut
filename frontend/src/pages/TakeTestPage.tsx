@@ -195,7 +195,7 @@ export function TakeTestPage() {
   function confirmSubmit() {
     if (!taking) return
     if (recording) {
-      window.alert('Wait until your answer has finished recording and uploading.')
+      window.alert('An answer is still recording or hasn’t uploaded yet. Finish it, or click Try uploading again, before submitting.')
       return
     }
     const missing = taking.questions.length - answered
@@ -455,6 +455,11 @@ export function TakeTestPage() {
                 >
                   Next: {sectionTitle(phases[phaseIndex + 1])} →
                 </Button>
+              )}
+              {isInterview && recording && (
+                <span className="muted" style={{ fontSize: 13 }}>
+                  Finish the current answer (or upload it again) to continue.
+                </span>
               )}
             </div>
           </>

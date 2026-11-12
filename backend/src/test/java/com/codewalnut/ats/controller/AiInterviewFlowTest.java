@@ -217,6 +217,23 @@ class AiInterviewFlowTest {
         json(HM, "POST", "/api/v1/tests/" + invite + "/review-again", "").andExpect(status().isForbidden());
         json(RECRUITER, "POST", "/api/v1/tests/" + invite + "/review-again", "").andExpect(status().isNoContent());
         mockMvc.perform(get("/api/v1/tests/" + invite).with(RECRUITER)).andExpect(jsonPath("$.invite.evaluation").value("DONE"));
+
+        // AINT-10: let them finish — reopened with saved answers kept, reviewed again on submit.
+        json(HM, "POST", "/api/v1/tests/" + invite + "/reopen?minutes=30", "").andExpect(status().isForbidden());
+        json(RECRUITER, "POST", "/api/v1/tests/" + invite + "/reopen?minutes=5", "").andExpect(status().isBadRequest());
+        json(RECRUITER, "POST", "/api/v1/tests/" + invite + "/reopen?minutes=30", "").andExpect(status().isNoContent());
+        candidate(session, "GET", "/api/v1/candidate/tests/" + invite, "")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.test.status").value("STARTED"))
+                .andExpect(jsonPath("$.secondsLeft").value(Matchers.greaterThan(1700)))
+                .andExpect(jsonPath("$.answers['" + videos.get(0) + "'][0]").value(first));
+        upload(session, invite, videos.get(1), WEBM, transcript).andExpect(status().isOk());
+        candidate(session, "POST", "/api/v1/candidate/tests/" + invite + "/submit", "{\"answers\":{}}")
+                .andExpect(jsonPath("$.status").value("SUBMITTED"));
+        mockMvc.perform(get("/api/v1/tests/" + invite).with(RECRUITER))
+                .andExpect(jsonPath("$.invite.evaluation").value("DONE"))
+                .andExpect(jsonPath("$.answers[0].given[0]").value(first));
+        json(RECRUITER, "POST", "/api/v1/tests/" + UUID.randomUUID() + "/reopen", "").andExpect(status().isNotFound());
     }
 
     @Test

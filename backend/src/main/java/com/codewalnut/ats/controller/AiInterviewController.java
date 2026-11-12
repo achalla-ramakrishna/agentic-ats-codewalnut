@@ -52,6 +52,13 @@ public class AiInterviewController {
         interviews.reviewAgain(currentUserService.require(), id);
     }
 
+    /** Let the candidate finish: reopens a submitted interview for the given minutes, keeping saved answers. */
+    @PostMapping("/api/v1/tests/{id}/reopen")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void reopen(@PathVariable UUID id, @RequestParam(value = "minutes", defaultValue = "60") int minutes) {
+        interviews.reopen(currentUserService.require(), id, minutes);
+    }
+
     /** A recorded answer; supports byte ranges so the player can seek. */
     @GetMapping("/api/v1/tests/{id}/videos/{videoId}")
     public ResponseEntity<Resource> video(@PathVariable UUID id, @PathVariable UUID videoId) {

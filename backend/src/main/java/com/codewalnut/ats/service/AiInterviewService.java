@@ -450,6 +450,42 @@ public class AiInterviewService {
         events.publishEvent(new InterviewReviewRequested(inviteId));
     }
 
+    /**
+     * Staff: let a candidate finish a submitted AI interview (e.g. some recordings failed to upload). It opens
+     * again for the given minutes with everything saved so far kept; the review runs again on the next submit.
+     */
+    @Transactional
+    public void reopen(AppUser actor, UUID inviteId, int minutes) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        AssessmentInvite invite = inviteRepository.findById(inviteId).orElseThrow(() -> new NotFoundException("Interview not found"));
+        inviteService.finalise(invite);
+        if (invite.getAssessment().getCategory() != Assessment.Category.INTERVIEW || invite.getStatus() != AssessmentInvite.Status.SUBMITTED) {
+            throw new IllegalArgumentException("Only a submitted AI interview can be reopened");
+        }
+        if (minutes < 10 || minutes > 240) {
+            throw new IllegalArgumentException("minutes: give them between 10 and 240 minutes");
+        }
+        Instant now = Instant.now();
+        invite.setStatus(AssessmentInvite.Status.STARTED);
+        invite.setDeadlineAt(now.plus(java.time.Duration.ofMinutes(minutes)));
+        if (invite.getDueAt().isBefore(invite.getDeadlineAt())) {
+            invite.setDueAt(invite.getDeadlineAt());
+        }
+        invite.setSubmittedAt(null);
+        invite.setScore(null);
+        invite.setMaxScore(null);
+        invite.setPercent(null);
+        invite.setEvaluation(null);
+        invite.setEvaluationJson(null);
+        invite.setAiScore(null);
+        invite.setEvaluatedAt(null);
+        invite.setReviewedAt(null);
+        invite.setReviewedBy(null);
+        auditService.record(actor, AuditAction.INTERVIEW_REOPENED, "AssessmentInvite", inviteId, Map.of("minutes", minutes));
+        teamNote(invite, actor.getEmail() + " reopened " + invite.getApplication().getCandidate().getName() + "'s AI interview for "
+                + minutes + " minutes so they can finish it. Their saved answers are kept; send them the same link (Copy link).");
+    }
+
     // ---- the ranking ----
 
     /** The opening's AI interviews, best first: reviewed by score, then waiting for review, then not yet taken. */

@@ -231,4 +231,30 @@ describe('TakeTestPage — AI interview (AINT-03, AINT-04)', () => {
     expect(JSON.parse(submit[1]!.body as string).answers.w1).toEqual(['30 days'])
     expect(stop).toHaveBeenCalled() // camera off afterwards
   })
+
+  it('keeps a recording that failed to upload and holds Next until it is saved', { timeout: 20000 }, async () => {
+    fakeFetch([
+      { path: '/candidate/tests/i1/start', method: 'POST', body: takingInterview },
+      { path: '/candidate/tests/i1/questions/v1/video', method: 'POST', status: 503, body: { error: 'The server couldn’t save your recording right now.' } },
+      { path: '/candidate/tests/i1/activity', method: 'POST', status: 204 },
+      { path: '/candidate/tests', body: [interview] },
+    ])
+    vi.stubGlobal('navigator', { ...navigator, mediaDevices: { getUserMedia: vi.fn(async () => ({ getTracks: () => [] })) } })
+    vi.stubGlobal('MediaRecorder', FakeRecorder)
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => 'blob:answer', revokeObjectURL: () => undefined }))
+    render(
+      <MemoryRouter initialEntries={['/tests/i1']}>
+        <Routes>
+          <Route path="/tests/:id" element={<TakeTestPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Start the interview' }))
+    await userEvent.click(await screen.findByRole('button', { name: '● Record answer' }))
+    await userEvent.click(screen.getByRole('button', { name: '■ Stop and save' }))
+    expect(await screen.findByText(/Your recording is kept/, {}, { timeout: 8000 })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Try uploading again' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Next: Readiness to join →' })).toBeDisabled()
+    expect(screen.getByText(/Finish the current answer/)).toBeInTheDocument()
+  })
 })

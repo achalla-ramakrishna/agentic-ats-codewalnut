@@ -229,11 +229,11 @@ export function VideoAnswer({
       setHeard(transcript)
       onSaved(result.videoId, transcript)
       setState('idle')
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not upload your answer.')
-      setState('error')
-    } finally {
       onRecording(false)
+    } catch (e) {
+      // Stay "busy" so the page won't move on and lose this recording; retry or record again.
+      setError(`${e instanceof Error ? e.message : 'Could not upload your answer.'} Your recording is kept — click Try uploading again.`)
+      setState('error')
     }
   }
 
@@ -254,7 +254,7 @@ export function VideoAnswer({
           <span className="muted">Uploading your answer…</span>
         ) : (
           <>
-            <Button variant={saved ? 'secondary' : 'primary'} disabled={busy} onClick={start}>
+            <Button variant={saved ? 'secondary' : 'primary'} disabled={busy && state !== 'error'} onClick={start}>
               {saved ? '↻ Record again' : '● Record answer'}
             </Button>
             <span className="muted" style={{ fontSize: 13 }}>
