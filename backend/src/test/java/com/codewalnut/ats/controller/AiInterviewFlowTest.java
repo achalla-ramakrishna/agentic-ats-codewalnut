@@ -104,6 +104,13 @@ class AiInterviewFlowTest {
         assertThat((List<String>) JsonPath.read(created, "$.interview.questions[?(@.kind == 'VIDEO')].explanation")).doesNotContainNull();
         assertThat((List<Boolean>) JsonPath.read(created, "$.interview.questions[*].aiDrafted")).containsOnly(false);
 
+        // AINT-11: four hand-written sets to choose from.
+        String setC = body(json(RECRUITER, "POST", "/api/v1/ai-interviews", "{\"jobId\":\"" + job + "\",\"questionSet\":3}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.interview.summary.title").value(Matchers.endsWith("Set C"))));
+        assertThat((List<String>) JsonPath.read(setC, "$.interview.questions[*].prompt")).anyMatch(p -> p.contains("price-drop alerts"));
+        json(RECRUITER, "POST", "/api/v1/ai-interviews", "{\"jobId\":\"" + job + "\",\"questionSet\":5}").andExpect(status().isBadRequest());
+
         // AINT-02: staff add and edit video questions with a phase and a time limit.
         String test = JsonPath.read(created, "$.interview.summary.id");
         json(RECRUITER, "POST", "/api/v1/assessments/" + test + "/questions",

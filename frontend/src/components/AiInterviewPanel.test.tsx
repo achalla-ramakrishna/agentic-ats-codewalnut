@@ -70,4 +70,26 @@ describe('AiInterviewPanel (AINT-07)', () => {
     expect(String(moved[0])).toContain('/stage')
     expect(JSON.parse(moved[1]!.body as string).stage).toBe('SHORTLISTED')
   })
+
+  it('creates the chosen question set, or all four (AINT-11)', async () => {
+    const fetchMock = fakeFetch([
+      { path: '/jobs/j1/ai-interviews', body: { candidates: [], sent: 0, started: 0, submitted: 0, reviewed: 0 } },
+      { path: '/stages', body: [] },
+      { path: '/ai-interviews', method: 'POST', body: { interview: { summary: { id: 't9' }, questions: [] }, notes: [] } },
+    ])
+    vi.spyOn(window, 'alert').mockImplementation(() => undefined)
+    render(
+      <MemoryRouter>
+        <AiInterviewPanel jobId="j1" canEdit onOpen={() => undefined} onChanged={() => undefined} onClose={() => undefined} />
+      </MemoryRouter>,
+    )
+    await userEvent.selectOptions(await screen.findByLabelText('Question set'), 'all')
+    await userEvent.click(screen.getByRole('button', { name: /Create an AI interview/ }))
+    const posts = await vi.waitFor(() => {
+      const calls = fetchMock.mock.calls.filter(([url, init]) => String(url).endsWith('/ai-interviews') && init?.method === 'POST')
+      expect(calls).toHaveLength(4)
+      return calls
+    })
+    expect(posts.map(([, init]) => JSON.parse(init!.body as string).questionSet)).toEqual([1, 2, 3, 4])
+  })
 })

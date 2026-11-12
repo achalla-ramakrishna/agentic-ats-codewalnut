@@ -108,11 +108,12 @@ public class AiInterviewService {
                 ? BankQuestion.Section.ADVANCED : BankQuestion.Section.PRACTICAL;
         // A hand-written set (marked answers checked by hand) beats a drafted one where it fits.
         boolean handWritten = area == Assessment.Category.JAVA && band == BankQuestion.Section.ADVANCED;
+        int set = request.questionSet() == null ? 1 : request.questionSet();
         InterviewAgent.Draft draft;
         boolean drafted = !handWritten && agent.usesAi();
         if (handWritten) {
-            draft = new InterviewAgent.Draft(com.codewalnut.ats.bank.InterviewSets.seniorJava());
-            notes.add("Used the hand-written senior Java question set (Java 17, Spring Boot, MongoDB, Redis caching, JWT, testing and "
+            draft = new InterviewAgent.Draft(com.codewalnut.ats.bank.InterviewSets.seniorJava(set));
+            notes.add("Used hand-written senior Java question Set " + com.codewalnut.ats.bank.InterviewSets.setLetter(set) + " (Java 17, Spring Boot, MongoDB, Redis caching, JWT, testing and "
                     + "CI, airline shopping and booking): production scenarios, code reading and design, with what a strong answer "
                     + "covers for the reviewers. Edit anything you like.");
         } else {
@@ -124,7 +125,8 @@ public class AiInterviewService {
                 drafted = false;
             }
         }
-        String title = "AI interview — " + job.getTitle();
+        String title = "AI interview — " + job.getTitle() + (handWritten || request.questionSet() != null
+                ? " — Set " + com.codewalnut.ats.bank.InterviewSets.setLetter(set) : "");
         Assessment a = assessmentRepository.save(Assessment.builder()
                 .title(title.length() > 200 ? title.substring(0, 200) : title)
                 .category(Assessment.Category.INTERVIEW)

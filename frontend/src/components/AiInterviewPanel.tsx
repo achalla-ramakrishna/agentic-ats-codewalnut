@@ -48,6 +48,7 @@ export function AiInterviewPanel({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [questionSet, setQuestionSet] = useState<'1' | '2' | '3' | '4' | 'all'>('1')
 
   const load = useCallback(() => {
     jobInterviews(jobId)
@@ -66,7 +67,14 @@ export function AiInterviewPanel({
     setBusy(true)
     setError(null)
     try {
-      const r = await createAiInterview(jobId)
+      if (questionSet === 'all') {
+        // One draft per set; pick which to send from Tests.
+        for (const n of [1, 2, 3, 4]) await createAiInterview(jobId, undefined, n)
+        window.alert('Sets A, B, C and D were created as drafts under Tests. Check each, Mark ready, and send whichever you like.')
+        navigate('/tests')
+        return
+      }
+      const r = await createAiInterview(jobId, undefined, Number(questionSet))
       if (r.notes.length) window.alert(r.notes.join('\n'))
       navigate(`/tests?test=${r.interview.summary.id}`)
     } catch (e) {
@@ -112,12 +120,24 @@ export function AiInterviewPanel({
         top people, then shortlist.
       </p>
       {canEdit && (
-        <div className="row" style={{ gap: 8 }}>
+        <div className="row" style={{ gap: 8, alignItems: 'flex-end' }}>
+          <label className="field" style={{ maxWidth: 200 }}>
+            Question set
+            <select className="select" value={questionSet} onChange={(e) => setQuestionSet(e.target.value as typeof questionSet)}>
+              <option value="1">Set A</option>
+              <option value="2">Set B</option>
+              <option value="3">Set C</option>
+              <option value="4">Set D</option>
+              <option value="all">All four sets</option>
+            </select>
+          </label>
           <Button variant="secondary" disabled={busy} onClick={() => void create()}>
-            {busy ? 'Drafting…' : '✨ Create an AI interview for this opening'}
+            {busy ? 'Creating…' : '✨ Create an AI interview for this opening'}
           </Button>
-          <span className="muted" style={{ fontSize: 13 }}>
-            Drafts the questions from the job description; you check them under Tests, mark it ready and use Send to candidates (30 at a time).
+          <span className="muted" style={{ fontSize: 13, flex: '1 1 280px' }}>
+            Senior Java openings have four hand-written sets (A–D) covering the same skills with different questions, so you can give
+            different candidates different papers. Other openings get questions drafted from the job description. Check them under
+            Tests, Mark ready, then Send to candidates.
           </span>
         </div>
       )}

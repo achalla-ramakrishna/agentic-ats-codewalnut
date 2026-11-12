@@ -40,10 +40,11 @@ export const AREA_SHORT: Record<string, string> = {
   READINESS: 'Ready',
 }
 
-export const createAiInterview = (jobId: string, durationMinutes?: number) =>
+/** questionSet: 1–4 (Set A–D) of the hand-written senior Java sets. */
+export const createAiInterview = (jobId: string, durationMinutes?: number, questionSet?: number) =>
   api<{ interview: AssessmentDetail; notes: string[] }>('/ai-interviews', {
     method: 'POST',
-    body: JSON.stringify({ jobId, durationMinutes }),
+    body: JSON.stringify({ jobId, durationMinutes, questionSet }),
   })
 
 export const jobInterviews = (jobId: string) => api<JobInterviews>(`/jobs/${jobId}/ai-interviews`)

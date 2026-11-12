@@ -15,8 +15,17 @@ public final class AiInterviewDtos {
 
     private AiInterviewDtos() {}
 
-    /** durationMinutes: the whole interview's time limit once started. */
-    public record CreateInterviewRequest(@NotNull UUID jobId, @Min(20) @Max(180) Integer durationMinutes) {}
+    /**
+     * durationMinutes: the whole interview's time limit once started. questionSet: 1–4 (Set A–D) of the
+     * hand-written senior Java sets; each covers the same skills with different questions.
+     */
+    public record CreateInterviewRequest(@NotNull UUID jobId, @Min(20) @Max(180) Integer durationMinutes,
+            @Min(1) @Max(4) Integer questionSet) {
+
+        public CreateInterviewRequest(UUID jobId, Integer durationMinutes) {
+            this(jobId, durationMinutes, null);
+        }
+    }
 
     /** notes: e.g. "The AI was unavailable, so the standard question set was used." */
     public record CreateInterviewResult(AssessmentDtos.AssessmentDetail interview, List<String> notes) {}

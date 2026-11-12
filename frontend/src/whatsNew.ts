@@ -16,6 +16,17 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-12-interview-sets',
+    date: '2026-11-12',
+    title: 'Four AI interview papers for senior Java roles',
+    summary: 'Senior Java openings now have four hand-written AI interview sets, A to D. Each covers the same skills from the job description with different questions, so candidates can’t pass the questions around. Create one set or all four, and send whichever you like.',
+    steps: [
+      'Open the opening → 🎥 AI interview → Question set → Set A, B, C, D or All four sets → Create.',
+      'Under Tests, check each set → Mark ready → Send to candidates.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-11-12-senior-java-interview',
     date: '2026-11-12',
     title: 'AI interview for senior Java roles: real production scenarios',

@@ -41,6 +41,7 @@ team talks live only to the best few (e.g. 10 of 200).
 | AINT-07 | **Ranking** on the opening (🎥 AI interview): sent / in progress / submitted / reviewed counts, candidates by score with dots per area, notice and salary, summary; click a name to watch; tick and **Shortlist selected**. | Done |
 | AINT-09 | **Senior Java set**: for a Java opening whose title or description says senior, lead, architect, principal or staff, the interview uses a hand-written set instead of a drafted one, written for the Senior Java Developer job description (Java 17, Spring Boot, REST/gRPC, MongoDB, Redis/Caffeine caching, Spring Security with JWT, JUnit 5/Mockito/Spock, CI/CD with SonarQube; airline shopping and booking): production scenarios (a service owned end to end, an incident, slow under load), JWT security, fare-search caching and booking design, a code review on video, code-reading and MongoDB multiple choice (checked by hand), fill in the blanks, testing and CI, working from vague requirements and with global teams, and readiness (notice up to 60 days, hybrid Bengaluru). Each spoken question carries **what a strong answer covers**: shown to staff next to the answer ("Look for"), given to the AI review as the team's expectations (other correct approaches still get credit), never shown to candidates. Drafted questions also carry these notes. | Done |
 | AINT-10 | **Let them finish**: staff (`MANAGE_JOBS`) reopen a submitted AI interview for 10–240 minutes; saved answers are kept, the candidate uses the same link, and the review runs again on submit. Audited, with a team-chat note. A recording that fails to upload is kept on the candidate's screen and Next/Submit wait until it is uploaded or recorded again. | Done |
+| AINT-11 | **Four question sets (A–D)** for senior Java openings, each covering the same skills with different questions (no question repeats across sets apart from the introduction and the notice/salary/location facts). On the opening, 🎥 AI interview → Question set → Set A–D or All four sets → Create; each is a draft titled "… — Set X" to check, Mark ready and send, so different candidates can get different papers. | Done |
 | AINT-08 | Automatic retention: delete interview videos N days after the opening closes. | v1 |
 
 ## Business rules
@@ -78,6 +79,7 @@ team talks live only to the best few (e.g. 10 of 200).
 
 | Date | Change |
 | --- | --- |
+| 2026-11-12 | Four senior Java question sets, A–D (AINT-11) |
 | 2026-11-12 | Let them finish (reopen with saved answers); failed uploads hold Next (AINT-10) |
 | 2026-11-12 | Senior Java question set, written for the Senior Java Developer job description; reviewer notes guide the AI review (AINT-09) |
 | 2026-11-12 | First release: create from the opening, phased video interview, agent review and ranking (AINT-01…07, ADR-0030) |

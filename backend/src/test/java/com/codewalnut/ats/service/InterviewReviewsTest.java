@@ -60,8 +60,19 @@ class InterviewReviewsTest {
     }
 
     @Test
-    void seniorJavaSetIsComplete() {
-        var set = com.codewalnut.ats.bank.InterviewSets.seniorJava();
+    void seniorJavaSetsAreCompleteAndDifferent() {
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (int n = 1; n <= com.codewalnut.ats.bank.InterviewSets.SENIOR_JAVA_SETS; n++) {
+            var set = com.codewalnut.ats.bank.InterviewSets.seniorJava(n);
+            checkSet(set);
+            // Apart from the introduction and the notice/salary/location facts, no question repeats across sets.
+            set.stream().filter(q -> !q.phase().equals("INTRO") && !q.kind().equals("WRITTEN"))
+                    .forEach(q -> assertThat(seen.add(q.prompt() + q.code())).as(q.prompt()).isTrue());
+        }
+        assertThat(com.codewalnut.ats.bank.InterviewSets.setLetter(3)).isEqualTo("C");
+    }
+
+    private static void checkSet(List<InterviewAgent.DraftQuestion> set) {
         assertThat(set).extracting(InterviewAgent.DraftQuestion::phase).containsSubsequence("INTRO", "EXPERIENCE", "SKILLS", "PROJECTS",
                 "ARCHITECTURE", "TECHNICAL", "SOFT_SKILLS", "READINESS");
         assertThat(set).filteredOn(q -> q.kind().equals("MULTIPLE_CHOICE"))
