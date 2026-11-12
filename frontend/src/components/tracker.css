@@ -671,3 +671,10 @@
 .link-button:hover {
   text-decoration: underline;
 }
+.send-list-scroll {
+  max-height: min(420px, 50vh);
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0 8px;
+}

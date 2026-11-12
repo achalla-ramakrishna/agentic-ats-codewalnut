@@ -149,6 +149,8 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
               opening → AI suggestions → Analyze résumés to read them.
             </p>
           )}
+          {/* The list scrolls on its own so Send stays in view with hundreds of candidates. */}
+          <div className="send-list-scroll" role="region" aria-label="Candidate list">
           <table className="send-list" aria-label="Candidates">
             <tbody>
               {rows.map((r) => {
@@ -184,6 +186,7 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
               })}
             </tbody>
           </table>
+          </div>
           <div className="row" style={{ alignItems: 'flex-end' }}>
             <label className="field" style={{ maxWidth: 140 }}>
               Days to finish
