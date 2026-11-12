@@ -99,7 +99,7 @@ public class ClaudeAssistantClient implements AssistantClient {
             throw new CalendarException("The AI assistant is busy right now. Please try again in a minute.");
         } catch (AnthropicServiceException e) {
             log.warn("Assistant request failed: HTTP {} {}", e.statusCode(), e.errorType().orElse(null));
-            throw new CalendarException("The AI assistant is unavailable right now. Nothing was changed.");
+            throw new CalendarException("The AI assistant is unavailable: " + reason(e) + ". Nothing was changed.");
         } catch (RuntimeException e) {
             log.warn("Assistant request failed: {}", e.getMessage());
             throw new CalendarException("Couldn't reach the AI assistant. Nothing was changed.");
@@ -137,5 +137,11 @@ public class ClaudeAssistantClient implements AssistantClient {
 
     static String instructionBlock(Request request) {
         return "<instruction>" + request.instruction().replace("</instruction>", "") + "</instruction>";
+    }
+
+    /** Why the AI call failed, in words; a plain "it rejected the request" for other bad requests. */
+    private static String reason(AnthropicServiceException e) {
+        String r = AiErrors.reason(e);
+        return r != null ? r : "it rejected the request (HTTP 400)";
     }
 }

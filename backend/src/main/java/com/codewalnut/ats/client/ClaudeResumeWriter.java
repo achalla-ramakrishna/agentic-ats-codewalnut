@@ -82,10 +82,10 @@ public class ClaudeResumeWriter implements ResumeWriter {
             throw new CalendarException("The AI is busy right now. Please try again in a minute.");
         } catch (AnthropicServiceException e) {
             log.warn("Résumé writing failed: HTTP {} {}", e.statusCode(), e.errorType().orElse(null));
-            if (e.statusCode() == 400) {
+            if (e.statusCode() == 400 && AiErrors.reason(e) == null) {
                 throw new CalendarException("The AI couldn't read this file. Try uploading the résumé as a PDF.");
             }
-            throw new CalendarException("The AI is unavailable right now. Please try again later.");
+            throw new CalendarException("The AI is unavailable: " + reason(e) + ".");
         } catch (RuntimeException e) {
             log.warn("Résumé writing failed: {}", e.getMessage());
             throw new CalendarException("Couldn't reach the AI. Please try again.");
@@ -102,5 +102,11 @@ public class ClaudeResumeWriter implements ResumeWriter {
                 .map(text -> text.text())
                 .findFirst()
                 .orElseThrow(() -> new CalendarException("The AI didn't return a résumé. Please try again."));
+    }
+
+    /** Why the AI call failed, in words; a plain "it rejected the request" for other bad requests. */
+    private static String reason(AnthropicServiceException e) {
+        String r = AiErrors.reason(e);
+        return r != null ? r : "it rejected the request (HTTP 400)";
     }
 }

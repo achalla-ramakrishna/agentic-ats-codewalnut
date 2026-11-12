@@ -89,10 +89,10 @@ public class ClaudeResumeAnalyzer implements ResumeAnalyzer {
             throw new CalendarException("The AI is busy right now; this résumé will need another try.");
         } catch (AnthropicServiceException e) {
             log.warn("Résumé analysis failed: HTTP {} {}", e.statusCode(), e.errorType().orElse(null));
-            if (e.statusCode() == 400) {
+            if (e.statusCode() == 400 && AiErrors.reason(e) == null) {
                 throw new CalendarException("The AI couldn't read this file. Try saving it again as a PDF.");
             }
-            throw new CalendarException("The AI is unavailable right now; this résumé will need another try.");
+            throw new CalendarException("The AI is unavailable: " + reason(e) + ". This résumé will need another try.");
         } catch (RuntimeException e) {
             log.warn("Résumé analysis failed: {}", e.getMessage());
             throw new CalendarException("Couldn't reach the AI; this résumé will need another try.");
@@ -137,5 +137,11 @@ public class ClaudeResumeAnalyzer implements ResumeAnalyzer {
                     .build();
         }
         throw new CalendarException("Old Word (.doc) files can't be read. Please save it as PDF or .docx and upload again.");
+    }
+
+    /** Why the AI call failed, in words; a plain "it rejected the request" for other bad requests. */
+    private static String reason(AnthropicServiceException e) {
+        String r = AiErrors.reason(e);
+        return r != null ? r : "it rejected the request (HTTP 400)";
     }
 }

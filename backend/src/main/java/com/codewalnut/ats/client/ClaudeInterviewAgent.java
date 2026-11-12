@@ -109,7 +109,7 @@ public class ClaudeInterviewAgent implements InterviewAgent {
             throw new CalendarException("The AI is busy right now.");
         } catch (AnthropicServiceException e) {
             log.warn("Interview agent failed to {}: HTTP {} {}", what, e.statusCode(), e.errorType().orElse(null));
-            throw new CalendarException("The AI is unavailable right now.");
+            throw new CalendarException("The AI is unavailable: " + reason(e) + ".");
         } catch (RuntimeException e) {
             log.warn("Interview agent failed to {}: {}", what, e.getMessage());
             throw new CalendarException("Couldn't reach the AI.");
@@ -152,5 +152,11 @@ public class ClaudeInterviewAgent implements InterviewAgent {
 
     private static String clean(String s) {
         return s == null ? "" : s.replaceAll("[<>\"]", " ");
+    }
+
+    /** Why the AI call failed, in words; a plain "it rejected the request" for other bad requests. */
+    private static String reason(AnthropicServiceException e) {
+        String r = AiErrors.reason(e);
+        return r != null ? r : "it rejected the request (HTTP 400)";
     }
 }

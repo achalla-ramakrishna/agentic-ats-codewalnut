@@ -68,7 +68,7 @@ public class ClaudeAssessmentDrafter implements AssessmentDrafter {
             throw new CalendarException("The AI is busy right now. Please try again in a minute.");
         } catch (AnthropicServiceException e) {
             log.warn("Question drafting failed: HTTP {} {}", e.statusCode(), e.errorType().orElse(null));
-            throw new CalendarException("The AI is unavailable right now. Please try again later.");
+            throw new CalendarException("The AI is unavailable: " + reason(e) + ".");
         } catch (RuntimeException e) {
             log.warn("Question drafting failed: {}", e.getMessage());
             throw new CalendarException("Couldn't reach the AI. Please try again.");
@@ -89,5 +89,11 @@ public class ClaudeAssessmentDrafter implements AssessmentDrafter {
 
     private static String clean(String s) {
         return s == null || s.isBlank() ? "(not given)" : s.replaceAll("[<>]", " ").strip();
+    }
+
+    /** Why the AI call failed, in words; a plain "it rejected the request" for other bad requests. */
+    private static String reason(AnthropicServiceException e) {
+        String r = AiErrors.reason(e);
+        return r != null ? r : "it rejected the request (HTTP 400)";
     }
 }
