@@ -203,7 +203,7 @@ public class QuestionBankService {
     public BankQuestionView create(AppUser actor, BankQuestionRequest request) {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);
         checkSection(request.area(), request.section());
-        QuestionRequest q = assessmentService.normalise(request.question());
+        QuestionRequest q = bankQuestion(request.question());
         BankQuestion saved = bankRepository.save(apply(BankQuestion.builder()
                 .area(request.area()).section(request.section()).topic(request.topic().strip()).difficulty(request.difficulty())
                 .source(BankQuestion.Source.MANUAL).status(BankQuestion.Status.ACTIVE).createdBy(actor.getEmail()).build(), q));
@@ -216,7 +216,7 @@ public class QuestionBankService {
     public BankQuestionView update(AppUser actor, UUID id, BankQuestionRequest request) {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);
         BankQuestion b = bank(id);
-        QuestionRequest q = assessmentService.normalise(request.question());
+        QuestionRequest q = bankQuestion(request.question());
         checkSection(request.area(), request.section());
         b.setArea(request.area());
         b.setSection(request.section());
@@ -420,6 +420,14 @@ public class QuestionBankService {
     }
 
     // ---- helpers ----
+
+    /** Bank questions are marked right or wrong; video and written answers belong to AI interviews only. */
+    private QuestionRequest bankQuestion(QuestionRequest request) {
+        if (request != null && request.kind() != null && request.kind().isOpen()) {
+            throw new IllegalArgumentException("kind: video and written answers are for AI interviews, not the question bank");
+        }
+        return assessmentService.normalise(request);
+    }
 
     /** Aptitude uses numerical/logical/verbal; technical areas use the experience bands. */
     private static void checkSection(Assessment.Category area, BankQuestion.Section section) {

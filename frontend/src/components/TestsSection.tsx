@@ -15,9 +15,14 @@ import {
   type AnswerReview,
   type SectionScore,
   type AssessmentSummary,
+  type InterviewReview,
   type InviteView,
   type SendResult,
 } from '../api/assessments'
+import { reviewAgain, videoUrl } from '../api/aiInterviews'
+import { sectionTitle } from '../api/questionBank'
+import { InterviewReviewCard } from './InterviewReviewCard'
+import { RecordedVideo } from './VideoAnswer'
 import { getWhatsAppStatus } from '../api/messages'
 import { Figure } from './Figure'
 import { RunResults } from './RunResults'
@@ -83,14 +88,28 @@ function CodeAnswer({ a }: { a: AnswerReview }) {
   )
 }
 
-function Review({ answers, sections, activity }: { answers: AnswerReview[]; sections: SectionScore[]; activity: Activity | null }) {
+function Review({
+  inviteId,
+  answers,
+  sections,
+  activity,
+  interview,
+}: {
+  inviteId: string
+  answers: AnswerReview[]
+  sections: SectionScore[]
+  activity: Activity | null
+  interview: InterviewReview | null
+}) {
+  const marked = sections.filter((s) => s.max > 0)
   return (
     <>
+    {interview && <InterviewReviewCard review={interview} />}
     <ActivityNote activity={activity} />
-    {sections.length > 0 && (
+    {marked.length > 0 && (
       <table className="bank-grid" aria-label="Score by section" style={{ fontSize: 13, marginTop: 6 }}>
         <tbody>
-          {sections.map((s) => (
+          {marked.map((s) => (
             <tr key={s.section}>
               <td style={{ textAlign: 'left' }}>{s.label}</td>
               <td>
@@ -109,6 +128,30 @@ function Review({ answers, sections, activity }: { answers: AnswerReview[]; sect
             ? a.given[0] || '—'
             : a.given.map((g) => a.options[Number(g)] ?? g).join(', ') || '—'
         const right = a.kind === 'SHORT_ANSWER' ? a.acceptedAnswers.join(' / ') : a.correct.map((c) => a.options[c]).join(', ')
+        if (a.kind === 'VIDEO' || a.kind === 'WRITTEN') {
+          return (
+            <li key={a.position} style={{ marginBottom: 8 }} className="stack">
+              <span>
+                {a.section && <span className="muted">{sectionTitle(a.section)} · </span>}
+                {a.prompt}
+              </span>
+              {a.kind === 'VIDEO' ? (
+                a.given[0] ? (
+                  <>
+                    <RecordedVideo src={videoUrl(inviteId, a.given[0])} label={`Answer to question ${a.position}`} />
+                    <span className="muted">{a.given[1] ? `Transcript: ${a.given[1]}` : 'No transcript (recorded in a browser without speech-to-text).'}</span>
+                  </>
+                ) : (
+                  <span className="muted">Not answered.</span>
+                )
+              ) : (
+                <span>
+                  Answered: <strong>{a.given[0] || '—'}</strong>
+                </span>
+              )}
+            </li>
+          )
+        }
         if (a.kind === 'CODING') {
           return (
             <li key={a.position} style={{ marginBottom: 6 }}>
@@ -164,7 +207,9 @@ export function TestsSection({
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [waApi, setWaApi] = useState(false)
-  const [review, setReview] = useState<Record<string, { answers: AnswerReview[]; sections: SectionScore[]; activity: Activity | null }>>({})
+  const [review, setReview] = useState<
+    Record<string, { answers: AnswerReview[]; sections: SectionScore[]; activity: Activity | null; interview: InterviewReview | null }>
+  >({})
 
   const load = useCallback(() => {
     listApplicationTests(applicationId).then(setInvites).catch(() => setInvites([]))
@@ -262,6 +307,21 @@ export function TestsSection({
     }
   }
 
+  async function onReviewAgain(invite: InviteView) {
+    setError(null)
+    try {
+      await reviewAgain(invite.id)
+      setReview((all) => {
+        const rest = { ...all }
+        delete rest[invite.id]
+        return rest
+      })
+      setInvites(await listApplicationTests(applicationId))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not review again')
+    }
+  }
+
   async function toggleReview(invite: InviteView) {
     if (review[invite.id]) {
       setReview((all) => {
@@ -272,7 +332,7 @@ export function TestsSection({
       return
     }
     const r = await getTestResult(invite.id)
-    setReview((all) => ({ ...all, [invite.id]: { answers: r.answers, sections: r.sections, activity: r.activity } }))
+    setReview((all) => ({ ...all, [invite.id]: { answers: r.answers, sections: r.sections, activity: r.activity, interview: r.review } }))
     if (invite.newResult) {
       // Opening the answers marks the result as seen on the server.
       setInvites((all) => all?.map((i) => (i.id === invite.id ? { ...i, newResult: false } : i)) ?? all)
@@ -372,6 +432,11 @@ export function TestsSection({
                       Grade again
                     </Button>
                   )}
+                  {canSend && i.category === 'INTERVIEW' && i.status === 'SUBMITTED' && i.evaluation !== 'PENDING' && (
+                    <Button size="sm" variant={i.evaluation === 'FAILED' ? 'secondary' : 'ghost'} onClick={() => void onReviewAgain(i)}>
+                      Review again
+                    </Button>
+                  )}
                   {i.status === 'SUBMITTED' && (
                     <Button size="sm" variant="ghost" onClick={() => void toggleReview(i)}>
                       {review[i.id] ? 'Hide answers' : 'Answers'}
@@ -399,10 +464,19 @@ export function TestsSection({
                 {i.reminderCount > 0 && ` · reminded ${i.reminderCount}×`}
                 {i.status === 'SUBMITTED' && i.grading === 'PENDING' && ' · grading the code (usually under a minute)'}
                 {i.status === 'SUBMITTED' && i.grading === 'FAILED' && ' · the code couldn’t be graded — the code runner was unreachable'}
-                {i.status === 'SUBMITTED' && i.percent != null && ` · ${i.score}/${i.maxScore} points, pass mark ${i.passPercent}%`}
+                {i.status === 'SUBMITTED' && i.percent != null && i.category !== 'INTERVIEW' && ` · ${i.score}/${i.maxScore} points, pass mark ${i.passPercent}%`}
+                {i.status === 'SUBMITTED' && i.category === 'INTERVIEW' && i.evaluation === 'FAILED' && ' · the AI review couldn’t be done'}
                 {i.needsNudge && i.status === 'SENT' && ' · not started after 2 days — send a nudge?'}
               </span>
-              {review[i.id] && <Review answers={review[i.id].answers} sections={review[i.id].sections} activity={review[i.id].activity} />}
+              {review[i.id] && (
+                <Review
+                  inviteId={i.id}
+                  answers={review[i.id].answers}
+                  sections={review[i.id].sections}
+                  activity={review[i.id].activity}
+                  interview={review[i.id].interview}
+                />
+              )}
             </li>
           ))}
         </ul>

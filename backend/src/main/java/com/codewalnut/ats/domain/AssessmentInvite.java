@@ -108,6 +108,27 @@ public class AssessmentInvite {
     @Column(name = "reviewed_by", length = 254)
     private String reviewedBy;
 
+    /** The advisory AI review of an AI interview (ADR-0030): null for other tests. */
+    public enum Evaluation { PENDING, DONE, FAILED }
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private Evaluation evaluation;
+
+    @Column(name = "evaluation_attempts", nullable = false)
+    private int evaluationAttempts;
+
+    /** Ratings per area and phase with evidence, summary and things to check (InterviewEvaluation). */
+    @Column(name = "evaluation_json", columnDefinition = "MEDIUMTEXT")
+    private String evaluationJson;
+
+    /** 0–100, worked out by the app from the AI's ratings and the marked answers. Advisory. */
+    @Column(name = "ai_score")
+    private Integer aiScore;
+
+    @Column(name = "evaluated_at")
+    private Instant evaluatedAt;
+
     @PrePersist
     void onCreate() {
         sentAt = Instant.now();

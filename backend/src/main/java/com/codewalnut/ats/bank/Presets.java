@@ -36,6 +36,7 @@ public final class Presets {
                             new SectionPlan(Section.VERBAL, 4, 4, 2))));
 
     private static final java.util.Map<Category, String> NAMES = java.util.Map.ofEntries(
+            java.util.Map.entry(Category.INTERVIEW, "AI interview"),
             java.util.Map.entry(Category.JAVA, "Java"), java.util.Map.entry(Category.PYTHON, "Python"),
             java.util.Map.entry(Category.JAVASCRIPT, "JavaScript"), java.util.Map.entry(Category.REACT, "React"),
             java.util.Map.entry(Category.ANGULAR, "Angular"), java.util.Map.entry(Category.SQL, "SQL"),

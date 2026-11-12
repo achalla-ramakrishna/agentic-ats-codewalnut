@@ -16,6 +16,19 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-12-ai-interviews',
+    date: '2026-11-12',
+    title: 'AI interviews: candidates record answers, the AI ranks them',
+    summary: 'Too many applicants to interview? Send a recorded interview instead. The ATS drafts it from the job description in phases — introduction, work experience, skills, projects, architecture, technical round, soft skills and readiness to join — with video answers, fill in the blanks and multiple choice. Candidates answer on camera in their own time; the interview agent reviews each one and ranks them by technical depth, design, communication, experience and readiness, with notice period and salary. You watch the top people and shortlist.',
+    steps: [
+      'Open the opening → 🎥 AI interview → Create an AI interview for this opening.',
+      'Check the questions under Tests (edit any, add your own video questions) → Mark ready.',
+      'Send to candidates → pick the opening → tick up to 30 → Send. Repeat for the next 30.',
+      'Back on the opening → 🎥 AI interview: the ranking fills in as people submit. Click a name to watch, tick the best → Shortlist selected.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-10-12-todays-emails',
     date: '2026-10-12',
     title: 'Today’s emails: the ATS works out who needs what, you click once',

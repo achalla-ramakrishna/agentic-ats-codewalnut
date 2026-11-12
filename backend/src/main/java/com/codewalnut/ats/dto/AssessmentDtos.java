@@ -34,7 +34,8 @@ public final class AssessmentDtos {
     public record QuestionView(
             UUID id, int position, AssessmentQuestion.Kind kind, String prompt, String code, List<String> options,
             List<Integer> correct, List<String> acceptedAnswers, int points, String explanation, boolean aiDrafted,
-            String figure, List<String> optionFigures, String section, String topic, String difficulty, CodingView coding) {}
+            String figure, List<String> optionFigures, String section, String topic, String difficulty, CodingView coding,
+            Integer maxSeconds) {}
 
     // ---- coding questions (ADR-0016) ----
 
@@ -114,7 +115,14 @@ public final class AssessmentDtos {
             @Min(1) @Max(20) int points,
             @Size(max = 2000) String explanation,
             @Size(max = 1_500_000) String figure,
-            @Valid CodingRequest coding) {
+            @Valid CodingRequest coding,
+            @Size(max = 30) String section,
+            @Min(30) @Max(600) Integer maxSeconds) {
+
+        public QuestionRequest(AssessmentQuestion.Kind kind, String prompt, String code, List<String> options, List<Integer> correct,
+                List<String> acceptedAnswers, int points, String explanation, String figure, CodingRequest coding) {
+            this(kind, prompt, code, options, correct, acceptedAnswers, points, explanation, figure, coding, null, null);
+        }
 
         public QuestionRequest(AssessmentQuestion.Kind kind, String prompt, String code, List<String> options, List<Integer> correct,
                 List<String> acceptedAnswers, int points, String explanation, String figure) {
@@ -147,7 +155,8 @@ public final class AssessmentDtos {
             UUID id, UUID applicationId, UUID assessmentId, String title, Assessment.Category category,
             AssessmentInvite.Status status, String sentBy, Instant sentAt, Instant dueAt, Instant startedAt,
             Instant submittedAt, Integer score, Integer maxScore, Integer percent, Boolean passed, int passPercent,
-            int reminderCount, Instant lastRemindedAt, boolean needsNudge, boolean newResult, AssessmentInvite.Grading grading) {}
+            int reminderCount, Instant lastRemindedAt, boolean needsNudge, boolean newResult, AssessmentInvite.Grading grading,
+            Integer aiScore, AssessmentInvite.Evaluation evaluation) {}
 
     /** A submitted test nobody has looked at yet, with where to find the candidate. */
     public record NewResult(InviteView invite, String candidateName, UUID jobId, String jobTitle) {}
@@ -163,7 +172,9 @@ public final class AssessmentDtos {
     public record SectionScore(String section, String label, int score, int max, int questions) {}
 
     /** activity: browser signals while the test was taken (advisory). */
-    public record InviteDetail(InviteView invite, List<AnswerReview> answers, List<SectionScore> sections, Activity activity) {}
+    /** review: the AI interview review (ADR-0030), null for other tests. */
+    public record InviteDetail(InviteView invite, List<AnswerReview> answers, List<SectionScore> sections, Activity activity,
+            com.codewalnut.ats.dto.AiInterviewDtos.InterviewReview review) {}
 
     // ---- the candidate ----
 
@@ -174,7 +185,7 @@ public final class AssessmentDtos {
 
     public record CandidateQuestion(
             UUID id, int position, AssessmentQuestion.Kind kind, String prompt, String code, List<String> options,
-            int points, String figure, List<String> optionFigures, String section, CodingSpec coding) {}
+            int points, String figure, List<String> optionFigures, String section, CodingSpec coding, Integer maxSeconds) {}
 
     /** answers: what the candidate has saved so far, by question id. */
     public record TakeTest(MyTest test, List<CandidateQuestion> questions, Map<UUID, List<String>> answers,

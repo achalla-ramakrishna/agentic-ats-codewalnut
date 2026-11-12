@@ -56,7 +56,8 @@ function QuestionCard({
         <span className="row" style={{ gap: 8 }}>
           <strong>{q.position}.</strong>
           <span className="muted" style={{ fontSize: 13 }}>
-            {KIND_LABEL[q.kind]} · {q.points} point{q.points === 1 ? '' : 's'}
+            {KIND_LABEL[q.kind]}
+            {q.kind === 'VIDEO' || q.kind === 'WRITTEN' ? '' : ` · ${q.points} point${q.points === 1 ? '' : 's'}`}
             {q.section ? ` · ${sectionTitle(q.section, (c) => CATEGORY_LABEL[c] ?? c)}` : ''}
             {q.topic ? ` · ${q.topic}` : ''}
           </span>
@@ -270,7 +271,7 @@ function Editor({
             }}
           />
         )}
-        {draftMode && (
+        {draftMode && s.category !== 'INTERVIEW' && (
           <div className="card stack" role="region" aria-label="Draft questions with AI" style={{ gap: 8 }}>
             <strong>✨ Draft questions with AI</strong>
             <div className="row" style={{ alignItems: 'flex-end' }}>
@@ -305,6 +306,7 @@ function Editor({
             editing === q.id ? (
               <li key={q.id}>
                 <QuestionForm
+                  interview={s.category === 'INTERVIEW'}
                   initial={q}
                   onCancel={() => setEditing(null)}
                   onSave={async (input) => {
@@ -329,6 +331,7 @@ function Editor({
         {draftMode &&
           (editing === 'new' ? (
             <QuestionForm
+              interview={s.category === 'INTERVIEW'}
               onCancel={() => setEditing(null)}
               onSave={async (input) => {
                 setDetail(await addQuestion(id, input))

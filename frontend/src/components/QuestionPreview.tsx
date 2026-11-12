@@ -12,6 +12,7 @@ interface Previewable {
   acceptedAnswers: string[]
   explanation: string | null
   coding?: CodingView | null
+  maxSeconds?: number | null
 }
 
 /** A question as a reviewer sees it: picture, options (text or pictures) and, optionally, the answer. */
@@ -49,6 +50,12 @@ export function QuestionPreview({ question: q, showAnswer }: { question: Preview
             </div>
           </div>
         </div>
+      ) : q.kind === 'VIDEO' || q.kind === 'WRITTEN' ? (
+        <span className="muted" style={{ fontSize: 13 }}>
+          {q.kind === 'VIDEO'
+            ? `Answered on video${q.maxSeconds ? `, up to ${Math.floor(q.maxSeconds / 60)}:${String(q.maxSeconds % 60).padStart(2, '0')}` : ''} · reviewed, not marked`
+            : 'Typed answer · reviewed, not marked'}
+        </span>
       ) : q.kind === 'SHORT_ANSWER' ? (
         showAnswer && (
           <div style={{ fontSize: 14 }}>

@@ -247,7 +247,8 @@ public class AssessmentService {
                     .code(q.getCode()).optionsJson(q.getOptionsJson()).answerJson(q.getAnswerJson()).codingJson(q.getCodingJson())
                     .points(q.getPoints()).explanation(q.getExplanation()).aiDrafted(q.isAiDrafted())
                     .figure(q.getFigure()).optionFiguresJson(q.getOptionFiguresJson()).section(q.getSection())
-                    .topic(q.getTopic()).difficulty(q.getDifficulty()).bankQuestionId(q.getBankQuestionId()).build());
+                    .topic(q.getTopic()).difficulty(q.getDifficulty()).bankQuestionId(q.getBankQuestionId())
+                    .maxSeconds(q.getMaxSeconds()).build());
         }
         auditService.record(actor, AuditAction.ASSESSMENT_CREATED, "Assessment", copy.getId(), Map.of("copiedFrom", id));
         return detail(copy);
@@ -309,8 +310,8 @@ public class AssessmentService {
     }
 
     List<Integer> correct(AssessmentQuestion q) {
-        return q.getKind() == AssessmentQuestion.Kind.SHORT_ANSWER || q.getKind() == AssessmentQuestion.Kind.CODING ? List.of()
-                : readList(q.getAnswerJson(), new TypeReference<List<Integer>>() {});
+        return q.getKind() == AssessmentQuestion.Kind.SHORT_ANSWER || q.getKind() == AssessmentQuestion.Kind.CODING || q.getKind().isOpen()
+                ? List.of() : readList(q.getAnswerJson(), new TypeReference<List<Integer>>() {});
     }
 
     /** Staff view of a coding question (spec and hidden tests), or null for other kinds. */
@@ -326,7 +327,7 @@ public class AssessmentService {
 
     /** Points earned for the given answer: all or nothing. Coding answers are graded by running them (CodeRunService). */
     int earned(AssessmentQuestion q, List<String> given) {
-        if (given == null || given.isEmpty() || q.getKind() == AssessmentQuestion.Kind.CODING) {
+        if (given == null || given.isEmpty() || q.getKind() == AssessmentQuestion.Kind.CODING || q.getKind().isOpen()) {
             return 0;
         }
         if (q.getKind() == AssessmentQuestion.Kind.SHORT_ANSWER) {
@@ -366,7 +367,7 @@ public class AssessmentService {
         List<QuestionView> views = qs.stream()
                 .map(q -> new QuestionView(q.getId(), q.getPosition(), q.getKind(), q.getPrompt(), q.getCode(),
                         options(q), correct(q), accepted(q), q.getPoints(), q.getExplanation(), q.isAiDrafted(),
-                        q.getFigure(), optionFigures(q), q.getSection(), q.getTopic(), q.getDifficulty(), coding(q)))
+                        q.getFigure(), optionFigures(q), q.getSection(), q.getTopic(), q.getDifficulty(), coding(q), q.getMaxSeconds()))
                 .toList();
         return new AssessmentDetail(summary(a, new long[] {qs.size(), qs.stream().mapToInt(AssessmentQuestion::getPoints).sum()}), views);
     }
@@ -390,6 +391,16 @@ public class AssessmentService {
             return new QuestionRequest(r.kind(), prompt, null, List.of(), List.of(), List.of(), r.points(), blankToNull(r.explanation()),
                     null, r.coding());
         }
+        String section = r.section() == null || r.section().isBlank() ? null : r.section().strip();
+        if (section != null && com.codewalnut.ats.domain.InterviewPhase.of(section) == null) {
+            throw new IllegalArgumentException("section: choose an interview phase");
+        }
+        if (r.kind().isOpen()) {
+            // AI interviews (ADR-0030): spoken or written answers, read by the AI review, not marked.
+            Integer seconds = r.kind() == AssessmentQuestion.Kind.VIDEO ? (r.maxSeconds() == null ? 120 : r.maxSeconds()) : null;
+            return new QuestionRequest(r.kind(), prompt, code, List.of(), List.of(), List.of(), 1, blankToNull(r.explanation()),
+                    null, null, section, seconds);
+        }
         if (r.kind() == AssessmentQuestion.Kind.SHORT_ANSWER) {
             List<String> accepted = r.acceptedAnswers() == null ? List.of() : r.acceptedAnswers().stream()
                     .filter(StringUtils::hasText).map(String::strip).distinct().toList();
@@ -397,7 +408,7 @@ public class AssessmentService {
                 throw new IllegalArgumentException("acceptedAnswers: add at least one accepted answer");
             }
             return new QuestionRequest(r.kind(), prompt, code, List.of(), List.of(), accepted, r.points(), blankToNull(r.explanation()),
-                    com.codewalnut.ats.bank.Figures.check(r.figure()));
+                    com.codewalnut.ats.bank.Figures.check(r.figure()), null, section, null);
         }
         List<String> options = r.options() == null ? List.of() : r.options().stream()
                 .map(o -> o == null ? "" : o.strip()).toList();
@@ -415,7 +426,7 @@ public class AssessmentService {
             throw new IllegalArgumentException("correct: a single-choice question has exactly one right option");
         }
         return new QuestionRequest(r.kind(), prompt, code, options, correct, List.of(), r.points(), blankToNull(r.explanation()),
-                com.codewalnut.ats.bank.Figures.check(r.figure()));
+                com.codewalnut.ats.bank.Figures.check(r.figure()), null, section, null);
     }
 
     void apply(AssessmentQuestion q, QuestionRequest r) {
@@ -434,13 +445,22 @@ public class AssessmentService {
             q.setOptionFiguresJson(null);
             q.setCodingJson(stored.specJson());
             q.setAnswerJson(stored.testsJson());
+        } else if (r.kind().isOpen()) {
+            q.setCodingJson(null);
+            q.setOptionsJson(null);
+            q.setOptionFiguresJson(null);
+            q.setAnswerJson("[]");
         } else {
             q.setCodingJson(null);
             q.setOptionsJson(r.kind() == AssessmentQuestion.Kind.SHORT_ANSWER ? null : write(r.options()));
             q.setAnswerJson(write(r.kind() == AssessmentQuestion.Kind.SHORT_ANSWER ? r.acceptedAnswers() : r.correct()));
         }
-        q.setPoints(r.points());
+        q.setPoints(r.kind().isOpen() ? 0 : r.points()); // open answers are reviewed, not marked
         q.setExplanation(r.explanation());
+        q.setMaxSeconds(r.kind() == AssessmentQuestion.Kind.VIDEO ? r.maxSeconds() : null);
+        if (r.section() != null) {
+            q.setSection(r.section());
+        }
     }
 
     String write(Object value) {

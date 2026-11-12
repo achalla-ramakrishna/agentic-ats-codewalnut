@@ -115,6 +115,7 @@ templates, rules and SLAs are in [pipeline.md](features/pipeline.md).
 | MSG | [Email & communication](features/communication.md) | 3 | In progress (first release shipped) |
 | INT | [Interviews & scorecards](features/interviews-and-scorecards.md) | 4 | In progress (scheduling shipped) |
 | ASMT | [Coding assessments](features/assessments.md) | 5 | Draft |
+| AINT | [AI interviews](features/ai-interviews.md) | v1 | Done (first release) |
 | SUB | [Client submissions & review](features/client-submissions.md) | 6 | Ready |
 | OFR | [Offers & placements](features/offers-and-placements.md) | 7 | Draft |
 | PRIV | [Privacy, consent & retention](features/privacy-and-retention.md) | 8 (+ throughout) | Ready |

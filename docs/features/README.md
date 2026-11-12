@@ -39,6 +39,7 @@ here holds the detailed, testable requirements for one feature.
 | MSG | [Email & communication](communication.md) | 3 | In progress (first release shipped) |
 | INT | [Interviews & scorecards](interviews-and-scorecards.md) | 4 | In progress (scheduling shipped) |
 | ASMT | [Coding assessments](assessments.md) | 5 | Draft |
+| AINT | [AI interviews](ai-interviews.md) | v1 | Done (first release) |
 | SUB | [Client submissions & review](client-submissions.md) | 6 | Ready |
 | OFR | [Offers & placements](offers-and-placements.md) | 7 | Draft |
 | PRIV | [Privacy, consent & retention](privacy-and-retention.md) | 8 (+ throughout) | Ready |

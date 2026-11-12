@@ -188,6 +188,17 @@ public class IntegrationsConfig {
                 .orElseGet(DisabledProfileRanker::new);
     }
 
+    /** The AI interview agent (ADR-0030): Claude when ANTHROPIC_API_KEY is set; otherwise the built-in question set and basic review. */
+    @Bean
+    public com.codewalnut.ats.client.InterviewAgent interviewAgent(@Value("${ANTHROPIC_API_KEY:}") String apiKey,
+            @Value("${ats.assistant.model:claude-opus-5-5}") String model, Environment environment) {
+        if (environment.acceptsProfiles(org.springframework.core.env.Profiles.of("dev", "demo"))) {
+            return new com.codewalnut.ats.client.BuiltInInterviewAgent();
+        }
+        return anthropic(apiKey).<com.codewalnut.ats.client.InterviewAgent>map(c -> new com.codewalnut.ats.client.ClaudeInterviewAgent(c, model))
+                .orElseGet(com.codewalnut.ats.client.BuiltInInterviewAgent::new);
+    }
+
     private static Optional<AnthropicClient> anthropic(String apiKey) {
         if (apiKey == null || apiKey.isBlank()) {
             return Optional.empty();

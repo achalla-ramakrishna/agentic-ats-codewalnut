@@ -148,3 +148,87 @@ describe('TakeTestPage', () => {
     expect(JSON.parse(run[1]!.body as string)).toEqual({ language: 'python', source: 'import sys\nprint(sum(map(int, input().split())))' })
   })
 })
+
+describe('TakeTestPage — AI interview (AINT-03, AINT-04)', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  const interview = { ...test, title: 'AI interview — Senior Java', category: 'INTERVIEW', questionCount: 3, durationMinutes: 75 }
+  const takingInterview = {
+    test: { ...interview, status: 'STARTED' },
+    questions: [
+      { id: 'v1', position: 1, kind: 'VIDEO', prompt: 'Introduce yourself.', code: null, options: [], points: 0, figure: null, optionFigures: null, section: 'INTRO', coding: null, maxSeconds: 60 },
+      { id: 'w1', position: 2, kind: 'WRITTEN', prompt: 'What is your notice period?', code: null, options: [], points: 0, figure: null, optionFigures: null, section: 'READINESS', coding: null, maxSeconds: null },
+      { id: 'v2', position: 3, kind: 'VIDEO', prompt: 'Why this role?', code: null, options: [], points: 0, figure: null, optionFigures: null, section: 'READINESS', coding: null, maxSeconds: 60 },
+    ],
+    answers: { v2: ['saved-video', 'I like the work'] },
+    secondsLeft: 4500,
+  }
+
+  /** A stand-in for the browser recorder: one chunk of "video" when stopped. */
+  class FakeRecorder {
+    static isTypeSupported = (t: string) => t === 'video/webm'
+    mimeType = 'video/webm'
+    state = 'inactive'
+    ondataavailable: ((e: { data: Blob }) => void) | null = null
+    onstop: (() => void) | null = null
+    start() {
+      this.state = 'recording'
+    }
+    stop() {
+      this.state = 'inactive'
+      this.ondataavailable?.({ data: new Blob(['webm'], { type: 'video/webm' }) })
+      this.onstop?.()
+    }
+  }
+
+  it('checks the camera, goes phase by phase, records and uploads an answer, and submits', { timeout: 20000 }, async () => {
+    const fetchMock = fakeFetch([
+      { path: '/candidate/tests/i1/start', method: 'POST', body: takingInterview },
+      { path: '/candidate/tests/i1/questions/v1/video', method: 'POST', body: { videoId: 'vid-1', seconds: 12, sizeBytes: 4 } },
+      { path: '/candidate/tests/i1/activity', method: 'POST', status: 204 },
+      { path: '/candidate/tests/i1/answers', method: 'PUT', body: takingInterview },
+      { path: '/candidate/tests/i1/submit', method: 'POST', body: { ...interview, status: 'SUBMITTED' } },
+      { path: '/candidate/tests', body: [interview] },
+    ])
+    const stop = vi.fn()
+    vi.stubGlobal('navigator', { ...navigator, mediaDevices: { getUserMedia: vi.fn(async () => ({ getTracks: () => [{ stop }] })) } })
+    vi.stubGlobal('MediaRecorder', FakeRecorder)
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => 'blob:answer', revokeObjectURL: () => undefined }))
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+    render(
+      <MemoryRouter initialEntries={['/tests/i1']}>
+        <Routes>
+          <Route path="/tests/:id" element={<TakeTestPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText(/Recorded interview for/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Check camera and microphone' }))
+    expect(await screen.findByLabelText('Camera preview')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Start the interview' }))
+
+    // Phase 1 of 2: only the introduction is on screen.
+    expect(await screen.findByText('Introduce yourself.')).toBeInTheDocument()
+    expect(screen.queryByText('Why this role?')).not.toBeInTheDocument()
+    expect(screen.getByText('1. Introduction')).toHaveAttribute('aria-current', 'step')
+    await userEvent.click(screen.getByRole('button', { name: '● Record answer' }))
+    expect(screen.getByRole('timer', { name: 'Recording question 1' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '■ Stop and save' }))
+    expect(await screen.findByText(/✓ Saved/, {}, { timeout: 8000 })).toBeInTheDocument()
+    const upload = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/questions/v1/video'))!
+    expect((upload[1]!.body as FormData).get('file')).toBeInstanceOf(Blob)
+    expect(screen.getByText(/2 of 3 answered/)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Next: Readiness to join →' }))
+    expect(await screen.findByText('What is your notice period?')).toBeInTheDocument()
+    expect(screen.queryByText('Introduce yourself.')).not.toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('Answer to question 2'), '30 days')
+    await userEvent.click(screen.getByRole('button', { name: 'Submit the interview' }))
+    expect(await screen.findByText('Thank you!')).toBeInTheDocument()
+    const submit = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/submit'))!
+    expect(JSON.parse(submit[1]!.body as string).answers.w1).toEqual(['30 days'])
+    expect(stop).toHaveBeenCalled() // camera off afterwards
+  })
+})

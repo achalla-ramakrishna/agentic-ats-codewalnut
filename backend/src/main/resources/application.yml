@@ -14,7 +14,8 @@ spring:
     locations: classpath:db/migration
   servlet:
     multipart:
-      max-file-size: 10MB
+      # Documents are checked at 10 MB by DocumentService; AI interview videos may be up to 60 MB.
+      max-file-size: 60MB
       # Bulk résumé uploads send several files per request (the page sends them in small batches).
       max-request-size: 60MB
   # Google sign-in: set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (see
@@ -63,6 +64,12 @@ ats:
     workers: ${ATS_AI_WORKERS:3}
   # Coding questions run in a self-hosted Judge0 sandbox (ADR-0016, docs/deploy-judge0.md).
   # Unset: coding questions can be written but not run or graded.
+  # AI interviews (ADR-0030): recorded answers are saved in this folder. On Railway, mount a
+  # volume and set ATS_MEDIA_DIR to a folder on it (e.g. /data/media), or videos are lost on redeploy.
+  media:
+    dir: ${ATS_MEDIA_DIR:data/media}
+  interview:
+    async: true
   coding:
     runner-url: ${ATS_CODE_RUNNER_URL:}
     runner-token: ${ATS_CODE_RUNNER_TOKEN:}

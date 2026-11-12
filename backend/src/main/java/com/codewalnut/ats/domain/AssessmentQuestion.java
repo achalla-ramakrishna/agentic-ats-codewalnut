@@ -29,8 +29,16 @@ public class AssessmentQuestion {
     /**
      * SINGLE_CHOICE: one right option. MULTI_CHOICE: pick all right options. SHORT_ANSWER: type it (e.g. the output).
      * CODING: write a program that reads stdin and prints the answer; it runs against hidden test cases (ADR-0016).
+     * VIDEO: AI interviews (ADR-0030) — record a spoken answer on camera. WRITTEN: a free-text answer. Neither is
+     * marked right or wrong; the AI review reads them.
      */
-    public enum Kind { SINGLE_CHOICE, MULTI_CHOICE, SHORT_ANSWER, CODING }
+    public enum Kind { SINGLE_CHOICE, MULTI_CHOICE, SHORT_ANSWER, CODING, VIDEO, WRITTEN;
+
+        /** Answers read by the AI review rather than marked by the app. */
+        public boolean isOpen() {
+            return this == VIDEO || this == WRITTEN;
+        }
+    }
 
     @Id
     @UuidGenerator
@@ -91,6 +99,10 @@ public class AssessmentQuestion {
 
     @Column(name = "bank_question_id")
     private java.util.UUID bankQuestionId;
+
+    /** VIDEO only: the longest answer allowed, in seconds. */
+    @Column(name = "max_seconds")
+    private Integer maxSeconds;
 
     @Column(name = "ai_drafted", nullable = false)
     private boolean aiDrafted;

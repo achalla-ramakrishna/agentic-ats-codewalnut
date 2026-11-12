@@ -1,5 +1,6 @@
 import { api } from './client'
 import type { AssessmentDetail, Category, CodingView, QuestionInput, QuestionKind } from './assessments'
+import { INTERVIEW_PHASES } from './assessments'
 
 /** The question bank and the test-paper builder (ADR-0014). */
 
@@ -35,6 +36,7 @@ export const sectionName = (s: Section) => (SECTION_LEVEL[s] ? `${SECTION_LABEL[
  */
 export function sectionTitle(section: string | null | undefined, categoryLabel?: (c: Category) => string): string {
   if (!section) return ''
+  if (section in INTERVIEW_PHASES) return INTERVIEW_PHASES[section as keyof typeof INTERVIEW_PHASES]
   const [area, band] = section.includes(':') ? section.split(':') : [null, section]
   const label = SECTION_LABEL[band as Section] ?? band
   return area ? `${categoryLabel ? categoryLabel(area as Category) : area} · ${label}` : label

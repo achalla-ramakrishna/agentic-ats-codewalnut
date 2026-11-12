@@ -19,6 +19,7 @@ import { CandidateDrawer, type DrawerTab } from '../components/CandidateDrawer'
 import { TEMPLATE_FOR_STAGE } from '../components/emailTemplates'
 import { NaukriImport } from '../components/NaukriImport'
 import { InterviewSlots } from '../components/InterviewSlots'
+import { AiInterviewPanel } from '../components/AiInterviewPanel'
 import { BatchSizeInput, useBatchSize } from '../components/BatchSize'
 import { BulkEmail, type BulkRecipient } from '../components/BulkEmail'
 import { BulkWhatsApp, type WhatsAppRecipient } from '../components/BulkWhatsApp'
@@ -200,7 +201,7 @@ export function JobDetailPage() {
   const [plan, setPlan] = useState<AssistantPlan | null>(null)
   const [asking, setAsking] = useState(false)
   const [askError, setAskError] = useState<string | null>(null)
-  const [panel, setPanel] = useState<'none' | 'add' | 'import' | 'naukri' | 'resumes' | 'edit' | 'slots'>('none')
+  const [panel, setPanel] = useState<'none' | 'add' | 'import' | 'naukri' | 'resumes' | 'edit' | 'slots' | 'interview'>('none')
   const [columns, setColumns] = useState<ColumnKey[]>(loadColumns)
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [hideEmailed, setHideEmailed] = useState(false)
@@ -409,6 +410,9 @@ export function JobDetailPage() {
                 Workflow
               </Link>
             )}
+            <Button variant="secondary" onClick={() => setPanel(panel === 'interview' ? 'none' : 'interview')}>
+              🎥 AI interview
+            </Button>
             {me.navigation.some((n) => n.key === 'interviews') && (
               <Link className="btn btn-secondary" to={`/interview-kits/${job.id}`}>
                 Interview kit
@@ -507,6 +511,18 @@ export function JobDetailPage() {
       )}
       {insights && aiMatch && (rows?.length ?? 0) > 0 && (
         <InsightsPanel jobId={job.id} data={insights} canEdit={canEdit} onOpen={openById} onChanged={load} />
+      )}
+      {panel === 'interview' && (
+        <AiInterviewPanel
+          jobId={job.id}
+          canEdit={canEdit}
+          onOpen={(applicationId) => {
+            const row = rows?.find((r) => r.id === applicationId)
+            if (row) openDrawer(row, 'tests')
+          }}
+          onChanged={load}
+          onClose={() => setPanel('none')}
+        />
       )}
       {panel === 'slots' && <InterviewSlots jobId={job.id} me={me.email} onChanged={load} onClose={() => setPanel('none')} />}
       {panel === 'naukri' && (

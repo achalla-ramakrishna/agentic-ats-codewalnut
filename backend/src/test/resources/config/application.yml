@@ -14,3 +14,8 @@ ats:
   coding:
     runner-url: fake
     async: false
+  # AI interviews: videos go to a scratch folder and the AI review runs inline.
+  media:
+    dir: ${java.io.tmpdir}/ats-test-media
+  interview:
+    async: false

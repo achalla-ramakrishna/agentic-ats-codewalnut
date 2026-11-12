@@ -86,6 +86,19 @@ Without the key the **Ask AI** and **Upload résumés** buttons simply don't
 appear. Reading a résumé costs roughly ₹2–₹10, once per résumé; set
 `ATS_AI_WORKERS` (default 3) to read more at a time.
 
+### AI interview videos (needed for AI interviews)
+
+Candidates' recorded answers are saved as files, not in MySQL (ADR-0030). Give them a disk that
+survives redeploys:
+
+1. Click the **app** service → **Settings** → **Volumes** → **+ New volume** → mount path `/data`.
+   Size: about 35 MB per candidate interview (300 interviews ≈ 10 GB).
+2. Variables: `ATS_MEDIA_DIR=/data/media` → Deploy.
+
+Without a volume, interviews still work but the videos disappear on the next deploy. With
+`ANTHROPIC_API_KEY` set, the interview agent drafts the questions and reviews each interview (a few
+rupees each); without it a basic review by rules is shown.
+
 ### WhatsApp (optional)
 
 Works with no setup: ticking **WhatsApp** in a candidate chat opens WhatsApp

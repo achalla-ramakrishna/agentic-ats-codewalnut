@@ -12,6 +12,7 @@ import {
   type TakeTest,
 } from '../api/assessments'
 import { CodingQuestion } from '../components/CodingQuestion'
+import { VideoAnswer, speechRecognition } from '../components/VideoAnswer'
 import { Figure } from '../components/Figure'
 import { Button, Card } from '../components/ui'
 import { sectionTitle } from '../api/questionBank'
@@ -22,6 +23,15 @@ function clock(seconds: number) {
   const m = Math.floor(seconds / 60)
   const s = seconds % 60
   return `${m}:${String(s).padStart(2, '0')}`
+}
+
+/** The live camera on the start screen, so candidates can check how they look and sound. */
+function VideoPreview({ stream }: { stream: MediaStream }) {
+  const ref = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    if (ref.current) ref.current.srcObject = stream
+  }, [stream])
+  return <video ref={ref} className="video-answer mirrored" autoPlay muted playsInline aria-label="Camera preview" />
 }
 
 /** A candidate taking a test: start screen, then the questions against a timer, saved as they go. */
@@ -39,6 +49,33 @@ export function TakeTestPage() {
   // Advisory signals for staff (ADR-0016): totals only, sent with the regular save.
   const activity = useRef({ tabSwitches: 0, pastes: 0, pastedChars: 0 })
   const reported = useRef('')
+  // AI interviews (ADR-0030): the camera, the phase on screen, and whether an answer is being recorded.
+  const [stream, setStream] = useState<MediaStream | null>(null)
+  const [cameraError, setCameraError] = useState<string | null>(null)
+  const [phaseIndex, setPhaseIndex] = useState(0)
+  const [recording, setRecording] = useState(false)
+  const isInterview = (taking?.test.category ?? intro?.category) === 'INTERVIEW'
+
+  async function camera(): Promise<boolean> {
+    setCameraError(null)
+    if (stream) return true
+    try {
+      setStream(await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: true }))
+      return true
+    } catch {
+      setCameraError('We couldn’t use your camera and microphone. Allow them for this site in the browser’s address bar, then try again.')
+      return false
+    }
+  }
+
+  // Turn the camera off when the interview ends or the page closes.
+  useEffect(() => {
+    if (!stream) return
+    return () => stream.getTracks().forEach((t) => t.stop())
+  }, [stream])
+  useEffect(() => {
+    if (done) setStream(null)
+  }, [done])
 
   useEffect(() => {
     listMyTests()
@@ -60,6 +97,7 @@ export function TakeTestPage() {
   }, [id])
 
   function begin(t: TakeTest) {
+    setIntro(null)
     setTaking(t)
     setAnswers(t.answers)
     setLeft(t.secondsLeft)
@@ -134,6 +172,7 @@ export function TakeTestPage() {
 
   async function onStart() {
     setError(null)
+    if (isInterview && !(await camera())) return
     try {
       begin(await startTest(id))
     } catch (e) {
@@ -143,9 +182,25 @@ export function TakeTestPage() {
 
   const answered = taking
     ? taking.questions.filter((q) =>
-        q.kind === 'CODING' ? (answers[q.id]?.[1] ?? '').trim() !== '' : (answers[q.id] ?? []).some((v) => v.trim() !== ''),
+        q.kind === 'CODING' || q.kind === 'VIDEO'
+          ? (answers[q.id]?.[q.kind === 'VIDEO' ? 0 : 1] ?? '').trim() !== ''
+          : (answers[q.id] ?? []).some((v) => v.trim() !== ''),
       ).length
     : 0
+  const phases = taking ? [...new Set(taking.questions.map((q) => q.section ?? ''))] : []
+  const phase = phases[Math.min(phaseIndex, Math.max(0, phases.length - 1))]
+  const shown = taking ? taking.questions.filter((q) => !isInterview || (q.section ?? '') === phase) : []
+  const lastPhase = !isInterview || phaseIndex >= phases.length - 1
+
+  function confirmSubmit() {
+    if (!taking) return
+    if (recording) {
+      window.alert('Wait until your answer has finished recording and uploading.')
+      return
+    }
+    const missing = taking.questions.length - answered
+    if (window.confirm(missing ? `${missing} question(s) unanswered. Submit anyway?` : 'Submit your answers? You can’t change them after.')) void submit()
+  }
   const hasCoding = (intro?.category === 'CODING') || (taking?.questions.some((q) => q.kind === 'CODING') ?? false)
 
   return (
@@ -176,9 +231,38 @@ export function TakeTestPage() {
           <Card className="stack">
             <h1 style={{ margin: 0 }}>{intro.title}</h1>
             <p className="muted" style={{ margin: 0 }}>
-              {CATEGORY_LABEL[intro.category]} test for {intro.jobTitle}
+              {intro.category === 'INTERVIEW' ? `Recorded interview for ${intro.jobTitle}` : `${CATEGORY_LABEL[intro.category]} test for ${intro.jobTitle}`}
             </p>
             {intro.description && <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{intro.description}</p>}
+            {isInterview && (
+              <div className="stack" style={{ gap: 8 }}>
+                <ul style={{ margin: 0 }}>
+                  <li>The interview goes phase by phase: introduction, work experience, skills, projects, architecture, a technical round, soft skills and readiness to join.</li>
+                  <li>
+                    For most questions you record a spoken answer on camera, up to the time shown. Think for a moment, then click Record and talk as you would
+                    to an interviewer. You can record an answer again.
+                  </li>
+                  <li>Use Chrome or Edge on a laptop, in a quiet, well-lit place. Your answers are watched by the CodeWalnut team and reviewed with the help of AI.</li>
+                  {!speechRecognition() && <li><strong>This browser can’t write down speech — please switch to Chrome or Edge.</strong></li>}
+                </ul>
+                <div className="stack" style={{ gap: 6 }}>
+                  {stream ? (
+                    <VideoPreview stream={stream} />
+                  ) : (
+                    <div>
+                      <Button variant="secondary" onClick={() => void camera()}>
+                        Check camera and microphone
+                      </Button>
+                    </div>
+                  )}
+                  {cameraError && (
+                    <div role="alert" className="alert alert-error">
+                      {cameraError}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             <ul>
               <li>
                 {intro.questionCount} questions, <strong>{intro.durationMinutes} minutes</strong>.
@@ -196,7 +280,7 @@ export function TakeTestPage() {
             </ul>
             {intro.status === 'SENT' ? (
               <div>
-                <Button onClick={() => void onStart()}>Start the test</Button>
+                <Button onClick={() => void onStart()}>{isInterview ? 'Start the interview' : 'Start the test'}</Button>
               </div>
             ) : (
               <p className="alert alert-info">
@@ -209,15 +293,41 @@ export function TakeTestPage() {
         )}
         {taking && (
           <>
-            <Card>
-              <strong>{taking.test.title}</strong>{' '}
-              <span className="muted">
-                · {answered} of {taking.questions.length} answered
-              </span>
+            <Card className="stack" style={{ gap: 8 }}>
+              <div>
+                <strong>{taking.test.title}</strong>{' '}
+                <span className="muted">
+                  · {answered} of {taking.questions.length} answered
+                </span>
+              </div>
+              {isInterview && (
+                <>
+                  <ol className="phase-steps" aria-label="Interview phases">
+                    {phases.map((p, i) => (
+                      <li key={p} className={i === phaseIndex ? 'current' : i < phaseIndex ? 'done' : ''} aria-current={i === phaseIndex ? 'step' : undefined}>
+                        {i + 1}. {sectionTitle(p)}
+                      </li>
+                    ))}
+                  </ol>
+                  {!stream && (
+                    <div className="row" style={{ gap: 8 }}>
+                      <span className="muted">Your camera is off.</span>
+                      <Button size="sm" variant="secondary" onClick={() => void camera()}>
+                        Turn on camera and microphone
+                      </Button>
+                    </div>
+                  )}
+                  {cameraError && (
+                    <div role="alert" className="alert alert-error">
+                      {cameraError}
+                    </div>
+                  )}
+                </>
+              )}
             </Card>
-            {taking.questions.map((q, index) => {
+            {shown.map((q, index) => {
               const value = answers[q.id] ?? []
-              const newSection = q.section && q.section !== taking.questions[index - 1]?.section
+              const newSection = q.section && q.section !== shown[index - 1]?.section
               return (
                 <div key={q.id} className="stack" style={{ gap: 8 }}>
                 {newSection && <h2 className="section-heading">{sectionTitle(q.section, (c) => CATEGORY_LABEL[c] ?? c)}</h2>}
@@ -225,7 +335,7 @@ export function TakeTestPage() {
                   <div className="row" style={{ justifyContent: 'space-between' }}>
                     <strong>Question {q.position}</strong>
                     <span className="muted" style={{ fontSize: 13 }}>
-                      {q.points} point{q.points === 1 ? '' : 's'}
+                      {q.kind === 'VIDEO' ? 'Spoken answer' : q.kind === 'WRITTEN' ? 'Short written answer' : `${q.points} point${q.points === 1 ? '' : 's'}`}
                       {q.kind === 'MULTI_CHOICE' ? ' · choose all that apply' : ''}
                     </span>
                   </div>
@@ -241,6 +351,27 @@ export function TakeTestPage() {
                       value={value}
                       onChange={(v) => answer(q.id, v)}
                       onPaste={pasted}
+                    />
+                  ) : q.kind === 'VIDEO' ? (
+                    <VideoAnswer
+                      testId={id}
+                      questionId={q.id}
+                      position={q.position}
+                      maxSeconds={q.maxSeconds ?? 120}
+                      stream={stream}
+                      value={value}
+                      busy={recording}
+                      onRecording={setRecording}
+                      onSaved={(videoId, transcript) => setAnswers((a) => ({ ...a, [q.id]: [videoId, transcript] }))}
+                    />
+                  ) : q.kind === 'WRITTEN' ? (
+                    <textarea
+                      className="input"
+                      rows={2}
+                      aria-label={`Answer to question ${q.position}`}
+                      value={value[0] ?? ''}
+                      maxLength={2000}
+                      onChange={(e) => answer(q.id, [e.target.value])}
                     />
                   ) : q.kind === 'SHORT_ANSWER' ? (
                     <input
@@ -306,14 +437,25 @@ export function TakeTestPage() {
               )
             })}
             <div className="row">
-              <Button
-                onClick={() => {
-                  const missing = taking.questions.length - answered
-                  if (window.confirm(missing ? `${missing} question(s) unanswered. Submit anyway?` : 'Submit your answers? You can’t change them after.')) void submit()
-                }}
-              >
-                Submit
-              </Button>
+              {isInterview && phaseIndex > 0 && (
+                <Button variant="secondary" disabled={recording} onClick={() => setPhaseIndex((i) => i - 1)}>
+                  ← Back
+                </Button>
+              )}
+              {lastPhase ? (
+                <Button onClick={confirmSubmit}>{isInterview ? 'Submit the interview' : 'Submit'}</Button>
+              ) : (
+                <Button
+                  disabled={recording}
+                  onClick={() => {
+                    void flush()
+                    setPhaseIndex((i) => i + 1)
+                    window.scrollTo(0, 0)
+                  }}
+                >
+                  Next: {sectionTitle(phases[phaseIndex + 1])} →
+                </Button>
+              )}
             </div>
           </>
         )}
@@ -321,7 +463,8 @@ export function TakeTestPage() {
           <Card className="stack">
             <h1 style={{ margin: 0 }}>Thank you!</h1>
             <p style={{ margin: 0 }}>
-              Your <strong>{done.title}</strong> test for {done.jobTitle} has been submitted. The CodeWalnut team will get back to you.
+              Your <strong>{done.title}</strong> {done.category === 'INTERVIEW' ? '' : 'test '}for {done.jobTitle} has been submitted. The CodeWalnut team will get back
+              to you.
             </p>
             <div>
               <Link to="/" className="btn btn-secondary">

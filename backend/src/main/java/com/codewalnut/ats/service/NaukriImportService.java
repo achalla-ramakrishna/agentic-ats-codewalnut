@@ -71,6 +71,9 @@ public class NaukriImportService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Choose the Excel file exported from Naukri.");
         }
+        if (file.getSize() > DocumentService.MAX_BYTES) {
+            throw new IllegalArgumentException("file: must be 10 MB or smaller");
+        }
         NaukriSheet.Parsed parsed = NaukriSheet.parse(SpreadsheetReader.read(file.getOriginalFilename(), file.getBytes()));
         List<NaukriProfile> profiles = parsed.profiles();
         if (profiles.isEmpty()) {

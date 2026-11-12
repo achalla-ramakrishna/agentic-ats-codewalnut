@@ -61,7 +61,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<Map<String, String>> handleTooLarge(MaxUploadSizeExceededException ex) {
-        return error(HttpStatus.BAD_REQUEST, "file: must be 10 MB or smaller");
+        return error(HttpStatus.BAD_REQUEST, "file: the file is too large");
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

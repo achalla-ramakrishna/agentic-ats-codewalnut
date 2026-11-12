@@ -113,6 +113,15 @@ candidate's page (`pages/BookingPage`) and book atomically; *send invites* calls
 `InterviewService.schedule` for each booked slot (Google Calendar + Meet). `WorkflowService` adds the
 booking to rows and the *send the invite* next step.
 
+AI interviews (ADR-0030): an `assessment` of category INTERVIEW whose questions carry a phase
+(`section`) and may be `VIDEO` (with `max_seconds`) or `WRITTEN`. `AiInterviewService` drafts one for an
+opening through `client/InterviewAgent` (`ClaudeInterviewAgent` with a key, `BuiltInInterviewAgent`
+otherwise) plus bank multiple choice; stores recordings via `VideoStorage` on disk (`ATS_MEDIA_DIR`, a
+Railway volume) with `interview_video` rows (V28), the transcript in the invite's answers; on submit
+`AssessmentInviteService` marks the review PENDING and `AiInterviewReviewer` runs the agent after commit
+(retried by `AiInterviewSweeper`); `InterviewReviews` stores the review and works out the 0–100 score.
+`GET /jobs/{id}/ai-interviews` ranks an opening's candidates.
+
 Coding questions (ADR-0016): `client/CodeRunner` sends candidate code to a
 self-hosted Judge0 (`Judge0CodeRunner`; `DisabledCodeRunner` when
 `ATS_CODE_RUNNER_URL` is unset). `CodeRunService` runs samples while a test is

@@ -18,7 +18,7 @@ class ReadinessTest {
 
     private static InviteView test(int percent) {
         return new InviteView(null, null, null, "Java", null, null, null, null, null, null, null, null, null, percent,
-                percent >= 60, 60, 0, null, false, false, null);
+                percent >= 60, 60, 0, null, false, false, null, null, null);
     }
 
     @Test

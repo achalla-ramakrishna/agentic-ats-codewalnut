@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import {
   KIND_LABEL,
+  INTERVIEW_PHASES,
+  OPEN_KINDS,
   LANGUAGE_LABEL,
   type CodeLanguage,
   type QuestionInput,
@@ -61,12 +63,19 @@ export function QuestionForm({
   initial,
   onSave,
   onCancel,
+  interview = false,
 }: {
   initial?: QuestionView
   onSave: (q: QuestionInput) => Promise<void>
   onCancel: () => void
+  /** An AI interview (ADR-0030): video and written answers, and a phase for every question. */
+  interview?: boolean
 }) {
-  const [kind, setKind] = useState<QuestionKind>(initial?.kind ?? 'SINGLE_CHOICE')
+  const [kind, setKind] = useState<QuestionKind>(initial?.kind ?? (interview ? 'VIDEO' : 'SINGLE_CHOICE'))
+  const [phase, setPhase] = useState<string>(initial?.section && initial.section in INTERVIEW_PHASES ? initial.section : 'TECHNICAL')
+  const [maxSeconds, setMaxSeconds] = useState(initial?.maxSeconds ?? 120)
+  const open = OPEN_KINDS.includes(kind)
+  const kinds = (Object.keys(KIND_LABEL) as QuestionKind[]).filter((k) => (interview ? k !== 'CODING' : !OPEN_KINDS.includes(k)))
   const [prompt, setPrompt] = useState(initial?.prompt ?? '')
   const [code, setCode] = useState(initial?.code ?? '')
   const [options, setOptions] = useState<string[]>(initial?.options.length ? initial.options : ['', '', '', ''])
@@ -118,10 +127,15 @@ export function QuestionForm({
         })
         return
       }
+      if (open) {
+        await onSave({ kind, prompt, code: code.trim() || undefined, points: 1, section: phase, maxSeconds: kind === 'VIDEO' ? maxSeconds : undefined })
+        return
+      }
       await onSave({
         kind,
         prompt,
         code: code.trim() || undefined,
+        section: interview ? phase : undefined,
         options: kind === 'SHORT_ANSWER' ? [] : filled.filter((o) => o),
         // keep indexes pointing at the same options after dropping blanks
         correct: kind === 'SHORT_ANSWER' ? [] : correct.filter((i) => filled[i]).map((i) => filled.slice(0, i).filter((o) => o).length),
@@ -146,22 +160,50 @@ export function QuestionForm({
         <label className="field">
           Type
           <select className="select" value={kind} onChange={(e) => setKind(e.target.value as QuestionKind)}>
-            {(Object.keys(KIND_LABEL) as QuestionKind[]).map((k) => (
+            {kinds.map((k) => (
               <option key={k} value={k}>
-                {KIND_LABEL[k]}
+                {interview && k === 'SHORT_ANSWER' ? 'Fill in the blank' : KIND_LABEL[k]}
               </option>
             ))}
           </select>
         </label>
-        <label className="field" style={{ maxWidth: 100 }}>
-          Points
-          <input className="input" type="number" min={1} max={coding ? 20 : 10} value={points} onChange={(e) => setPoints(Number(e.target.value))} />
-        </label>
+        {interview && (
+          <label className="field">
+            Phase
+            <select className="select" value={phase} onChange={(e) => setPhase(e.target.value)}>
+              {Object.entries(INTERVIEW_PHASES).map(([k, label]) => (
+                <option key={k} value={k}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {kind === 'VIDEO' && (
+          <label className="field" style={{ maxWidth: 160 }}>
+            Longest answer (seconds)
+            <input className="input" type="number" min={30} max={600} step={15} value={maxSeconds} onChange={(e) => setMaxSeconds(Number(e.target.value))} />
+          </label>
+        )}
+        {!open && (
+          <label className="field" style={{ maxWidth: 100 }}>
+            Points
+            <input className="input" type="number" min={1} max={coding ? 20 : 10} value={points} onChange={(e) => setPoints(Number(e.target.value))} />
+          </label>
+        )}
       </div>
+      {open && (
+        <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+          {kind === 'VIDEO'
+            ? 'The candidate records a spoken answer on camera. It isn’t marked right or wrong: the AI review reads the transcript and you can watch it.'
+            : 'The candidate types a short answer (e.g. notice period). The AI review reads it; it isn’t marked.'}
+        </p>
+      )}
       <label className="field">
         Question
         <textarea className="input" rows={2} required value={prompt} onChange={(e) => setPrompt(e.target.value)} />
       </label>
+      {!open && (
       <div className="stack" style={{ gap: 6 }}>
         <span style={{ fontSize: 14 }}>Picture (optional)</span>
         {figure && (
@@ -189,13 +231,14 @@ export function QuestionForm({
         />
         {initial?.optionFigures && <span className="muted" style={{ fontSize: 13 }}>The options are pictures; they stay as long as the number of options stays the same.</span>}
       </div>
-      {!coding && (
+      )}
+      {!coding && !open && (
         <label className="field">
           Code to read (optional)
           <textarea className="input test-code-input" rows={4} value={code} onChange={(e) => setCode(e.target.value)} />
         </label>
       )}
-      {coding ? (
+      {open ? null : coding ? (
         <div className="stack" style={{ gap: 8 }}>
           <p className="muted" style={{ margin: 0, fontSize: 13 }}>
             The candidate’s program reads the input from standard input and prints the answer. Samples are shown to the candidate; hidden tests

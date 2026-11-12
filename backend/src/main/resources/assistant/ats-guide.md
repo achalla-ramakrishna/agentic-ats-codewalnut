@@ -103,6 +103,17 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
 - Results: Tests → New test results; the candidate's Tests tab shows answers and scores; Remind if
   they haven't started.
 
+## AI interviews (recorded, reviewed by AI)
+- Create: open the opening → 🎥 AI interview → Create an AI interview for this opening. It drafts
+  phases (introduction, experience, skills, projects, architecture, technical, soft skills, readiness)
+  from the job description; check and edit under Tests → Mark ready.
+- Send: Tests → open the AI interview → Send to candidates (30 at a time) → pick the opening → tick →
+  Send. Candidates record answers on camera in Chrome or Edge, phase by phase.
+- Ranking: open the opening → 🎥 AI interview: candidates by score with ratings for technical,
+  design, communication, experience and readiness, notice period and salary. Click a name to watch the
+  videos and read the review; tick the best → Shortlist selected; then send them the booking link.
+- The score is advice: the AI never moves or rejects anyone.
+
 ## Messages
 - Email or WhatsApp a candidate: open the candidate → Chat with candidate → write or pick a
   template → tick Email and/or WhatsApp → Send.

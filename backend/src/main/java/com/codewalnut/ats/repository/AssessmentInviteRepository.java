@@ -26,6 +26,9 @@ public interface AssessmentInviteRepository extends JpaRepository<AssessmentInvi
     /** Submitted tests whose code is waiting to be graded (ADR-0016). */
     List<AssessmentInvite> findByGrading(AssessmentInvite.Grading grading);
 
+    /** AI interviews waiting for (or retrying) their AI review (ADR-0030). */
+    List<AssessmentInvite> findByEvaluation(AssessmentInvite.Evaluation evaluation);
+
     /** Invites someone has started or submitted: the test has been taken. */
     long countByAssessmentIdAndStatusIn(UUID assessmentId, Collection<AssessmentInvite.Status> statuses);
 }

@@ -94,9 +94,12 @@ public class AssessmentInviteService {
     private final ObjectMapper objectMapper;
     private final CodingSpecs codingSpecs;
     private final ApplicationEventPublisher events;
+    private final InterviewReviews interviewReviews;
 
     /** Sample runs a candidate may make per coding question, and per test. */
     static final int RUNS_PER_QUESTION = 30;
+    /** A written answer or a video's transcript (ADR-0030). */
+    static final int MAX_OPEN_ANSWER = 8000;
     static final int RUNS_PER_TEST = 150;
     /** Grading attempts while the sandbox is down (about one a minute) before giving up. */
     static final int MAX_GRADING_ATTEMPTS = 30;
@@ -234,7 +237,8 @@ public class AssessmentInviteService {
                                 assessmentService.optionFigures(q), q.getSection(), staffCode(q, answers, code)))
                         .toList()
                 : List.of();
-        return new InviteDetail(view(invite), review, sectionScores(review), activity(invite));
+        return new InviteDetail(view(invite), review, sectionScores(review), activity(invite),
+                interviewReviews.view(invite, invite.getMaxScore() == null || invite.getMaxScore() == 0 ? null : invite.getPercent()));
     }
 
     /**
@@ -328,6 +332,10 @@ public class AssessmentInviteService {
 
     /** "QUANT" → "Numerical ability"; "JAVA:PRACTICAL" (role tests) → "Java · Applied". */
     static String sectionLabel(String section) {
+        com.codewalnut.ats.domain.InterviewPhase phase = com.codewalnut.ats.domain.InterviewPhase.of(section);
+        if (phase != null) {
+            return phase.getLabel();
+        }
         int colon = section.indexOf(':');
         try {
             if (colon > 0) {
@@ -451,6 +459,20 @@ public class AssessmentInviteService {
     /** Final score, history, audit and the team-chat note, once every answer (code included) is scored. */
     private void finish(AssessmentInvite invite, List<AssessmentQuestion> questions, Instant submittedAt) {
         total(invite, questions);
+        if (invite.getAssessment().getCategory() == Assessment.Category.INTERVIEW) {
+            // AI interviews (ADR-0030): the review runs after this commits and posts its own note.
+            String name = invite.getApplication().getCandidate().getName();
+            history(invite.getApplication(), ApplicationEventType.TEST_SUBMITTED, "AI interview submitted: " + invite.getAssessment().getTitle()
+                    + (invite.getMaxScore() > 0 ? " — marked answers " + invite.getPercent() + "%" : ""), invite.getApplication().getCandidate().getEmail());
+            auditService.recordAnonymous(invite.getApplication().getCandidate().getEmail(), AuditAction.ASSESSMENT_SUBMITTED,
+                    Map.of("inviteId", invite.getId(), "interview", true));
+            invite.setEvaluation(AssessmentInvite.Evaluation.PENDING);
+            invite.setEvaluationAttempts(0);
+            teamNote(invite, name + " submitted the AI interview \"" + invite.getAssessment().getTitle() + "\". The AI review is running; "
+                    + "see the ranking under the opening's AI interview button.");
+            events.publishEvent(new InterviewReviewRequested(invite.getId()));
+            return;
+        }
         int score = invite.getScore();
         int max = invite.getMaxScore();
         history(invite.getApplication(), ApplicationEventType.TEST_SUBMITTED, "Test submitted: " + invite.getAssessment().getTitle()
@@ -754,6 +776,19 @@ public class AssessmentInviteService {
                         source.length() > CodingSpecs.MAX_SOURCE ? source.substring(0, CodingSpecs.MAX_SOURCE) : source));
                 return;
             }
+            if (known.get(id).isOpen()) {
+                // WRITTEN: [text]. VIDEO: [video id, transcript]; the id is only ever set by the upload.
+                List<String> v = values == null ? List.of() : values;
+                String text = v.isEmpty() || v.get(0) == null ? "" : v.get(0);
+                if (known.get(id) == AssessmentQuestion.Kind.VIDEO) {
+                    List<String> had = answers.getOrDefault(id, List.of());
+                    String transcript = v.size() < 2 || v.get(1) == null ? "" : v.get(1);
+                    answers.put(id, List.of(had.isEmpty() ? "" : had.get(0), clip(transcript, MAX_OPEN_ANSWER)));
+                } else {
+                    answers.put(id, List.of(clip(text, MAX_OPEN_ANSWER)));
+                }
+                return;
+            }
             answers.put(id, values == null ? List.of() : values.stream()
                     .filter(v -> v != null).map(v -> v.length() > 500 ? v.substring(0, 500) : v).limit(10).toList());
         });
@@ -764,7 +799,7 @@ public class AssessmentInviteService {
         }
     }
 
-    private Map<UUID, List<String>> answers(AssessmentInvite invite) {
+    Map<UUID, List<String>> answers(AssessmentInvite invite) {
         if (invite.getAnswersJson() == null) {
             return Map.of();
         }
@@ -780,7 +815,7 @@ public class AssessmentInviteService {
                 .stream()
                 .map(q -> new CandidateQuestion(q.getId(), q.getPosition(), q.getKind(), q.getPrompt(), q.getCode(),
                         assessmentService.options(q), q.getPoints(), q.getFigure(), assessmentService.optionFigures(q), q.getSection(),
-                        q.getKind() == AssessmentQuestion.Kind.CODING ? codingSpecs.spec(q.getCodingJson()) : null))
+                        q.getKind() == AssessmentQuestion.Kind.CODING ? codingSpecs.spec(q.getCodingJson()) : null, q.getMaxSeconds()))
                 .toList();
         long secondsLeft = Math.max(0, Duration.between(Instant.now(), invite.getDeadlineAt()).getSeconds());
         return new TakeTest(mine(invite), questions, answers(invite), secondsLeft);
@@ -796,7 +831,7 @@ public class AssessmentInviteService {
                 i.getSubmittedAt(), i.getScore(), i.getMaxScore(), i.getPercent(),
                 i.getPercent() == null ? null : i.getPercent() >= i.getAssessment().getPassPercent(),
                 i.getAssessment().getPassPercent(), i.getReminderCount(), i.getLastRemindedAt(), nudge || status == AssessmentInvite.Status.EXPIRED,
-                status == AssessmentInvite.Status.SUBMITTED && i.getReviewedAt() == null, i.getGrading());
+                status == AssessmentInvite.Status.SUBMITTED && i.getReviewedAt() == null, i.getGrading(), i.getAiScore(), i.getEvaluation());
     }
 
     private MyTest mine(AssessmentInvite i) {
@@ -821,7 +856,7 @@ public class AssessmentInviteService {
                 .application(application).type(type).note(note).actorEmail(actorEmail).build());
     }
 
-    private AssessmentInvite ownInvite(CandidateAccount account, UUID inviteId) {
+    AssessmentInvite ownInvite(CandidateAccount account, UUID inviteId) {
         AssessmentInvite invite = inviteRepository.findById(inviteId).orElseThrow(() -> new NotFoundException("Test not found"));
         String email = invite.getApplication().getCandidate().getEmail();
         if (email == null || !email.equalsIgnoreCase(account.getEmail()) || invite.getStatus() == AssessmentInvite.Status.CANCELLED) {

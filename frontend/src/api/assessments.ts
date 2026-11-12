@@ -20,8 +20,9 @@ export type Category =
   | 'DSA'
   | 'CODING'
   | 'WEB_API'
+  | 'INTERVIEW'
   | 'OTHER'
-export type QuestionKind = 'SINGLE_CHOICE' | 'MULTI_CHOICE' | 'SHORT_ANSWER' | 'CODING'
+export type QuestionKind = 'SINGLE_CHOICE' | 'MULTI_CHOICE' | 'SHORT_ANSWER' | 'CODING' | 'VIDEO' | 'WRITTEN'
 export type InviteStatus = 'SENT' | 'STARTED' | 'SUBMITTED' | 'EXPIRED' | 'CANCELLED'
 
 export const CATEGORY_LABEL: Record<Category, string> = {
@@ -41,6 +42,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
   DSA: 'Data structures & algorithms',
   CODING: 'Coding',
   WEB_API: 'Web, APIs & tools',
+  INTERVIEW: 'AI interview',
   OTHER: 'Other',
 }
 
@@ -49,7 +51,25 @@ export const KIND_LABEL: Record<QuestionKind, string> = {
   MULTI_CHOICE: 'Several right answers',
   SHORT_ANSWER: 'Short answer',
   CODING: 'Write code',
+  VIDEO: 'Video answer',
+  WRITTEN: 'Written answer',
 }
+
+/** Kinds that only AI interviews use (ADR-0030); answers are reviewed, not marked. */
+export const OPEN_KINDS: QuestionKind[] = ['VIDEO', 'WRITTEN']
+
+/** The phases of an AI interview, in order; stored as the question's section. */
+export const INTERVIEW_PHASES = {
+  INTRO: 'Introduction',
+  EXPERIENCE: 'Work experience',
+  SKILLS: 'Skills',
+  PROJECTS: 'Projects',
+  ARCHITECTURE: 'Architecture',
+  TECHNICAL: 'Technical round',
+  SOFT_SKILLS: 'Soft skills',
+  READINESS: 'Readiness to join',
+} as const
+export type InterviewPhase = keyof typeof INTERVIEW_PHASES
 
 // ---- coding questions (ADR-0016) ----
 
@@ -186,6 +206,8 @@ export interface QuestionView {
   topic: string | null
   difficulty: 'EASY' | 'MEDIUM' | 'HARD' | null
   coding: CodingView | null
+  /** Video answers: the longest answer allowed, in seconds. */
+  maxSeconds?: number | null
 }
 
 export interface AssessmentDetail {
@@ -204,6 +226,9 @@ export interface QuestionInput {
   explanation?: string
   figure?: string | null
   coding?: CodingInput
+  /** AI interviews: the phase (INTRO, …) and, for video answers, the time limit in seconds. */
+  section?: string
+  maxSeconds?: number
 }
 
 export interface InviteView {
@@ -230,6 +255,37 @@ export interface InviteView {
   newResult: boolean
   /** Code grading after submit: null when the test has no coding questions. */
   grading: 'PENDING' | 'DONE' | 'FAILED' | null
+  /** AI interviews (ADR-0030): the app's 0–100 score from the review, and the review's state. */
+  aiScore: number | null
+  evaluation: Evaluation | null
+}
+
+export type Evaluation = 'PENDING' | 'DONE' | 'FAILED'
+
+export interface AreaView {
+  area: string
+  label: string
+  weight: number
+  /** 1–5; 0 when there was nothing to judge it on. */
+  rating: number
+  reason: string
+  evidence: string
+}
+
+/** The advisory review of an AI interview. usesAi false: the basic review by rules. */
+export interface InterviewReview {
+  status: Evaluation
+  usesAi: boolean
+  aiScore: number | null
+  markedPercent: number | null
+  areas: AreaView[]
+  phases: { phase: string; label: string; rating: number; note: string }[]
+  summary: string | null
+  strengths: string[]
+  toCheck: string[]
+  noticePeriod: string | null
+  expectedSalary: string | null
+  reviewedAt: string | null
 }
 
 /** A submitted test nobody has looked at yet, with where to find the candidate. */
@@ -297,6 +353,7 @@ export interface CandidateQuestion {
   optionFigures: string[] | null
   section: string | null
   coding: CodingSpec | null
+  maxSeconds: number | null
 }
 
 export interface TakeTest {
@@ -341,7 +398,9 @@ export const listNewResults = () => api<NewResult[]>('/tests/new-results')
 export const markResultsSeen = (inviteIds: string[]) => api<{ marked: number }>('/tests/seen', json('POST', { inviteIds }))
 export const listJobTests = (jobId: string) => api<InviteView[]>(`/jobs/${jobId}/tests`)
 export const getTestResult = (inviteId: string) =>
-  api<{ invite: InviteView; answers: AnswerReview[]; sections: SectionScore[]; activity: Activity | null }>(`/tests/${inviteId}`)
+  api<{ invite: InviteView; answers: AnswerReview[]; sections: SectionScore[]; activity: Activity | null; review: InterviewReview | null }>(
+    `/tests/${inviteId}`,
+  )
 export const regradeTest = (inviteId: string) => api<InviteView>(`/tests/${inviteId}/regrade`, { method: 'POST' })
 export const codingStatus = () => api<{ available: boolean; languages: CodeLanguage[] }>('/coding/status')
 export const tryQuestion = (assessmentId: string, questionId: string, input: { language: CodeLanguage; source: string }) =>
@@ -363,13 +422,16 @@ export const runCode = (id: string, questionId: string, input: { language: CodeL
 export const reportActivity = (id: string, input: { tabSwitches: number; pastes: number; pastedChars: number }) =>
   api<void>(`/candidate/tests/${id}/activity`, json('POST', input))
 
-export function testStatusLabel(i: Pick<InviteView, 'status' | 'percent' | 'passed'>): string {
+export function testStatusLabel(i: Pick<InviteView, 'status' | 'percent' | 'passed'> & Partial<Pick<InviteView, 'category' | 'aiScore' | 'evaluation'>>): string {
   switch (i.status) {
     case 'SENT':
       return 'Sent, not started'
     case 'STARTED':
       return 'In progress'
     case 'SUBMITTED':
+      if (i.category === 'INTERVIEW') {
+        return i.evaluation === 'PENDING' ? 'Submitted · reviewing' : i.aiScore != null ? `Score ${i.aiScore}/100` : 'Submitted'
+      }
       return i.percent == null ? 'Submitted · grading code' : `${i.percent}%${i.passed ? ' · passed' : ''}`
     case 'EXPIRED':
       return 'Not taken (past due)'
