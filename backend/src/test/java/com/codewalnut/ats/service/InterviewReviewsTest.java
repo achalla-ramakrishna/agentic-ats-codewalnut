@@ -61,7 +61,7 @@ class InterviewReviewsTest {
 
     @Test
     void seniorJavaSetIsComplete() {
-        var set = com.codewalnut.ats.bank.InterviewSets.seniorJavaLead();
+        var set = com.codewalnut.ats.bank.InterviewSets.seniorJava();
         assertThat(set).extracting(InterviewAgent.DraftQuestion::phase).containsSubsequence("INTRO", "EXPERIENCE", "SKILLS", "PROJECTS",
                 "ARCHITECTURE", "TECHNICAL", "SOFT_SKILLS", "READINESS");
         assertThat(set).filteredOn(q -> q.kind().equals("MULTIPLE_CHOICE"))

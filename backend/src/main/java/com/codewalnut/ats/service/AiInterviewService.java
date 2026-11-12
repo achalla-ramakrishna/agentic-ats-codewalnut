@@ -111,9 +111,10 @@ public class AiInterviewService {
         InterviewAgent.Draft draft;
         boolean drafted = !handWritten && agent.usesAi();
         if (handWritten) {
-            draft = new InterviewAgent.Draft(com.codewalnut.ats.bank.InterviewSets.seniorJavaLead());
-            notes.add("Used the hand-written senior Java / lead question set: production scenarios, code reading and "
-                    + "architecture, with what a strong answer covers for the reviewers. Edit anything you like.");
+            draft = new InterviewAgent.Draft(com.codewalnut.ats.bank.InterviewSets.seniorJava());
+            notes.add("Used the hand-written senior Java question set (Java 17, Spring Boot, MongoDB, Redis caching, JWT, testing and "
+                    + "CI, airline shopping and booking): production scenarios, code reading and design, with what a strong answer "
+                    + "covers for the reviewers. Edit anything you like.");
         } else {
             try {
                 draft = agent.draft(forAgent);

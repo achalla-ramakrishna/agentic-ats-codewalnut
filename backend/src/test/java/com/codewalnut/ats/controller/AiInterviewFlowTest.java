@@ -149,7 +149,7 @@ class AiInterviewFlowTest {
                 .andExpect(jsonPath("$.questions[0].kind").value("VIDEO"))
                 .andExpect(jsonPath("$.questions[0].maxSeconds").value(60))
                 .andExpect(jsonPath("$.questions[0].section").value("INTRO")));
-        assertThat(taking).doesNotContain("Idempotency key with a unique constraint"); // reviewer notes stay with staff
+        assertThat(taking).doesNotContain("Idempotency key with a unique index"); // reviewer notes stay with staff
         List<String> videos = JsonPath.read(taking, "$.questions[?(@.kind == 'VIDEO')].id");
         List<String> written = JsonPath.read(taking, "$.questions[?(@.kind == 'WRITTEN')].id");
 
