@@ -71,4 +71,27 @@ describe('Send to candidates', () => {
     expect(screen.getByText(/1 résumé hasn’t been read by the AI yet/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Send to 1 candidate' })).toBeEnabled()
   })
+
+  it('asks to connect Gmail before emailing, or sends the link without email', async () => {
+    const fetchMock = fakeFetch([
+      { path: '/whatsapp/status', body: { apiEnabled: false, repliesEnabled: false } },
+      { path: '/google/status', body: { available: true, calendarConnected: false, mailConnected: false, redirectUri: '' } },
+      { path: '/jobs/j1/applications', body: [app('a1', 'Asha Test', 'asha@x.test')] },
+      { path: '/jobs/j1/tests', body: [] },
+      { path: '/jobs', body: [{ id: 'j1', title: 'Java developer', client: null, status: 'OPEN', total: 1 }] },
+      { path: '/applications/a1/tests', method: 'POST', status: 201, body: { invite: { id: 'n1' }, message: {} } },
+    ])
+    render(<SendToCandidates test={test} onSent={() => undefined} onClose={() => undefined} />)
+    await userEvent.selectOptions(await screen.findByLabelText('Opening'), 'j1')
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'Send to Asha Test' }))
+    expect(await screen.findByRole('button', { name: /Connect Google/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Send to 1 candidate' })).toBeDisabled()
+
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Email' }))
+    expect(screen.queryByRole('button', { name: /Connect Google/ })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Send to 1 candidate' }))
+    expect(await screen.findByText('Sent to 1: Asha Test.')).toBeInTheDocument()
+    const sent = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/applications/a1/tests') && init?.method === 'POST')!
+    expect(JSON.parse(sent[1]!.body as string)).toMatchObject({ sendEmail: false })
+  })
 })

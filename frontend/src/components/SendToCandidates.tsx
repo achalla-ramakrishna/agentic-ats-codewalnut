@@ -1,7 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { listJobTests, sendTest, testStatusLabel, type AssessmentSummary, type InviteView } from '../api/assessments'
 import { getBackgrounds, TRACK_LABEL, type Background, type Track } from '../api/insights'
+import { getGoogleStatus, type GoogleStatus } from '../api/interviews'
 import { getWhatsAppStatus } from '../api/messages'
+import { ConnectGoogle } from './ConnectGoogle'
 import { listApplications, listJobs, type ApplicationRow, type Job } from '../api/tracker'
 import { BatchSizeInput, useBatchSize } from './BatchSize'
 import { Badge, Button } from './ui'
@@ -35,6 +37,14 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
   const [busy, setBusy] = useState<string | null>(null)
   const [outcome, setOutcome] = useState<{ sent: string[]; failed: string[] } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Emails go from the sender's own Gmail, so it must be connected in this sign-in.
+  const [google, setGoogle] = useState<GoogleStatus | null>(null)
+  useEffect(() => {
+    getGoogleStatus()
+      .then(setGoogle)
+      .catch(() => setGoogle(null))
+  }, [])
+  const needsGoogle = email && google !== null && !google.mailConnected
 
   useEffect(() => {
     listJobs()
@@ -206,8 +216,15 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
               To send on WhatsApp without the WhatsApp Business API, use Send test in each candidate’s panel (it opens WhatsApp for you).
             </p>
           )}
+          {needsGoogle && (
+            <ConnectGoogle
+              status={google}
+              purpose="The test link is emailed from your own Gmail, so replies come back to you. Or untick Email and use Copy link in the candidate’s Tests tab."
+              returnTo={window.location.pathname + window.location.search}
+            />
+          )}
           <div className="row">
-            <Button type="submit" disabled={!!busy || chosen.length === 0}>
+            <Button type="submit" disabled={!!busy || chosen.length === 0 || needsGoogle}>
               {busy ?? `Send to ${chosen.length} candidate${chosen.length === 1 ? '' : 's'}`}
             </Button>
           </div>
