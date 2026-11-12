@@ -18,7 +18,9 @@ RUN mvn -B -q package -DskipTests
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-RUN groupadd --system ats && useradd --system --gid ats ats
+RUN groupadd --system ats && useradd --system --gid ats ats \
+    # AI interview videos (ATS_MEDIA_DIR defaults to /app/data/media); mount a volume here to keep them.
+    && mkdir -p /app/data/media && chown -R ats:ats /app/data
 COPY --from=api /app/target/ats-*.jar /app/app.jar
 USER ats
 EXPOSE 8080

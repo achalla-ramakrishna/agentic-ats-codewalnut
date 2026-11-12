@@ -93,9 +93,13 @@ survives redeploys:
 
 1. Click the **app** service → **Settings** → **Volumes** → **+ New volume** → mount path `/data`.
    Size: about 35 MB per candidate interview (300 interviews ≈ 10 GB).
-2. Variables: `ATS_MEDIA_DIR=/data/media` → Deploy.
+2. Variables: `ATS_MEDIA_DIR=/data/media` and `RAILWAY_RUN_UID=0` → Deploy. Railway mounts
+   volumes as root and the app runs as a non-root user, so without `RAILWAY_RUN_UID=0` it can't
+   write there (Railway's volume docs, "Permissions").
 
-Without a volume, interviews still work but the videos disappear on the next deploy. With
+Without a volume, interviews still work but the videos disappear on the next deploy. If the folder
+isn't writable, the app logs an error at start-up ("Can't write interview videos to …") and saves
+to a temporary folder instead. With
 `ANTHROPIC_API_KEY` set, the interview agent drafts the questions and reviews each interview (a few
 rupees each); without it a basic review by rules is shown.
 

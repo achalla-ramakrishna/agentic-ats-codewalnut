@@ -2,7 +2,6 @@ package com.codewalnut.ats.service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -23,7 +22,33 @@ public class VideoStorage {
     private final Path root;
 
     public VideoStorage(@Value("${ats.media.dir:data/media}") String dir) {
-        this.root = Path.of(dir).toAbsolutePath().normalize();
+        this.root = usable(Path.of(dir).toAbsolutePath().normalize());
+    }
+
+    /**
+     * The configured folder if the app can write there; otherwise a folder in the temp directory,
+     * so uploads still work (but don't survive a redeploy) and the log says what to fix.
+     */
+    static Path usable(Path wanted) {
+        if (writable(wanted)) {
+            log.info("Interview videos are saved in {}", wanted);
+            return wanted;
+        }
+        Path fallback = Path.of(System.getProperty("java.io.tmpdir"), "ats-media").toAbsolutePath().normalize();
+        log.error("Can't write interview videos to {} (ATS_MEDIA_DIR). Using {} instead, which is lost on every deploy. "
+                + "On Railway: mount a volume and set ATS_MEDIA_DIR to a folder on it (see docs/deploy-railway.md).", wanted, fallback);
+        return fallback;
+    }
+
+    private static boolean writable(Path dir) {
+        try {
+            Files.createDirectories(dir);
+            Path probe = Files.createTempFile(dir, "probe-", ".tmp");
+            Files.delete(probe);
+            return true;
+        } catch (IOException | RuntimeException e) {
+            return false;
+        }
     }
 
     /** Writes the stream to the key (replacing any file there) and returns its size in bytes. */
@@ -40,7 +65,8 @@ public class VideoStorage {
                 Files.deleteIfExists(tmp);
             }
         } catch (IOException e) {
-            throw new UncheckedIOException("Couldn't save the video", e);
+            log.error("Couldn't save interview video {}: {}", key, e.toString());
+            throw new StorageUnavailableException();
         }
     }
 
@@ -55,6 +81,14 @@ public class VideoStorage {
             Files.deleteIfExists(resolve(key));
         } catch (IOException e) {
             log.warn("Couldn't delete video {}: {}", key, e.getMessage());
+        }
+    }
+
+    /** The server couldn't write the file (disk full, folder not writable); shown as 503 with a plain message. */
+    public static class StorageUnavailableException extends RuntimeException {
+        public StorageUnavailableException() {
+            super("The server couldn't save your recording right now. Please try uploading again in a minute; "
+                    + "if it keeps failing, message the CodeWalnut team.");
         }
     }
 

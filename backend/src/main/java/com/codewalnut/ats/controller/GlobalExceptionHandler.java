@@ -59,6 +59,11 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(com.codewalnut.ats.service.VideoStorage.StorageUnavailableException.class)
+    public ResponseEntity<Map<String, String>> handleStorage(com.codewalnut.ats.service.VideoStorage.StorageUnavailableException ex) {
+        return error(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+    }
+
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<Map<String, String>> handleTooLarge(MaxUploadSizeExceededException ex) {
         return error(HttpStatus.BAD_REQUEST, "file: the file is too large");
