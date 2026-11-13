@@ -236,7 +236,8 @@ describe('JobDetailPage', () => {
     ])
     renderJob()
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Import from spreadsheet' }))
+    await userEvent.click(await screen.findByText('+ Add candidates ▾'))
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Import from spreadsheet' }))
     await userEvent.type(screen.getByLabelText('Pasted rows'), 'name\temail\nAsha Rao\tasha@example.com')
     await userEvent.click(screen.getByRole('button', { name: 'Preview' }))
 
@@ -418,7 +419,7 @@ describe('JobDetailPage', () => {
     const panel = await screen.findByRole('region', { name: 'AI suggestions' })
     expect(within(panel).getByText('Meets 3 of 3 requirements')).toBeInTheDocument()
     expect(await screen.findByText('90%')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Upload résumés' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Upload résumés', hidden: true })).toBeInTheDocument()
 
     await userEvent.selectOptions(screen.getByLabelText('Sort candidates'), 'match')
     const names = () => screen.getAllByRole('row').slice(1).map((r) => within(r).getAllByRole('button')[0].textContent)
@@ -504,5 +505,67 @@ describe('matchesSearch', () => {
   })
   it('an empty search matches everyone', () => {
     expect(matchesSearch(r, '   ')).toBe(true)
+  })
+
+  describe('simpler opening page (AINT-15)', () => {
+    const base = [
+      { path: '/auth/session', body: { type: 'STAFF' } },
+      { path: '/me', body: recruiter },
+      { path: '/stages', body: stages },
+      { path: '/jobs/j1/applications', body: [row] },
+      { path: '/jobs/j1/insights', body: noInsights },
+      { path: '/jobs/j1/tests', body: [] },
+      { path: '/google/status', body: { available: true, calendarConnected: false, mailConnected: false, redirectUri: '' } },
+      {
+        path: '/assessments',
+        body: [{ id: 't1', title: 'AI interview — Acme – Interns — Set A', category: 'INTERVIEW', status: 'READY', jobId: 'j1', questionCount: 46,
+          durationMinutes: 120, passPercent: 0, description: null, totalPoints: 26, invites: 0, updatedAt: '2026-11-13T00:00:00Z', taken: 0 }],
+      },
+      { path: '/applications/a1/tests', method: 'POST', status: 201, body: { invite: { id: 'n1' }, message: {} } },
+      { path: '/jobs/j1/ai-interviews', body: { candidates: [], sent: 0, started: 0, submitted: 0, reviewed: 0 } },
+      { path: '/jobs/j1', body: job },
+    ]
+    afterEach(() => window.sessionStorage.clear())
+
+    it('has tabs, and sends the AI interview to the selected people with their links to copy', async () => {
+      const fetchMock = fakeFetch(base)
+      renderJob()
+      expect(await screen.findByRole('tab', { name: 'Candidates (1)' })).toHaveAttribute('aria-selected', 'true')
+      expect(screen.getByRole('button', { name: 'Connect Gmail' })).toBeInTheDocument()
+
+      await userEvent.click(await screen.findByRole('checkbox', { name: 'Select Asha Rao' }))
+      const bar = screen.getByRole('region', { name: 'Selected candidates' })
+      await userEvent.click(within(bar).getByRole('button', { name: '🎥 Send AI interview (1)' }))
+      const dialog = await screen.findByRole('dialog', { name: 'Send the AI interview to 1 candidate' })
+      expect(within(dialog).getByLabelText('Interview')).toHaveValue('t1')
+      // Gmail isn't connected, so the email box starts unticked and the links are listed instead.
+      expect(within(dialog).getByLabelText('Email them the link from my Gmail')).not.toBeChecked()
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Send AI interview to 1' }))
+      expect(await within(dialog).findByText(/Sent to 1/)).toBeInTheDocument()
+      expect((within(dialog).getByLabelText('Interview links') as HTMLTextAreaElement).value).toContain('Asha Rao: http')
+      const sent = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/applications/a1/tests') && init?.method === 'POST')!
+      expect(JSON.parse(sent[1]!.body as string)).toMatchObject({ assessmentId: 't1', dueDays: 3, sendEmail: false })
+
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Close' }))
+      await userEvent.click(screen.getByRole('tab', { name: '🎥 AI interview' }))
+      expect(await screen.findByLabelText('Question set')).toBeInTheDocument()
+      expect(screen.queryByRole('checkbox', { name: 'Select Asha Rao' })).not.toBeInTheDocument()
+    })
+
+    it('keeps the selection while connecting Gmail', async () => {
+      fakeFetch(base)
+      const assign = vi.fn()
+      vi.stubGlobal('location', { ...window.location, assign, origin: 'http://localhost' })
+      const first = renderJob()
+      await userEvent.click(await screen.findByRole('checkbox', { name: 'Select Asha Rao' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Connect Gmail' }))
+      expect(assign).toHaveBeenCalledWith(expect.stringContaining('/api/v1/google/connect?returnTo='))
+      first.unmount()
+
+      renderJob() // back from Google
+      const box = await screen.findByRole('checkbox', { name: 'Select Asha Rao' })
+      await vi.waitFor(() => expect(box).toBeChecked())
+      expect(screen.getByRole('region', { name: 'Selected candidates' })).toHaveTextContent('1 selected')
+    })
   })
 })

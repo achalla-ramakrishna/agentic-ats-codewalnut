@@ -6,10 +6,13 @@ export function ConnectGoogle({
   status,
   purpose,
   returnTo,
+  onConnect,
 }: {
   status: GoogleStatus | null
   purpose: string
   returnTo: string
+  /** Called instead of the default redirect, e.g. to remember what was selected before leaving the page. */
+  onConnect?: () => void
 }) {
   if (status && !status.available) {
     return (
@@ -22,7 +25,7 @@ export function ConnectGoogle({
     <div className="alert alert-info stack" style={{ gap: 8 }}>
       <span>{purpose} Connect your Google account once per sign-in.</span>
       <div>
-        <Button size="sm" onClick={() => window.location.assign(connectGoogleUrl(returnTo))}>
+        <Button size="sm" onClick={() => (onConnect ? onConnect() : window.location.assign(connectGoogleUrl(returnTo)))}>
           Connect Google (Calendar &amp; Gmail)
         </Button>
       </div>

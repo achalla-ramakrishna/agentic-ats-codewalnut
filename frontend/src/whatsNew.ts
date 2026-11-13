@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-13-simpler-opening',
+    date: '2026-11-13',
+    title: 'A simpler opening page — and send the AI interview from your list',
+    summary: 'Openings now have tabs: Candidates, AI interview, Interview slots and Opening details, so nothing opens halfway down the page. Adding people is one “+ Add candidates” menu. Tick candidates and a bar stays at the bottom with Send AI interview, Email and WhatsApp; they open on top of the page. Connect Gmail from the banner first — and if you connect midway, your selection is kept.',
+    steps: [
+      'Open an opening → Candidates → tick people (or Select this page).',
+      'In the bar at the bottom: 🎥 Send AI interview → pick the set and days → Send.',
+      'No Gmail? Untick Email and use Copy all links to share them yourself.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-11-13-ai-interview-ask',
     date: '2026-11-13',
     title: 'New email: “Will you take an AI interview?”',

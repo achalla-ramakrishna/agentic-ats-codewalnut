@@ -10,19 +10,19 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
 
 ## Openings
 - New opening: Openings → New opening.
-- Rename an opening, change its client, hiring type or people needed: open the opening → Edit opening.
+- Rename an opening, change its client, hiring type or people needed: open the opening → Opening details tab → Edit title, client and openings.
 - Job description, location, work mode and the public apply link: open the opening → Job details &
   share link → turn the link on → Copy link. Applicants arrive at Applied / Sourced with their résumé.
 - Interview kit from the job description: open the opening → Interview kit → Generate interview kit.
   It suggests a test, interview questions per round, coding problems and a scorecard.
 
 ## Candidates
-- Add one: open the opening → Add candidate. Many: Import, then paste a table from Excel or Google
+- Add one: open the opening → + Add candidates → Add one candidate. Many: + Add candidates → Import from spreadsheet, then paste a table from Excel or Google
   Sheets (name, email, phone).
-- Naukri applicants: open the opening → Import from Naukri → choose the Excel from Naukri → Rank
+- Naukri applicants: open the opening → + Add candidates → Import from Naukri → choose the Excel from Naukri → Rank
   against job description → tick the best (Top 10/20/50) → Add to this opening → check the "Ask for
   résumé" email → Send. Replies show in Messages and Workflow; then Schedule interview.
-- Upload résumés: open the opening → Upload résumés (needs a job description for the match score).
+- Upload résumés: open the opening → + Add candidates → Upload résumés (needs a job description for the match score).
   The AI fills each profile and a Match %; "AI suggestions" shows who to contact next.
 - Open a candidate: click their name in an opening (or search in Candidates). The panel has Profile,
   Chat with candidate, Team chat, history and documents.
@@ -63,7 +63,7 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
   template matches the tab (interview slots for people waiting on us, résumé request for never
   contacted, follow-up for no contact in 7+ days).
 
-- Let candidates pick their own interview time: open the opening → Interview slots → Add slots. Then email
+- Let candidates pick their own interview time: open the opening → Interview slots tab → Add slots. Then email
   them the "Book a 30-minute call" template (each gets their own link). When they've booked: Interview
   slots (or Workflow) → Send invites for N booked; Google Meet invites go out from your calendar.
 
@@ -104,17 +104,20 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
   they haven't started.
 
 ## AI interviews (recorded, reviewed by AI)
-- Create: open the opening → 🎥 AI interview → Create an AI interview for this opening. It drafts
+- Create: open the opening → 🎥 AI interview tab → Create an AI interview for this opening. It drafts
   phases (introduction, experience, skills, projects, architecture, technical, soft skills, readiness)
   from the job description; check and edit under Tests → Mark ready.
 - Send: Tests → open the AI interview → Send to candidates (30 at a time) → pick the opening → tick →
   Send. Candidates record answers on camera in Chrome or Edge, phase by phase.
-- Ranking: open the opening → 🎥 AI interview: candidates by score with ratings for technical,
+- Ranking: open the opening → 🎥 AI interview tab: candidates by score with ratings for technical,
   design, communication, experience and readiness, notice period and salary. Click a name to watch the
   videos and read the review; tick the best → Shortlist selected; then send them the booking link.
 - Senior Java openings get a hand-written set (Java 17, Spring Boot, MongoDB, Redis caching, JWT,
   testing and CI, airline booking): production scenarios, a code review and code-reading questions;
   under each answer, "Look for" shows what a strong answer covers.
+- Send it to chosen people straight from the opening: Candidates tab → tick people (or Select this page)
+  → 🎥 Send AI interview in the bar at the bottom → pick the set and days → Send. Without Gmail,
+  untick Email and copy the links it lists.
 - Ask first: select candidates → Email selected → template "AI interview: will you take it? (reply
   YES)" → Send. Send the interview (Tests → Send to candidates) to those who reply YES.
 - Different papers for different candidates: on a senior Java opening, 🎥 AI interview → Question set

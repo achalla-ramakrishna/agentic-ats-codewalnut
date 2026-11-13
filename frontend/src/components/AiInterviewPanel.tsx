@@ -39,7 +39,8 @@ export function AiInterviewPanel({
   canEdit: boolean
   onOpen: (applicationId: string) => void
   onChanged: () => void
-  onClose: () => void
+  /** Shows a Close button (not needed when the panel is a tab). */
+  onClose?: () => void
 }) {
   const navigate = useNavigate()
   const stages = useStages()
@@ -113,9 +114,11 @@ export function AiInterviewPanel({
     <Card className="stack" aria-label="AI interview">
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <strong>🎥 AI interview</strong>
-        <Button size="sm" variant="ghost" onClick={onClose}>
-          Close
-        </Button>
+        {onClose && (
+          <Button size="sm" variant="ghost" onClick={onClose}>
+            Close
+          </Button>
+        )}
       </div>
       <ol className="ai-steps" aria-label="How it works">
         <li>

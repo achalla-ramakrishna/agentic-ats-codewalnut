@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import {
   addCandidate,
   getJob,
@@ -29,6 +29,9 @@ import { JobDetailsEditor } from '../components/JobDetailsEditor'
 import { ResumeUpload } from '../components/ResumeUpload'
 import { StageSelect } from '../components/StageSelect'
 import { EditOpeningForm } from '../components/EditOpeningForm'
+import { Dialog } from '../components/Dialog'
+import { SendAiInterview } from '../components/SendAiInterview'
+import { connectGoogleUrl, getGoogleStatus, type GoogleStatus } from '../api/interviews'
 import { Button, Card, PageHeader } from '../components/ui'
 import { useOpenFromQuery } from '../components/useOpenFromQuery'
 import { useStages } from '../components/useStages'
@@ -201,7 +204,25 @@ export function JobDetailPage() {
   const [plan, setPlan] = useState<AssistantPlan | null>(null)
   const [asking, setAsking] = useState(false)
   const [askError, setAskError] = useState<string | null>(null)
-  const [panel, setPanel] = useState<'none' | 'add' | 'import' | 'naukri' | 'resumes' | 'edit' | 'slots' | 'interview'>('none')
+  // Add/import forms open at the top of the Candidates tab; everything else has its own tab.
+  const [panel, setPanel] = useState<'none' | 'add' | 'import' | 'naukri' | 'resumes'>('none')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab = (['candidates', 'interview', 'slots', 'details'].includes(searchParams.get('tab') ?? '')
+    ? searchParams.get('tab')
+    : 'candidates') as 'candidates' | 'interview' | 'slots' | 'details'
+  const showTab = (t: typeof tab) =>
+    setSearchParams(
+      (p) => {
+        const next = new URLSearchParams(p)
+        if (t === 'candidates') next.delete('tab')
+        else next.set('tab', t)
+        return next
+      },
+      { replace: true },
+    )
+  const [editingOpening, setEditingOpening] = useState(false)
+  const [sendingInterview, setSendingInterview] = useState(false)
+  const [google, setGoogle] = useState<GoogleStatus | null>(null)
   const [columns, setColumns] = useState<ColumnKey[]>(loadColumns)
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [hideEmailed, setHideEmailed] = useState(false)
@@ -233,6 +254,12 @@ export function JobDetailPage() {
   const [openTemplate, setOpenTemplate] = useState<string | undefined>()
   const [emailPrompt, setEmailPrompt] = useState<{ row: ApplicationRow; stageLabel: string; template: string } | null>(null)
   const canMessage = me.capabilities.includes('MESSAGE_CANDIDATES')
+  useEffect(() => {
+    if (!canMessage) return
+    getGoogleStatus()
+      .then(setGoogle)
+      .catch(() => setGoogle(null))
+  }, [canMessage])
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -249,6 +276,25 @@ export function JobDetailPage() {
     setOpenTemplate(template)
   }, [])
   useOpenFromQuery(rows, openDrawer)
+
+  // Back from connecting Gmail: bring back the selection and the dialog that was open.
+  const resumeKey = `ats.job.${id}.beforeGoogle`
+  useEffect(() => {
+    if (!rows) return
+    let saved: { picked: string[]; action: 'email' | 'interview' | null } | null = null
+    try {
+      saved = JSON.parse(window.sessionStorage.getItem(resumeKey) ?? 'null')
+      window.sessionStorage.removeItem(resumeKey)
+    } catch {
+      saved = null
+    }
+    if (!saved) return
+    const keep = new Set(saved.picked.filter((x) => rows.some((r) => r.id === x)))
+    setPicked(keep)
+    const chosen = rows.filter((r) => keep.has(r.id))
+    if (saved.action === 'email') setEmailing(chosen.map((r) => ({ applicationId: r.id, name: r.name, hasEmail: !!r.email })))
+    if (saved.action === 'interview') setSendingInterview(true)
+  }, [rows, resumeKey])
 
   // While résumés are being read, refresh the scores every few seconds.
   const reading = insights?.pending ?? 0
@@ -317,6 +363,16 @@ export function JobDetailPage() {
 
   // Back to the first page whenever what's listed changes.
   useEffect(() => setPage(0), [filter, query, categories, skill, year, passedOnly, resumeOnly, sortChoice, batch, hideEmailed])
+
+  /** Connect Gmail and come back to the same selection (and dialog), instead of losing it. */
+  function connectGoogle(action: 'email' | 'interview' | null) {
+    try {
+      window.sessionStorage.setItem(resumeKey, JSON.stringify({ picked: [...picked], action }))
+    } catch {
+      // the selection just won't come back
+    }
+    window.location.assign(connectGoogleUrl(`/jobs/${id}`))
+  }
 
   if (error && !job) return <p role="alert" className="alert alert-error">{error}</p>
   if (!job) return <p className="muted">Loading…</p>
@@ -410,9 +466,6 @@ export function JobDetailPage() {
                 Workflow
               </Link>
             )}
-            <Button variant="secondary" onClick={() => setPanel(panel === 'interview' ? 'none' : 'interview')}>
-              🎥 AI interview
-            </Button>
             {me.navigation.some((n) => n.key === 'interviews') && (
               <Link className="btn btn-secondary" to={`/interview-kits/${job.id}`}>
                 Interview kit
@@ -420,24 +473,30 @@ export function JobDetailPage() {
             )}
             {canEdit && (
               <>
-                <Button variant="secondary" onClick={() => setPanel(panel === 'edit' ? 'none' : 'edit')}>
-                  Edit opening
-                </Button>
-                {insights?.available && (
-                  <Button variant="secondary" onClick={() => setPanel(panel === 'resumes' ? 'none' : 'resumes')}>
-                    Upload résumés
-                  </Button>
-                )}
-                <Button variant="secondary" onClick={() => setPanel(panel === 'import' ? 'none' : 'import')}>
-                  Import from spreadsheet
-                </Button>
-                <Button variant="secondary" onClick={() => setPanel(panel === 'naukri' ? 'none' : 'naukri')}>
-                  Import from Naukri
-                </Button>
-                <Button variant="secondary" onClick={() => setPanel(panel === 'slots' ? 'none' : 'slots')}>
-                  Interview slots
-                </Button>
-                <Button onClick={() => setPanel(panel === 'add' ? 'none' : 'add')}>Add candidate</Button>
+                <details className="add-menu">
+                  <summary className="btn btn-primary">+ Add candidates ▾</summary>
+                  <div className="add-menu-items" role="menu" aria-label="Add candidates">
+                    {[
+                      { key: 'add' as const, label: 'Add one candidate' },
+                      { key: 'import' as const, label: 'Import from spreadsheet' },
+                      { key: 'naukri' as const, label: 'Import from Naukri' },
+                      ...(insights?.available ? [{ key: 'resumes' as const, label: 'Upload résumés' }] : []),
+                    ].map((a) => (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        key={a.key}
+                        onClick={(e) => {
+                          e.currentTarget.closest('details')?.removeAttribute('open')
+                          setPanel(a.key)
+                          showTab('candidates')
+                        }}
+                      >
+                        {a.label}
+                      </button>
+                    ))}
+                  </div>
+                </details>
                 <select
                   className="select"
                   aria-label="Opening status"
@@ -456,6 +515,20 @@ export function JobDetailPage() {
           </>
         }
       />
+      <div className="page-tabs" role="tablist" aria-label="Opening sections">
+        {(
+          [
+            ['candidates', `Candidates (${job.total})`],
+            ['interview', '🎥 AI interview'],
+            ['slots', 'Interview slots'],
+            ['details', 'Opening details'],
+          ] as const
+        ).map(([key, label]) => (
+          <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => showTab(key)}>
+            {label}
+          </button>
+        ))}
+      </div>
       {message && <div className="alert alert-info">{message}</div>}
       {emailPrompt && (
         <div className="alert alert-info row" style={{ justifyContent: 'space-between' }}>
@@ -483,19 +556,56 @@ export function JobDetailPage() {
           {error}
         </div>
       )}
-      {panel === 'edit' && (
-        <EditOpeningForm
-          job={job}
-          onCancel={() => setPanel('none')}
-          onSaved={(saved) => {
-            setJob(saved)
-            setPanel('none')
-            setMessage('Opening saved.')
-            load()
+      {tab === 'details' && (
+        <>
+          {canEdit &&
+            (editingOpening ? (
+              <EditOpeningForm
+                job={job}
+                onCancel={() => setEditingOpening(false)}
+                onSaved={(saved) => {
+                  setJob(saved)
+                  setEditingOpening(false)
+                  setMessage('Opening saved.')
+                  load()
+                }}
+              />
+            ) : (
+              <div>
+                <Button variant="secondary" onClick={() => setEditingOpening(true)}>
+                  Edit title, client and openings
+                </Button>
+              </div>
+            ))}
+          {canEdit ? (
+            <JobDetailsEditor key={`${job.title}|${job.client?.id ?? ''}`} job={job} onSaved={load} />
+          ) : (
+            <Card>{job.description ? <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{job.description}</p> : <p className="muted">No description yet.</p>}</Card>
+          )}
+        </>
+      )}
+      {tab === 'interview' && (
+        <AiInterviewPanel
+          jobId={job.id}
+          canEdit={canEdit}
+          onOpen={(applicationId) => {
+            const row = rows?.find((r) => r.id === applicationId)
+            if (row) openDrawer(row, 'tests')
           }}
+          onChanged={load}
         />
       )}
-      {canEdit && <JobDetailsEditor key={`${job.title}|${job.client?.id ?? ''}`} job={job} onSaved={load} />}
+      {tab === 'slots' && <InterviewSlots jobId={job.id} me={me.email} onChanged={load} />}
+      {tab === 'candidates' && (
+        <>
+      {canMessage && google && google.available && !google.mailConnected && (
+        <div className="alert alert-info gmail-banner" role="status">
+          <span>Emails to candidates go from your own Gmail. Connect it once per sign-in, before selecting people.</span>
+          <Button size="sm" onClick={() => connectGoogle(null)}>
+            Connect Gmail
+          </Button>
+        </div>
+      )}
       {panel === 'add' && (
         <AddCandidateForm
           jobId={job.id}
@@ -510,21 +620,12 @@ export function JobDetailPage() {
         <ResumeUpload jobId={job.id} onProgress={load} onClose={() => setPanel('none')} />
       )}
       {insights && aiMatch && (rows?.length ?? 0) > 0 && (
-        <InsightsPanel jobId={job.id} data={insights} canEdit={canEdit} onOpen={openById} onChanged={load} />
+        // Folded away until it has someone to suggest, so the list is the first thing you see.
+        <details className="insights-fold" open={insights.contactNext.length > 0 || insights.closestToSelection.length > 0}>
+          <summary>✨ AI suggestions</summary>
+          <InsightsPanel jobId={job.id} data={insights} canEdit={canEdit} onOpen={openById} onChanged={load} />
+        </details>
       )}
-      {panel === 'interview' && (
-        <AiInterviewPanel
-          jobId={job.id}
-          canEdit={canEdit}
-          onOpen={(applicationId) => {
-            const row = rows?.find((r) => r.id === applicationId)
-            if (row) openDrawer(row, 'tests')
-          }}
-          onChanged={load}
-          onClose={() => setPanel('none')}
-        />
-      )}
-      {panel === 'slots' && <InterviewSlots jobId={job.id} me={me.email} onChanged={load} onClose={() => setPanel('none')} />}
       {panel === 'naukri' && (
         <NaukriImport jobId={job.id} jobTitle={job.title} senderName={me.name} onAdded={load} onClose={() => setPanel('none')} />
       )}
@@ -688,50 +789,6 @@ export function JobDetailPage() {
             <Button size="sm" variant="secondary" disabled={pageEmailable.length === 0 || pageAllPicked} onClick={() => pickPage(true)}>
               Select this page ({pageEmailable.length})
             </Button>
-            {picked.size > 0 && (
-              <>
-                <Button size="sm" onClick={() => setEmailing(pickedRows.map((r) => ({ applicationId: r.id, name: r.name, hasEmail: !!r.email })))}>
-                  Email selected ({picked.size})
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setWhatsApping(pickedRows.map((r) => ({ applicationId: r.id, name: r.name, phone: r.phone })))}
-                >
-                  WhatsApp selected ({picked.size})
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => setPicked(new Set())}>
-                  Clear
-                </Button>
-              </>
-            )}
-          </div>
-        )}
-        {whatsApping && (
-          <div className="card" style={{ marginBottom: 12 }}>
-            <BulkWhatsApp
-              recipients={whatsApping}
-              jobTitle={job.title}
-              senderName={me.name}
-              onClose={() => {
-                setWhatsApping(null)
-                load()
-              }}
-            />
-          </div>
-        )}
-        {emailing && (
-          <div className="card" style={{ marginBottom: 12 }}>
-            <BulkEmail
-              recipients={emailing}
-              jobTitle={job.title}
-              senderName={me.name}
-              onSent={() => {
-                setPicked(new Set())
-                load()
-              }}
-              onClose={() => setEmailing(null)}
-            />
           </div>
         )}
         {visible.length > 0 && (
@@ -910,6 +967,71 @@ export function JobDetailPage() {
           </nav>
         )}
       </Card>
+      {canEdit && picked.size > 0 && (
+        <div className="selection-bar" role="region" aria-label="Selected candidates">
+          <strong>{picked.size} selected</strong>
+          <Button size="sm" onClick={() => setSendingInterview(true)}>
+            🎥 Send AI interview ({picked.size})
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => setEmailing(pickedRows.map((r) => ({ applicationId: r.id, name: r.name, hasEmail: !!r.email })))}>
+            Email selected ({picked.size})
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setWhatsApping(pickedRows.map((r) => ({ applicationId: r.id, name: r.name, phone: r.phone })))}
+          >
+            WhatsApp selected ({picked.size})
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setPicked(new Set())}>
+            Clear
+          </Button>
+        </div>
+      )}
+        </>
+      )}
+      {sendingInterview && (
+        <Dialog title={`Send the AI interview to ${picked.size} candidate${picked.size === 1 ? '' : 's'}`} onClose={() => setSendingInterview(false)}>
+          <SendAiInterview
+            jobId={job.id}
+            recipients={pickedRows}
+            onConnectGoogle={() => connectGoogle('interview')}
+            onSent={load}
+            onCreate={() => {
+              setSendingInterview(false)
+              showTab('interview')
+            }}
+          />
+        </Dialog>
+      )}
+      {emailing && (
+        <Dialog title="Email the selected candidates" onClose={() => setEmailing(null)} wide>
+          <BulkEmail
+            recipients={emailing}
+            jobTitle={job.title}
+            senderName={me.name}
+            onConnectGoogle={() => connectGoogle('email')}
+            onSent={() => {
+              setPicked(new Set())
+              load()
+            }}
+            onClose={() => setEmailing(null)}
+          />
+        </Dialog>
+      )}
+      {whatsApping && (
+        <Dialog title="WhatsApp the selected candidates" onClose={() => setWhatsApping(null)} wide>
+          <BulkWhatsApp
+            recipients={whatsApping}
+            jobTitle={job.title}
+            senderName={me.name}
+            onClose={() => {
+              setWhatsApping(null)
+              load()
+            }}
+          />
+        </Dialog>
+      )}
       {open && (
         <CandidateDrawer
           key={`${open.id}-${openTab}-${openTemplate ?? ''}`}

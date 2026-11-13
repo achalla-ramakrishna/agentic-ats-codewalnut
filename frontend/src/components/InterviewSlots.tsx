@@ -18,7 +18,7 @@ const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart
  * calendar invites (Google Meet) in one click. Candidates book through the link in the
  * "Book a 30-minute call" email.
  */
-export function InterviewSlots({ jobId, me, onChanged, onClose }: { jobId: string; me: string; onChanged: () => void; onClose: () => void }) {
+export function InterviewSlots({ jobId, me, onChanged, onClose }: { jobId: string; me: string; onChanged: () => void; onClose?: () => void }) {
   const start = nextWeekday(new Date())
   const [data, setData] = useState<SlotsResponse | null>(null)
   const [from, setFrom] = useState(iso(start))
@@ -105,9 +105,11 @@ export function InterviewSlots({ jobId, me, onChanged, onClose }: { jobId: strin
     <Card className="stack">
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <h2 style={{ margin: 0 }}>Interview slots</h2>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          Close
-        </Button>
+        {onClose && (
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Close
+          </Button>
+        )}
       </div>
       <p className="muted" style={{ margin: 0, fontSize: 13 }}>
         Offer times here, then email candidates the <strong>Book a 30-minute call</strong> template: each gets their own link to pick a

@@ -25,6 +25,7 @@ export function BulkEmail({
   title = 'Email the selected candidates',
   onSent,
   onClose,
+  onConnectGoogle,
 }: {
   recipients: BulkRecipient[]
   jobTitle: string
@@ -33,6 +34,8 @@ export function BulkEmail({
   title?: string
   onSent?: () => void
   onClose: () => void
+  /** Connect Gmail without losing what's selected (the page saves it and restores it on return). */
+  onConnectGoogle?: () => void
 }) {
   const sender = senderName ?? 'CodeWalnut Talent Team'
   const withEmail = recipients.filter((r) => r.hasEmail)
@@ -134,7 +137,12 @@ export function BulkEmail({
         </label>
       )}
       {needsGoogle && (
-        <ConnectGoogle status={google} purpose="Emails are sent from your own Gmail, so replies come back to your inbox." returnTo={window.location.pathname} />
+        <ConnectGoogle
+          status={google}
+          purpose="Emails are sent from your own Gmail, so replies come back to your inbox."
+          returnTo={window.location.pathname}
+          onConnect={onConnectGoogle}
+        />
       )}
       <div className="row" style={{ gap: 8 }}>
         <Button onClick={send} disabled={!!busy || withEmail.length === 0 || needsGoogle || !subject.trim() || !body.trim()}>
