@@ -95,7 +95,8 @@ function Editor({
   const [detail, setDetail] = useState<AssessmentDetail | null>(null)
   const [editing, setEditing] = useState<string | 'new' | null>(null)
   const [picking, setPicking] = useState(false)
-  const [sending, setSending] = useState(false)
+  // Reopened after connecting Gmail from Send to candidates (?send=1).
+  const [sending, setSending] = useState(() => new URLSearchParams(window.location.search).get('send') === '1')
   const [topic, setTopic] = useState('')
   const [level, setLevel] = useState('Fresher')
   const [count, setCount] = useState(5)

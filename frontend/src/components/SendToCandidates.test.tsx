@@ -31,6 +31,10 @@ describe('Send to candidates', () => {
     render(<SendToCandidates test={test} onSent={onSent} onClose={() => undefined} />)
 
     await userEvent.selectOptions(await screen.findByLabelText('Opening'), 'j1')
+    // People already sent it are hidden until asked for.
+    await screen.findByRole('checkbox', { name: 'Send to Asha Test' })
+    expect(screen.queryByText('Meena Test')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByLabelText('Hide people already sent it'))
     expect(await screen.findByText('Already sent · Sent, not started')).toBeInTheDocument()
     expect(screen.getByText('No email')).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: 'Send to Meena Test' })).toBeDisabled()
@@ -93,5 +97,76 @@ describe('Send to candidates', () => {
     expect(await screen.findByText('Sent to 1: Asha Test.')).toBeInTheDocument()
     const sent = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/applications/a1/tests') && init?.method === 'POST')!
     expect(JSON.parse(sent[1]!.body as string)).toMatchObject({ sendEmail: false })
+  })
+
+  it('finds people by name, selects everyone shown, and keeps Send in one row', async () => {
+    fakeFetch([
+      { path: '/whatsapp/status', body: { apiEnabled: false, repliesEnabled: false } },
+      { path: '/jobs/j1/applications', body: [app('a1', 'Asha Test', 'asha@x.test'), app('a2', 'Ravi Test', 'ravi@x.test'), app('a3', 'Ravindra Test', 'ravindra@x.test')] },
+      { path: '/jobs/j1/tests', body: [] },
+      { path: '/jobs', body: [{ id: 'j1', title: 'Java developer', client: null, status: 'OPEN', total: 3 }] },
+    ])
+    render(<SendToCandidates test={{ ...test, jobId: 'j1' } as AssessmentSummary} onSent={() => undefined} onClose={() => undefined} />)
+    // An AI interview (or any test that knows its opening) starts there.
+    expect(await screen.findByRole('checkbox', { name: 'Send to Asha Test' })).toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('Find candidates'), 'ravi')
+    expect(screen.queryByText('Asha Test')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByLabelText('Select everyone shown'))
+    expect(screen.getByText('2 selected')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Send to 2 candidates' })).toBeEnabled()
+  })
+
+  it('lists candidates from all openings, each with their opening', async () => {
+    const fetchMock = fakeFetch([
+      { path: '/whatsapp/status', body: { apiEnabled: false, repliesEnabled: false } },
+      { path: '/jobs/j1/applications', body: [app('a1', 'Asha Test', 'asha@x.test')] },
+      { path: '/jobs/j2/applications', body: [{ ...app('b1', 'Bala Test', 'bala@x.test'), jobId: 'j2', jobTitle: 'React developer' }] },
+      { path: '/jobs/j1/tests', body: [] },
+      { path: '/jobs/j2/tests', body: [] },
+      { path: '/jobs', body: [{ id: 'j1', title: 'Java developer', client: null, status: 'OPEN', total: 1 }, { id: 'j2', title: 'React developer', client: null, status: 'OPEN', total: 1 }] },
+      { path: '/applications/b1/tests', method: 'POST', status: 201, body: { invite: { id: 'n2' }, message: {} } },
+    ])
+    render(<SendToCandidates test={test} onSent={() => undefined} onClose={() => undefined} />)
+    await userEvent.selectOptions(await screen.findByLabelText('Opening'), '__all__')
+    expect(await screen.findByRole('checkbox', { name: 'Send to Bala Test' })).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Send to Asha Test' })).toBeInTheDocument()
+    expect(screen.getAllByText('React developer').length).toBeGreaterThan(0)
+    expect(screen.queryByText(/Add people by email/)).not.toBeInTheDocument()
+    await userEvent.type(screen.getByLabelText('Find candidates'), 'react')
+    expect(screen.queryByRole('checkbox', { name: 'Send to Asha Test' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Send to Bala Test' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Send to 1 candidate' }))
+    expect(await screen.findByText('Sent to 1: Bala Test.')).toBeInTheDocument()
+    expect(fetchMock.mock.calls.some(([url, init]) => String(url).endsWith('/applications/b1/tests') && init?.method === 'POST')).toBe(true)
+  })
+
+  it('keeps ticks across searches, shows them as chips, and adds new email addresses', async () => {
+    const fetchMock = fakeFetch([
+      { path: '/whatsapp/status', body: { apiEnabled: false, repliesEnabled: false } },
+      { path: '/jobs/j1/applications', method: 'POST', status: 201, body: { ...app('a9', 'Nisha Patel', 'nisha@x.test') } },
+      { path: '/jobs/j1/applications', body: [app('a1', 'Asha Test', 'asha@x.test'), app('a2', 'Ravi Test', 'ravi@x.test'), app('a3', 'Meena Test', 'meena@x.test')] },
+      { path: '/jobs/j1/tests', body: [] },
+      { path: '/jobs', body: [{ id: 'j1', title: 'Java developer', client: null, status: 'OPEN', total: 3 }] },
+      { path: '/applications/', method: 'POST', status: 201, body: { invite: { id: 'n1' }, message: {} } },
+    ])
+    render(<SendToCandidates test={{ ...test, jobId: 'j1' } as AssessmentSummary} onSent={() => undefined} onClose={() => undefined} />)
+    const find = await screen.findByLabelText('Find candidates')
+    await userEvent.type(find, 'asha')
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Send to Asha Test' }))
+    await userEvent.clear(find)
+    await userEvent.type(find, 'meena')
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Send to Meena Test' }))
+    const chips = screen.getByRole('list', { name: 'Selected people' })
+    expect(chips).toHaveTextContent('Asha Test')
+    expect(chips).toHaveTextContent('Meena Test')
+    await userEvent.click(screen.getByRole('button', { name: 'Remove Meena Test' }))
+    expect(chips).not.toHaveTextContent('Meena Test')
+
+    await userEvent.type(screen.getByLabelText(/Also send to/), 'Nisha Patel <nisha@x.test>')
+    expect(chips).toHaveTextContent('Nisha Patel · new')
+    await userEvent.click(screen.getByRole('button', { name: 'Send to 2 candidates' }))
+    expect(await screen.findByText(/Sent to 2: Asha Test, Nisha Patel/)).toBeInTheDocument()
+    const added = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/jobs/j1/applications') && init?.method === 'POST')!
+    expect(JSON.parse(added[1]!.body as string)).toMatchObject({ name: 'Nisha Patel', email: 'nisha@x.test' })
   })
 })

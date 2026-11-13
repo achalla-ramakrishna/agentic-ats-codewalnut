@@ -229,7 +229,7 @@ describe('TakeTestPage — AI interview (AINT-03, AINT-04)', () => {
     expect(await screen.findByText('Thank you!')).toBeInTheDocument()
     const submit = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/submit'))!
     expect(JSON.parse(submit[1]!.body as string).answers.w1).toEqual(['30 days'])
-    expect(stop).toHaveBeenCalled() // camera off afterwards
+    await vi.waitFor(() => expect(stop).toHaveBeenCalled()) // camera off afterwards (next render)
   })
 
   it('keeps a recording that failed to upload and holds Next until it is saved', { timeout: 20000 }, async () => {

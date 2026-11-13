@@ -143,6 +143,20 @@ export function SendAiInterview({
           : 'No one selected from the list — add people by email below.'}
         {noEmail > 0 && ` ${noEmail} without an email can't take it and are skipped.`}
       </p>
+      {(withEmail.length > 0 || extraPeople.length > 0) && (
+        <div className="picked-chips" role="list" aria-label="Sending to">
+          {withEmail.map((r) => (
+            <span key={r.id} className="picked-chip new" role="listitem">
+              {r.name}
+            </span>
+          ))}
+          {extraPeople.map((p) => (
+            <span key={p.email} className="picked-chip new" role="listitem" title="Will be added to the opening">
+              {p.name} · new
+            </span>
+          ))}
+        </div>
+      )}
       <div className="row" style={{ gap: 12, alignItems: 'flex-end' }}>
         <label className="field" style={{ flex: '1 1 320px' }}>
           Interview

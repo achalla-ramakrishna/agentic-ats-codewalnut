@@ -107,8 +107,9 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
 - Create: open the opening → 🎥 AI interview tab → Create an AI interview for this opening. It drafts
   phases (introduction, experience, skills, projects, architecture, technical, soft skills, readiness)
   from the job description; check and edit under Tests → Mark ready.
-- Send: Tests → open the AI interview → Send to candidates (30 at a time) → pick the opening → tick →
-  Send. Candidates record answers on camera in Chrome or Edge, phase by phase.
+- Send: Tests → open the AI interview → Send to candidates → find people by name and tick them (ticks
+  stay while you search; they show as chips), type new email addresses in "Also send to", pick All
+  openings to see everyone → Send. Candidates record answers on camera in Chrome or Edge, phase by phase.
 - Ranking: open the opening → 🎥 AI interview tab: candidates by score with ratings for technical,
   design, communication, experience and readiness, notice period and salary. Click a name to watch the
   videos and read the review; tick the best → Shortlist selected; then send them the booking link.

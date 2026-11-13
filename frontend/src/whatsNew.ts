@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-13-send-to-candidates',
+    date: '2026-11-13',
+    title: 'Send to candidates: search, pick and add new emails',
+    summary: 'When you send a test or AI interview from Tests, you can now find people by name, tick them one by one (your ticks stay while you search, and show as chips you can remove), add new email addresses in a box, and choose All openings to see everyone. People who already got it are hidden, and the Send button stays in view.',
+    steps: [
+      'Tests → open the interview → Send to candidates.',
+      'Search a name → tick → search the next → tick. Type new emails in “Also send to”.',
+      'Check the chips, then Send.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-11-13-simpler-opening',
     date: '2026-11-13',
     title: 'A simpler opening page — and send the AI interview from your list',
