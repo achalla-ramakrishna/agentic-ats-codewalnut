@@ -28,8 +28,10 @@ function trackFor(category: AssessmentSummary['category']): Track | null {
  */
 export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSummary; onSent: () => void; onClose: () => void }) {
   const [jobs, setJobs] = useState<Job[]>([])
-  // An AI interview starts at the opening it was made for; other tests ask which opening.
-  const [jobId, setJobId] = useState(test.jobId ?? '')
+  // AI interviews get the simple version: everyone listed, search, tick, send.
+  const simple = test.category === 'INTERVIEW'
+  // An AI interview starts at the opening it was made for (or everyone); other tests ask which opening.
+  const [jobId, setJobId] = useState(test.jobId ?? (simple ? ALL_OPENINGS : ''))
   const [rows, setRows] = useState<ApplicationRow[] | null>(null)
   const [invites, setInvites] = useState<InviteView[]>([])
   const [backgrounds, setBackgrounds] = useState<Background[]>([])
@@ -44,7 +46,7 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [resumeOnly, setResumeOnly] = useState(false)
-  const [hideSent, setHideSent] = useState(true)
+  const [hideSent, setHideSent] = useState(!simple)
   const [selectedOnly, setSelectedOnly] = useState(false)
   const [extraText, setExtraText] = useState('')
   // Emails go from the sender's own Gmail, so it must be connected in this sign-in.
@@ -207,7 +209,7 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
         Opening
         <select className="select" value={jobId} onChange={(e) => setJobId(e.target.value)}>
           <option value="">Choose an opening…</option>
-          {jobs.length > 1 && <option value={ALL_OPENINGS}>All openings ({jobs.reduce((n, j) => n + j.total, 0)} candidates)</option>}
+          {jobs.length > 0 && <option value={ALL_OPENINGS}>All openings ({jobs.reduce((n, j) => n + j.total, 0)} candidates)</option>}
           {jobs.map((j) => (
             <option key={j.id} value={j.id}>
               {j.title}
@@ -234,16 +236,26 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
                 Résumé uploaded <strong>{withResume}</strong>
               </button>
             )}
-            <label className="row" style={{ gap: 4, fontSize: 13 }}>
-              <input type="checkbox" checked={hideSent} onChange={(e) => setHideSent(e.target.checked)} /> Hide people already sent it
-            </label>
+            {!simple && (
+              <label className="row" style={{ gap: 4, fontSize: 13 }}>
+                <input type="checkbox" checked={hideSent} onChange={(e) => setHideSent(e.target.checked)} /> Hide people already sent it
+              </label>
+            )}
+            {chosen.length > 0 && (
+              <Button size="sm" variant="ghost" onClick={() => setChosen([])}>
+                Clear selection
+              </Button>
+            )}
             <label className="row" style={{ gap: 4, fontSize: 13 }}>
               <input type="checkbox" checked={selectedOnly} onChange={(e) => setSelectedOnly(e.target.checked)} /> Show selected only
             </label>
           </div>
           <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-            Search for each person and tick them — ticks are kept while you search for the next one.
+            {simple
+              ? `${shown.length} candidate${shown.length === 1 ? '' : 's'}. Search a name, tick one or more people — ticks stay while you search — then Send.`
+              : 'Search for each person and tick them — ticks are kept while you search for the next one.'}
           </p>
+          {!simple && (
           <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <BatchSizeInput value={batch} onChange={setBatch} />
             <Button size="sm" variant="secondary" disabled={shownSendable.length === 0} onClick={() => setChosen(shownSendable.slice(0, batch).map((r) => r.id))}>
@@ -263,7 +275,8 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
               </Button>
             )}
           </div>
-          {track && unread > 0 && (
+          )}
+          {track && unread > 0 && !simple && (
             <p className="muted" style={{ margin: 0, fontSize: 12 }}>
               {unread} résumé{unread === 1 ? ' hasn’t' : 's haven’t'} been read by the AI yet, so their background is unknown. Open the
               opening → AI suggestions → Analyze résumés to read them.
@@ -344,6 +357,9 @@ export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSu
             </tbody>
           </table>
           </div>
+          {allOpenings && (
+            <p className="muted" style={{ margin: 0, fontSize: 13 }}>To add new people by email, choose their opening above.</p>
+          )}
           {!allOpenings && (
           <div>
             <label className="field">

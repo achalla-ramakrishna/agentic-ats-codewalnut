@@ -445,13 +445,54 @@ export function TestsPage() {
   const [tab, setTab] = useState<'tests' | 'bank'>('tests')
   const [notice, setNotice] = useState<string | null>(null)
   const [showArchived, setShowArchived] = useState(false)
+  const [kind, setKind] = useState<'all' | 'interviews' | 'tests'>('all')
+  const [status, setStatus] = useState<'' | 'DRAFT' | 'READY'>('')
+  const [search, setSearch] = useState('')
+  const [ticked, setTicked] = useState<Set<string>>(new Set())
+  const [tidying, setTidying] = useState(false)
+  const open = (id: string) => {
+    setSelected(id)
+    window.setTimeout(() => editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }), 100)
+  }
 
   const load = useCallback(() => {
     listAssessments().then(setTests).catch(() => setTests([]))
   }, [])
   useEffect(load, [load])
 
-  const visible = (tests ?? []).filter((t) => showArchived || t.status !== 'ARCHIVED')
+  const live = (tests ?? []).filter((t) => showArchived || t.status !== 'ARCHIVED')
+  const interviews = live.filter((t) => t.category === 'INTERVIEW').length
+  const q = search.trim().toLowerCase()
+  const visible = live
+    .filter((t) => kind === 'all' || (kind === 'interviews') === (t.category === 'INTERVIEW'))
+    .filter((t) => !status || t.status === status)
+    .filter((t) => !q || t.title.toLowerCase().includes(q))
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  const tickedTests = live.filter((t) => ticked.has(t.id))
+
+  /** Copies nobody was sent are deleted; ones that were sent are archived, so answers and videos stay. */
+  async function tidyUp() {
+    const remove = tickedTests.filter((t) => t.invites === 0)
+    const archive = tickedTests.filter((t) => t.invites > 0 && t.status !== 'ARCHIVED')
+    if (
+      !window.confirm(
+        `Delete ${remove.length} that nobody was sent${archive.length ? ` and archive ${archive.length} that were sent (their answers are kept)` : ''}?`,
+      )
+    )
+      return
+    setTidying(true)
+    const failed: string[] = []
+    for (const t of remove) await deleteAssessment(t.id).catch(() => failed.push(t.title))
+    for (const t of archive) await archiveAssessment(t.id).catch(() => failed.push(t.title))
+    setTidying(false)
+    setTicked(new Set())
+    if (selected && tickedTests.some((t) => t.id === selected)) setSelected(null)
+    setNotice(
+      `Tidied up: ${remove.length - failed.filter((f) => remove.some((t) => t.title === f)).length} deleted, ${archive.length} archived.` +
+        (failed.length ? ` Couldn't change: ${failed.join(', ')}.` : ''),
+    )
+    load()
+  }
   return (
     <div className="stack">
       <PageHeader
@@ -500,12 +541,54 @@ export function TestsPage() {
       {tab === 'tests' && (
       <Card>
         {!tests && <p className="muted">Loading…</p>}
-        {tests && visible.length === 0 && <p className="muted" style={{ margin: 0 }}>No tests yet. Click New test to make one.</p>}
+        {tests && live.length > 0 && (
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
+            {(
+              [
+                ['all', `All ${live.length}`],
+                ['interviews', `AI interviews ${interviews}`],
+                ['tests', `Tests ${live.length - interviews}`],
+              ] as const
+            ).map(([key, label]) => (
+              <button key={key} type="button" className="stage-chip" aria-pressed={kind === key} onClick={() => setKind(key)}>
+                {label}
+              </button>
+            ))}
+            <select className="select" aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value as typeof status)}>
+              <option value="">Any status</option>
+              <option value="DRAFT">Draft</option>
+              <option value="READY">Ready to send</option>
+            </select>
+            <input
+              className="input"
+              type="search"
+              aria-label="Find a test"
+              placeholder="Find a test"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ flex: '1 1 200px', maxWidth: 280 }}
+            />
+            {ticked.size > 0 && (
+              <>
+                <Button size="sm" variant="secondary" disabled={tidying} onClick={() => void tidyUp()}>
+                  {tidying ? 'Tidying…' : `Delete or archive ${ticked.size} ticked`}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setTicked(new Set())}>
+                  Clear
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+        {tests && visible.length === 0 && (
+          <p className="muted" style={{ margin: 0 }}>{live.length ? 'No tests match.' : 'No tests yet. Click New test to make one.'}</p>
+        )}
         {visible.length > 0 && (
           <div className="table-wrap">
             <table className="table">
               <thead>
                 <tr>
+                  <th aria-label="Tick" />
                   <th>Test</th>
                   <th>Kind</th>
                   <th>Questions</th>
@@ -513,13 +596,29 @@ export function TestsPage() {
                   <th>Pass mark</th>
                   <th>Status</th>
                   <th>Sent</th>
+                  <th>Last changed</th>
                 </tr>
               </thead>
               <tbody>
                 {visible.map((t) => (
                   <tr key={t.id} aria-selected={selected === t.id}>
                     <td>
-                      <button type="button" className="row-link" onClick={() => setSelected(t.id)}>
+                      <input
+                        type="checkbox"
+                        aria-label={`Tick ${t.title}`}
+                        checked={ticked.has(t.id)}
+                        onChange={(e) =>
+                          setTicked((all) => {
+                            const next = new Set(all)
+                            if (e.target.checked) next.add(t.id)
+                            else next.delete(t.id)
+                            return next
+                          })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <button type="button" className="row-link" onClick={() => open(t.id)}>
                         {t.title}
                       </button>
                     </td>
@@ -529,6 +628,9 @@ export function TestsPage() {
                     <td>{t.passPercent}%</td>
                     <td>{STATUS_LABEL[t.status]}</td>
                     <td>{t.invites}</td>
+                    <td className="muted" style={{ whiteSpace: 'nowrap' }}>
+                      {new Date(t.updatedAt).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </td>
                   </tr>
                 ))}
               </tbody>

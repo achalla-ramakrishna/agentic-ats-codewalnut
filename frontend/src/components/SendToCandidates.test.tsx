@@ -169,4 +169,24 @@ describe('Send to candidates', () => {
     const added = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/jobs/j1/applications') && init?.method === 'POST')!
     expect(JSON.parse(added[1]!.body as string)).toMatchObject({ name: 'Nisha Patel', email: 'nisha@x.test' })
   })
+
+  it('is simple for an AI interview: everyone listed, tick, send (AINT-18)', async () => {
+    fakeFetch([
+      { path: '/whatsapp/status', body: { apiEnabled: false, repliesEnabled: false } },
+      { path: '/jobs/j1/applications', body: [app('a1', 'Asha Test', 'asha@x.test'), app('a2', 'Ravi Test', 'ravi@x.test')] },
+      { path: '/jobs/j1/tests', body: [{ id: 'i9', applicationId: 'a2', assessmentId: 't1', status: 'SENT', title: 'AI interview' }] },
+      { path: '/jobs', body: [{ id: 'j1', title: 'Java developer', client: null, status: 'OPEN', total: 2 }] },
+      { path: '/applications/a1/tests', method: 'POST', status: 201, body: { invite: { id: 'n1' }, message: {} } },
+    ])
+    const interview = { ...test, category: 'INTERVIEW', jobId: 'j1' } as AssessmentSummary
+    render(<SendToCandidates test={interview} onSent={() => undefined} onClose={() => undefined} />)
+    expect(await screen.findByText(/2 candidates\. Search a name, tick one or more people/)).toBeInTheDocument()
+    expect(screen.queryByLabelText('Batch size')).not.toBeInTheDocument()
+    // Already sent: still listed, marked and not tickable.
+    expect(screen.getByText('Already sent · Sent, not started')).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Send to Ravi Test' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Send to Asha Test' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Send to 1 candidate' }))
+    expect(await screen.findByText('Sent to 1: Asha Test.')).toBeInTheDocument()
+  })
 })

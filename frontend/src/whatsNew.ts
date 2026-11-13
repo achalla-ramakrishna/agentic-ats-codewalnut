@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-13-tests-tidy',
+    date: '2026-11-13',
+    title: 'Tidier Tests list',
+    summary: 'Filter the Tests list to AI interviews or tests, by status or by name; the newest are on top with when they last changed. Tick old copies and click Delete or archive: ones nobody was sent are deleted, ones that were sent are archived so answers stay.',
+    steps: ['Tests → AI interviews → tick the copies you don’t need → Delete or archive N ticked.'],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-11-13-send-to-candidates',
     date: '2026-11-13',
     title: 'Send to candidates: search, pick and add new emails',

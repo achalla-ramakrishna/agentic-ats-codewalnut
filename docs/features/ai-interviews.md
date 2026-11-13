@@ -48,6 +48,7 @@ team talks live only to the best few (e.g. 10 of 200).
 | AINT-15 | **Simpler opening page**: tabs (Candidates · AI interview · Interview slots · Opening details) so each part opens at the top; one **+ Add candidates** menu (add one, spreadsheet, Naukri, résumés); a **Connect Gmail** banner before selecting; selecting people shows a bar that stays in view with **Send AI interview**, Email and WhatsApp; these open over the page; **Send AI interview** picks the opening's ready interview (set), days to finish, and email or copy-the-links; connecting Gmail keeps the selection and the open dialog. | Done |
 | AINT-16 | **Send by email address**: the Send AI interview dialog has an "Also send to" box (one per line, optionally "Name <email>" or "Name, email"); addresses already in the opening are reused, new ones are added to it as Applied (with a note) and then sent the interview with everyone selected. A "Send AI interview by email address" button opens it with nobody selected. | Done |
 | AINT-17 | **Send to candidates** (Tests page) reworked: find by name or email; Résumé uploaded filter; people already sent it hidden by default; best match first; select everyone shown; ticks are kept across searches and shown as chips with ×; Show selected only; an always-visible box for new email addresses (added to the opening first); **All openings** lists candidates from every open opening with their opening; the Send row (count, days, email) stays in view; connecting Gmail returns to the panel with the selection kept. | Done |
+| AINT-18 | For an AI interview, **Send to candidates** is the simple version: everyone in its opening (or in all openings) is listed, people already sent it stay listed but marked and can't be ticked, no batch tools; search, tick one or more, add new emails, Send. | Done |
 | AINT-08 | Automatic retention: delete interview videos N days after the opening closes. | v1 |
 
 ## Business rules
@@ -85,6 +86,7 @@ team talks live only to the best few (e.g. 10 of 200).
 
 | Date | Change |
 | --- | --- |
+| 2026-11-13 | Simple Send to candidates for AI interviews (AINT-18) |
 | 2026-11-13 | Send to candidates: search, filters, chips, new emails, all openings (AINT-17) |
 | 2026-11-13 | Send the AI interview to typed-in email addresses (AINT-16) |
 | 2026-11-13 | Simpler opening page: tabs, add menu, Gmail banner, selection bar, Send AI interview from the list (AINT-15) |
