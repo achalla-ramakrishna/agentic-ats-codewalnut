@@ -184,6 +184,8 @@ export interface AssessmentSummary {
   updatedAt: string
   /** Candidates who started or submitted it; a test can be deleted only while this is 0. */
   taken: number
+  /** The opening an AI interview was created for; null for library tests. */
+  jobId?: string | null
 }
 
 export interface QuestionView {

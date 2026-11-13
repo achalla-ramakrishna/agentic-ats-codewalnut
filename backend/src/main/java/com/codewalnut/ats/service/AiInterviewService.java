@@ -136,6 +136,7 @@ public class AiInterviewService {
                         + "multiple choice or fill in the blank. You can record an answer again before moving on.")
                 .durationMinutes(request.durationMinutes() != null ? request.durationMinutes() : handWritten ? 120 : 75)
                 .passPercent(0)
+                .jobId(job.getId())
                 .status(Assessment.Status.DRAFT)
                 .createdBy(actor.getEmail())
                 .build());

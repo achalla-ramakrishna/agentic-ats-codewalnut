@@ -24,7 +24,8 @@ function trackFor(category: AssessmentSummary['category']): Track | null {
  */
 export function SendToCandidates({ test, onSent, onClose }: { test: AssessmentSummary; onSent: () => void; onClose: () => void }) {
   const [jobs, setJobs] = useState<Job[]>([])
-  const [jobId, setJobId] = useState('')
+  // An AI interview starts at the opening it was made for; other tests ask which opening.
+  const [jobId, setJobId] = useState(test.jobId ?? '')
   const [rows, setRows] = useState<ApplicationRow[] | null>(null)
   const [invites, setInvites] = useState<InviteView[]>([])
   const [backgrounds, setBackgrounds] = useState<Background[]>([])

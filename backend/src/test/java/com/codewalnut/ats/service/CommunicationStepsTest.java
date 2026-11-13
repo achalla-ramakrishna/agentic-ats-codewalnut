@@ -51,6 +51,13 @@ class CommunicationStepsTest {
     }
 
     @Test
+    void askingAboutAnAiInterviewStopsTheBookingLink() {
+        assertThat(of(true, List.of(sent("resume_request", 6), sent("ai_interview_ask", 1))))
+                .isEqualTo(new Communication("AI_INTERVIEW_ASKED", null));
+        assertThat(of(true, List.of(sent("ai_interview_ask", 9)))).isEqualTo(new Communication("AI_INTERVIEW_ASKED", null));
+    }
+
+    @Test
     void anyEarlierEmailCountsAsAskedSoNobodyGetsTheFirstEmailTwice() {
         assertThat(of(false, List.of(sent(null, 1)))).isEqualTo(new Communication("RESUME_ASKED", null));
         assertThat(of(false, List.of(sent(null, 5)))).isEqualTo(new Communication("RESUME_ASKED", "RESUME_FOLLOW_UP"));

@@ -43,6 +43,8 @@ team talks live only to the best few (e.g. 10 of 200).
 | AINT-10 | **Let them finish**: staff (`MANAGE_JOBS`) reopen a submitted AI interview for 10–240 minutes; saved answers are kept, the candidate uses the same link, and the review runs again on submit. Audited, with a team-chat note. A recording that fails to upload is kept on the candidate's screen and Next/Submit wait until it is uploaded or recorded again. | Done |
 | AINT-11 | **Four question sets (A–D)** for senior Java openings, each covering the same skills with different questions (no question repeats across sets apart from the introduction and the notice/salary/location facts). On the opening, 🎥 AI interview → Question set → Set A–D or All four sets → Create; each is a draft titled "… — Set X" to check, Mark ready and send, so different candidates can get different papers. | Done |
 | AINT-12 | **The team's questions in every set**: each senior Java set has the senior architect's 16 questions (ownership and constraints, a regretted decision, OOM, deadlocks, GC tuning, exception handling, a slow join query, caching failures, anti-patterns, monitoring, a notification system, the last item in stock, a screen loading a million records, and two coding questions: character frequency, and a money transfer with tests) plus 5–6 of the team's concept questions (HashMap vs ConcurrentHashMap, JVM memory, locks, CompletableFuture, Spring Boot startup, Actuator, graceful shutdown, configuration, secrets, filters vs interceptors, PUT vs PATCH, query vs path parameters, payment idempotency, correlation ID vs idempotency key, securing REST APIs, MongoDB embedding, compound indexes, collection scans and slow queries, authentication vs authorization, transactions), all 21 spread across the four sets; global exception handling is merged into the architect's question. Coding questions are typed in a code box (Tab indents; pastes are noted) and reviewed, not run. Time limit 120 minutes. **Preview questions** on the opening shows a set by phase, with answers and what to look for, before creating it. | Done |
+| AINT-13 | **"AI interview: will you take it? (reply YES)"** email template: what the interview involves and what candidates need (about 2 hours, Chrome or Edge with camera and microphone, a quiet place, a Google account for their email); they reply YES and staff send the link with Send to candidates. Sent emails show as "AI interview asked" in the Workflow, and the candidate's outreach step becomes *AI interview asked*, so Today's emails no longer offers them a booking link. | Done |
+| AINT-14 | An AI interview remembers the opening it was created for: **Send to candidates** opens with that opening already chosen (it can still be changed); Duplicate keeps it; interviews created earlier are linked by their title (V29). | Done |
 | AINT-08 | Automatic retention: delete interview videos N days after the opening closes. | v1 |
 
 ## Business rules
@@ -80,6 +82,8 @@ team talks live only to the best few (e.g. 10 of 200).
 
 | Date | Change |
 | --- | --- |
+| 2026-11-13 | Send to candidates starts at the interview's opening (AINT-14) |
+| 2026-11-13 | "Will you take an AI interview?" email template; Workflow step (AINT-13) |
 | 2026-11-13 | Architect's and team's questions in every set; Preview questions; code answers (AINT-12) |
 | 2026-11-12 | Four senior Java question sets, A–D (AINT-11) |
 | 2026-11-12 | Let them finish (reopen with saved answers); failed uploads hold Next (AINT-10) |

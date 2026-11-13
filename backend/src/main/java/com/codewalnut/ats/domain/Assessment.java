@@ -59,6 +59,10 @@ public class Assessment {
     @Column(nullable = false, length = 20)
     private Status status;
 
+    /** The opening an AI interview was created for (ADR-0030); null for library tests. */
+    @Column(name = "job_id")
+    private UUID jobId;
+
     @Column(name = "created_by", nullable = false, length = 254)
     private String createdBy;
 

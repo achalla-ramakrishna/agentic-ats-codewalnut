@@ -16,6 +16,17 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-13-ai-interview-ask',
+    date: '2026-11-13',
+    title: 'New email: “Will you take an AI interview?”',
+    summary: 'A ready-made email asks candidates whether they will take the AI interview and tells them what they need (about 2 hours, Chrome or Edge with a camera and microphone, a quiet place). They reply YES and you send them the link. The Workflow shows them as “AI interview asked”, and Today’s emails stops offering them a booking link.',
+    steps: [
+      'Select candidates → Email selected → template “AI interview: will you take it? (reply YES)” → check the text → Send.',
+      'For those who reply YES: Tests → open the AI interview → Send to candidates → tick them → Send.',
+    ],
+    capability: 'MESSAGE_CANDIDATES',
+  },
+  {
     id: '2026-11-13-team-questions',
     date: '2026-11-13',
     title: 'AI interview: your architects’ questions, and preview before you create',

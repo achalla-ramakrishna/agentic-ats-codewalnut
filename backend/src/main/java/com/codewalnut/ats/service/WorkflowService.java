@@ -284,6 +284,8 @@ public class WorkflowService {
                 : scheduled ? "SCHEDULED"
                 : booking != null ? "BOOKED"
                 : sent.containsKey("book_slot") ? "INVITED_TO_BOOK"
+                // Asked whether they'll take an AI interview (ADR-0030): a person sends the link when they say yes.
+                : sent.containsKey("ai_interview_ask") ? "AI_INTERVIEW_ASKED"
                 : hasResume ? "RESUME_RECEIVED"
                 : sent.containsKey("resume_request") || sent.containsKey("follow_up") ? "RESUME_ASKED"
                 : "NEW";

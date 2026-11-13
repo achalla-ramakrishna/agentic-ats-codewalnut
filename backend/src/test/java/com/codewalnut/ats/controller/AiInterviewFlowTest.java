@@ -86,7 +86,8 @@ class AiInterviewFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.interview.summary.category").value("INTERVIEW"))
                 .andExpect(jsonPath("$.interview.summary.status").value("DRAFT"))
-                .andExpect(jsonPath("$.interview.summary.durationMinutes").value(60)));
+                .andExpect(jsonPath("$.interview.summary.durationMinutes").value(60))
+                .andExpect(jsonPath("$.interview.summary.jobId").value(job))); // sending starts at this opening
         List<String> sections = JsonPath.read(created, "$.interview.questions[*].section");
         // Every phase, in order.
         assertThat(sections.stream().distinct().toList()).containsExactly("INTRO", "EXPERIENCE", "SKILLS", "PROJECTS", "ARCHITECTURE",

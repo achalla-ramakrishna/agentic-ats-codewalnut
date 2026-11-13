@@ -239,7 +239,7 @@ public class AssessmentService {
         String title = a.getTitle().length() > 190 ? a.getTitle().substring(0, 190) : a.getTitle();
         Assessment copy = assessmentRepository.save(Assessment.builder()
                 .title(title + " (copy)").category(a.getCategory()).description(a.getDescription())
-                .durationMinutes(a.getDurationMinutes()).passPercent(a.getPassPercent())
+                .durationMinutes(a.getDurationMinutes()).passPercent(a.getPassPercent()).jobId(a.getJobId())
                 .status(Assessment.Status.DRAFT).createdBy(actor.getEmail()).build());
         for (AssessmentQuestion q : questionRepository.findByAssessmentIdOrderByPositionAsc(id)) {
             questionRepository.save(AssessmentQuestion.builder()
@@ -376,7 +376,7 @@ public class AssessmentService {
         return new AssessmentSummary(a.getId(), a.getTitle(), a.getCategory(), a.getDescription(), a.getDurationMinutes(),
                 a.getPassPercent(), a.getStatus(), (int) counts[0], (int) counts[1],
                 inviteRepository.countByAssessmentId(a.getId()), a.getUpdatedAt(),
-                inviteRepository.countByAssessmentIdAndStatusIn(a.getId(), TAKEN));
+                inviteRepository.countByAssessmentIdAndStatusIn(a.getId(), TAKEN), a.getJobId());
     }
 
     /** Validates and tidies a question; throws IllegalArgumentException with a field message. */

@@ -59,6 +59,7 @@ const STEPS: { key: string; label: string }[] = [
   { key: 'RESUME_ASKED', label: 'Résumé asked' },
   { key: 'RESUME_RECEIVED', label: 'Résumé received' },
   { key: 'INVITED_TO_BOOK', label: 'Booking link sent' },
+  { key: 'AI_INTERVIEW_ASKED', label: 'AI interview asked' },
   { key: 'BOOKED', label: 'Booked' },
   { key: 'SCHEDULED', label: 'Call scheduled' },
   { key: 'SCREENED', label: 'Screened' },

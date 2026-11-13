@@ -37,6 +37,16 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
       'Once you have picked a time, you will receive a calendar invitation with the Google Meet link.\n\nBest regards,\n{senderName}\nCodeWalnut',
   },
   {
+    key: 'ai_interview_ask',
+    label: 'AI interview: will you take it? (reply YES)',
+    subject: 'Next step: an AI interview for {jobTitle} at CodeWalnut',
+    body:
+      'Hi {firstName},\n\nThank you for sending your résumé for the {jobTitle} role. As the next step, we would like you to take a recorded AI interview. ' +
+      'You answer questions on camera in your own time, phase by phase: your experience and projects, architecture, a technical round on Java, Spring and MongoDB, and two short coding questions.\n\n' +
+      'What you will need:\n- about 2 hours in one sitting\n- a laptop with Chrome or Edge, and a working camera and microphone\n- a quiet, well-lit place\n- a Google account for this email address (you sign in with it)\n\n' +
+      'If you would like to take it, please reply "YES" to this email and we will send you your personal interview link. The link stays open for 3 days.\n\nBest regards,\n{senderName}\nCodeWalnut',
+  },
+  {
     key: 'booking_reminder',
     label: 'Reminder: pick a time (booking link)',
     subject: 'Reminder: pick a time for your call – {jobTitle} at CodeWalnut',
@@ -119,6 +129,7 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
 export const TEMPLATE_SHORT: Record<string, string> = {
   resume_request: 'Résumé request',
   book_slot: 'Booking link',
+  ai_interview_ask: 'AI interview asked',
   booking_reminder: 'Booking reminder',
   interview_slots: 'Interview slots',
   follow_up: 'Follow-up',

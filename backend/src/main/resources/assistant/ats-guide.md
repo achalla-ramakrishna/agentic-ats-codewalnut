@@ -115,6 +115,8 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
 - Senior Java openings get a hand-written set (Java 17, Spring Boot, MongoDB, Redis caching, JWT,
   testing and CI, airline booking): production scenarios, a code review and code-reading questions;
   under each answer, "Look for" shows what a strong answer covers.
+- Ask first: select candidates → Email selected → template "AI interview: will you take it? (reply
+  YES)" → Send. Send the interview (Tests → Send to candidates) to those who reply YES.
 - Different papers for different candidates: on a senior Java opening, 🎥 AI interview → Question set
   → Set A, B, C, D or All four sets → Create. Mark each ready under Tests and send the one you want.
 - A candidate couldn't finish (videos failed, time ran out): open the candidate → Tests → Let them
