@@ -181,7 +181,8 @@ export function VideoAnswer({
     const type = recordingType()
     let rec: MediaRecorder
     try {
-      rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 350_000, audioBitsPerSecond: 64_000 })
+      // About 1.9 MB a minute: clear faces and speech, so a volume holds many more interviews.
+      rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 200_000, audioBitsPerSecond: 48_000 })
     } catch {
       setError('This browser can’t record video. Please use Chrome or Edge on a laptop or desktop.')
       return

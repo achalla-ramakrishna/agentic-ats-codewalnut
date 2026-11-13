@@ -47,6 +47,23 @@ public class AiInterviewController {
         return interviews.previewSet(currentUserService.require(), set);
     }
 
+    /** Room left for interview videos, with a warning when it's running low. */
+    @GetMapping("/api/v1/ai-interviews/storage")
+    public com.codewalnut.ats.dto.AiInterviewDtos.Storage storage() {
+        return interviews.storage(currentUserService.require());
+    }
+
+    /** What deleting the opening's rejected and withdrawn candidates' videos would free. */
+    @GetMapping("/api/v1/jobs/{id}/ai-interviews/closed-videos")
+    public com.codewalnut.ats.dto.AiInterviewDtos.Cleanup closedVideos(@PathVariable UUID id) {
+        return interviews.cleanupPreview(currentUserService.require(), id);
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/api/v1/jobs/{id}/ai-interviews/closed-videos")
+    public com.codewalnut.ats.dto.AiInterviewDtos.Cleanup deleteClosedVideos(@PathVariable UUID id) {
+        return interviews.deleteClosedVideos(currentUserService.require(), id);
+    }
+
     @GetMapping("/api/v1/jobs/{id}/ai-interviews")
     public JobInterviews ranking(@PathVariable UUID id) {
         return interviews.ranking(currentUserService.require(), id);

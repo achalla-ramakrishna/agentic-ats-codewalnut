@@ -147,6 +147,8 @@ function Review({
                     <RecordedVideo src={videoUrl(inviteId, a.given[0])} label={`Answer to question ${a.position}`} />
                     <span className="muted">{a.given[1] ? `Transcript: ${a.given[1]}` : 'No transcript (recorded in a browser without speech-to-text).'}</span>
                   </>
+                ) : a.given[1] ? (
+                  <span className="muted">Video deleted to free space. Transcript: {a.given[1]}</span>
                 ) : (
                   <span className="muted">Not answered.</span>
                 )

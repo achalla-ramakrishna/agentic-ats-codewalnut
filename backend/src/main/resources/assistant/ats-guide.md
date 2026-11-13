@@ -126,6 +126,8 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
   → Set A, B, C, D or All four sets → Create. Mark each ready under Tests and send the one you want.
 - A candidate couldn't finish (videos failed, time ran out): open the candidate → Tests → Let them
   finish → minutes. Their saved answers stay; send them the same link (Copy link).
+- Space for videos: the AI interview tab shows how much is free and about how many more interviews fit.
+  To free space, click "Free …: delete rejected candidates' videos" (transcripts and reviews stay).
 - The score is advice: the AI never moves or rejects anyone.
 
 ## Messages

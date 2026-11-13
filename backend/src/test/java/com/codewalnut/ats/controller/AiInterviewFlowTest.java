@@ -5,6 +5,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -252,6 +254,37 @@ class AiInterviewFlowTest {
                 .andExpect(jsonPath("$.invite.evaluation").value("DONE"))
                 .andExpect(jsonPath("$.answers[0].given[0]").value(first));
         json(RECRUITER, "POST", "/api/v1/tests/" + UUID.randomUUID() + "/reopen", "").andExpect(status().isNotFound());
+
+        // AINT-19: room for videos, visible to anyone who sees candidates.
+        mockMvc.perform(get("/api/v1/ai-interviews/storage").with(HM))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.usedBytes").value(Matchers.greaterThan(0)))
+                .andExpect(jsonPath("$.interviews").value(Matchers.greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.freeBytes").isNumber())
+                .andExpect(jsonPath("$.roomFor").isNumber())
+                .andExpect(jsonPath("$.temporary").value(false));
+
+        // AINT-20: delete a rejected candidate's videos; transcripts and the review stay.
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/ai-interviews/closed-videos").with(RECRUITER))
+                .andExpect(jsonPath("$.videos").value(0));
+        mockMvc.perform(patch("/api/v1/applications/" + app + "/stage").with(RECRUITER).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"stage\":\"REJECTED\",\"note\":\"Not a fit\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/ai-interviews/closed-videos").with(RECRUITER))
+                .andExpect(jsonPath("$.candidates").value(1))
+                .andExpect(jsonPath("$.videos").value(videos.size()))
+                .andExpect(jsonPath("$.bytes").value(Matchers.greaterThan(0)));
+        mockMvc.perform(delete("/api/v1/jobs/" + job + "/ai-interviews/closed-videos").with(HM).with(csrf())).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/v1/jobs/" + job + "/ai-interviews/closed-videos").with(RECRUITER).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.videos").value(videos.size()));
+        mockMvc.perform(get("/api/v1/tests/" + invite + "/videos/" + first).with(RECRUITER)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/tests/" + invite).with(RECRUITER))
+                .andExpect(jsonPath("$.answers[0].given[0]").value(""))
+                .andExpect(jsonPath("$.answers[0].given[1]").value(transcript))
+                .andExpect(jsonPath("$.review.areas.length()").value(5));
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/ai-interviews/closed-videos").with(RECRUITER))
+                .andExpect(jsonPath("$.videos").value(0));
     }
 
     @Test

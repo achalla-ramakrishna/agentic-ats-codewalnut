@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-13-video-space',
+    date: '2026-11-13',
+    title: 'Room for more AI interviews',
+    summary: 'Interview recordings are now about half the size, with clear faces and speech. The AI interview tab shows how much space is left and about how many more interviews fit, and warns before it runs out. You can delete the videos of rejected candidates to free space; their transcripts and reviews stay.',
+    steps: ['Open the opening → 🎥 AI interview tab → see Space for videos.', 'Running low? Click “Free …: delete rejected candidates’ videos”.'],
+    capability: 'VIEW_CANDIDATES',
+  },
+  {
     id: '2026-11-13-tests-tidy',
     date: '2026-11-13',
     title: 'Tidier Tests list',

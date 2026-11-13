@@ -92,7 +92,8 @@ Candidates' recorded answers are saved as files, not in MySQL (ADR-0030). Give t
 survives redeploys:
 
 1. Click the **app** service → **Settings** → **Volumes** → **+ New volume** → mount path `/data`.
-   Size: about 35 MB per candidate interview (300 interviews ≈ 10 GB).
+   Size: about 50–60 MB per completed interview (a 5 GB volume holds roughly 75; 330 interviews need about
+   20 GB). The AI interview tab shows the space left and warns under 1 GB.
 2. Variables: `ATS_MEDIA_DIR=/data/media` and `RAILWAY_RUN_UID=0` → Deploy. Railway mounts
    volumes as root and the app runs as a non-root user, so without `RAILWAY_RUN_UID=0` it can't
    write there (Railway's volume docs, "Permissions").

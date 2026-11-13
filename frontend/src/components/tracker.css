@@ -880,3 +880,17 @@
   padding: 0 4px;
   color: var(--color-text-muted);
 }
+.space-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  overflow: hidden;
+}
+.space-bar span {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+}
+.space-bar.low span {
+  background: #b91c1c;
+}

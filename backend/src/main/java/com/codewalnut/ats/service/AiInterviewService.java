@@ -388,7 +388,7 @@ public class AiInterviewService {
             String asked = q.getCode() == null ? q.getPrompt() : q.getPrompt() + "\nCode shown:\n" + q.getCode();
             switch (q.getKind()) {
                 case VIDEO -> {
-                    boolean recorded = !g.isEmpty() && !g.get(0).isBlank();
+                    boolean recorded = !g.isEmpty() && (!g.get(0).isBlank() || (g.size() > 1 && !g.get(1).isBlank()));
                     String transcript = g.size() > 1 ? g.get(1) : "";
                     answers.add(new InterviewAgent.Answer(phase, "VIDEO", asked,
                             !recorded ? "" : transcript.isBlank() ? "(answered on video; no transcript available)" : transcript,
@@ -506,6 +506,90 @@ public class AiInterviewService {
         auditService.record(actor, AuditAction.INTERVIEW_REOPENED, "AssessmentInvite", inviteId, Map.of("minutes", minutes));
         teamNote(invite, actor.getEmail() + " reopened " + invite.getApplication().getCandidate().getName() + "'s AI interview for "
                 + minutes + " minutes so they can finish it. Their saved answers are kept; send them the same link (Copy link).");
+    }
+
+    // ---- space for videos ----
+
+    /** Until a few interviews are in, assume this much per interview (about 30 minutes of answers). */
+    static final long DEFAULT_PER_INTERVIEW = 60L * 1024 * 1024;
+    static final long LOW_SPACE = 1024L * 1024 * 1024;
+
+    /** How much room is left for interview videos, so the team hears before candidates hit upload errors. */
+    @Transactional(readOnly = true)
+    public com.codewalnut.ats.dto.AiInterviewDtos.Storage storage(AppUser actor) {
+        accessPolicy.require(actor, Capability.VIEW_CANDIDATES);
+        VideoStorage.Space space = storage.space();
+        long used = videoRepository.totalBytes();
+        int interviews = (int) videoRepository.interviewCount();
+        long per = interviews >= 3 ? Math.max(1, used / interviews) : DEFAULT_PER_INTERVIEW;
+        long room = space.freeBytes() < 0 ? -1 : space.freeBytes() / per;
+        String warning = space.temporary()
+                ? "Videos are being saved to a temporary folder and will be lost on the next deploy. Mount a volume and set ATS_MEDIA_DIR."
+                : space.freeBytes() >= 0 && space.freeBytes() < LOW_SPACE
+                        ? "Less than 1 GB left for interview videos — make the volume bigger or delete videos you no longer need, "
+                                + "or candidates won't be able to save their answers."
+                        : null;
+        return new com.codewalnut.ats.dto.AiInterviewDtos.Storage(used, space.freeBytes(), space.totalBytes(), interviews, per, room,
+                space.temporary(), warning);
+    }
+
+    /** Interviews of an opening's rejected or withdrawn candidates that still have videos. */
+    private List<AssessmentInvite> closedInterviews(UUID jobId) {
+        List<UUID> closed = applicationRepository.findByJobIdOrderByCandidateNameAsc(jobId).stream()
+                .filter(a -> a.getStage() == com.codewalnut.ats.domain.Stage.REJECTED || a.getStage() == com.codewalnut.ats.domain.Stage.WITHDRAWN)
+                .map(Application::getId).toList();
+        if (closed.isEmpty()) {
+            return List.of();
+        }
+        return inviteRepository.findByApplicationIdInOrderBySentAtDesc(closed).stream()
+                .filter(i -> i.getAssessment().getCategory() == Assessment.Category.INTERVIEW)
+                .toList();
+    }
+
+    /** What deleting the rejected and withdrawn candidates' videos would free, before doing it. */
+    @Transactional(readOnly = true)
+    public com.codewalnut.ats.dto.AiInterviewDtos.Cleanup cleanupPreview(AppUser actor, UUID jobId) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        List<AssessmentInvite> invites = closedInterviews(jobId);
+        List<InterviewVideo> videos = videoRepository.findByInviteIdIn(invites.stream().map(AssessmentInvite::getId).toList());
+        return new com.codewalnut.ats.dto.AiInterviewDtos.Cleanup(
+                (int) videos.stream().map(InterviewVideo::getInviteId).distinct().count(), videos.size(),
+                videos.stream().mapToLong(InterviewVideo::getSizeBytes).sum());
+    }
+
+    /**
+     * Deletes the video files of an opening's rejected and withdrawn candidates. Transcripts, written answers,
+     * scores and the review stay; the answers show the video was deleted to free space.
+     */
+    @Transactional
+    public com.codewalnut.ats.dto.AiInterviewDtos.Cleanup deleteClosedVideos(AppUser actor, UUID jobId) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        int candidates = 0;
+        int count = 0;
+        long bytes = 0;
+        for (AssessmentInvite invite : closedInterviews(jobId)) {
+            List<InterviewVideo> videos = videoRepository.findByInviteId(invite.getId());
+            if (videos.isEmpty()) {
+                continue;
+            }
+            candidates++;
+            Map<UUID, List<String>> answers = new LinkedHashMap<>(inviteService.answers(invite));
+            for (InterviewVideo v : videos) {
+                storage.delete(v.getStorageKey());
+                bytes += v.getSizeBytes();
+                count++;
+                List<String> given = answers.get(v.getQuestionId());
+                if (given != null && !given.isEmpty()) {
+                    // Keep the transcript; an empty video id means the recording is gone.
+                    answers.put(v.getQuestionId(), List.of("", given.size() > 1 ? given.get(1) : ""));
+                }
+                videoRepository.delete(v);
+            }
+            invite.setAnswersJson(write(answers));
+        }
+        auditService.record(actor, AuditAction.INTERVIEW_VIDEOS_DELETED, "JobOpening", jobId,
+                Map.of("candidates", candidates, "videos", count, "bytes", bytes));
+        return new com.codewalnut.ats.dto.AiInterviewDtos.Cleanup(candidates, count, bytes);
     }
 
     // ---- the ranking ----

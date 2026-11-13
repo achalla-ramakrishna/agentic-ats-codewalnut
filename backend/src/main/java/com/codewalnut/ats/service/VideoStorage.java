@@ -20,9 +20,25 @@ import org.springframework.stereotype.Service;
 public class VideoStorage {
 
     private final Path root;
+    /** True when the configured folder wasn't writable and a temporary one is used (lost on deploy). */
+    private final boolean temporary;
 
     public VideoStorage(@Value("${ats.media.dir:data/media}") String dir) {
-        this.root = usable(Path.of(dir).toAbsolutePath().normalize());
+        Path wanted = Path.of(dir).toAbsolutePath().normalize();
+        this.root = usable(wanted);
+        this.temporary = !root.equals(wanted);
+    }
+
+    /** Free and total bytes of the disk the videos are on; -1 when it can't be read. */
+    public record Space(long freeBytes, long totalBytes, boolean temporary, String folder) {}
+
+    public Space space() {
+        try {
+            var store = Files.getFileStore(root);
+            return new Space(store.getUsableSpace(), store.getTotalSpace(), temporary, root.toString());
+        } catch (IOException e) {
+            return new Space(-1, -1, temporary, root.toString());
+        }
     }
 
     /**

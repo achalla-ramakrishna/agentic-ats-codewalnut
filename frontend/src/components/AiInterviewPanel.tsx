@@ -4,6 +4,7 @@ import { AREA_SHORT, createAiInterview, jobInterviews, type JobInterviews, type 
 import { moveStage } from '../api/tracker'
 import { Dots } from './InterviewReviewCard'
 import { QuestionSetPreview } from './QuestionSetPreview'
+import { VideoSpace } from './VideoSpace'
 import { useStages } from './useStages'
 import { Badge, Button, Card } from './ui'
 
@@ -134,6 +135,7 @@ export function AiInterviewPanel({
           <strong>4. Shortlist</strong>The AI reviews each one; the ranking appears below.
         </li>
       </ol>
+      <VideoSpace jobId={jobId} canEdit={canEdit} />
       {canEdit && (
         <div className="stack" style={{ gap: 8 }}>
           <div className="row" style={{ gap: 8, alignItems: 'flex-end' }}>

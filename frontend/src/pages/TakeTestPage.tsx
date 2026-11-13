@@ -60,7 +60,7 @@ export function TakeTestPage() {
     setCameraError(null)
     if (stream) return true
     try {
-      setStream(await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: true }))
+      setStream(await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, frameRate: { ideal: 15, max: 20 } }, audio: true }))
       return true
     } catch {
       setCameraError('We couldn’t use your camera and microphone. Allow them for this site in the browser’s address bar, then try again.')

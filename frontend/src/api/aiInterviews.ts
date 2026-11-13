@@ -64,6 +64,36 @@ export interface SetQuestion {
 export const previewSet = (set: number) =>
   api<{ set: number; letter: string; questions: SetQuestion[]; minutes: number }>(`/ai-interviews/sets/${set}`)
 
+export interface VideoStorage {
+  usedBytes: number
+  freeBytes: number
+  totalBytes: number
+  interviews: number
+  perInterviewBytes: number
+  /** About how many more interviews fit; -1 when unknown. */
+  roomFor: number
+  temporary: boolean
+  warning: string | null
+}
+
+export const videoStorage = () => api<VideoStorage>('/ai-interviews/storage')
+export const closedVideos = (jobId: string) => api<{ candidates: number; videos: number; bytes: number }>(`/jobs/${jobId}/ai-interviews/closed-videos`)
+export const deleteClosedVideos = (jobId: string) =>
+  api<{ candidates: number; videos: number; bytes: number }>(`/jobs/${jobId}/ai-interviews/closed-videos`, { method: 'DELETE' })
+
+/** 1536 → "1.5 KB", 4.5e9 → "4.2 GB". */
+export function bytes(n: number) {
+  if (n < 0) return '?'
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let i = 0
+  let v = n
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024
+    i++
+  }
+  return `${v >= 10 || i === 0 ? Math.round(v) : v.toFixed(1)} ${units[i]}`
+}
+
 export const jobInterviews = (jobId: string) => api<JobInterviews>(`/jobs/${jobId}/ai-interviews`)
 
 /** Let the candidate finish a submitted interview: reopens it for the minutes given, keeping saved answers. */

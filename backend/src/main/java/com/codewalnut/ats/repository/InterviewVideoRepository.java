@@ -13,4 +13,10 @@ public interface InterviewVideoRepository extends JpaRepository<InterviewVideo, 
     List<InterviewVideo> findByInviteId(UUID inviteId);
 
     List<InterviewVideo> findByInviteIdIn(java.util.Collection<UUID> inviteIds);
+
+    @org.springframework.data.jpa.repository.Query("select coalesce(sum(v.sizeBytes), 0) from InterviewVideo v")
+    long totalBytes();
+
+    @org.springframework.data.jpa.repository.Query("select count(distinct v.inviteId) from InterviewVideo v")
+    long interviewCount();
 }
