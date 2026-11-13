@@ -46,6 +46,7 @@ team talks live only to the best few (e.g. 10 of 200).
 | AINT-13 | **"AI interview: will you take it? (reply YES)"** email template: what the interview involves and what candidates need (about 2 hours, Chrome or Edge with camera and microphone, a quiet place, a Google account for their email); they reply YES and staff send the link with Send to candidates. Sent emails show as "AI interview asked" in the Workflow, and the candidate's outreach step becomes *AI interview asked*, so Today's emails no longer offers them a booking link. | Done |
 | AINT-14 | An AI interview remembers the opening it was created for: **Send to candidates** opens with that opening already chosen (it can still be changed); Duplicate keeps it; interviews created earlier are linked by their title (V29). | Done |
 | AINT-15 | **Simpler opening page**: tabs (Candidates · AI interview · Interview slots · Opening details) so each part opens at the top; one **+ Add candidates** menu (add one, spreadsheet, Naukri, résumés); a **Connect Gmail** banner before selecting; selecting people shows a bar that stays in view with **Send AI interview**, Email and WhatsApp; these open over the page; **Send AI interview** picks the opening's ready interview (set), days to finish, and email or copy-the-links; connecting Gmail keeps the selection and the open dialog. | Done |
+| AINT-16 | **Send by email address**: the Send AI interview dialog has an "Also send to" box (one per line, optionally "Name <email>" or "Name, email"); addresses already in the opening are reused, new ones are added to it as Applied (with a note) and then sent the interview with everyone selected. A "Send AI interview by email address" button opens it with nobody selected. | Done |
 | AINT-08 | Automatic retention: delete interview videos N days after the opening closes. | v1 |
 
 ## Business rules
@@ -83,6 +84,7 @@ team talks live only to the best few (e.g. 10 of 200).
 
 | Date | Change |
 | --- | --- |
+| 2026-11-13 | Send the AI interview to typed-in email addresses (AINT-16) |
 | 2026-11-13 | Simpler opening page: tabs, add menu, Gmail banner, selection bar, Send AI interview from the list (AINT-15) |
 | 2026-11-13 | Send to candidates starts at the interview's opening (AINT-14) |
 | 2026-11-13 | "Will you take an AI interview?" email template; Workflow step (AINT-13) |

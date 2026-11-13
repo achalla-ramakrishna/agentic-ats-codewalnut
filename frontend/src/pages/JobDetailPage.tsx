@@ -789,6 +789,11 @@ export function JobDetailPage() {
             <Button size="sm" variant="secondary" disabled={pageEmailable.length === 0 || pageAllPicked} onClick={() => pickPage(true)}>
               Select this page ({pageEmailable.length})
             </Button>
+            {picked.size === 0 && (
+              <Button size="sm" variant="ghost" onClick={() => setSendingInterview(true)}>
+                🎥 Send AI interview by email address
+              </Button>
+            )}
           </div>
         )}
         {visible.length > 0 && (
@@ -991,10 +996,14 @@ export function JobDetailPage() {
         </>
       )}
       {sendingInterview && (
-        <Dialog title={`Send the AI interview to ${picked.size} candidate${picked.size === 1 ? '' : 's'}`} onClose={() => setSendingInterview(false)}>
+        <Dialog
+          title={picked.size ? `Send the AI interview to ${picked.size} candidate${picked.size === 1 ? '' : 's'}` : 'Send the AI interview'}
+          onClose={() => setSendingInterview(false)}
+        >
           <SendAiInterview
             jobId={job.id}
             recipients={pickedRows}
+            allRows={rows ?? []}
             onConnectGoogle={() => connectGoogle('interview')}
             onSent={load}
             onCreate={() => {

@@ -117,7 +117,8 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
   under each answer, "Look for" shows what a strong answer covers.
 - Send it to chosen people straight from the opening: Candidates tab → tick people (or Select this page)
   → 🎥 Send AI interview in the bar at the bottom → pick the set and days → Send. Without Gmail,
-  untick Email and copy the links it lists.
+  untick Email and copy the links it lists. Someone not in the list? Type their email in "Also send to"
+  (one per line); they're added to the opening and sent the interview.
 - Ask first: select candidates → Email selected → template "AI interview: will you take it? (reply
   YES)" → Send. Send the interview (Tests → Send to candidates) to those who reply YES.
 - Different papers for different candidates: on a senior Java opening, 🎥 AI interview → Question set

@@ -552,6 +552,25 @@ describe('matchesSearch', () => {
       expect(screen.queryByRole('checkbox', { name: 'Select Asha Rao' })).not.toBeInTheDocument()
     })
 
+    it('sends the AI interview to an email address typed in, adding them to the opening (AINT-16)', async () => {
+      const fetchMock = fakeFetch([
+        { path: '/jobs/j1/applications', method: 'POST', status: 201,
+          body: { ...row, id: 'a9', name: 'Nisha Patel', email: 'nisha.patel@example.com', stage: 'SOURCED' } },
+        { path: '/applications/a9/tests', method: 'POST', status: 201, body: { invite: { id: 'n9' }, message: {} } },
+        ...base,
+      ])
+      renderJob()
+      await userEvent.click(await screen.findByRole('button', { name: '🎥 Send AI interview by email address' }))
+      const dialog = await screen.findByRole('dialog', { name: 'Send the AI interview' })
+      await userEvent.type(within(dialog).getByLabelText(/Also send to/), 'nisha.patel@example.com')
+      expect(within(dialog).getByText(/Adding: Nisha Patel \(nisha.patel@example.com\)/)).toBeInTheDocument()
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Send AI interview to 1' }))
+      expect(await within(dialog).findByText(/Sent to 1/)).toBeInTheDocument()
+      const added = fetchMock.mock.calls.find(([url, init]) => String(url).endsWith('/jobs/j1/applications') && init?.method === 'POST')!
+      expect(JSON.parse(added[1]!.body as string)).toMatchObject({ name: 'Nisha Patel', email: 'nisha.patel@example.com', stage: 'SOURCED' })
+      expect(fetchMock.mock.calls.some(([url, init]) => String(url).endsWith('/applications/a9/tests') && init?.method === 'POST')).toBe(true)
+    })
+
     it('keeps the selection while connecting Gmail', async () => {
       fakeFetch(base)
       const assign = vi.fn()

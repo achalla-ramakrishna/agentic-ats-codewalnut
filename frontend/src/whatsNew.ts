@@ -24,6 +24,7 @@ export const WHATS_NEW: WhatsNewEntry[] = [
       'Open an opening → Candidates → tick people (or Select this page).',
       'In the bar at the bottom: 🎥 Send AI interview → pick the set and days → Send.',
       'No Gmail? Untick Email and use Copy all links to share them yourself.',
+      'Someone not in the list? Type their email in “Also send to” — they’re added to the opening and get the link too.',
     ],
     capability: 'MANAGE_JOBS',
   },
