@@ -39,23 +39,12 @@ public final class InterviewSets {
      */
     public static List<DraftQuestion> seniorJava() {
         List<DraftQuestion> q = new ArrayList<>();
-        q.add(video("INTRO", "In one minute: your current role, your years with Java, and the service you own end to end today.", 60,
-                "Clear scope (owner vs contributor); years with Java and Spring Boot; the service, its users and its traffic."));
-
-        q.add(video("EXPERIENCE", "Describe a high-throughput Java microservice you owned end to end: its traffic, its data store, "
-                + "how it was built, tested, deployed and monitored, and what you designed yourself.", 150,
-                "Real numbers (requests per second, data size, latency); the whole path from design to CI/CD to production "
-                        + "monitoring; their own decisions rather than 'we'; trade-offs they made."));
-        q.add(video("EXPERIENCE", "Tell us about a production issue you troubleshot and fixed. How did you find the cause, what "
-                + "was the fix, and what did you change so it couldn't happen again?", 150,
-                "A clear timeline; real tools (logs, metrics, traces, thread or heap dumps, database profiler); root cause vs "
-                        + "symptom; follow-ups such as alerts, tests or a design change; owning it rather than blaming."));
-
-        q.add(video("SKILLS", "How would you secure a set of Spring Boot microservices with JWT? Cover where tokens are issued "
-                + "and checked, what goes in them, expiry and refresh, and how one service calls another.", 150,
-                "Stateless validation of the signature (ideally asymmetric keys / JWKS) in a resource-server filter chain; short "
-                        + "expiry with refresh tokens; claims and roles mapped to authorities; no secrets in the payload; "
-                        + "service-to-service via client credentials or a propagated token; revocation and clock skew."));
+        q.add(intro());
+        ownership(q);
+        q.add(d5());
+        q.add(d9());
+        q.add(d13());
+        q.add(d21());
         q.add(blank("In MongoDB, to increase a counter field atomically in one update, without reading the document first, use "
                 + "the ____ update operator.", "$inc", "inc"));
         q.add(blank("In Spring, the annotation that caches a method's result is @____.", "Cacheable"));
@@ -64,25 +53,11 @@ public final class InterviewSets {
         q.add(blank("A Java 17 ____ class uses a permits clause to list exactly which classes may extend it.", "sealed"));
         q.add(blank("In Mockito, to check that a method was called exactly twice, write verify(mock, ____(2)).", "times"));
         q.add(blank("In a thread pool, a ThreadLocal leaks unless you call ____() in a finally block.", "remove"));
-
         q.add(video("PROJECTS", "Pick a project you're proud of. Describe it in words: the services, data stores, caches and "
                 + "messaging. What was the hardest technical problem, and what did you personally build?", 180,
                 "A coherent architecture; a genuinely hard problem; their own contribution; numbers and outcomes."));
-        q.add(video("PROJECTS", "What is a technical decision on that project you would reverse today, and why?", 120,
-                "Honest reflection; what they learned; a concrete better alternative. Saying 'nothing' is a warning sign at this level."));
-
-        q.add(video("ARCHITECTURE", "Design fare search for an airline shopping service: 3,000 searches per second, prices come "
-                + "from slow external airline systems (1 to 3 seconds), and fares change often. Cover caching, timeouts, "
-                + "freshness, and what the customer sees if a cached fare has changed by the time they book.", 180,
-                "Cache-aside in Redis keyed by route, date and passengers, with a short TTL and jitter; a small in-memory "
-                        + "(Caffeine) layer for the hottest keys; parallel calls to providers with timeouts, bulkheads and "
-                        + "partial results; circuit breakers; one reload per key to avoid stampedes; re-price at booking and "
-                        + "show a price-change message instead of selling a stale fare."));
-        q.add(video("ARCHITECTURE", "Design booking creation so a customer is never charged twice and never left paid without a "
-                + "booking, when the airline system or the payment provider can time out.", 180,
-                "Idempotency key with a unique index; a booking state machine (held, paid, ticketed, failed); query status "
-                        + "before retrying; bounded retries with backoff; a saga with compensation (refund or release the hold); "
-                        + "events via an outbox; reconciling late responses."));
+        q.add(regrettedDecision());
+        architectureCore(q);
         q.add(choice("ARCHITECTURE", "A booking service must save the booking in MongoDB and publish a 'booking created' event to "
                 + "Kafka. Neither may be lost, even if the service crashes between the two. What do you use?",
                 List.of("Publish to Kafka first, then save the booking",
@@ -108,7 +83,9 @@ public final class InterviewSets {
                         "REST with JSON, opening a new connection for every call",
                         "SOAP web services",
                         "Both services reading and writing the same database tables"), 0));
-
+        technicalCore(q);
+        q.add(d1());
+        q.add(d17());
         q.add(choiceWithCode("TECHNICAL", "What does this print?", """
                 List<String> codes = List.of("BLR", "DEL", "BOM", "DEL");
                 Map<String, Long> counts = codes.stream()
@@ -132,7 +109,6 @@ public final class InterviewSets {
                 @Service
                 class FareService {
                     public Fare quote(String route) { return lookup(route); }
-
                     @Cacheable("fares")
                     public Fare lookup(String route) {
                         return provider.fetch(route); // slow call to the airline
@@ -159,7 +135,6 @@ public final class InterviewSets {
                 @Service
                 public class FareCache {
                     private final Map<String, Fare> cache = new HashMap<>();
-
                     @Async
                     public CompletableFuture<Fare> get(String route) {
                         return CompletableFuture.completedFuture(cache.computeIfAbsent(route, provider::fetch));
@@ -169,19 +144,7 @@ public final class InterviewSets {
                         + "cache needs a TTL and a size limit; each instance has its own copy, so consider Redis or a short local "
                         + "TTL; a slow fetch inside computeIfAbsent blocks others on that key; @Async is ignored on self-calls; "
                         + "configure the async pool; handle provider errors and timeouts."));
-        q.add(video("TECHNICAL", "Response time is 20 ms normally and 8 seconds under load. There are no errors in the logs. "
-                + "Where do you start, and with which tools?", 180,
-                "Something is waiting rather than failing: thread pools, the MongoDB or HTTP connection pools, locks, slow "
-                        + "queries (profiler, explain()), downstream calls; thread dumps or JFR, pool metrics, GC logs, traces; "
-                        + "look at p99 latency, not the average."));
-        q.add(video("TECHNICAL", "How do you test a Spring Boot service that uses MongoDB, Redis and an external airline API? "
-                + "Which tests run where in the CI pipeline, and how do you keep the SonarQube quality gate green without "
-                + "gaming coverage?", 150,
-                "Unit tests with JUnit 5 and Mockito or Spock; slice tests (@WebMvcTest, @DataMongoTest); Testcontainers for "
-                        + "MongoDB and Redis; WireMock or contract tests for the airline API; a few Playwright end-to-end tests; "
-                        + "fast tests on every pull request, slower ones later; the quality gate on new code; meaningful "
-                        + "assertions rather than coverage padding; fixing Sonar issues or tuning rules with a reason."));
-
+        codingCore(q);
         q.add(video("SOFT_SKILLS", "You get a one-line ticket: 'Let travel agents change the seat on a booking.' Before writing "
                 + "code, what questions do you ask, and how do you break it into pieces you can ship?", 150,
                 "Asks about scope (which bookings and airlines, fees, who may do it), edge cases (partial failures, a seat "
@@ -191,11 +154,6 @@ public final class InterviewSets {
                 + "through the conversation and how it ends.", 120,
                 "Puts the risk in concrete terms; offers options (smaller scope, a feature flag, a later date); makes the "
                         + "trade-off visible; commits to the decision once made."));
-        q.add(video("SOFT_SKILLS", "You disagree with a design an architect on the client's global team has proposed. How do "
-                + "you handle it?", 120,
-                "First understands their reasons; brings data or a quick prototype; writes up options for an asynchronous "
-                        + "discussion across time zones; respects the final decision; stays constructive."));
-
         q.add(written("What is your notice period, and the earliest date you could join? (We prefer immediate to 60 days.)"));
         q.add(written("What are your current and expected salary (CTC)?"));
         q.add(written("This role is hybrid in Bengaluru. Where are you based, and are you happy to work from the Bengaluru office part of the week?"));
@@ -205,6 +163,264 @@ public final class InterviewSets {
                 "Specific interest in the role; realistic 90-day goals (learn the domain and system, ship, improve something); "
                         + "any airline or travel domain knowledge is a plus."));
         return q;
+    }
+
+    // ---- the senior architect's questions: in every set ----
+
+    private static void ownership(List<DraftQuestion> q) {
+        q.add(video("EXPERIENCE", "Tell us about a system or service where you had ownership. What did it do, who used it, and "
+                + "what were you personally responsible for?", 150,
+                "Clear ownership (design, build, run, on-call); what the service does and for whom; concrete decisions they "
+                        + "made themselves; how they kept it healthy in production."));
+        q.add(video("EXPERIENCE", "For that system, what were the scale, latency, throughput and reliability constraints, and how "
+                + "did they shape your design?", 120,
+                "Real numbers (requests per second, p95/p99 latency targets, data volume, uptime or SLOs); how the constraints "
+                        + "drove choices (caching, async processing, partitioning, replication, timeouts); how they measured them."));
+    }
+
+    private static DraftQuestion regrettedDecision() {
+        return video("PROJECTS", "What design decision did you later regret, and what would you do differently?", 120,
+                "An honest, specific decision; why it seemed right at the time; what it cost; what they changed or would "
+                        + "change; what they learned. Saying 'none' is a warning sign.");
+    }
+
+    private static void architectureCore(List<DraftQuestion> q) {
+        q.add(video("ARCHITECTURE", "Explain the system design of a notification system (email, SMS and push) for millions of "
+                + "users.", 180,
+                "Intake through an API or events (Kafka) decoupled from sending; templates and user preferences and opt-outs; "
+                        + "workers per channel and provider; queues with retries, backoff and a dead-letter queue; idempotency "
+                        + "or de-duplication keys; rate limits per provider and per user; priorities (OTP before marketing); "
+                        + "scheduling and time zones; delivery status from provider callbacks; provider failover; partitioning "
+                        + "to scale; monitoring."));
+        q.add(video("ARCHITECTURE", "Imagine there is only one item left in stock and many users try to buy it at the same moment. "
+                + "How do you make sure it is sold to only one user?", 150,
+                "One atomic conditional update (UPDATE ... SET qty = qty - 1 WHERE id = ? AND qty > 0, or MongoDB $inc with a "
+                        + "$gte condition) and checking that a row or document changed; or optimistic locking with a version and "
+                        + "retry; or SELECT ... FOR UPDATE; a reservation with expiry during checkout; idempotency for retries; "
+                        + "not an in-JVM synchronized (several instances); a cached count is not the source of truth; what the "
+                        + "other users see."));
+        q.add(video("ARCHITECTURE", "A UI screen loads one million records by fetching them from an API. Identify every stage "
+                + "where it is slow, and how you would improve each one.", 180,
+                "Database query (indexes, only the needed columns); server memory and serialisation of a million objects "
+                        + "(stream, paginate); payload size over the network (pagination or cursors, compression, field "
+                        + "selection); the browser parsing JSON and holding it in memory; rendering a million rows (virtualised "
+                        + "lists); best of all, not loading a million rows: server-side paging, filtering, sorting, search and "
+                        + "aggregation; caching; full exports as a background job."));
+        q.add(video("ARCHITECTURE", "When can caching lead to failures? Give examples and how you prevent them.", 120,
+                "Stale data (wrong prices) — TTLs, invalidation, versioning; stampedes when many keys expire — jitter and "
+                        + "request coalescing; the cache going down and flooding the database — timeouts and protected "
+                        + "fallbacks; cold starts; inconsistent per-instance caches; caching errors or nulls; unbounded caches "
+                        + "using up memory; personal data cached under the wrong key; lookups for keys that never exist."));
+        q.add(video("ARCHITECTURE", "Give examples of anti-patterns you have seen in Java services or microservices, and how you "
+                + "fixed them.", 120,
+                "Concrete examples such as god classes, a distributed monolith (chatty synchronous calls, a shared "
+                        + "database), swallowed exceptions, N+1 queries, entities used as API objects, field injection, retries "
+                        + "without backoff; why each is harmful and how it was fixed."));
+        q.add(video("ARCHITECTURE", "What monitoring and logging strategy would you put in place for a critical API?", 150,
+                "Rate, errors and latency percentiles (p95/p99) plus saturation; SLOs and alerts on symptoms, with runbooks; "
+                        + "structured logs with correlation or trace IDs, sensible levels, no personal data or secrets; "
+                        + "distributed tracing (OpenTelemetry); dashboards (Prometheus, Grafana); synthetic checks; health of "
+                        + "dependencies; business metrics such as bookings per minute; avoiding alert fatigue."));
+    }
+
+    private static void technicalCore(List<DraftQuestion> q) {
+        q.add(video("TECHNICAL", "How do you debug high memory usage or an OutOfMemoryError in a Java service?", 150,
+                "Heap dump on OOM or with jcmd, analysed in Eclipse MAT (dominator tree), comparing dumps over time; GC logs and "
+                        + "the heap trend; which memory it is (heap, metaspace, direct buffers, thread stacks, native); "
+                        + "container limit vs -Xmx (MaxRAMPercentage); usual causes (unbounded caches, ThreadLocals, listeners, "
+                        + "growing collections); mitigate while investigating; verify the fix under load."));
+        q.add(video("TECHNICAL", "How do you identify a deadlock or thread contention in a running Java application?", 150,
+                "Several thread dumps a few seconds apart (jstack or jcmd); the JVM reports deadlocks it finds; many BLOCKED "
+                        + "threads waiting on the same monitor; JFR lock events or async-profiler; ThreadMXBean; symptoms (low "
+                        + "CPU, throughput drops, requests piling up); fixes: consistent lock ordering, smaller critical sections, "
+                        + "tryLock with timeouts, concurrent collections; thread-pool starvation as a cause."));
+        q.add(video("TECHNICAL", "Explain the basics of GC tuning. When would you avoid tuning the GC first?", 150,
+                "Pick the collector by goal (G1 by default, ZGC for low pauses, Parallel for throughput); size the heap (equal "
+                        + "-Xms and -Xmx, MaxRAMPercentage in containers); pause-time goals; read GC logs (-Xlog:gc*) and measure "
+                        + "before changing anything; change one setting at a time. Avoid it first when the cause is a leak, "
+                        + "excessive allocation in code, an undersized container, or the slowness isn't GC at all — profile first."));
+        q.add(video("TECHNICAL", "How do you design global exception handling in a Spring Boot API so clients get useful errors "
+                + "but internal details are not leaked?", 150,
+                "A central @RestControllerAdvice mapping exceptions to status codes; one consistent error body (problem details: "
+                        + "type, title, status, detail, an error code, a trace ID); field-level validation errors; no stack "
+                        + "traces, SQL, class names or internal messages to clients; full details logged server-side with the "
+                        + "trace ID; domain errors (4xx) vs unexpected ones (500 with a generic message); never swallowing "
+                        + "exceptions."));
+        q.add(video("TECHNICAL", "A SQL query with several joins has become slow. How would you find out why and make it fast?", 150,
+                "EXPLAIN or EXPLAIN ANALYZE to read the plan; indexes on join and filter columns (composite, covering); no "
+                        + "functions on indexed columns; only the columns and rows needed (pagination); statistics and row "
+                        + "estimates; N+1 from the ORM; denormalising or pre-aggregating (a materialised view) for read-heavy "
+                        + "reports; caching; measuring before and after."));
+    }
+
+    private static void codingCore(List<DraftQuestion> q) {
+        q.add(writtenCode("Write a Java program that prints how many times each character occurs in a string. Type your code "
+                + "below; it isn't run, so write it as you would for a code review.",
+                "Correct counting (a LinkedHashMap to keep order, an int array for ASCII, or streams with groupingBy and "
+                        + "counting); handles null and empty input; a clear decision on case and spaces; O(n) time; readable "
+                        + "output; a bonus for Unicode code points or a small test."));
+        q.add(writtenCode("Write Java code that transfers a given amount from one account to another, and the JUnit tests for it. "
+                + "Type your code below; it isn't run. Show how you handle invalid input, insufficient funds and transfers "
+                + "happening at the same time.",
+                "BigDecimal for money; validates amount > 0, two different accounts that exist; insufficient funds raises a "
+                        + "specific exception and changes nothing; both balances change or neither (a transaction or locks); "
+                        + "concurrent transfers lock both accounts in a consistent order (e.g. by id) to avoid deadlock, or use "
+                        + "optimistic locking with retry; idempotency for retries. Tests: success, insufficient funds, zero or "
+                        + "negative amount, same account, concurrent transfers keep the total unchanged, A to B and B to A at "
+                        + "once without deadlock."));
+    }
+
+    // ---- the team's concept questions (Dhaval's list), spread across the sets ----
+
+    private static DraftQuestion d1() {
+        return video("TECHNICAL", "Explain the difference between HashMap and ConcurrentHashMap, and when you would use each.", 90,
+                "HashMap isn't thread-safe (lost updates, corrupted state under concurrent writes) and allows a null key and "
+                        + "values; ConcurrentHashMap is thread-safe with fine-grained locking and CAS, no nulls, weakly consistent "
+                        + "iterators, atomic compute, merge and putIfAbsent; synchronizedMap locks the whole map.");
+    }
+
+    private static DraftQuestion d2() {
+        return video("TECHNICAL", "How is JVM memory divided?", 90,
+                "Heap (young generation: eden and survivor spaces; old generation); metaspace for class metadata (native, "
+                        + "replaced PermGen); a stack per thread; the code cache for JIT-compiled code; direct and native memory; "
+                        + "what an OOM in each looks like; a container limit covers all of it, not just -Xmx.");
+    }
+
+    private static DraftQuestion d3() {
+        return video("TECHNICAL", "What is the difference between synchronized, ReentrantLock and ReadWriteLock? When would you "
+                + "use each?", 120,
+                "synchronized: built-in monitor, simple, released automatically, no timeout; ReentrantLock: unlock in finally, "
+                        + "tryLock with timeout, interruptible, fairness, conditions; ReadWriteLock: many readers or one writer, "
+                        + "for read-heavy data; StampedLock for optimistic reads; prefer concurrent collections or atomics "
+                        + "where possible; pitfalls such as forgetting to unlock or writer starvation.");
+    }
+
+    private static DraftQuestion d4() {
+        return video("TECHNICAL", "Explain CompletableFuture and where you would use it.", 120,
+                "Asynchronous computation with callbacks; supplyAsync with a dedicated executor (not the common pool for "
+                        + "blocking I/O); thenApply, thenCompose, thenCombine; allOf for fanning out to several providers and "
+                        + "combining; exceptionally or handle for errors; orTimeout; join vs get; passing context such as MDC.");
+    }
+
+    private static DraftQuestion d5() {
+        return video("SKILLS", "What happens internally when a Spring Boot application starts?", 120,
+                "SpringApplication.run; the environment (properties, profiles); creating the application context; component "
+                        + "scanning and bean definitions; auto-configuration with conditions; creating beans, injecting "
+                        + "dependencies, post-processors and proxies (@Transactional, @Async); starting the embedded server; "
+                        + "runners and the ready event; how to investigate slow startup.");
+    }
+
+    private static DraftQuestion d6() {
+        return video("SKILLS", "Which Spring Boot Actuator endpoints have you used, and for what?", 90,
+                "health with liveness and readiness groups for Kubernetes, info, metrics and prometheus, loggers (change levels "
+                        + "at runtime), env and configprops with care, threaddump, heapdump, mappings, startup; securing them "
+                        + "(separate port, authentication, exposing only what's needed).");
+    }
+
+    private static DraftQuestion d7() {
+        return video("SKILLS", "How do you shut down a Spring Boot service gracefully?", 90,
+                "server.shutdown=graceful with a timeout per phase; readiness goes down first so no new traffic arrives; "
+                        + "in-flight requests finish; consumers stop and commit offsets; scheduled and async work completes; "
+                        + "pools close; Kubernetes preStop and terminationGracePeriodSeconds; SIGTERM, not kill -9.");
+    }
+
+    private static DraftQuestion d8() {
+        return video("SKILLS", "How do you externalize configuration across environments such as dev, QA and production?", 90,
+                "application.yml with profiles; environment variables and command-line overrides; @ConfigurationProperties with "
+                        + "validation; Kubernetes ConfigMaps or Spring Cloud Config; one build promoted through environments; "
+                        + "secrets kept separately.");
+    }
+
+    private static DraftQuestion d9() {
+        return video("SKILLS", "How do you handle secrets such as database passwords and API keys?", 90,
+                "Never in code or Git (scan for leaks); environment variables or a secrets manager (Vault, a cloud secret "
+                        + "manager, encrypted Kubernetes secrets); least privilege; rotation; never logged; different per "
+                        + "environment; access audited.");
+    }
+
+    private static DraftQuestion d11() {
+        return video("SKILLS", "Explain filters vs interceptors in Spring. When would you use each?", 90,
+                "A servlet filter runs before the DispatcherServlet for every request (security, CORS, logging, correlation "
+                        + "IDs, compression); a HandlerInterceptor runs in Spring MVC and knows the controller method (preHandle, "
+                        + "postHandle, afterCompletion) for per-endpoint checks or timing; ordering; AOP for method-level concerns.");
+    }
+
+    private static DraftQuestion d12() {
+        return video("SKILLS", "What is the difference between PUT and PATCH?", 60,
+                "PUT replaces the whole resource and is idempotent (missing fields are reset); PATCH is a partial update (JSON "
+                        + "Merge Patch or JSON Patch) and isn't necessarily idempotent; concurrency with ETag and If-Match.");
+    }
+
+    private static DraftQuestion d13() {
+        return video("SKILLS", "When would you use query parameters, and when path variables?", 60,
+                "Path variables identify a resource (/bookings/{id}); query parameters filter, sort, page or search "
+                        + "(/flights?from=BLR&to=DEL); required vs optional; consistent URL design.");
+    }
+
+    private static DraftQuestion d14() {
+        return video("ARCHITECTURE", "How would you implement idempotency in a payment API?", 120,
+                "The client sends an Idempotency-Key; store the key, a hash of the request and the result with a unique "
+                        + "constraint; return the stored result on a repeat and reject a different payload with the same key; "
+                        + "handle a request still in progress; expire old keys; keep it atomic with the payment record; pass "
+                        + "the key to the payment provider.");
+    }
+
+    private static DraftQuestion d15() {
+        return video("ARCHITECTURE", "What is the difference between a correlation ID and an idempotency key?", 90,
+                "A correlation ID traces one request across services and logs and doesn't change behaviour; an idempotency key "
+                        + "identifies one logical operation so retries aren't executed twice, is chosen by the client, reused on "
+                        + "retries and stored by the server; a retry has the same idempotency key but a new correlation ID.");
+    }
+
+    private static DraftQuestion d16() {
+        return video("SKILLS", "How do you secure REST APIs?", 120,
+                "HTTPS everywhere; authentication (OAuth2 or OIDC, JWT validation) and authorisation per endpoint and per "
+                        + "resource (ownership checks); input validation; rate limiting; nothing sensitive in URLs or logs; CORS "
+                        + "and security headers; the OWASP Top 10 (injection, broken object-level authorisation); secrets "
+                        + "management; dependency scanning; audit logs.");
+    }
+
+    private static DraftQuestion d17() {
+        return video("TECHNICAL", "In MongoDB, when do you embed documents and when do you reference them?", 90,
+                "Embed when data is read together, owned by the parent, bounded in size and updated together (single-document "
+                        + "atomicity); reference when many-to-many, growing without bound (the 16 MB limit), shared or updated "
+                        + "independently; duplication vs $lookup; access patterns drive the schema.");
+    }
+
+    private static DraftQuestion d18() {
+        return video("TECHNICAL", "Explain compound indexes in MongoDB.", 90,
+                "One index on several fields in order; the prefix rule; the equality, sort, range (ESR) rule; sort direction "
+                        + "for multi-field sorts; covered queries; the cost on writes and memory; checking with explain().");
+    }
+
+    private static DraftQuestion d19() {
+        return video("TECHNICAL", "Why might a MongoDB query do a collection scan, and how do you fix it?", 90,
+                "No index on the filter fields, or one that can't be used (wrong field order, unanchored regex, $ne or $nin, "
+                        + "$where, case-insensitive matching without a collation, type mismatches); low selectivity; check "
+                        + "explain('executionStats') for COLLSCAN vs IXSCAN and documents examined vs returned; add or reorder "
+                        + "an index or rewrite the query.");
+    }
+
+    private static DraftQuestion d20() {
+        return video("TECHNICAL", "How do you identify slow queries in MongoDB?", 90,
+                "The database profiler with slowms and system.profile; slow query logs; explain('executionStats'); Atlas "
+                        + "Performance Advisor or Query Profiler; currentOp for running queries; timings per repository call in "
+                        + "the application (Micrometer, tracing); then fix indexes or queries and verify.");
+    }
+
+    private static DraftQuestion d21() {
+        return video("SKILLS", "What is the difference between authentication and authorization?", 60,
+                "Authentication proves who you are (login, a token); authorization decides what you may do (roles, scopes, "
+                        + "resource ownership); 401 vs 403; both checked on every request.");
+    }
+
+    private static DraftQuestion d22() {
+        return video("TECHNICAL", "Explain Spring transactions, covering propagation and isolation levels.", 150,
+                "@Transactional works through proxies; propagation: REQUIRED, REQUIRES_NEW, NESTED (savepoints), SUPPORTS, "
+                        + "MANDATORY, NEVER, NOT_SUPPORTED; isolation: READ_UNCOMMITTED, READ_COMMITTED, REPEATABLE_READ, "
+                        + "SERIALIZABLE and the anomalies each prevents (dirty, non-repeatable and phantom reads); rollback on "
+                        + "unchecked exceptions by default; the self-invocation pitfall; readOnly; MongoDB transactions need a "
+                        + "replica set.");
     }
 
     private static DraftQuestion intro() {
@@ -222,18 +438,9 @@ public final class InterviewSets {
     static List<DraftQuestion> seniorJavaB() {
         List<DraftQuestion> q = new ArrayList<>();
         q.add(intro());
-        q.add(video("EXPERIENCE", "Walk us through the architecture of the system you work on today: the services, data stores, "
-                + "caches and messaging, and the part you own.", 150,
-                "A coherent picture of how data flows; where they sit in it; real numbers; what they own vs what others own."));
-        q.add(video("EXPERIENCE", "Tell us about a time a release caused a problem in production. How did you detect it, how did "
-                + "you roll back or fix it, and what did you change in how the team releases?", 150,
-                "Detected by monitoring or alerts rather than customers; a quick rollback or feature-flag switch-off; root "
-                        + "cause; a process change (tests, canary or staged rollout, better alerts)."));
-        q.add(video("SKILLS", "How would you design a REST API for searching flights and creating bookings? Cover the resources "
-                + "and URLs, status codes, validation and errors, pagination, versioning and repeated requests.", 150,
-                "Resource-oriented URLs (POST /bookings, a search endpoint); 201 Created with Location; 400/404/409/422 used "
-                        + "correctly; one consistent error body (problem details); validation with @Valid; cursor or page "
-                        + "pagination; a versioning strategy; an Idempotency-Key on booking creation; OpenAPI documentation."));
+        ownership(q);
+        q.add(d6());
+        q.add(d12());
         q.add(blank("In MongoDB, to add an item to an array field only if it isn't already there, use the ____ update operator.",
                 "$addToSet", "addToSet"));
         q.add(blank("In Spring, to remove an entry from a cache when the data changes, annotate the method with @____.", "CacheEvict"));
@@ -247,18 +454,8 @@ public final class InterviewSets {
         q.add(video("PROJECTS", "Describe the most complex feature you delivered on your own, from a vague requirement to "
                 + "production. How did you break it down, and what went wrong along the way?", 180,
                 "Breaks a vague ask into concrete pieces; clarifies scope early; handles surprises; ships and follows up in production."));
-        q.add(video("PROJECTS", "Which part of your current codebase would you rewrite if you had two weeks, and how would you do "
-                + "it safely?", 120,
-                "A specific pain with a measurable reason; tests before changing; incremental steps behind flags; no big-bang rewrite."));
-        q.add(video("ARCHITECTURE", "Design seat availability for flights that thousands of agents search and book at the same "
-                + "time, without overselling seats or slowing down searches.", 180,
-                "The airline or inventory store is the source of truth with atomic conditional updates; short seat holds that "
-                        + "expire; a separate cached read model for search that may be slightly stale; re-check at booking; "
-                        + "idempotent booking; events to refresh caches."));
-        q.add(video("ARCHITECTURE", "A booking flow calls five services one after another and has become slow and fragile. How "
-                + "would you redesign it?", 180,
-                "Find the critical path with tracing; call independent services in parallel; move non-critical steps (emails, "
-                        + "loyalty) to events; timeouts, retries and circuit breakers; a saga for consistency; cache reference data."));
+        q.add(regrettedDecision());
+        architectureCore(q);
         q.add(choice("ARCHITECTURE", "After a booking, the email and loyalty services must be told. Loyalty is sometimes down for "
                 + "a few minutes. What fits best?",
                 List.of("Call both inside the booking request and fail the booking if either fails",
@@ -281,6 +478,10 @@ public final class InterviewSets {
                         "Calling the airline for every search result",
                         "Locking the flight record during every search",
                         "Caching it for a day"), 0));
+        technicalCore(q);
+        q.add(d2());
+        q.add(d18());
+        q.add(d22());
         q.add(choiceWithCode("TECHNICAL", "What does this print?", """
                 Map<String, Integer> fares = new HashMap<>();
                 fares.put("BLR-DEL", 4500);
@@ -325,7 +526,6 @@ public final class InterviewSets {
                 @RestController
                 class BookingController {
                     @Autowired BookingRepository repo;
-
                     @PostMapping("/bookings")
                     public Booking create(@RequestBody Booking b) {
                         try {
@@ -340,16 +540,7 @@ public final class InterviewSets {
                         + "DTOs with @Valid); exceptions swallowed and printStackTrace instead of SLF4J logging and a proper error "
                         + "response (@ControllerAdvice); returning null gives a 200 with an empty body; 201 Created expected; no "
                         + "idempotency for retries; business logic belongs in a service; no authorisation check."));
-        q.add(video("TECHNICAL", "A service's memory grows slowly for days, then it restarts with OutOfMemoryError. How do you find "
-                + "the cause?", 150,
-                "Heap dump on OOM (-XX:+HeapDumpOnOutOfMemoryError) and analysis in Eclipse MAT, or comparing two dumps; GC "
-                        + "logs; usual causes (unbounded caches, ThreadLocals, listeners, collections that only grow); heap vs "
-                        + "metaspace vs direct memory; container memory limit vs -Xmx (MaxRAMPercentage)."));
-        q.add(video("TECHNICAL", "Your Jenkins or GitHub Actions pipeline takes 40 minutes and developers have started bypassing "
-                + "it. How would you make it fast and trustworthy?", 150,
-                "Measure where time goes; run stages in parallel; cache dependencies; split fast unit tests from slower "
-                        + "integration tests; reuse Testcontainers; fix or quarantine flaky tests with an owner; fail fast; keep the "
-                        + "SonarQube gate on new code."));
+        codingCore(q);
         q.add(video("SOFT_SKILLS", "You are asked to 'add multi-city search' with no other detail, and the product manager is away "
                 + "for two days. What do you do?", 150,
                 "Writes down questions and assumptions; starts on the parts that are certain or does a spike; shares a short "
@@ -358,8 +549,6 @@ public final class InterviewSets {
                 + "is tomorrow. What do you do?", 120,
                 "Talks to them directly; separates must-fix from follow-up; explains with concrete examples; agrees a plan "
                         + "(small fix now, ticket for later); respectful."));
-        q.add(video("SOFT_SKILLS", "Tell us about feedback you received that changed how you work.", 120,
-                "A specific example; self-awareness; a lasting change rather than a one-off."));
         readinessFacts(q);
         q.add(video("READINESS", "What kind of work do you want to be doing in two years, and how does this role fit into that?", 90,
                 "A clear direction that fits a hands-on backend role; genuine interest; realistic expectations."));
@@ -370,17 +559,9 @@ public final class InterviewSets {
     static List<DraftQuestion> seniorJavaC() {
         List<DraftQuestion> q = new ArrayList<>();
         q.add(intro());
-        q.add(video("EXPERIENCE", "What is the hardest performance problem you have solved in a Java service? Tell us how you "
-                + "measured it before and after.", 150,
-                "A baseline in numbers; profiling (JFR, async-profiler, database profiler); a hypothesis tested; the fix; "
-                        + "measured improvement."));
-        q.add(video("EXPERIENCE", "Tell us about a time you took ownership of something nobody had asked you to own. What happened?",
-                120, "Initiative; a real problem fixed; follow-through to production; impact on others."));
-        q.add(video("SKILLS", "How does Spring Boot decide which beans to create and how to wire them? Explain auto-configuration, "
-                + "component scanning, and what you do when two beans of the same type exist.", 150,
-                "@SpringBootApplication combines configuration, auto-configuration and component scanning; auto-configuration "
-                        + "uses conditions (on class, on missing bean) so your own beans win; constructor injection; @Primary or "
-                        + "@Qualifier for two beans; the conditions report (--debug) or actuator to see why."));
+        ownership(q);
+        q.add(d7());
+        q.add(d11());
         q.add(blank("In MongoDB, to update a document if it exists or insert it if it doesn't, set the ____ option to true.", "upsert"));
         q.add(blank("In Spring, to always run a method and store its result in the cache, annotate it with @____.", "CachePut"));
         q.add(blank("In a Java switch expression, a case written as a block returns its value with the ____ keyword.", "yield"));
@@ -392,20 +573,9 @@ public final class InterviewSets {
                 + "consider, and why did you choose the one you did?", 180,
                 "Real alternatives with trade-offs (cost, complexity, performance, team skills); a reasoned choice; what "
                         + "happened afterwards."));
-        q.add(video("PROJECTS", "Describe a time you changed a database schema or migrated data while the service kept running. "
-                + "How did you avoid downtime?", 150,
-                "Backward-compatible (expand and contract) changes; backfills; dual reads or writes during the move; feature "
-                        + "flags; verification; a rollback plan."));
-        q.add(video("ARCHITECTURE", "Design price-drop alerts: travellers save a route and get notified when the fare drops. There "
-                + "are millions of saved searches and fares refresh every few minutes.", 180,
-                "Subscriptions stored and indexed by route and date; react to fare-change events rather than polling every "
-                        + "subscription; partition by route; remember the last price notified; de-duplicate and throttle "
-                        + "notifications; idempotent sending; scale consumers."));
-        q.add(video("ARCHITECTURE", "Your fare service uses Redis. What happens in most designs if Redis goes down, and how would "
-                + "you design the service to stay up?", 150,
-                "Without care, requests fail or hang on Redis calls; short timeouts on the client; fall back to the source "
-                        + "with protection (circuit breaker, rate limit, a small local cache) so the database isn't flooded; "
-                        + "Redis replication or a cluster; alerts."));
+        q.add(regrettedDecision());
+        architectureCore(q);
+        q.add(d14());
         q.add(choice("ARCHITECTURE", "Two services need the same customer data. What is usually best with microservices?",
                 List.of("Both read and write the same database tables",
                         "One service owns the data; others call its API or keep a copy updated from its events",
@@ -426,6 +596,9 @@ public final class InterviewSets {
                         "Release it to everyone at once and watch the logs",
                         "Ship it behind a feature flag and turn it on for a small share of traffic while watching metrics",
                         "Skip testing to release sooner and fix forward"), 2));
+        technicalCore(q);
+        q.add(d3());
+        q.add(d19());
         q.add(choiceWithCode("TECHNICAL", "What does this print?", """
                 List<String> names = new ArrayList<>(List.of("asha", "ravi"));
                 List<String> view = Collections.unmodifiableList(names);
@@ -481,26 +654,13 @@ public final class InterviewSets {
                 "Strings compared with == instead of equals (better: an enum); money summed as double loses precision (keep "
                         + "BigDecimal and add); new BigDecimal(double) is inexact (BigDecimal.valueOf); scale and rounding; "
                         + "mixed currencies; null amounts; could be a stream with reduce."));
-        q.add(video("TECHNICAL", "One service is at 100% CPU and requests are timing out. Walk us through how you find what is "
-                + "using the CPU, and what you do first.", 150,
-                "Mitigate first (scale out, roll back a recent deploy); find hot threads (top -H, jstack, JFR or async-profiler "
-                        + "flame graphs); rule out GC thrashing; look for hot loops, regex, serialisation or logging; compare with "
-                        + "the last deploy."));
-        q.add(video("TECHNICAL", "How would you test a class that calls an external airline API with retries and timeouts? What "
-                + "would you test, and how?", 150,
-                "Unit tests with mocks or WireMock simulating timeouts, 5xx errors and slow responses; check retry counts and "
-                        + "backoff (inject a clock); circuit breaker states; contract tests; never the real API in CI; "
-                        + "deterministic, fast tests."));
+        codingCore(q);
         q.add(video("SOFT_SKILLS", "On a Friday evening you discover that a bug you shipped is showing some customers the wrong "
                 + "fare. What do you do, step by step?", 150,
                 "Assess impact; stop the harm (feature flag or rollback); tell the right people early; fix with a test; "
                         + "communicate what happened; a blameless review; owns it."));
         q.add(video("SOFT_SKILLS", "How do you explain a technical trade-off to a non-technical product manager? Give an example.", 120,
                 "Plain language; options with cost, risk and benefit; a recommendation; checks understanding."));
-        q.add(video("SOFT_SKILLS", "Working with a team in another country, a decision you need keeps getting delayed. How do you "
-                + "move it forward?", 120,
-                "A short written proposal with options; a clear decision owner and date; asynchronous follow-up; escalates "
-                        + "politely if needed; keeps working on what isn't blocked."));
         readinessFacts(q);
         q.add(video("READINESS", "Why are you looking for a change now, and why this role?", 90,
                 "Honest, positive reasons; specific interest in this role and domain; no red flags about commitment."));
@@ -511,18 +671,9 @@ public final class InterviewSets {
     static List<DraftQuestion> seniorJavaD() {
         List<DraftQuestion> q = new ArrayList<>();
         q.add(intro());
-        q.add(video("EXPERIENCE", "Tell us about the biggest scale you have worked at: requests per second, data size, number of "
-                + "services. What broke first as it grew?", 150,
-                "Concrete numbers; what failed first (database, a hot partition, connection pools, a downstream service); how "
-                        + "they found and fixed it."));
-        q.add(video("EXPERIENCE", "Describe a design or code review where your feedback changed the outcome. What did you spot, "
-                + "and how did you raise it?", 120,
-                "A real issue (correctness, security, performance, design); raised clearly with evidence; constructive; the result."));
-        q.add(video("SKILLS", "How do you use Streams, Optional and records in Java 17 to make code clearer, and where would you "
-                + "avoid Streams?", 120,
-                "Streams and collectors for transformations; Optional as a return type, not for fields or parameters; records "
-                        + "for immutable data and DTOs; avoid streams for side effects, complex control flow, checked exceptions "
-                        + "and hot loops where boxing costs; readability first."));
+        ownership(q);
+        q.add(d8());
+        q.add(d16());
         q.add(blank("In MongoDB, to remove matching items from an array field, use the ____ update operator.", "$pull", "pull"));
         q.add(blank("In Spring Data MongoDB, the class for building and running queries and updates in code is Mongo____.", "Template", "MongoTemplate"));
         q.add(blank("In Java, the Thread method that waits for that thread to finish is ____().", "join"));
@@ -534,17 +685,9 @@ public final class InterviewSets {
                 + "a payment provider. What made it hard, and how did you make it reliable?", 180,
                 "Unreliable or slow APIs; timeouts and retries; idempotency; mapping their data to ours; sandbox gaps; "
                         + "monitoring; contract tests."));
-        q.add(video("PROJECTS", "What technical debt did you leave behind on your last project, and why?", 120,
-                "Honest; conscious, documented trade-offs; a plan or ticket to pay it back; no blame."));
-        q.add(video("ARCHITECTURE", "Design a service that cancels bookings and refunds payments, where the airline, the payment "
-                + "provider and our database must all agree, even if a step fails halfway.", 180,
-                "A saga with a state machine; compensation steps; every step idempotent; outbox events; retries with backoff; a "
-                        + "reconciliation job; a manual queue for stuck cases; an audit trail."));
-        q.add(video("ARCHITECTURE", "Your shopping API must handle five times today's traffic during a holiday sale next month. "
-                + "How do you prepare?", 180,
-                "Load tests with realistic traffic; find bottlenecks; horizontal scaling or autoscaling; cache warming; rate "
-                        + "limits and back-pressure; pool sizes; indexes and database capacity; protect downstream providers; "
-                        + "dashboards, alerts and a runbook; degrade gracefully."));
+        q.add(regrettedDecision());
+        architectureCore(q);
+        q.add(d15());
         q.add(choice("ARCHITECTURE", "Clients retry POST /bookings after a timeout. How do you avoid duplicate bookings?",
                 List.of("Change the endpoint to PUT",
                         "Tell clients not to retry",
@@ -569,6 +712,9 @@ public final class InterviewSets {
                         "That code changed recently (e.g. in this branch) meets the rules for coverage, bugs and vulnerabilities, so "
                                 + "old debt doesn't block new work",
                         "Only that the code compiles"), 2));
+        technicalCore(q);
+        q.add(d4());
+        q.add(d20());
         q.add(choiceWithCode("TECHNICAL", "What does this print?", """
                 int[] counter = {0};
                 List<Integer> nums = List.of(1, 2, 3, 4);
@@ -616,23 +762,13 @@ public final class InterviewSets {
                 "Sorts the caller's list in place (sort a copy or use a stream); the subtracting comparator truncates and can "
                         + "overflow (Comparator.comparing or Double.compare); subList(0, 10) throws when there are fewer than 10 "
                         + "(use limit); subList is a view of the original; null prices; money as BigDecimal."));
-        q.add(video("TECHNICAL", "Logs show 'connection pool exhausted' for MongoDB during peak hours. How do you investigate and "
-                + "fix it?", 150,
-                "Pool metrics; slow queries (profiler, explain, missing indexes) holding connections; unclosed cursors or "
-                        + "leaks; pool size vs number of instances vs server limits; timeouts; not just raising the pool size; "
-                        + "load testing the fix."));
-        q.add(video("TECHNICAL", "How do you decide what to log and at which level, and how do you follow one booking request "
-                + "across several services?", 150,
-                "SLF4J with sensible levels; structured logs; no personal data or secrets; correlation or trace IDs (MDC); "
-                        + "OpenTelemetry tracing; metrics for counts and latency rather than logs; sampling."));
+        codingCore(q);
         q.add(video("SOFT_SKILLS", "You estimated a feature at five days. On day four you realise it needs ten. What do you do?", 120,
                 "Raises it as soon as known; explains why; offers options (cut scope, extend, get help); re-plans; learns for "
                         + "future estimates."));
         q.add(video("SOFT_SKILLS", "QA in another time zone reports a bug you can't reproduce. How do you handle it?", 120,
                 "Asks for steps, data and environment; checks logs and trace IDs; compares environments; adds logging if "
                         + "needed; works with QA asynchronously; never dismisses it."));
-        q.add(video("SOFT_SKILLS", "What do you do to keep growing as an engineer? Give a recent example.", 90,
-                "A specific, recent example of learning something and applying it at work."));
         readinessFacts(q);
         q.add(video("READINESS", "What would make you say yes to this offer, and what would make you hesitate?", 90,
                 "Honest priorities; serious interest; any blockers (notice, location, salary) raised openly."));
@@ -645,6 +781,11 @@ public final class InterviewSets {
 
     private static DraftQuestion videoWithCode(String phase, String prompt, String code, int seconds, String good) {
         return new DraftQuestion(phase, "VIDEO", prompt, code, List.of(), -1, List.of(), seconds, good);
+    }
+
+    /** A typed code answer in the technical round; reviewed by the AI and people, not run. */
+    private static DraftQuestion writtenCode(String prompt, String good) {
+        return new DraftQuestion("TECHNICAL", "WRITTEN", prompt, "", List.of(), -1, List.of(), 0, good);
     }
 
     private static DraftQuestion written(String prompt) {

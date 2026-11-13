@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AREA_SHORT, createAiInterview, jobInterviews, type JobInterviews, type RankedCandidate } from '../api/aiInterviews'
 import { moveStage } from '../api/tracker'
 import { Dots } from './InterviewReviewCard'
+import { QuestionSetPreview } from './QuestionSetPreview'
 import { useStages } from './useStages'
 import { Badge, Button, Card } from './ui'
 
@@ -49,6 +50,8 @@ export function AiInterviewPanel({
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [questionSet, setQuestionSet] = useState<'1' | '2' | '3' | '4' | 'all'>('1')
+  const [previewing, setPreviewing] = useState(false)
+  const [previewOf, setPreviewOf] = useState(1)
 
   const load = useCallback(() => {
     jobInterviews(jobId)
@@ -114,31 +117,55 @@ export function AiInterviewPanel({
           Close
         </Button>
       </div>
-      <p className="muted" style={{ margin: 0, fontSize: 14 }}>
-        Candidates record answers on camera in their own time, phase by phase (introduction → experience → skills → projects → architecture →
-        technical → soft skills → readiness). The interview agent reviews each one and ranks them here. It’s advice: watch the answers of the
-        top people, then shortlist.
-      </p>
+      <ol className="ai-steps" aria-label="How it works">
+        <li>
+          <strong>1. Pick a question set</strong>Read it first with Preview questions.
+        </li>
+        <li>
+          <strong>2. Create and check</strong>It opens under Tests; edit anything, then Mark ready.
+        </li>
+        <li>
+          <strong>3. Send</strong>Send to candidates, 30 at a time. They record answers on camera.
+        </li>
+        <li>
+          <strong>4. Shortlist</strong>The AI reviews each one; the ranking appears below.
+        </li>
+      </ol>
       {canEdit && (
-        <div className="row" style={{ gap: 8, alignItems: 'flex-end' }}>
-          <label className="field" style={{ maxWidth: 200 }}>
-            Question set
-            <select className="select" value={questionSet} onChange={(e) => setQuestionSet(e.target.value as typeof questionSet)}>
-              <option value="1">Set A</option>
-              <option value="2">Set B</option>
-              <option value="3">Set C</option>
-              <option value="4">Set D</option>
-              <option value="all">All four sets</option>
-            </select>
-          </label>
-          <Button variant="secondary" disabled={busy} onClick={() => void create()}>
-            {busy ? 'Creating…' : '✨ Create an AI interview for this opening'}
-          </Button>
-          <span className="muted" style={{ fontSize: 13, flex: '1 1 280px' }}>
-            Senior Java openings have four hand-written sets (A–D) covering the same skills with different questions, so you can give
-            different candidates different papers. Other openings get questions drafted from the job description. Check them under
-            Tests, Mark ready, then Send to candidates.
+        <div className="stack" style={{ gap: 8 }}>
+          <div className="row" style={{ gap: 8, alignItems: 'flex-end' }}>
+            <label className="field" style={{ maxWidth: 200 }}>
+              Question set
+              <select className="select" value={questionSet} onChange={(e) => setQuestionSet(e.target.value as typeof questionSet)}>
+                <option value="1">Set A</option>
+                <option value="2">Set B</option>
+                <option value="3">Set C</option>
+                <option value="4">Set D</option>
+                <option value="all">All four sets</option>
+              </select>
+            </label>
+            <Button variant="secondary" onClick={() => setPreviewing(!previewing)}>
+              {previewing ? 'Hide questions' : 'Preview questions'}
+            </Button>
+            <Button disabled={busy} onClick={() => void create()}>
+              {busy ? 'Creating…' : questionSet === 'all' ? '✨ Create all four sets' : '✨ Create this interview'}
+            </Button>
+          </div>
+          <span className="muted" style={{ fontSize: 13 }}>
+            Senior Java openings have four hand-written sets (A–D): every set has the senior architect’s core questions plus different
+            concept and code questions, so you can give different candidates different papers. Other openings get questions drafted from
+            the job description.
           </span>
+          {previewing && questionSet === 'all' && (
+            <div className="row" style={{ gap: 6 }} role="group" aria-label="Preview set">
+              {[1, 2, 3, 4].map((n) => (
+                <Button key={n} size="sm" variant={previewOf === n ? 'primary' : 'ghost'} onClick={() => setPreviewOf(n)}>
+                  Set {'ABCD'[n - 1]}
+                </Button>
+              ))}
+            </div>
+          )}
+          {previewing && <QuestionSetPreview set={questionSet === 'all' ? previewOf : Number(questionSet)} />}
         </div>
       )}
       {error && (

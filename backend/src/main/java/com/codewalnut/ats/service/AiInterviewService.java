@@ -134,7 +134,7 @@ public class AiInterviewService {
                         + "skills, projects, architecture, a technical round, soft skills and readiness to join. Most questions are "
                         + "answered on camera (use Chrome or Edge, with a working camera and microphone, in a quiet place); a few are "
                         + "multiple choice or fill in the blank. You can record an answer again before moving on.")
-                .durationMinutes(request.durationMinutes() == null ? 75 : request.durationMinutes())
+                .durationMinutes(request.durationMinutes() != null ? request.durationMinutes() : handWritten ? 120 : 75)
                 .passPercent(0)
                 .status(Assessment.Status.DRAFT)
                 .createdBy(actor.getEmail())
@@ -179,6 +179,25 @@ public class AiInterviewService {
     }
 
     /** trusted: a hand-written set, whose multiple choice may be used as is (drafted multiple choice never is). */
+    /** Staff: the questions of hand-written set 1–4 (A–D), with answers and reviewer notes, before creating it. */
+    public com.codewalnut.ats.dto.AiInterviewDtos.QuestionSetPreview previewSet(AppUser actor, int set) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        if (set < 1 || set > com.codewalnut.ats.bank.InterviewSets.SENIOR_JAVA_SETS) {
+            throw new IllegalArgumentException("set: choose 1 to " + com.codewalnut.ats.bank.InterviewSets.SENIOR_JAVA_SETS);
+        }
+        List<com.codewalnut.ats.dto.AiInterviewDtos.SetQuestion> questions = com.codewalnut.ats.bank.InterviewSets.seniorJava(set)
+                .stream()
+                .sorted(Comparator.comparingInt(d -> InterviewPhase.of(d.phase()).ordinal())) // same order as when created
+                .map(d -> new com.codewalnut.ats.dto.AiInterviewDtos.SetQuestion(d.phase(), InterviewPhase.of(d.phase()).getLabel(),
+                        d.kind(), d.prompt(), d.code() == null || d.code().isBlank() ? null : d.code(),
+                        d.options() == null ? List.of() : d.options(), d.correctOption() < 0 ? null : d.correctOption(),
+                        d.acceptedAnswers() == null ? List.of() : d.acceptedAnswers(), d.maxSeconds() > 0 ? d.maxSeconds() : null,
+                        d.goodAnswer() == null || d.goodAnswer().isBlank() ? null : d.goodAnswer()))
+                .toList();
+        return new com.codewalnut.ats.dto.AiInterviewDtos.QuestionSetPreview(set, com.codewalnut.ats.bank.InterviewSets.setLetter(set),
+                questions, 120);
+    }
+
     private AssessmentQuestion fromDraft(UUID assessmentId, InterviewAgent.DraftQuestion d, boolean aiDrafted, boolean trusted) {
         InterviewPhase phase = d == null ? null : InterviewPhase.of(d.phase() == null ? null : d.phase().strip().toUpperCase(Locale.ROOT));
         String prompt = d == null || d.prompt() == null ? "" : d.prompt().strip();

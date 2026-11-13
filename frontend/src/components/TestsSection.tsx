@@ -151,9 +151,13 @@ function Review({
                   <span className="muted">Not answered.</span>
                 )
               ) : (
-                <span>
-                  Answered: <strong>{a.given[0] || '—'}</strong>
-                </span>
+                (a.given[0] ?? '').includes('\n') ? (
+                  <pre className="test-code">{a.given[0]}</pre>
+                ) : (
+                  <span>
+                    Answered: <strong>{a.given[0] || '—'}</strong>
+                  </span>
+                )
               )}
             </li>
           )

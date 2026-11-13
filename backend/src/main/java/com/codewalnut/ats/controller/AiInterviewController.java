@@ -41,6 +41,12 @@ public class AiInterviewController {
         return interviews.create(currentUserService.require(), request);
     }
 
+    /** The questions of hand-written senior Java set 1–4, to read before creating one. */
+    @GetMapping("/api/v1/ai-interviews/sets/{set}")
+    public com.codewalnut.ats.dto.AiInterviewDtos.QuestionSetPreview previewSet(@PathVariable int set) {
+        return interviews.previewSet(currentUserService.require(), set);
+    }
+
     @GetMapping("/api/v1/jobs/{id}/ai-interviews")
     public JobInterviews ranking(@PathVariable UUID id) {
         return interviews.ranking(currentUserService.require(), id);

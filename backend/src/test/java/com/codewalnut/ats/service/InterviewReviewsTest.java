@@ -61,14 +61,24 @@ class InterviewReviewsTest {
 
     @Test
     void seniorJavaSetsAreCompleteAndDifferent() {
-        java.util.Set<String> seen = new java.util.HashSet<>();
-        for (int n = 1; n <= com.codewalnut.ats.bank.InterviewSets.SENIOR_JAVA_SETS; n++) {
+        int sets = com.codewalnut.ats.bank.InterviewSets.SENIOR_JAVA_SETS;
+        java.util.Map<String, Integer> inSets = new java.util.HashMap<>();
+        for (int n = 1; n <= sets; n++) {
             var set = com.codewalnut.ats.bank.InterviewSets.seniorJava(n);
             checkSet(set);
-            // Apart from the introduction and the notice/salary/location facts, no question repeats across sets.
-            set.stream().filter(q -> !q.phase().equals("INTRO") && !q.kind().equals("WRITTEN"))
-                    .forEach(q -> assertThat(seen.add(q.prompt() + q.code())).as(q.prompt()).isTrue());
+            set.forEach(q -> inSets.merge(q.prompt() + q.code(), 1, Integer::sum));
+            // The architect's core questions are in every set, including both coding questions.
+            assertThat(set).extracting(InterviewAgent.DraftQuestion::prompt)
+                    .anyMatch(p -> p.startsWith("Tell us about a system or service where you had ownership"))
+                    .anyMatch(p -> p.contains("only one item left in stock"))
+                    .anyMatch(p -> p.contains("transfers a given amount"));
         }
+        // A question is either core (in every set) or belongs to one set only.
+        assertThat(inSets).allSatisfy((prompt, count) -> assertThat(count).as(prompt).isIn(1, sets));
+        // The team's 21 concept questions (the 22nd is merged into exception handling) are spread one set each.
+        assertThat(inSets.keySet()).filteredOn(p -> p.startsWith("Explain the difference between HashMap and ConcurrentHashMap")
+                || p.startsWith("What is the difference between PUT and PATCH") || p.startsWith("How do you identify slow queries in MongoDB"))
+                .hasSize(3);
         assertThat(com.codewalnut.ats.bank.InterviewSets.setLetter(3)).isEqualTo("C");
     }
 

@@ -84,12 +84,44 @@ describe('AiInterviewPanel (AINT-07)', () => {
       </MemoryRouter>,
     )
     await userEvent.selectOptions(await screen.findByLabelText('Question set'), 'all')
-    await userEvent.click(screen.getByRole('button', { name: /Create an AI interview/ }))
+    await userEvent.click(screen.getByRole('button', { name: /Create all four sets/ }))
     const posts = await vi.waitFor(() => {
       const calls = fetchMock.mock.calls.filter(([url, init]) => String(url).endsWith('/ai-interviews') && init?.method === 'POST')
       expect(calls).toHaveLength(4)
       return calls
     })
     expect(posts.map(([, init]) => JSON.parse(init!.body as string).questionSet)).toEqual([1, 2, 3, 4])
+  })
+
+  it('previews a set’s questions with answers and what to look for before creating it', async () => {
+    fakeFetch([
+      { path: '/jobs/j1/ai-interviews', body: { candidates: [], sent: 0, started: 0, submitted: 0, reviewed: 0 } },
+      { path: '/stages', body: [] },
+      {
+        path: '/ai-interviews/sets/2',
+        body: {
+          set: 2, letter: 'B', minutes: 120,
+          questions: [
+            { phase: 'INTRO', phaseLabel: 'Introduction', kind: 'VIDEO', prompt: 'In one minute: your current role.', code: null, options: [],
+              correctOption: null, acceptedAnswers: [], maxSeconds: 60, lookFor: 'Clear scope.' },
+            { phase: 'TECHNICAL', phaseLabel: 'Technical round', kind: 'MULTIPLE_CHOICE', prompt: 'What does this print?',
+              code: 'System.out.println(1);', options: ['0', '1'], correctOption: 1, acceptedAnswers: [], maxSeconds: null, lookFor: null },
+          ],
+        },
+      },
+    ])
+    render(
+      <MemoryRouter>
+        <AiInterviewPanel jobId="j1" canEdit onOpen={() => undefined} onChanged={() => undefined} onClose={() => undefined} />
+      </MemoryRouter>,
+    )
+    await userEvent.selectOptions(await screen.findByLabelText('Question set'), '2')
+    await userEvent.click(screen.getByRole('button', { name: 'Preview questions' }))
+    const preview = await screen.findByRole('region', { name: 'Set B questions' })
+    expect(preview).toHaveTextContent('2 questions · 1 spoken')
+    expect(preview).toHaveTextContent('Look for: Clear scope.')
+    expect(preview).toHaveTextContent('1 ✓')
+    await userEvent.click(screen.getByLabelText('Show answers and what to look for'))
+    expect(preview).not.toHaveTextContent('Look for')
   })
 })

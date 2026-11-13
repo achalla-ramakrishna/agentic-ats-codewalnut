@@ -16,6 +16,17 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-13-team-questions',
+    date: '2026-11-13',
+    title: 'AI interview: your architects’ questions, and preview before you create',
+    summary: 'Every senior Java set now includes the senior architect’s questions (ownership, OOM, deadlocks, GC, the last item in stock, a notification system, a screen loading a million records, and two coding questions typed in a code box), plus the team’s concept questions spread across Sets A–D. Preview questions shows a set phase by phase, with answers and what to look for.',
+    steps: [
+      'Open the opening → 🎥 AI interview → choose a Question set → Preview questions.',
+      'Happy with it? Create this interview → check under Tests → Mark ready → Send to candidates.',
+    ],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-11-12-interview-sets',
     date: '2026-11-12',
     title: 'Four AI interview papers for senior Java roles',

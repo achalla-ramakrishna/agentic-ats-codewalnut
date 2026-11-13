@@ -30,6 +30,12 @@ public final class AiInterviewDtos {
     /** notes: e.g. "The AI was unavailable, so the standard question set was used." */
     public record CreateInterviewResult(AssessmentDtos.AssessmentDetail interview, List<String> notes) {}
 
+    /** A question of a hand-written set, as staff preview it (answers and reviewer notes included). */
+    public record SetQuestion(String phase, String phaseLabel, String kind, String prompt, String code, List<String> options,
+            Integer correctOption, List<String> acceptedAnswers, Integer maxSeconds, String lookFor) {}
+
+    public record QuestionSetPreview(int set, String letter, List<SetQuestion> questions, int minutes) {}
+
     public record VideoSaved(UUID videoId, int seconds, long sizeBytes) {}
 
     /** One area of the review: rating 1–5 (0 = nothing to judge on), with the reason and a quote. */

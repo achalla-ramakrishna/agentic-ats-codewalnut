@@ -108,8 +108,18 @@ class AiInterviewFlowTest {
         String setC = body(json(RECRUITER, "POST", "/api/v1/ai-interviews", "{\"jobId\":\"" + job + "\",\"questionSet\":3}")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.interview.summary.title").value(Matchers.endsWith("Set C"))));
-        assertThat((List<String>) JsonPath.read(setC, "$.interview.questions[*].prompt")).anyMatch(p -> p.contains("price-drop alerts"));
+        assertThat((List<String>) JsonPath.read(setC, "$.interview.questions[*].prompt")).anyMatch(p -> p.contains("synchronized, ReentrantLock and ReadWriteLock"));
         json(RECRUITER, "POST", "/api/v1/ai-interviews", "{\"jobId\":\"" + job + "\",\"questionSet\":5}").andExpect(status().isBadRequest());
+
+        // Preview a set's questions before creating it (managers only).
+        mockMvc.perform(get("/api/v1/ai-interviews/sets/2").with(RECRUITER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.letter").value("B"))
+                .andExpect(jsonPath("$.questions[0].phase").value("INTRO"))
+                .andExpect(jsonPath("$.questions[?(@.kind == 'MULTIPLE_CHOICE')].correctOption").isNotEmpty())
+                .andExpect(jsonPath("$.questions[?(@.kind == 'VIDEO')].lookFor").isNotEmpty());
+        mockMvc.perform(get("/api/v1/ai-interviews/sets/2").with(HM)).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/v1/ai-interviews/sets/9").with(RECRUITER)).andExpect(status().isBadRequest());
 
         // AINT-02: staff add and edit video questions with a phase and a time limit.
         String test = JsonPath.read(created, "$.interview.summary.id");
@@ -158,7 +168,7 @@ class AiInterviewFlowTest {
                 .andExpect(jsonPath("$.questions[0].section").value("INTRO")));
         assertThat(taking).doesNotContain("Idempotency key with a unique index"); // reviewer notes stay with staff
         List<String> videos = JsonPath.read(taking, "$.questions[?(@.kind == 'VIDEO')].id");
-        List<String> written = JsonPath.read(taking, "$.questions[?(@.kind == 'WRITTEN')].id");
+        List<String> written = JsonPath.read(taking, "$.questions[?(@.kind == 'WRITTEN' && @.section == 'READINESS')].id");
 
         // AINT-04: not a video → refused; someone else can't record into this interview.
         upload(session, invite, videos.get(0), "not a video".getBytes(), "").andExpect(status().isBadRequest());

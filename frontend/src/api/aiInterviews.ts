@@ -47,6 +47,23 @@ export const createAiInterview = (jobId: string, durationMinutes?: number, quest
     body: JSON.stringify({ jobId, durationMinutes, questionSet }),
   })
 
+/** A question of a hand-written set, as staff preview it. */
+export interface SetQuestion {
+  phase: string
+  phaseLabel: string
+  kind: 'VIDEO' | 'WRITTEN' | 'FILL_BLANK' | 'MULTIPLE_CHOICE'
+  prompt: string
+  code: string | null
+  options: string[]
+  correctOption: number | null
+  acceptedAnswers: string[]
+  maxSeconds: number | null
+  lookFor: string | null
+}
+
+export const previewSet = (set: number) =>
+  api<{ set: number; letter: string; questions: SetQuestion[]; minutes: number }>(`/ai-interviews/sets/${set}`)
+
 export const jobInterviews = (jobId: string) => api<JobInterviews>(`/jobs/${jobId}/ai-interviews`)
 
 /** Let the candidate finish a submitted interview: reopens it for the minutes given, keeping saved answers. */

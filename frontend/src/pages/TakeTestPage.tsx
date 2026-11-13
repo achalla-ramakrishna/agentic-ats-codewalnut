@@ -365,14 +365,39 @@ export function TakeTestPage() {
                       onSaved={(videoId, transcript) => setAnswers((a) => ({ ...a, [q.id]: [videoId, transcript] }))}
                     />
                   ) : q.kind === 'WRITTEN' ? (
-                    <textarea
-                      className="input"
-                      rows={2}
-                      aria-label={`Answer to question ${q.position}`}
-                      value={value[0] ?? ''}
-                      maxLength={2000}
-                      onChange={(e) => answer(q.id, [e.target.value])}
-                    />
+                    q.section === 'TECHNICAL' ? (
+                      // A coding answer: typed, reviewed by people and the AI, not run.
+                      <textarea
+                        className="input code-answer"
+                        rows={14}
+                        spellCheck={false}
+                        aria-label={`Answer to question ${q.position}`}
+                        placeholder="Write your Java code here"
+                        value={value[0] ?? ''}
+                        maxLength={8000}
+                        onPaste={(e) => pasted(e.clipboardData.getData('text').length)}
+                        onKeyDown={(e) => {
+                          // Tab indents instead of leaving the box.
+                          if (e.key !== 'Tab') return
+                          e.preventDefault()
+                          const t = e.currentTarget
+                          const next = t.value.slice(0, t.selectionStart) + '    ' + t.value.slice(t.selectionEnd)
+                          const at = t.selectionStart + 4
+                          answer(q.id, [next])
+                          requestAnimationFrame(() => t.setSelectionRange(at, at))
+                        }}
+                        onChange={(e) => answer(q.id, [e.target.value])}
+                      />
+                    ) : (
+                      <textarea
+                        className="input"
+                        rows={2}
+                        aria-label={`Answer to question ${q.position}`}
+                        value={value[0] ?? ''}
+                        maxLength={2000}
+                        onChange={(e) => answer(q.id, [e.target.value])}
+                      />
+                    )
                   ) : q.kind === 'SHORT_ANSWER' ? (
                     <input
                       className="input"
