@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-14-delete-archived',
+    date: '2026-11-14',
+    title: 'Clean up old AI interviews and tests',
+    summary: 'Delete archived tests and AI interviews for good, with their answers and videos, to free space. In an opening you can also delete the AI interview of chosen candidates and send them a new one.',
+    steps: ['Tests → Status: Archived → Tick all shown → Clean up → OK.', 'Opening → 🎥 AI interview → tick candidates → 🗑 Delete AI interview.'],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-11-14-export-contacts',
     date: '2026-11-14',
     title: 'Export candidate contacts to your phone',

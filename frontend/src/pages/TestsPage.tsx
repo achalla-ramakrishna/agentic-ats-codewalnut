@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { bytes } from '../api/aiInterviews'
 import {
   CATEGORY_LABEL,
   KIND_LABEL,
@@ -212,6 +213,28 @@ function Editor({
                 Delete
               </Button>
             )}
+            {s.taken > 0 && s.status === 'ARCHIVED' && (
+              <Button
+                variant="ghost"
+                onClick={async () => {
+                  const who = `${s.taken} candidate${s.taken === 1 ? '' : 's'}`
+                  if (
+                    !window.confirm(
+                      `Delete “${s.title}” for good?\n\n${who} took it: their answers, scores, AI interview videos, reviews and verdicts are deleted too and can’t be recovered. The candidates stay in their openings.`,
+                    )
+                  )
+                    return
+                  try {
+                    const r = await deleteAssessment(id, true)
+                    onDeleted(`Deleted “${r.title}” with ${r.taken} candidate${r.taken === 1 ? '’s' : 's’'} answers${r.videos ? ` and ${r.videos} videos (${bytes(r.bytes)} freed)` : ''}.`)
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : 'Could not delete the test')
+                  }
+                }}
+              >
+                🗑 Delete for good
+              </Button>
+            )}
           </span>
         </div>
         <p className="muted" style={{ margin: 0 }}>
@@ -247,7 +270,10 @@ function Editor({
         {!draftMode && (
           <p className="muted" style={{ margin: 0, fontSize: 13 }}>
             Questions are locked so every candidate gets the same test. Use Duplicate to make a changed version.
-            {s.taken > 0 && ` ${s.taken} candidate${s.taken === 1 ? ' has' : 's have'} taken it, so it can be archived but not deleted.`}
+            {s.taken > 0 &&
+              (s.status === 'ARCHIVED'
+                ? ` ${s.taken} candidate${s.taken === 1 ? ' has' : 's have'} taken it. Delete for good removes their answers and videos too.`
+                : ` ${s.taken} candidate${s.taken === 1 ? ' has' : 's have'} taken it, so it can be archived (then deleted for good with their answers).`)}
           </p>
         )}
         {message && <div className="alert alert-info">{message}</div>}
@@ -446,7 +472,7 @@ export function TestsPage() {
   const [notice, setNotice] = useState<string | null>(null)
   const [showArchived, setShowArchived] = useState(false)
   const [kind, setKind] = useState<'all' | 'interviews' | 'tests'>('all')
-  const [status, setStatus] = useState<'' | 'DRAFT' | 'READY'>('')
+  const [status, setStatus] = useState<'' | 'DRAFT' | 'READY' | 'ARCHIVED'>('')
   const [search, setSearch] = useState('')
   const [ticked, setTicked] = useState<Set<string>>(new Set())
   const [tidying, setTidying] = useState(false)
@@ -460,7 +486,7 @@ export function TestsPage() {
   }, [])
   useEffect(load, [load])
 
-  const live = (tests ?? []).filter((t) => showArchived || t.status !== 'ARCHIVED')
+  const live = (tests ?? []).filter((t) => showArchived || status === 'ARCHIVED' || t.status !== 'ARCHIVED')
   const interviews = live.filter((t) => t.category === 'INTERVIEW').length
   const q = search.trim().toLowerCase()
   const visible = live
@@ -470,26 +496,49 @@ export function TestsPage() {
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   const tickedTests = live.filter((t) => ticked.has(t.id))
 
-  /** Copies nobody was sent are deleted; ones that were sent are archived, so answers and videos stay. */
+  /**
+   * Copies nobody was sent are deleted; live ones that were sent are archived, so answers and videos stay;
+   * archived ones are deleted for good with their answers and videos, to free space (ASMT-41).
+   */
   async function tidyUp() {
     const remove = tickedTests.filter((t) => t.invites === 0)
     const archive = tickedTests.filter((t) => t.invites > 0 && t.status !== 'ARCHIVED')
-    if (
-      !window.confirm(
-        `Delete ${remove.length} that nobody was sent${archive.length ? ` and archive ${archive.length} that were sent (their answers are kept)` : ''}?`,
-      )
-    )
-      return
+    const purge = tickedTests.filter((t) => t.invites > 0 && t.status === 'ARCHIVED')
+    const parts = [
+      remove.length ? `delete ${remove.length} that nobody was sent` : '',
+      archive.length ? `archive ${archive.length} that were sent (their answers are kept)` : '',
+      purge.length
+        ? `delete ${purge.length} archived for good — with every candidate’s answers, scores, AI interview videos, reviews and verdicts. This can’t be undone; the candidates stay`
+        : '',
+    ].filter(Boolean)
+    if (!window.confirm(`${parts.join(';\n')}?`.replace(/^./, (c) => c.toUpperCase()))) return
     setTidying(true)
     const failed: string[] = []
+    let videos = 0
+    let freed = 0
     for (const t of remove) await deleteAssessment(t.id).catch(() => failed.push(t.title))
     for (const t of archive) await archiveAssessment(t.id).catch(() => failed.push(t.title))
+    for (const t of purge) {
+      await deleteAssessment(t.id, true)
+        .then((r) => {
+          videos += r.videos
+          freed += r.bytes
+        })
+        .catch(() => failed.push(t.title))
+    }
     setTidying(false)
     setTicked(new Set())
     if (selected && tickedTests.some((t) => t.id === selected)) setSelected(null)
+    const ok = (list: AssessmentSummary[]) => list.filter((t) => !failed.includes(t.title)).length
     setNotice(
-      `Tidied up: ${remove.length - failed.filter((f) => remove.some((t) => t.title === f)).length} deleted, ${archive.length} archived.` +
-        (failed.length ? ` Couldn't change: ${failed.join(', ')}.` : ''),
+      [
+        remove.length ? `${ok(remove)} deleted` : '',
+        archive.length ? `${ok(archive)} archived` : '',
+        purge.length ? `${ok(purge)} archived deleted for good${videos ? ` (${videos} videos, ${bytes(freed)} freed)` : ''}` : '',
+      ]
+        .filter(Boolean)
+        .join(', ')
+        .replace(/^/, 'Tidied up: ') + '.' + (failed.length ? ` Couldn't change: ${failed.join(', ')}.` : ''),
     )
     load()
   }
@@ -558,6 +607,7 @@ export function TestsPage() {
               <option value="">Any status</option>
               <option value="DRAFT">Draft</option>
               <option value="READY">Ready to send</option>
+              <option value="ARCHIVED">Archived</option>
             </select>
             <input
               className="input"
@@ -571,7 +621,7 @@ export function TestsPage() {
             {ticked.size > 0 && (
               <>
                 <Button size="sm" variant="secondary" disabled={tidying} onClick={() => void tidyUp()}>
-                  {tidying ? 'Tidying…' : `Delete or archive ${ticked.size} ticked`}
+                  {tidying ? 'Tidying…' : `Clean up ${ticked.size} ticked`}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setTicked(new Set())}>
                   Clear
@@ -588,7 +638,14 @@ export function TestsPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th aria-label="Tick" />
+                  <th>
+                    <input
+                      type="checkbox"
+                      aria-label="Tick all shown"
+                      checked={visible.every((t) => ticked.has(t.id))}
+                      onChange={(e) => setTicked(e.target.checked ? new Set(visible.map((t) => t.id)) : new Set())}
+                    />
+                  </th>
                   <th>Test</th>
                   <th>Kind</th>
                   <th>Questions</th>

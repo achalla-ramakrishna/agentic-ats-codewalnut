@@ -118,4 +118,28 @@ describe('TestsPage', () => {
     expect(await screen.findByText(/1 candidate has taken it/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
   })
+  it('shows archived tests and deletes ticked ones for good with their answers and videos (ASMT-41)', async () => {
+    const archived = (id: string, title: string) => ({ ...summary, id, title, category: 'INTERVIEW', status: 'ARCHIVED', invites: 2, taken: 2 })
+    const fetchMock = fakeFetch([
+      { path: '/assessments/a1', method: 'DELETE', body: { title: 'AI interview A', openInvites: 0, taken: 2, videos: 20, bytes: 60 * 1024 * 1024 } },
+      { path: '/assessments/a2', method: 'DELETE', body: { title: 'AI interview B', openInvites: 0, taken: 1, videos: 10, bytes: 30 * 1024 * 1024 } },
+      { path: '/assessments', body: [archived('a1', 'AI interview A'), archived('a2', 'AI interview B'), { ...summary, status: 'READY' }] },
+    ])
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(
+      <MemoryRouter>
+        <TestsPage />
+      </MemoryRouter>,
+    )
+    await screen.findByRole('button', { name: 'Java basics' })
+    expect(screen.queryByRole('button', { name: 'AI interview A' })).not.toBeInTheDocument()
+    await userEvent.selectOptions(screen.getByLabelText('Status'), 'ARCHIVED')
+    expect(screen.queryByRole('button', { name: 'Java basics' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByLabelText('Tick all shown'))
+    await userEvent.click(screen.getByRole('button', { name: 'Clean up 2 ticked' }))
+    expect(confirm.mock.calls[0][0]).toMatch(/Delete 2 archived for good — with every candidate’s answers, scores, AI interview videos/)
+    expect(await screen.findByText(/Tidied up: 2 archived deleted for good \(30 videos, 90 MB freed\)\./)).toBeInTheDocument()
+    const deletes = fetchMock.mock.calls.filter(([, init]) => init?.method === 'DELETE').map(([url]) => String(url))
+    expect(deletes).toEqual(['/api/v1/assessments/a1?forGood=true', '/api/v1/assessments/a2?forGood=true'])
+  })
 })

@@ -53,6 +53,9 @@ public class AssessmentService {
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
     private final CodingSpecs codingSpecs;
+    private final com.codewalnut.ats.repository.InterviewVideoRepository videoRepository;
+    private final com.codewalnut.ats.repository.AiInterviewVerdictRepository verdictRepository;
+    private final VideoStorage videoStorage;
 
     /** Everyone who sends tests sees the list; only test managers see the questions. */
     @Transactional(readOnly = true)
@@ -214,21 +217,45 @@ public class AssessmentService {
      */
     @Transactional
     public com.codewalnut.ats.dto.AssessmentDtos.DeleteResult delete(AppUser actor, UUID id) {
+        return delete(actor, id, false);
+    }
+
+    /**
+     * Deletes a test. One candidates have taken can only go once it's archived and {@code forGood} is asked for
+     * (ASMT-41): then their answers, scores, AI interview videos (files too), reviews and verdicts go with it.
+     */
+    @Transactional
+    public com.codewalnut.ats.dto.AssessmentDtos.DeleteResult delete(AppUser actor, UUID id, boolean forGood) {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);
         Assessment a = assessment(id);
         long taken = inviteRepository.countByAssessmentIdAndStatusIn(id, TAKEN);
-        if (taken > 0) {
+        if (taken > 0 && !forGood) {
             throw new IllegalArgumentException(taken + " candidate" + (taken == 1 ? " has" : "s have")
                     + " already taken this test, so it can't be deleted. Archive it instead to hide it.");
         }
+        if (taken > 0 && a.getStatus() != Assessment.Status.ARCHIVED) {
+            throw new IllegalArgumentException("Archive this test first; only archived tests can be deleted with their answers.");
+        }
         List<com.codewalnut.ats.domain.AssessmentInvite> invites = inviteRepository.findByAssessmentId(id);
         int open = (int) invites.stream().filter(i -> i.getStatus() == com.codewalnut.ats.domain.AssessmentInvite.Status.SENT).count();
+        int videos = 0;
+        long bytes = 0;
+        for (var invite : invites) {
+            var recorded = videoRepository.findByInviteId(invite.getId());
+            for (var v : recorded) {
+                videoStorage.delete(v.getStorageKey());
+                bytes += v.getSizeBytes();
+            }
+            videos += recorded.size();
+            videoRepository.deleteAll(recorded);
+            verdictRepository.deleteByInviteId(invite.getId());
+        }
         inviteRepository.deleteAll(invites);
         questionRepository.deleteByAssessmentId(id);
         assessmentRepository.delete(a);
         auditService.record(actor, AuditAction.ASSESSMENT_DELETED, "Assessment", id,
-                Map.of("title", a.getTitle(), "removedInvites", invites.size()));
-        return new com.codewalnut.ats.dto.AssessmentDtos.DeleteResult(a.getTitle(), open);
+                Map.of("title", a.getTitle(), "removedInvites", invites.size(), "taken", taken, "videos", videos, "bytes", bytes));
+        return new com.codewalnut.ats.dto.AssessmentDtos.DeleteResult(a.getTitle(), open, (int) taken, videos, bytes);
     }
 
     /** A new draft with the same details and questions, to make a changed version. */

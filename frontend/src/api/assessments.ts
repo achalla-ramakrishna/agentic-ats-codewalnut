@@ -389,7 +389,11 @@ export const draftQuestions = (id: string, input: { topic?: string; level?: stri
 export const publishAssessment = (id: string) => api<AssessmentDetail>(`/assessments/${id}/publish`, { method: 'POST' })
 export const unpublishAssessment = (id: string) => api<AssessmentDetail>(`/assessments/${id}/unpublish`, { method: 'POST' })
 export const archiveAssessment = (id: string) => api<AssessmentDetail>(`/assessments/${id}/archive`, { method: 'POST' })
-export const deleteAssessment = (id: string) => api<{ title: string; openInvites: number }>(`/assessments/${id}`, { method: 'DELETE' })
+/** forGood: an archived test candidates took, with their answers, scores and AI interview videos (ASMT-41). */
+export const deleteAssessment = (id: string, forGood = false) =>
+  api<{ title: string; openInvites: number; taken: number; videos: number; bytes: number }>(`/assessments/${id}${forGood ? '?forGood=true' : ''}`, {
+    method: 'DELETE',
+  })
 export const duplicateAssessment = (id: string) => api<AssessmentDetail>(`/assessments/${id}/duplicate`, { method: 'POST' })
 
 // sending and results

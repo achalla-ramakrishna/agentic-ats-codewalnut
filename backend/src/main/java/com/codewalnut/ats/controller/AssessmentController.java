@@ -110,8 +110,9 @@ public class AssessmentController {
     }
 
     @DeleteMapping("/api/v1/assessments/{id}")
-    public com.codewalnut.ats.dto.AssessmentDtos.DeleteResult delete(@PathVariable UUID id) {
-        return assessmentService.delete(currentUserService.require(), id);
+    public com.codewalnut.ats.dto.AssessmentDtos.DeleteResult delete(@PathVariable UUID id,
+            @org.springframework.web.bind.annotation.RequestParam(value = "forGood", defaultValue = "false") boolean forGood) {
+        return assessmentService.delete(currentUserService.require(), id, forGood);
     }
 
     @PostMapping("/api/v1/assessments/{id}/duplicate")

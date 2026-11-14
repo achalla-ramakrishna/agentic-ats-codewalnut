@@ -94,6 +94,7 @@ team talks live only to the best few (e.g. 10 of 200).
 
 | Date | Change |
 | --- | --- |
+| 2026-11-14 | Archived AI interviews can be deleted for good with answers and videos (ASMT-41) |
 | 2026-11-14 | Delete the AI interviews of ticked candidates (AINT-23) |
 | 2026-11-14 | Outside reviewers (Gmail) as AI interview reviewers only (AINT-22) |
 | 2026-11-14 | AI interview reviewer role and verdicts: select for next round / hold / don't progress (AINT-21) |

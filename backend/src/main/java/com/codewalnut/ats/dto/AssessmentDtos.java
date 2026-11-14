@@ -28,7 +28,13 @@ public final class AssessmentDtos {
             Instant updatedAt, long taken, UUID jobId) {}
 
     /** openInvites: candidates who were sent the test but haven't started; their links stop working. */
-    public record DeleteResult(String title, int openInvites) {}
+    /** taken / videos / bytes: candidates' answers and recordings removed when an archived test is deleted for good. */
+    public record DeleteResult(String title, int openInvites, int taken, int videos, long bytes) {
+
+        public DeleteResult(String title, int openInvites) {
+            this(title, openInvites, 0, 0, 0);
+        }
+    }
 
     /** figure: SVG or image data URI shown with the question; optionFigures: pictures for the options, or null. */
     public record QuestionView(

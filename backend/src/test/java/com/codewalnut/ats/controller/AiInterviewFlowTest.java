@@ -370,4 +370,38 @@ class AiInterviewFlowTest {
         mockMvc.perform(get("/api/v1/jobs/" + job + "/ai-interviews").with(RECRUITER)).andExpect(jsonPath("$.sent").value(0));
         mockMvc.perform(get("/api/v1/jobs/" + job + "/applications").with(RECRUITER)).andExpect(jsonPath("$[0].name").value("Dev Sample"));
     }
+    @Test
+    void anArchivedInterviewCanBeDeletedForGoodWithItsAnswersAndVideos() throws Exception {
+        String job = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/jobs",
+                "{\"title\":\"Python Developer " + tag + "\",\"hiringType\":\"INTERNAL\"}")), "$.id");
+        String test = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/ai-interviews", "{\"jobId\":\"" + job + "\"}")),
+                "$.interview.summary.id");
+        json(RECRUITER, "POST", "/api/v1/assessments/" + test + "/publish", "").andExpect(status().isOk());
+        String email = "old." + tag + "@gmail.com";
+        String app = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/jobs/" + job + "/applications",
+                "{\"name\":\"Old Sample\",\"email\":\"" + email + "\",\"stage\":\"SCREENING\"}")), "$.id");
+        String invite = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/applications/" + app + "/tests",
+                "{\"assessmentId\":\"" + test + "\",\"dueDays\":3,\"sendEmail\":false,\"sendWhatsApp\":false}")), "$.invite.id");
+        MockHttpSession session = candidateSession(email);
+        String taking = body(candidate(session, "POST", "/api/v1/candidate/tests/" + invite + "/start", ""));
+        String video = ((List<String>) JsonPath.read(taking, "$.questions[?(@.kind == 'VIDEO')].id")).get(0);
+        String videoId = JsonPath.read(body(upload(session, invite, video, WEBM, "hello")), "$.videoId");
+        candidate(session, "POST", "/api/v1/candidate/tests/" + invite + "/submit", "{\"answers\":{}}").andExpect(status().isOk());
+
+        // ASMT-41: taken → can't delete; for good only once archived; then answers and videos go too.
+        mockMvc.perform(delete("/api/v1/assessments/" + test).with(RECRUITER).with(csrf())).andExpect(status().isBadRequest());
+        mockMvc.perform(delete("/api/v1/assessments/" + test + "?forGood=true").with(RECRUITER).with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value(Matchers.containsString("Archive this test first")));
+        json(RECRUITER, "POST", "/api/v1/assessments/" + test + "/archive", "").andExpect(status().isOk());
+        mockMvc.perform(delete("/api/v1/assessments/" + test + "?forGood=true").with(HM).with(csrf())).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/v1/assessments/" + test + "?forGood=true").with(RECRUITER).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.taken").value(1))
+                .andExpect(jsonPath("$.videos").value(1))
+                .andExpect(jsonPath("$.bytes").value(WEBM.length));
+        mockMvc.perform(get("/api/v1/tests/" + invite).with(RECRUITER)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/tests/" + invite + "/videos/" + videoId).with(RECRUITER)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/applications").with(RECRUITER)).andExpect(jsonPath("$[0].name").value("Old Sample"));
+    }
 }
