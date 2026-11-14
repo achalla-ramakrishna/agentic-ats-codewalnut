@@ -44,3 +44,30 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (response.status === 204) return undefined as T
   return (await response.json()) as T
 }
+
+/** POSTs JSON and saves the file the server sends back (e.g. an export), named as the server says. */
+export async function download(path: string, body: unknown, fallbackName: string): Promise<void> {
+  const headers = new Headers({ 'Content-Type': 'application/json' })
+  const token = readCookie('XSRF-TOKEN')
+  if (token) headers.set('X-XSRF-TOKEN', decodeURIComponent(token))
+  const response = await fetch(`/api/v1${path}`, { method: 'POST', headers, body: JSON.stringify(body), credentials: 'same-origin' })
+  if (!response.ok) {
+    let message = response.statusText || `Request failed (${response.status})`
+    try {
+      const err = (await response.json()) as { error?: string }
+      if (err.error) message = err.error
+    } catch {
+      // keep the status text
+    }
+    throw new ApiError(response.status, message)
+  }
+  const name = /filename="?([^";]+)"?/.exec(response.headers.get('Content-Disposition') ?? '')?.[1] ?? fallbackName
+  const url = URL.createObjectURL(await response.blob())
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
+}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import {
   addCandidate,
+  exportContacts,
   getJob,
   listApplications,
   moveStage,
@@ -435,6 +436,8 @@ export function JobDetailPage() {
     })
   // Best match first, so if Gmail stops part-way the strongest people already have their email.
   const pickedRows = (rows ?? []).filter((r) => picked.has(r.id)).sort((a, b) => matchOf(b) - matchOf(a))
+  // Export: the ticked people, else the ones matching the filters, else everyone.
+  const exportRows = picked.size > 0 ? (rows ?? []).filter((r) => picked.has(r.id)) : filtering ? visible : (rows ?? [])
   const openById = (applicationId: string) => {
     const row = rows?.find((r) => r.id === applicationId)
     if (row) openDrawer(row)
@@ -470,6 +473,35 @@ export function JobDetailPage() {
               <Link className="btn btn-secondary" to={`/interview-kits/${job.id}`}>
                 Interview kit
               </Link>
+            )}
+            {canMessage && (rows?.length ?? 0) > 0 && (
+              <details className="add-menu">
+                <summary className="btn btn-secondary">⬇ Export contacts ▾</summary>
+                <div className="add-menu-items" role="menu" aria-label="Export contacts">
+                  <span className="muted" style={{ padding: '4px 10px', fontSize: 12 }}>
+                    {exportRows.length} {exportRows.length === 1 ? 'person' : 'people'}
+                    {picked.size > 0 ? ' (ticked)' : filtering ? ' (matching your filters)' : ' (everyone)'}
+                  </span>
+                  {(
+                    [
+                      { format: 'VCF' as const, label: '📱 For iPhone / Android contacts (.vcf)' },
+                      { format: 'CSV' as const, label: '📄 Spreadsheet (.csv)' },
+                    ]
+                  ).map((x) => (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      key={x.format}
+                      onClick={(e) => {
+                        e.currentTarget.closest('details')?.removeAttribute('open')
+                        exportContacts(job.id, x.format, exportRows.map((r) => r.id)).catch((err: Error) => setError(err.message))
+                      }}
+                    >
+                      {x.label}
+                    </button>
+                  ))}
+                </div>
+              </details>
             )}
             {canEdit && (
               <>

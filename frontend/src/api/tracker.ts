@@ -1,4 +1,4 @@
-import { api } from './client'
+import { api, download } from './client'
 
 export type Stage =
   // Only SOURCED, INTERVIEWED, SHORTLISTED, OFFER_SENT, JOINED, ON_HOLD and REJECTED are in use (PIPE-15);
@@ -287,3 +287,7 @@ export const listCandidateOpenings = (applicationId: string) =>
 /** Put the same candidate forward for another opening (PIPE-14). */
 export const addToOpening = (applicationId: string, input: { jobId: string; stage: Stage; note: string }) =>
   api<ApplicationRow>(`/applications/${applicationId}/openings`, { method: 'POST', body: json(input) })
+
+/** The opening's candidate contacts as a file: VCF opens in iPhone/Android Contacts (Add all), CSV in a spreadsheet. */
+export const exportContacts = (jobId: string, format: 'VCF' | 'CSV', applicationIds: string[]) =>
+  download(`/jobs/${jobId}/contacts/export`, { format, applicationIds }, `contacts.${format.toLowerCase()}`)

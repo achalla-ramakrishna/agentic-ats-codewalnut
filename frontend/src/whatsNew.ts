@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-14-export-contacts',
+    date: '2026-11-14',
+    title: 'Export candidate contacts to your phone',
+    summary: 'Save an opening’s candidates straight into your iPhone or Android contacts, or download them as a spreadsheet. Numbers get +91 so you can call or WhatsApp them right away.',
+    steps: ['Open the opening → ⬇ Export contacts → For iPhone / Android contacts (.vcf).', 'Open the file on your phone (AirDrop or email it to yourself) → Add all contacts.', 'Tick people or filter first to export only them.'],
+    capability: 'MESSAGE_CANDIDATES',
+  },
+  {
     id: '2026-11-14-ai-interview-reviewer',
     date: '2026-11-14',
     title: 'AI interview reviewers: who goes to the next round',

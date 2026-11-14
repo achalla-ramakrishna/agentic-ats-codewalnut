@@ -333,6 +333,33 @@ describe('JobDetailPage', () => {
     expect(await screen.findByRole('complementary', { name: 'Candidate Meera Iyer' })).toBeInTheDocument()
   })
 
+  it('exports the people on screen as phone contacts (.vcf) or a spreadsheet', async () => {
+    const other = { ...row, id: 'a2', candidateId: 'p2', name: 'Ravi Kumar', email: 'ravi@example.com', phone: '9000000002' }
+    const fetchMock = fakeFetch([
+      { path: '/auth/session', body: { type: 'STAFF' } },
+      { path: '/me', body: recruiter },
+      { path: '/stages', body: stages },
+      { path: '/jobs/j1/applications', body: [row, other] },
+      { path: '/jobs/j1/insights', body: noInsights },
+      { path: '/jobs/j1/tests', body: [] },
+      { path: '/jobs/j1/contacts/export', method: 'POST', body: {} },
+      { path: '/jobs/j1', body: job },
+    ])
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:x'), revokeObjectURL: vi.fn() }))
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    renderJob()
+
+    await userEvent.type(await screen.findByLabelText('Search candidates in this opening'), 'Ravi')
+    await userEvent.click(screen.getByText('⬇ Export contacts ▾'))
+    const menu = screen.getByRole('menu', { name: 'Export contacts' })
+    expect(menu).toHaveTextContent('1 person (matching your filters)')
+    await userEvent.click(within(menu).getByRole('menuitem', { name: /For iPhone/ }))
+    await vi.waitFor(() => expect(click).toHaveBeenCalled())
+    const call = fetchMock.mock.calls.find(([url]) => String(url).includes('/contacts/export'))!
+    expect(JSON.parse(call[1]!.body as string)).toEqual({ format: 'VCF', applicationIds: ['a2'] })
+    click.mockRestore()
+  })
+
   it('combines search with the stage filter and offers to clear', async () => {
     fakeFetch([
       { path: '/auth/session', body: { type: 'STAFF' } },

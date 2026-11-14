@@ -103,6 +103,12 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
 - Results: Tests → New test results; the candidate's Tests tab shows answers and scores; Remind if
   they haven't started.
 
+## Export contacts (to call from your phone)
+- Open the opening → ⬇ Export contacts → For iPhone / Android contacts (.vcf) or Spreadsheet (.csv).
+  It exports the people you ticked, else those matching your search and filters, else everyone.
+- On an iPhone: open the .vcf (AirDrop it, email it to yourself, or download it in Safari) → Add all contacts.
+  Each contact shows "Candidate – <opening>" under the name, so search Contacts for the opening.
+
 ## AI interviews (recorded, reviewed by AI)
 - Create: open the opening → 🎥 AI interview tab → Create an AI interview for this opening. It drafts
   phases (introduction, experience, skills, projects, architecture, technical, soft skills, readiness)

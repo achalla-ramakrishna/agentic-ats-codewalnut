@@ -59,6 +59,7 @@ view, and every move is recorded for reporting.
 | PIPE-23 | **Workflow by stage, with the emails each person got**: every email sent from a template records the template (`message.template_key`; tests record *test_invite* / *test_reminder*). The Workflow page adds stage chips (All, Applied / Sourced, Interviewed, Shortlisted, Offer sent, Joined, On hold, Rejected) above the follow-up tabs, with counts that follow each other; an *Emails sent* column with one chip per template and date; and a filter *No “X” yet* / *Got “X”*. Bulk email suggests the template from that filter, the tab, or the stage (Applied → résumé request, Shortlisted → shortlisted, Offer sent → selected, Rejected → rejected). Sending *Shortlisted* or *Selected* can also move the person to Shortlisted / Offer sent (ticked by default). | Done |
 | PIPE-24 | **Candidates book their own interview slot** (ADR-0028): *Interview slots* on an opening offers times (days, daily windows, 30-minute length, interviewers). The *Book a 30-minute call* email gives each candidate their own `{bookingLink}`; they pick a free time on `/book/{token}` without signing in (and can change it until invited). *Send invites for N booked* (opening panel or Workflow) creates all the Google Calendar + Meet invites at once. Workflow shows *Booked …* and the next step *Slot booked: send the interview invite*. | Done |
 | PIPE-25 | **Outreach sequence and Today's emails** (ADR-0029): each candidate's step is worked out (New → Résumé asked → Résumé received → Booking link sent → Booked → Call scheduled → Screened), shown as chips and under Applied in the Workflow. *Today's emails* sends everything due in one click within a daily limit: invites for booked slots, booking links to people who sent a résumé, one booking reminder after 3 days, résumé requests to new Applied people, one résumé follow-up after 3 days. People who wrote to us are left to a person. | Done |
+| PIPE-26 | **Export contacts** from an opening (people who contact candidates, `MESSAGE_CANDIDATES`): *⬇ Export contacts* → **For iPhone / Android contacts (.vcf)** (open it on the phone → Add all contacts) or **Spreadsheet (.csv)** (name, phone, email, stage, opening, LinkedIn, added). It exports the ticked people, else the ones matching the search and filters, else everyone. Indian mobiles get +91 so they work for calling and WhatsApp; each contact's company line reads "Candidate – <opening>" so they're easy to find. CSV cells can't run as formulas. Every export is audited (who, how many, which format). | Done |
 
 ## Business rules
 
@@ -93,6 +94,7 @@ view, and every move is recorded for reporting.
 
 | Date | Change |
 | --- | --- |
+| 2026-11-14 | PIPE-26: export an opening's candidate contacts as vCard (iPhone/Android) or CSV |
 | 2026-10-12 | PIPE-25: outreach steps and one-click Today's emails (ADR-0029) |
 | 2026-10-12 | PIPE-24: interview self-booking with personal links; invites in one click (ADR-0028) |
 | 2026-10-12 | PIPE-23: Workflow by stage; emails remember their template; "No X yet" filter |

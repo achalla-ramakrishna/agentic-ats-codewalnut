@@ -47,6 +47,7 @@ public class TrackerController {
     private final TrackerService trackerService;
     private final CandidateProfileService candidateProfileService;
     private final CurrentUserService currentUserService;
+    private final com.codewalnut.ats.service.ContactExportService contactExportService;
 
     @GetMapping("/stages")
     public List<StageOption> stages() {
@@ -99,6 +100,19 @@ public class TrackerController {
     @GetMapping("/jobs/{id}/applications")
     public List<ApplicationResponse> applications(@PathVariable UUID id) {
         return trackerService.listApplications(currentUserService.require(), id);
+    }
+
+    /** The opening's candidate contacts as a file: format VCF (phone Contacts) or CSV; applicationIds empty = everyone. */
+    @PostMapping("/jobs/{id}/contacts/export")
+    public org.springframework.http.ResponseEntity<byte[]> exportContacts(@PathVariable UUID id,
+            @jakarta.validation.Valid @RequestBody com.codewalnut.ats.dto.ContactExportRequest request) {
+        var file = contactExportService.export(currentUserService.require(), id, request.format(), request.applicationIds());
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        org.springframework.http.ContentDisposition.attachment().filename(file.filename()).build().toString())
+                .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "no-store")
+                .contentType(org.springframework.http.MediaType.parseMediaType(file.contentType()))
+                .body(file.content());
     }
 
     @PostMapping("/jobs/{id}/applications")
