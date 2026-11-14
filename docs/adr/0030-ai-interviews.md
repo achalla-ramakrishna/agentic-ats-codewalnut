@@ -38,6 +38,8 @@ first interview that runs by itself and tells us whom to talk to.
   architect) watches completed interviews and records select / hold / don't progress with feedback. The role sees
   only the interview (name, opening, answers, videos, review) — no contact details or pipeline — so panelists can
   help screen without wider access. Verdicts are recorded and posted to the team; stage moves stay with recruiters.
+  Outside panelists (a Gmail address) can be added with this role only (AINT-22): sign-in treats an address as staff
+  when it is on a staff domain or an admin added it as a user, so other Gmail users stay candidates.
 
 ## Consequences
 

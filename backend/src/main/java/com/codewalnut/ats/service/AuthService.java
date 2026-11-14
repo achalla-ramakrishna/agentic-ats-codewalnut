@@ -35,10 +35,10 @@ public class AuthService {
     @Transactional
     public AppUser completeLogin(String rawEmail, String name, String googleSubject) {
         String email = rawEmail.trim().toLowerCase(Locale.ROOT);
-        if (!authProperties.isAllowedEmail(email)) {
+        AppUser user = userRepository.findByEmail(email).orElse(null);
+        if (!authProperties.isAllowedEmail(email) && user == null) {
             throw reject(email, "Email domain is not allowed");
         }
-        AppUser user = userRepository.findByEmail(email).orElse(null);
         if (user == null && authProperties.isBootstrapAdmin(email)) {
             user = userRepository.save(AppUser.builder()
                     .email(email)
@@ -67,6 +67,15 @@ public class AuthService {
         auditService.record(user, AuditAction.LOGIN, "AppUser", user.getId(),
                 Map.of("method", googleSubject != null ? "google" : "dev"));
         return user;
+    }
+
+    /**
+     * Staff sign in with a staff-domain address, or with any address an admin added as a user — only AI
+     * interview reviewers can be added that way (AINT-22). Everyone else at gmail.com etc. is a candidate.
+     */
+    @Transactional(readOnly = true)
+    public boolean isStaff(String email) {
+        return authProperties.isAllowedEmail(email) || userRepository.existsByEmail(email);
     }
 
     public static List<GrantedAuthority> authoritiesFor(AppUser user) {

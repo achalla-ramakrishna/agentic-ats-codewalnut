@@ -109,6 +109,33 @@ class UserControllerTest {
     }
 
     @Test
+    void anOutsideAddressCanBeAnAiInterviewReviewerOnlyAndSignsInAsStaff() throws Exception {
+        String email = "reviewer-" + UUID.randomUUID().toString().substring(0, 8) + "@gmail.com";
+        // AINT-22: any other role, or a mix, is refused for a non-CodeWalnut address.
+        mockMvc.perform(post("/api/v1/users").with(ADMIN).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"" + email + "\",\"roles\":[\"AI_INTERVIEW_REVIEWER\",\"RECRUITER\"]}"))
+                .andExpect(status().isBadRequest());
+        String id = createUser(email.toUpperCase(), "[\"AI_INTERVIEW_REVIEWER\"]");
+        mockMvc.perform(patch("/api/v1/users/" + id).with(ADMIN).with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"roles\":[\"ADMIN\"]}"))
+                .andExpect(status().isBadRequest());
+        // Signs in as staff (not as a candidate) and sees only AI interview reviews.
+        var session = (org.springframework.mock.web.MockHttpSession) mockMvc.perform(post("/api/v1/auth/dev-login").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"" + email + "\"}"))
+                .andReturn().getRequest().getSession(false);
+        mockMvc.perform(get("/api/v1/me").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.navigation[*].key").value(org.hamcrest.Matchers.contains("ai-reviews")));
+        mockMvc.perform(get("/api/v1/ai-reviews").session(session)).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/jobs").session(session)).andExpect(status().isForbidden());
+        // Other Gmail users are still candidates.
+        var candidate = (org.springframework.mock.web.MockHttpSession) mockMvc.perform(post("/api/v1/auth/dev-login").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"someone-else-" + UUID.randomUUID() + "@gmail.com\"}"))
+                .andReturn().getRequest().getSession(false);
+        mockMvc.perform(get("/api/v1/ai-reviews").session(candidate)).andExpect(status().isForbidden());
+    }
+
+    @Test
     void userNeedsAtLeastOneRole() throws Exception {
         mockMvc.perform(post("/api/v1/users").with(ADMIN).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)

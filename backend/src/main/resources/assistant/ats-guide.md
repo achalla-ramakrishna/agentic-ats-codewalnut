@@ -113,7 +113,7 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
 - Ranking: open the opening → 🎥 AI interview tab: candidates by score with ratings for technical,
   design, communication, experience and readiness, notice period and salary. Click a name to watch the
   videos and read the review; tick the best → Shortlist selected; then send them the booking link.
-- Reviewer verdict: people with the AI interview reviewer role (Admin → Users → give the role) see
+- Reviewer verdict: people with the AI interview reviewer role (Admin → Users → give the role; a Gmail address works too, for this role only) see
   AI interview reviews in the menu: open a completed interview, watch the answers, mark them, and choose
   Select for next round, Maybe — discuss or Don't progress (with a reason) → Save, or Save and review next.
   The verdict shows in the opening's 🎥 AI interview tab (Reviewers column) and in the candidate's team notes;

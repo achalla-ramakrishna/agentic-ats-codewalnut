@@ -37,7 +37,9 @@ Staff: what they see and can do is driven by their role(s).
 
 Staff roles: **Admin, Recruiter, Hiring Manager, Account Manager, Interviewer,
 Approver, AI interview reviewer**. A person may hold several roles; they get the union of their
-permissions.
+permissions. Staff use a staff-domain address (`ATS_ALLOWED_DOMAINS`); the one exception is an **AI interview
+reviewer** an admin adds with an outside address (e.g. Gmail): that role only, so an outside panelist sees AI
+interviews and nothing else (AINT-22). Any other outside address signs in as a candidate.
 
 ## User stories
 

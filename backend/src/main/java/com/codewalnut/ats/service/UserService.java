@@ -7,6 +7,8 @@ import com.codewalnut.ats.domain.Role;
 import com.codewalnut.ats.dto.CreateUserRequest;
 import com.codewalnut.ats.dto.UpdateUserRequest;
 import com.codewalnut.ats.repository.AppUserRepository;
+import com.codewalnut.ats.repository.CandidateRepository;
+import com.codewalnut.ats.repository.ClientContactRepository;
 import com.codewalnut.ats.security.AccessPolicy;
 import com.codewalnut.ats.security.Capability;
 import java.util.EnumSet;
@@ -28,6 +30,11 @@ public class UserService {
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
     private final AuthProperties authProperties;
+    private final CandidateRepository candidateRepository;
+    private final ClientContactRepository contactRepository;
+
+    /** The only role a person outside the staff domains may have: they see AI interviews and nothing else (AINT-22). */
+    static final Set<Role> EXTERNAL_ROLES = EnumSet.of(Role.AI_INTERVIEW_REVIEWER);
 
     @Transactional(readOnly = true)
     public List<AppUser> list(AppUser actor) {
@@ -39,11 +46,20 @@ public class UserService {
     public AppUser create(AppUser actor, CreateUserRequest request) {
         accessPolicy.require(actor, Capability.MANAGE_USERS);
         String email = request.email().trim().toLowerCase(Locale.ROOT);
-        if (!authProperties.isAllowedEmail(email)) {
-            throw new IllegalArgumentException("email: domain is not allowed");
-        }
         if (userRepository.existsByEmail(email)) {
             throw new ConflictException("A user with this email already exists");
+        }
+        if (!authProperties.isAllowedEmail(email)) {
+            if (!EXTERNAL_ROLES.containsAll(request.roles())) {
+                throw new IllegalArgumentException(
+                        "email: a non-CodeWalnut address can only be an AI interview reviewer (it sees AI interviews and nothing else)");
+            }
+            if (candidateRepository.findByEmail(email).isPresent()) {
+                throw new ConflictException("This email belongs to a candidate; use another address for the reviewer");
+            }
+            if (contactRepository.findByEmail(email).isPresent()) {
+                throw new ConflictException("This email belongs to a client contact; use another address for the reviewer");
+            }
         }
         AppUser user = userRepository.save(AppUser.builder()
                 .email(email)
@@ -67,6 +83,9 @@ public class UserService {
             Set<Role> roles = EnumSet.copyOf(request.roles());
             if (self && !roles.contains(Role.ADMIN)) {
                 throw new IllegalArgumentException("roles: you cannot remove your own Admin role");
+            }
+            if (!authProperties.isAllowedEmail(user.getEmail()) && !EXTERNAL_ROLES.containsAll(roles)) {
+                throw new IllegalArgumentException("roles: a non-CodeWalnut address can only be an AI interview reviewer");
             }
             changes.put("roles", Map.of("from", user.rolesView(), "to", roles));
             user.getRoles().clear();

@@ -31,6 +31,7 @@ public class ClientContactService {
     private final CandidateRepository candidateRepository;
     private final CandidateAccountRepository candidateAccountRepository;
     private final AuthProperties authProperties;
+    private final com.codewalnut.ats.repository.AppUserRepository userRepository;
     private final AccessPolicy accessPolicy;
     private final AuditService auditService;
 
@@ -46,8 +47,8 @@ public class ClientContactService {
         accessPolicy.require(actor, Capability.MANAGE_CLIENTS);
         Client client = client(clientId);
         String email = rawEmail.strip().toLowerCase(Locale.ROOT);
-        if (authProperties.isAllowedEmail(email)) {
-            throw new IllegalArgumentException("email: that's a CodeWalnut address; add staff under Users instead");
+        if (authProperties.isAllowedEmail(email) || userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("email: that's a CodeWalnut user; add staff under Users instead");
         }
         if (candidateRepository.findByEmail(email).isPresent() || candidateAccountRepository.findByEmail(email).isPresent()) {
             throw new ConflictException("This email belongs to a candidate, so it can't be a client contact");

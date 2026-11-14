@@ -1,6 +1,5 @@
 package com.codewalnut.ats.service;
 
-import com.codewalnut.ats.config.AuthProperties;
 import com.codewalnut.ats.security.SessionType;
 import java.util.List;
 import java.util.Locale;
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class SignInService {
 
-    private final AuthProperties authProperties;
     private final AuthService authService;
     private final CandidateAuthService candidateAuthService;
     private final ClientAuthService clientAuthService;
@@ -27,7 +25,7 @@ public class SignInService {
 
     public SignedIn signIn(String rawEmail, String name, String googleSubject) {
         String email = rawEmail.trim().toLowerCase(Locale.ROOT);
-        if (authProperties.isAllowedEmail(email)) {
+        if (authService.isStaff(email)) {
             var user = authService.completeLogin(email, name, googleSubject);
             return new SignedIn(user.getEmail(), SessionType.STAFF, AuthService.authoritiesFor(user));
         }
