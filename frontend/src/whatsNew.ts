@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-14-ai-interview-reviewer',
+    date: '2026-11-14',
+    title: 'AI interview reviewers: who goes to the next round',
+    summary: 'A new role, AI interview reviewer, for the engineers who check AI interviews. They see only completed AI interviews: they watch the answers, mark them and decide Select for next round, Maybe or Don’t progress, with feedback. Their verdict shows in the opening’s AI interview ranking and the candidate’s team notes. Hiring managers can review too.',
+    steps: ['Admin → Users → give someone the AI interview reviewer role.', 'They open AI interview reviews → pick a candidate → watch, mark, decide → Save and review next.', 'Recruiters see the verdicts in the opening → 🎥 AI interview → Reviewers.'],
+    capability: 'VIEW_CANDIDATES',
+  },
+  {
     id: '2026-11-13-video-space',
     date: '2026-11-13',
     title: 'Room for more AI interviews',

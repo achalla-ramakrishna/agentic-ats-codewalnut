@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import {
   CATEGORY_LABEL,
   cancelTest,
@@ -88,18 +88,24 @@ function CodeAnswer({ a }: { a: AnswerReview }) {
   )
 }
 
-function Review({
+/**
+ * A taken test's answers: videos with transcripts, written answers, marked answers and the AI interview review.
+ * answerExtra: shown under each open (video or written) answer, e.g. a reviewer's mark (AINT-21).
+ */
+export function TestAnswers({
   inviteId,
   answers,
   sections,
   activity,
   interview,
+  answerExtra,
 }: {
   inviteId: string
   answers: AnswerReview[]
   sections: SectionScore[]
   activity: Activity | null
   interview: InterviewReview | null
+  answerExtra?: (a: AnswerReview) => ReactNode
 }) {
   const marked = sections.filter((s) => s.max > 0)
   return (
@@ -161,6 +167,7 @@ function Review({
                   </span>
                 )
               )}
+              {answerExtra?.(a)}
             </li>
           )
         }
@@ -507,7 +514,7 @@ export function TestsSection({
                 {i.needsNudge && i.status === 'SENT' && ' · not started after 2 days — send a nudge?'}
               </span>
               {review[i.id] && (
-                <Review
+                <TestAnswers
                   inviteId={i.id}
                   answers={review[i.id].answers}
                   sections={review[i.id].sections}

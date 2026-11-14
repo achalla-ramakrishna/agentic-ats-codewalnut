@@ -29,6 +29,7 @@ public class DevDataSeeder implements ApplicationRunner {
             new Seed("account.manager@codewalnut.test", "Dev Account Manager", EnumSet.of(Role.ACCOUNT_MANAGER)),
             new Seed("interviewer@codewalnut.test", "Dev Interviewer", EnumSet.of(Role.INTERVIEWER)),
             new Seed("approver@codewalnut.test", "Dev Approver", EnumSet.of(Role.APPROVER)),
+            new Seed("reviewer@codewalnut.test", "Dev AI Reviewer", EnumSet.of(Role.AI_INTERVIEW_REVIEWER)),
             new Seed("lead@codewalnut.test", "Dev Delivery Lead",
                     EnumSet.of(Role.HIRING_MANAGER, Role.INTERVIEWER)));
 

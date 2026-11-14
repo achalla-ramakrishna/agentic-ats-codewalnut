@@ -92,6 +92,7 @@ public class AiInterviewService {
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher events;
+    private final AiReviewService verdicts;
 
     // ---- building an interview for an opening ----
 
@@ -357,7 +358,9 @@ public class AiInterviewService {
     /** Staff: a recorded answer, for the player. */
     @Transactional(readOnly = true)
     public VideoFile video(AppUser actor, UUID inviteId, UUID videoId) {
-        accessPolicy.require(actor, Capability.VIEW_CANDIDATES);
+        if (!accessPolicy.has(actor, Capability.REVIEW_AI_INTERVIEWS)) {
+            accessPolicy.require(actor, Capability.VIEW_CANDIDATES);
+        }
         InterviewVideo v = videoRepository.findById(videoId).filter(x -> x.getInviteId().equals(inviteId))
                 .orElseThrow(() -> new NotFoundException("Video not found"));
         Resource r = storage.load(v.getStorageKey());
@@ -611,6 +614,8 @@ public class AiInterviewService {
         }
         Map<UUID, Long> videos = videoRepository.findByInviteIdIn(latest.values().stream().map(AssessmentInvite::getId).toList()).stream()
                 .collect(Collectors.groupingBy(InterviewVideo::getInviteId, Collectors.counting()));
+        Map<UUID, List<com.codewalnut.ats.dto.AiReviewDtos.VerdictBrief>> people =
+                verdicts.briefsFor(latest.values().stream().map(AssessmentInvite::getId).toList());
         List<RankedCandidate> rows = new ArrayList<>();
         for (AssessmentInvite i : latest.values()) {
             InterviewReviews.Stored stored = reviews.read(i);
@@ -621,7 +626,7 @@ public class AiInterviewService {
                     i.getApplication().getStage(), i.getStatus(), i.getEvaluation(), stored != null && stored.usesAi(), i.getAiScore(), marked,
                     InterviewReviews.ratings(r), r == null ? null : r.summary(), r == null ? null : blankToNull(r.noticePeriod()),
                     r == null ? null : blankToNull(r.expectedSalary()), i.getSentAt(), i.getSubmittedAt(),
-                    videos.getOrDefault(i.getId(), 0L).intValue()));
+                    videos.getOrDefault(i.getId(), 0L).intValue(), people.getOrDefault(i.getId(), List.of())));
         }
         rows.sort(Comparator.comparingInt(AiInterviewService::rank)
                 .thenComparing(r -> r.aiScore() == null ? -1 : r.aiScore(), Comparator.reverseOrder())

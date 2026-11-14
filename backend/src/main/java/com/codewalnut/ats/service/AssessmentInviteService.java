@@ -226,6 +226,11 @@ public class AssessmentInviteService {
         if (invite.getStatus() == AssessmentInvite.Status.SUBMITTED && accessPolicy.has(actor, Capability.MANAGE_JOBS)) {
             seen(invite, actor);
         }
+        return detailOf(invite);
+    }
+
+    /** The answers next to the right ones; callers check access first (AI interview reviewers use it too). */
+    InviteDetail detailOf(AssessmentInvite invite) {
         Map<UUID, List<String>> answers = answers(invite);
         Map<UUID, CodeResult> code = codeResults(invite);
         List<AnswerReview> review = invite.getStatus() == AssessmentInvite.Status.SUBMITTED
@@ -870,7 +875,7 @@ public class AssessmentInviteService {
         return candidateRepository.findByEmail(account.getEmail().toLowerCase(Locale.ROOT)).orElse(null);
     }
 
-    private AssessmentInvite invite(UUID id) {
+    AssessmentInvite invite(UUID id) {
         return inviteRepository.findById(id).orElseThrow(() -> new NotFoundException("Test not found"));
     }
 

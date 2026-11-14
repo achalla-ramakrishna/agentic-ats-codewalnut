@@ -62,6 +62,7 @@ review what CodeWalnut submits to them, via secure links (ADR-0002).
 | Account Manager | Owner of a client relationship | Client records, client requisitions, approve submissions, relay decisions |
 | Interviewer | Engineers on panels | Assigned interviews, scorecards |
 | Approver | Finance / leadership | Approve requisitions and offers above thresholds |
+| AI interview reviewer | Senior engineers / architects | Watch completed AI interviews and say who goes to the next round (AINT-21); sees nothing else |
 | Client Reviewer | External, client side | Review submissions via link, feedback, interview slots |
 | Client Contact | External, client side (e.g. Blend's hiring manager) | Sign in with Google; see only candidates and details CodeWalnut shared; message CodeWalnut (ADR-0007) |
 | Candidate | External | Apply, book slots, take assessments, respond to offers |

@@ -34,6 +34,11 @@ first interview that runs by itself and tells us whom to talk to.
 - Reviews run after the submit commits on a small worker pool, retried every 5 minutes (10 attempts) and after
   a restart, like code grading (ADR-0016).
 
+- **People decide** (AINT-21, 2026-11-14): a separate *AI interview reviewer* role (senior engineers, the
+  architect) watches completed interviews and records select / hold / don't progress with feedback. The role sees
+  only the interview (name, opening, answers, videos, review) — no contact details or pipeline — so panelists can
+  help screen without wider access. Verdicts are recorded and posted to the team; stage moves stay with recruiters.
+
 ## Consequences
 
 - One link, one ranking: the team watches the top 10–20 and books live calls with the existing slots (ADR-0028).

@@ -588,6 +588,7 @@ export function JobDetailPage() {
         <AiInterviewPanel
           jobId={job.id}
           canEdit={canEdit}
+          canReview={me.navigation.some((n) => n.key === 'ai-reviews')}
           onOpen={(applicationId) => {
             const row = rows?.find((r) => r.id === applicationId)
             if (row) openDrawer(row, 'tests')

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AREA_SHORT, createAiInterview, jobInterviews, type JobInterviews, type RankedCandidate } from '../api/aiInterviews'
 import { moveStage } from '../api/tracker'
 import { Dots } from './InterviewReviewCard'
+import { Verdicts } from './Verdicts'
 import { QuestionSetPreview } from './QuestionSetPreview'
 import { VideoSpace } from './VideoSpace'
 import { useStages } from './useStages'
@@ -32,12 +33,15 @@ function status(r: RankedCandidate) {
 export function AiInterviewPanel({
   jobId,
   canEdit,
+  canReview = false,
   onOpen,
   onChanged,
   onClose,
 }: {
   jobId: string
   canEdit: boolean
+  /** May give a verdict on finished interviews (AINT-21): shows a Review link. */
+  canReview?: boolean
   onOpen: (applicationId: string) => void
   onChanged: () => void
   /** Shows a Close button (not needed when the panel is a tab). */
@@ -221,6 +225,7 @@ export function AiInterviewPanel({
                     <th key={a}>{AREA_SHORT[a]}</th>
                   ))}
                   <th style={{ textAlign: 'left' }}>Notice · salary</th>
+                  <th style={{ textAlign: 'left' }}>Reviewers</th>
                   <th style={{ textAlign: 'left' }}>Summary</th>
                 </tr>
               </thead>
@@ -269,6 +274,16 @@ export function AiInterviewPanel({
                     ))}
                     <td style={{ textAlign: 'left' }}>
                       {[r.noticePeriod, r.expectedSalary].filter(Boolean).join(' · ') || <span className="muted">–</span>}
+                    </td>
+                    <td style={{ textAlign: 'left' }}>
+                      <Verdicts verdicts={r.verdicts ?? []} />
+                      {canReview && r.status === 'SUBMITTED' && (
+                        <div>
+                          <Link to={`/ai-reviews/${r.inviteId}`} style={{ fontSize: 12 }}>
+                            {r.verdicts?.length ? 'Open review' : 'Review'}
+                          </Link>
+                        </div>
+                      )}
                     </td>
                     <td style={{ textAlign: 'left', maxWidth: 320 }}>{r.summary ?? ''}</td>
                   </tr>

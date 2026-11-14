@@ -401,10 +401,15 @@ export const testLink = (inviteId: string) => `${window.location.origin}/tests/$
 export const listNewResults = () => api<NewResult[]>('/tests/new-results')
 export const markResultsSeen = (inviteIds: string[]) => api<{ marked: number }>('/tests/seen', json('POST', { inviteIds }))
 export const listJobTests = (jobId: string) => api<InviteView[]>(`/jobs/${jobId}/tests`)
-export const getTestResult = (inviteId: string) =>
-  api<{ invite: InviteView; answers: AnswerReview[]; sections: SectionScore[]; activity: Activity | null; review: InterviewReview | null }>(
-    `/tests/${inviteId}`,
-  )
+/** A taken test's answers next to the right ones, for staff. */
+export interface InviteDetail {
+  invite: InviteView
+  answers: AnswerReview[]
+  sections: SectionScore[]
+  activity: Activity | null
+  review: InterviewReview | null
+}
+export const getTestResult = (inviteId: string) => api<InviteDetail>(`/tests/${inviteId}`)
 export const regradeTest = (inviteId: string) => api<InviteView>(`/tests/${inviteId}/regrade`, { method: 'POST' })
 export const codingStatus = () => api<{ available: boolean; languages: CodeLanguage[] }>('/coding/status')
 export const tryQuestion = (assessmentId: string, questionId: string, input: { language: CodeLanguage; source: string }) =>

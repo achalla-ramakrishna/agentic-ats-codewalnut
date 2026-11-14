@@ -30,6 +30,13 @@ class NavigationServiceTest {
     }
 
     @Test
+    void aiInterviewReviewerSeesOnlyTheirReviews() {
+        assertThat(keysFor(Role.AI_INTERVIEW_REVIEWER)).containsExactly("ai-reviews");
+        assertThat(keysFor(Role.HIRING_MANAGER)).contains("ai-reviews");
+        assertThat(keysFor(Role.RECRUITER)).doesNotContain("ai-reviews");
+    }
+
+    @Test
     void accountManagerSeesClients() {
         assertThat(keysFor(Role.ACCOUNT_MANAGER)).contains("clients").doesNotContain("users", "audit-log");
     }
@@ -37,7 +44,7 @@ class NavigationServiceTest {
     @Test
     void adminSeesEverythingInOrder() {
         assertThat(keysFor(Role.ADMIN)).containsExactly("dashboard", "ask", "jobs", "candidates", "workflow", "messages", "clients",
-                "interviews", "interview-questions", "tests", "approvals", "reports", "admin-updates", "users", "view-as", "audit-log");
+                "interviews", "interview-questions", "ai-reviews", "tests", "approvals", "reports", "admin-updates", "users", "view-as", "audit-log");
     }
 
     @Test

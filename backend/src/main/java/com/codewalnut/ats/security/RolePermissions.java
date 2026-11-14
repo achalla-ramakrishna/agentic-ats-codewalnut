@@ -12,6 +12,7 @@ import static com.codewalnut.ats.security.Capability.VIEW_DASHBOARD;
 import static com.codewalnut.ats.security.Capability.VIEW_INTERVIEWS;
 import static com.codewalnut.ats.security.Capability.VIEW_JOBS;
 import static com.codewalnut.ats.security.Capability.VIEW_REPORTS;
+import static com.codewalnut.ats.security.Capability.REVIEW_AI_INTERVIEWS;
 
 import com.codewalnut.ats.domain.Role;
 import java.util.Collection;
@@ -31,12 +32,13 @@ public final class RolePermissions {
                 VIEW_DASHBOARD, VIEW_JOBS, MANAGE_JOBS, VIEW_CANDIDATES, MESSAGE_CANDIDATES, VIEW_ID_DOCUMENTS,
                 SHARE_WITH_CLIENTS, VIEW_CLIENTS, VIEW_INTERVIEWS, VIEW_REPORTS));
         MATRIX.put(Role.HIRING_MANAGER, EnumSet.of(
-                VIEW_DASHBOARD, VIEW_JOBS, VIEW_CANDIDATES, MESSAGE_CANDIDATES, VIEW_INTERVIEWS, VIEW_REPORTS));
+                VIEW_DASHBOARD, VIEW_JOBS, VIEW_CANDIDATES, MESSAGE_CANDIDATES, VIEW_INTERVIEWS, VIEW_REPORTS, REVIEW_AI_INTERVIEWS));
         MATRIX.put(Role.ACCOUNT_MANAGER, EnumSet.of(
                 VIEW_DASHBOARD, VIEW_JOBS, VIEW_CANDIDATES, MESSAGE_CANDIDATES, VIEW_ID_DOCUMENTS, SHARE_WITH_CLIENTS,
                 VIEW_CLIENTS, MANAGE_CLIENTS, VIEW_INTERVIEWS, VIEW_REPORTS));
         MATRIX.put(Role.INTERVIEWER, EnumSet.of(VIEW_DASHBOARD, VIEW_INTERVIEWS));
         MATRIX.put(Role.APPROVER, EnumSet.of(VIEW_DASHBOARD, VIEW_APPROVALS));
+        MATRIX.put(Role.AI_INTERVIEW_REVIEWER, EnumSet.of(REVIEW_AI_INTERVIEWS));
     }
 
     private RolePermissions() {}

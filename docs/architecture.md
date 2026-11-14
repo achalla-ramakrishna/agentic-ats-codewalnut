@@ -122,7 +122,9 @@ Railway volume) with `interview_video` rows (V28), the transcript in the invite'
 (retried by `AiInterviewSweeper`); `InterviewReviews` stores the review and works out the 0–100 score.
 `GET /jobs/{id}/ai-interviews` ranks an opening's candidates. Senior/lead Java openings use the
 hand-written set in `bank/InterviewSets`; a question's `explanation` holds what a strong answer covers
-and is passed to the review as `<expected>`.
+and is passed to the review as `<expected>`. People then give a verdict (`AiReviewService`, `ai_interview_verdict`,
+V30): the *AI interview reviewer* role (`REVIEW_AI_INTERVIEWS`) sees only `/ai-reviews` — the answers, videos and
+review of completed interviews — and its select / hold / don't progress shows in the ranking and the team notes.
 
 Coding questions (ADR-0016): `client/CodeRunner` sends candidate code to a
 self-hosted Judge0 (`Judge0CodeRunner`; `DisabledCodeRunner` when

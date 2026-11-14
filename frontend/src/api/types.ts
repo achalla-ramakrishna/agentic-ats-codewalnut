@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'RECRUITER' | 'HIRING_MANAGER' | 'ACCOUNT_MANAGER' | 'INTERVIEWER' | 'APPROVER'
+export type Role = 'ADMIN' | 'RECRUITER' | 'HIRING_MANAGER' | 'ACCOUNT_MANAGER' | 'INTERVIEWER' | 'APPROVER' | 'AI_INTERVIEW_REVIEWER'
 
 export const ROLE_LABELS: Record<Role, string> = {
   ADMIN: 'Admin',
@@ -7,6 +7,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   ACCOUNT_MANAGER: 'Account Manager',
   INTERVIEWER: 'Interviewer',
   APPROVER: 'Approver',
+  AI_INTERVIEW_REVIEWER: 'AI interview reviewer',
 }
 
 export const ALL_ROLES = Object.keys(ROLE_LABELS) as Role[]

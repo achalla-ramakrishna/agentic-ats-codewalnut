@@ -67,7 +67,7 @@ public final class AiInterviewDtos {
             UUID inviteId, UUID applicationId, String candidateName, Stage stage, AssessmentInvite.Status status,
             AssessmentInvite.Evaluation evaluation, boolean usesAi, Integer aiScore, Integer markedPercent,
             Map<String, Integer> areas, String summary, String noticePeriod, String expectedSalary,
-            Instant sentAt, Instant submittedAt, int videos) {}
+            Instant sentAt, Instant submittedAt, int videos, List<AiReviewDtos.VerdictBrief> verdicts) {}
 
     public record JobInterviews(List<RankedCandidate> candidates, int sent, int started, int submitted, int reviewed) {}
 }

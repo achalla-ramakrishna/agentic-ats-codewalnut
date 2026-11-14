@@ -25,6 +25,7 @@ import { CodingRoomPage } from './pages/CodingRoomPage'
 import { TakeTestPage } from './pages/TakeTestPage'
 import { AskPage } from './pages/AskPage'
 import { WorkflowPage } from './pages/WorkflowPage'
+import { AiReviewPage, AiReviewsPage } from './pages/AiReviewsPage'
 import { TestsPage } from './pages/TestsPage'
 import { ViewAsPage } from './pages/ViewAsPage'
 import { ViewAsBanner } from './components/ViewAsBanner'
@@ -43,6 +44,7 @@ const SCREENS: Record<string, ReactElement> = {
   interviews: <InterviewsPage />,
   'interview-questions': <InterviewQuestionsPage />,
   tests: <TestsPage />,
+  'ai-reviews': <AiReviewsPage />,
   'view-as': <ViewAsPage />,
   messages: <MessagesPage />,
   approvals: <ComingSoonPage title="Approvals" chunk="chunks 1 and 7" spec="requisitions.md" />,
@@ -161,6 +163,10 @@ function StaffApp() {
         )}
         {state.me.navigation.some((item) => item.key === 'interviews') && (
           <Route path="/interview-kits/:jobId" element={<InterviewKitPage />} />
+        )}
+        {state.me.navigation.some((item) => item.key === 'ai-reviews') && <Route path="/ai-reviews/:id" element={<AiReviewPage />} />}
+        {!state.me.navigation.some((item) => item.key === 'dashboard') && state.me.navigation.length > 0 && (
+          <Route path="/" element={<Navigate to={state.me.navigation[0].path} replace />} />
         )}
         <Route path="/whats-new" element={<WhatsNewPage />} />
         <Route path="/login" element={<Navigate to="/" replace />} />

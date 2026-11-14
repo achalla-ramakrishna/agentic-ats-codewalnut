@@ -18,6 +18,8 @@ public enum Capability {
     VIEW_CLIENTS,
     MANAGE_CLIENTS,
     VIEW_INTERVIEWS,
+    /** Watch completed AI interviews and say whether the candidate goes to the next round (AINT-21). */
+    REVIEW_AI_INTERVIEWS,
     VIEW_APPROVALS,
     VIEW_REPORTS,
     MANAGE_USERS,

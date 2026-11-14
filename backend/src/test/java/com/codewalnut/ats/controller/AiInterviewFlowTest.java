@@ -39,6 +39,7 @@ class AiInterviewFlowTest {
 
     private static final RequestPostProcessor RECRUITER = user("recruiter@codewalnut.test");
     private static final RequestPostProcessor HM = user("hiring.manager@codewalnut.test");
+    private static final RequestPostProcessor REVIEWER = user("reviewer@codewalnut.test");
     /** The start of a WebM file (EBML header); enough for the type check. */
     private static final byte[] WEBM = {0x1A, 0x45, (byte) 0xDF, (byte) 0xA3, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
@@ -230,6 +231,48 @@ class AiInterviewFlowTest {
                 .andExpect(jsonPath("$.candidates[1].candidateName").value("Arun Sample"))
                 .andExpect(jsonPath("$.candidates[1].status").value("SENT"));
         // AI is advisory: nobody moved.
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/applications").with(RECRUITER))
+                .andExpect(jsonPath("$[*].stage", Matchers.everyItem(Matchers.not("SHORTLISTED"))));
+
+        // AINT-21: an AI interview reviewer sees the finished interview (not the one never started), watches the
+        // answers and says whether the candidate goes to the next round. Recruiters can't give verdicts.
+        mockMvc.perform(get("/api/v1/ai-reviews").with(REVIEWER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.interviews[?(@.inviteId == '" + invite + "')].candidateName").value("Meera Sample"))
+                .andExpect(jsonPath("$.interviews[?(@.candidateName == 'Arun Sample')]").isEmpty());
+        mockMvc.perform(get("/api/v1/ai-reviews").with(RECRUITER)).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/v1/ai-reviews/" + invite).with(REVIEWER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.jobId").value(job))
+                .andExpect(jsonPath("$.detail.answers[0].given[0]").value(first))
+                .andExpect(jsonPath("$.detail.review.areas.length()").value(5))
+                .andExpect(jsonPath("$.verdicts").isEmpty());
+        mockMvc.perform(get("/api/v1/tests/" + invite + "/videos/" + first).with(REVIEWER)).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/tests/" + invite).with(REVIEWER)).andExpect(status().isForbidden()); // nothing else about the candidate
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/applications").with(REVIEWER)).andExpect(status().isForbidden());
+        // Not selecting needs a reason.
+        json(REVIEWER, "PUT", "/api/v1/ai-reviews/" + invite, "{\"decision\":\"HOLD\"}").andExpect(status().isBadRequest());
+        json(REVIEWER, "PUT", "/api/v1/ai-reviews/" + invite, "{\"decision\":\"MAYBE\"}").andExpect(status().isBadRequest());
+        json(REVIEWER, "PUT", "/api/v1/ai-reviews/" + invite,
+                "{\"decision\":\"HOLD\",\"feedback\":\"Good design answers, thin on testing.\",\"marks\":[{\"position\":1,\"mark\":\"GOOD\",\"note\":\"Clear\"},"
+                        + "{\"position\":2,\"mark\":null,\"note\":\" \"}]}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.verdicts[0].decision").value("HOLD"))
+                .andExpect(jsonPath("$.verdicts[0].mine").value(true))
+                .andExpect(jsonPath("$.verdicts[0].marks.length()").value(1));
+        json(REVIEWER, "PUT", "/api/v1/ai-reviews/" + invite, "{\"decision\":\"SELECT\",\"feedback\":\"Watched again: strong.\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.verdicts.length()").value(1))
+                .andExpect(jsonPath("$.verdicts[0].decisionLabel").value("Select for next round"));
+        // A hiring manager can give one too; the ranking shows both; the team sees a note; nobody moved.
+        json(HM, "PUT", "/api/v1/ai-reviews/" + invite, "{\"decision\":\"SELECT\"}").andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/ai-interviews").with(RECRUITER))
+                .andExpect(jsonPath("$.candidates[0].verdicts.length()").value(2))
+                .andExpect(jsonPath("$.candidates[0].verdicts[0].decision").value("SELECT"));
+        mockMvc.perform(get("/api/v1/ai-reviews").with(REVIEWER))
+                .andExpect(jsonPath("$.interviews[?(@.inviteId == '" + invite + "')].mine").value("SELECT"));
+        mockMvc.perform(get("/api/v1/applications/" + app + "/messages?channel=TEAM").with(RECRUITER))
+                .andExpect(jsonPath("$[*].body", Matchers.hasItem(Matchers.containsString("reviewed the AI interview: Select for next round (was: Maybe"))));
         mockMvc.perform(get("/api/v1/jobs/" + job + "/applications").with(RECRUITER))
                 .andExpect(jsonPath("$[*].stage", Matchers.everyItem(Matchers.not("SHORTLISTED"))));
 

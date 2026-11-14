@@ -19,6 +19,8 @@ team talks live only to the best few (e.g. 10 of 200).
 
 - **Recruiters** (`MANAGE_JOBS`): create and edit the interview, send it, review again, shortlist.
 - **Hiring managers / panel** (`VIEW_CANDIDATES`): see the ranking, watch answers, read the review.
+- **AI interview reviewers** (new role, `REVIEW_AI_INTERVIEWS`; also hiring managers and admins): see only
+  completed AI interviews — answers, videos, the AI's review — and give a verdict. No contact details, no pipeline.
 - **Candidates**: take it from the emailed link, signed in with Google (same as tests).
 
 ## User stories
@@ -51,6 +53,7 @@ team talks live only to the best few (e.g. 10 of 200).
 | AINT-18 | For an AI interview, **Send to candidates** is the simple version: everyone in its opening (or in all openings) is listed, people already sent it stay listed but marked and can't be ticked, no batch tools; search, tick one or more, add new emails, Send. | Done |
 | AINT-19 | **Space for videos** on the AI interview tab: free and total space of the video disk, videos stored so far, the average per interview, and about how many more interviews fit; a warning when under 1 GB is left or videos are going to a temporary folder (lost on deploy). Recordings use about 200 kbps video at up to 15–20 fps and 48 kbps audio (roughly 1.5–2 MB a minute). | Done |
 | AINT-20 | **Free space**: on the AI interview tab, delete the videos of the opening's rejected and withdrawn candidates (shows how many and how much first, asks to confirm). Transcripts, written answers, scores and reviews stay; answers say the video was deleted to free space. Audited. | Done |
+| AINT-21 | **Reviewer verdict**: a new role, *AI interview reviewer*, gets one page, **AI interview reviews**: every completed AI interview (to review first, then reviewed by me, all; by opening; search). Opening one shows the answers with videos, transcripts and "Look for", the AI's review, and other reviewers' verdicts. The reviewer marks answers (✓ Good / ~ Okay / ✗ Weak, with a note; optional) and decides **Select for next round**, **Maybe — discuss** or **Don't progress** (a reason is required unless selecting); *Save and review next* opens the next one waiting. One verdict per person, changeable. The verdict shows in the opening's ranking (Reviewers column), is posted to the candidate's team notes and audited. It doesn't move the candidate; the recruiter does. Hiring managers and admins can review too. | Done |
 | AINT-08 | Automatic retention: delete interview videos N days after the opening closes. | v1 |
 
 ## Business rules
@@ -77,17 +80,19 @@ team talks live only to the best few (e.g. 10 of 200).
 ## Data
 
 `assessment` (category INTERVIEW), `assessment_question` (`section` = phase, `max_seconds`), `assessment_invite`
-(`evaluation`, `evaluation_json`, `ai_score`), `interview_video` (V28).
+(`evaluation`, `evaluation_json`, `ai_score`), `interview_video` (V28), `ai_interview_verdict` (V30: invite, reviewer, decision, marks, feedback).
 
 ## API
 
 `POST /ai-interviews`, `GET /jobs/{id}/ai-interviews`, `POST /tests/{id}/review-again`,
-`GET /tests/{id}/videos/{videoId}` (staff), `POST /candidate/tests/{id}/questions/{questionId}/video`.
+`GET /tests/{id}/videos/{videoId}` (staff), `POST /candidate/tests/{id}/questions/{questionId}/video`; reviewers: `GET /ai-reviews`, `GET /ai-reviews/{inviteId}`,
+`PUT /ai-reviews/{inviteId}` (my verdict).
 
 ## Change log
 
 | Date | Change |
 | --- | --- |
+| 2026-11-14 | AI interview reviewer role and verdicts: select for next round / hold / don't progress (AINT-21) |
 | 2026-11-13 | Smaller recordings; space meter; delete rejected candidates' videos (AINT-19, AINT-20) |
 | 2026-11-13 | Simple Send to candidates for AI interviews (AINT-18) |
 | 2026-11-13 | Send to candidates: search, filters, chips, new emails, all openings (AINT-17) |

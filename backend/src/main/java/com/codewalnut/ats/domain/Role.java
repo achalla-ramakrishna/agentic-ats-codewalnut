@@ -7,7 +7,9 @@ public enum Role {
     HIRING_MANAGER("Hiring Manager"),
     ACCOUNT_MANAGER("Account Manager"),
     INTERVIEWER("Interviewer"),
-    APPROVER("Approver");
+    APPROVER("Approver"),
+    /** Watches completed AI interviews and says who goes to the next round (AINT-21). */
+    AI_INTERVIEW_REVIEWER("AI interview reviewer");
 
     private final String label;
 

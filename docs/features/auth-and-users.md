@@ -36,7 +36,7 @@ Staff: what they see and can do is driven by their role(s).
 | All staff | Sign in, see their role-based navigation, sign out |
 
 Staff roles: **Admin, Recruiter, Hiring Manager, Account Manager, Interviewer,
-Approver**. A person may hold several roles; they get the union of their
+Approver, AI interview reviewer**. A person may hold several roles; they get the union of their
 permissions.
 
 ## User stories
@@ -85,19 +85,20 @@ permissions.
 
 Role → capability matrix (current; extended as features land):
 
-| Capability | Admin | Recruiter | Hiring Mgr | Account Mgr | Interviewer | Approver |
-| --- | --- | --- | --- | --- | --- | --- |
-| Dashboard | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Jobs (view) | ✓ | ✓ | ✓ | ✓ | | |
-| Jobs (manage) | ✓ | ✓ | | | | |
-| Candidates (view) | ✓ | ✓ | ✓ | ✓ | | |
-| Clients (view) | ✓ | ✓ | | ✓ | | |
-| Clients (manage) | ✓ | | | ✓ | | |
-| Interviews | ✓ | ✓ | ✓ | ✓ | ✓ | |
-| Approvals | ✓ | | | | | ✓ |
-| Reports | ✓ | ✓ | ✓ | ✓ | | |
-| Users (manage) | ✓ | | | | | |
-| Audit log | ✓ | | | | | |
+| Capability | Admin | Recruiter | Hiring Mgr | Account Mgr | Interviewer | Approver | AI interview reviewer |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Dashboard | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| Jobs (view) | ✓ | ✓ | ✓ | ✓ | | | |
+| Jobs (manage) | ✓ | ✓ | | | | | |
+| Candidates (view) | ✓ | ✓ | ✓ | ✓ | | | |
+| Clients (view) | ✓ | ✓ | | ✓ | | | |
+| Clients (manage) | ✓ | | | ✓ | | | |
+| Interviews | ✓ | ✓ | ✓ | ✓ | ✓ | | |
+| Approvals | ✓ | | | | | ✓ | |
+| Reports | ✓ | ✓ | ✓ | ✓ | | | |
+| Users (manage) | ✓ | | | | | | |
+| Audit log | ✓ | | | | | | |
+| AI interview reviews (verdicts) | ✓ | | ✓ | | | | ✓ |
 
 ## Edge cases & failure states
 

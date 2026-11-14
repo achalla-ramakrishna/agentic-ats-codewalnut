@@ -1,6 +1,7 @@
 import { api } from './client'
 import type { AssessmentDetail, Evaluation, InviteStatus } from './assessments'
 import type { Stage } from './tracker'
+import type { VerdictBrief } from './aiReviews'
 
 /** AI interviews (ADR-0030): build one for an opening, record answers, and the opening's ranking. */
 
@@ -22,6 +23,8 @@ export interface RankedCandidate {
   sentAt: string
   submittedAt: string | null
   videos: number
+  /** People's verdicts (AINT-21): who said select, hold or don't progress. */
+  verdicts: VerdictBrief[]
 }
 
 export interface JobInterviews {
