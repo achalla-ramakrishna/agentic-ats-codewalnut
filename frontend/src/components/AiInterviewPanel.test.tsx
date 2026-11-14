@@ -71,6 +71,32 @@ describe('AiInterviewPanel (AINT-07)', () => {
     expect(JSON.parse(moved[1]!.body as string).stage).toBe('SHORTLISTED')
   })
 
+  it('deletes the AI interviews of the ticked candidates after confirming (AINT-23)', async () => {
+    const fetchMock = fakeFetch([
+      { path: '/ai-interviews/delete', method: 'POST', body: { interviews: 2, videos: 24, bytes: 50 * 1024 * 1024 } },
+      {
+        path: '/jobs/j1/ai-interviews',
+        body: { candidates: [row('Asha Rao', 86, 'SUBMITTED'), row('Ravi Kumar', 61, 'SUBMITTED')], sent: 2, started: 0, submitted: 2, reviewed: 2 },
+      },
+      { path: '/stages', body: [] },
+    ])
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(
+      <MemoryRouter>
+        <AiInterviewPanel jobId="j1" canEdit onOpen={() => undefined} onChanged={() => undefined} />
+      </MemoryRouter>,
+    )
+    await screen.findByRole('table', { name: 'AI interview ranking' })
+    expect(screen.getByRole('button', { name: '🗑 Delete AI interview (0)' })).toBeDisabled()
+    await userEvent.click(screen.getByLabelText('Select Asha Rao'))
+    await userEvent.click(screen.getByLabelText('Select Ravi Kumar'))
+    await userEvent.click(screen.getByRole('button', { name: '🗑 Delete AI interview (2)' }))
+    expect(confirm.mock.calls[0][0]).toContain('2 candidates (Asha Rao, Ravi Kumar)')
+    expect(await screen.findByText('Deleted 2 AI interviews and 24 videos (50 MB freed).')).toBeInTheDocument()
+    const del = fetchMock.mock.calls.find(([url]) => String(url).includes('/ai-interviews/delete'))!
+    expect(JSON.parse(del[1]!.body as string)).toEqual({ inviteIds: ['i-Asha Rao', 'i-Ravi Kumar'] })
+  })
+
   it('creates the chosen question set, or all four (AINT-11)', async () => {
     const fetchMock = fakeFetch([
       { path: '/jobs/j1/ai-interviews', body: { candidates: [], sent: 0, started: 0, submitted: 0, reviewed: 0 } },

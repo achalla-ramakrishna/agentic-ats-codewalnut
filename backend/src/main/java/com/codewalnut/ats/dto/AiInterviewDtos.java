@@ -46,6 +46,11 @@ public final class AiInterviewDtos {
     /** Videos of rejected or withdrawn candidates in an opening, which can be deleted to free space. */
     public record Cleanup(int candidates, int videos, long bytes) {}
 
+    public record DeleteInterviewsRequest(@jakarta.validation.constraints.NotEmpty @jakarta.validation.constraints.Size(max = 500) List<UUID> inviteIds) {}
+
+    /** What deleting AI interviews removed. */
+    public record Deleted(int interviews, int videos, long bytes) {}
+
     public record VideoSaved(UUID videoId, int seconds, long sizeBytes) {}
 
     /** One area of the review: rating 1–5 (0 = nothing to judge on), with the reason and a quote. */

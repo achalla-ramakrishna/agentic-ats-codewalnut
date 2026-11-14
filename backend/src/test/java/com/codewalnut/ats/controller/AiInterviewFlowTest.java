@@ -354,5 +354,20 @@ class AiInterviewFlowTest {
         upload(session, invite, video, WEBM, "x").andExpect(status().isOk());
         candidate(session, "POST", "/api/v1/candidate/tests/" + invite + "/submit", "{\"answers\":{}}").andExpect(status().isOk());
         upload(session, invite, video, WEBM, "x").andExpect(status().isBadRequest());
+
+        // AINT-23: delete the AI interview (answers, videos, verdicts); the candidate stays in the opening.
+        String videoId = JsonPath.read(body(mockMvc.perform(get("/api/v1/tests/" + invite).with(RECRUITER))), "$.answers[0].given[0]");
+        json(HM, "PUT", "/api/v1/ai-reviews/" + invite, "{\"decision\":\"SELECT\"}").andExpect(status().isOk());
+        json(HM, "POST", "/api/v1/ai-interviews/delete", "{\"inviteIds\":[\"" + invite + "\"]}").andExpect(status().isForbidden());
+        json(RECRUITER, "POST", "/api/v1/ai-interviews/delete", "{\"inviteIds\":[]}").andExpect(status().isBadRequest());
+        json(RECRUITER, "POST", "/api/v1/ai-interviews/delete", "{\"inviteIds\":[\"" + UUID.randomUUID() + "\"]}").andExpect(status().isNotFound());
+        json(RECRUITER, "POST", "/api/v1/ai-interviews/delete", "{\"inviteIds\":[\"" + invite + "\"]}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.interviews").value(1))
+                .andExpect(jsonPath("$.videos").value(1));
+        mockMvc.perform(get("/api/v1/tests/" + invite).with(RECRUITER)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/tests/" + invite + "/videos/" + videoId).with(RECRUITER)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/ai-interviews").with(RECRUITER)).andExpect(jsonPath("$.sent").value(0));
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/applications").with(RECRUITER)).andExpect(jsonPath("$[0].name").value("Dev Sample"));
     }
 }

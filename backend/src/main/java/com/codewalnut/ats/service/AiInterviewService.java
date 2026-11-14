@@ -93,6 +93,7 @@ public class AiInterviewService {
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher events;
     private final AiReviewService verdicts;
+    private final com.codewalnut.ats.repository.AiInterviewVerdictRepository verdictRepository;
 
     // ---- building an interview for an opening ----
 
@@ -593,6 +594,39 @@ public class AiInterviewService {
         auditService.record(actor, AuditAction.INTERVIEW_VIDEOS_DELETED, "JobOpening", jobId,
                 Map.of("candidates", candidates, "videos", count, "bytes", bytes));
         return new com.codewalnut.ats.dto.AiInterviewDtos.Cleanup(candidates, count, bytes);
+    }
+
+    /**
+     * Deletes candidates' AI interviews for good (AINT-23): answers, videos (files too), the AI review and reviewers'
+     * verdicts. The candidates stay in the opening and can be sent a new one. Only AI interviews; audited per candidate.
+     */
+    @Transactional
+    public com.codewalnut.ats.dto.AiInterviewDtos.Deleted deleteInterviews(AppUser actor, List<UUID> inviteIds) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        List<AssessmentInvite> invites = inviteRepository.findAllById(inviteIds);
+        if (invites.size() != new java.util.HashSet<>(inviteIds).size()) {
+            throw new NotFoundException("AI interview not found");
+        }
+        if (invites.stream().anyMatch(i -> i.getAssessment().getCategory() != Assessment.Category.INTERVIEW)) {
+            throw new IllegalArgumentException("inviteIds: only AI interviews can be deleted here");
+        }
+        int videos = 0;
+        long bytes = 0;
+        for (AssessmentInvite invite : invites) {
+            List<InterviewVideo> recorded = videoRepository.findByInviteId(invite.getId());
+            for (InterviewVideo v : recorded) {
+                storage.delete(v.getStorageKey());
+                bytes += v.getSizeBytes();
+            }
+            videos += recorded.size();
+            videoRepository.deleteAll(recorded);
+            verdictRepository.deleteByInviteId(invite.getId());
+            auditService.record(actor, AuditAction.AI_INTERVIEW_DELETED, "AssessmentInvite", invite.getId(),
+                    Map.of("candidate", invite.getApplication().getCandidate().getName(), "status", invite.getStatus().name(),
+                            "videos", recorded.size()));
+            inviteRepository.delete(invite);
+        }
+        return new com.codewalnut.ats.dto.AiInterviewDtos.Deleted(invites.size(), videos, bytes);
     }
 
     // ---- the ranking ----

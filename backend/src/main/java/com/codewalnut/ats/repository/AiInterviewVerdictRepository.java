@@ -13,5 +13,7 @@ public interface AiInterviewVerdictRepository extends JpaRepository<AiInterviewV
 
     List<AiInterviewVerdict> findByInviteIdInOrderByCreatedAtAsc(Collection<UUID> inviteIds);
 
+    void deleteByInviteId(UUID inviteId);
+
     Optional<AiInterviewVerdict> findByInviteIdAndReviewerEmail(UUID inviteId, String reviewerEmail);
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AREA_SHORT, createAiInterview, jobInterviews, type JobInterviews, type RankedCandidate } from '../api/aiInterviews'
+import { AREA_SHORT, bytes, createAiInterview, deleteAiInterviews, jobInterviews, type JobInterviews, type RankedCandidate } from '../api/aiInterviews'
 import { moveStage } from '../api/tracker'
 import { Dots } from './InterviewReviewCard'
 import { Verdicts } from './Verdicts'
@@ -113,6 +113,32 @@ export function AiInterviewPanel({
     onChanged()
   }
 
+  async function deleteChosen() {
+    const chosen = (data?.candidates ?? []).filter((c) => picked.has(c.applicationId))
+    if (!chosen.length) return
+    const names = chosen.map((c) => c.candidateName).join(', ')
+    if (
+      !window.confirm(
+        `Delete the AI interview of ${chosen.length === 1 ? names : `${chosen.length} candidates (${names})`}?\n\n` +
+          'Their answers, videos, AI review and reviewers’ verdicts are deleted for good. The candidates stay in the opening, and you can send them a new AI interview.',
+      )
+    )
+      return
+    setBusy(true)
+    setError(null)
+    try {
+      const r = await deleteAiInterviews(chosen.map((c) => c.inviteId))
+      setPicked(new Set())
+      setMessage(`Deleted ${r.interviews} AI interview${r.interviews === 1 ? '' : 's'}${r.videos ? ` and ${r.videos} videos (${bytes(r.bytes)} freed)` : ''}.`)
+      load()
+      onChanged()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not delete')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const rows = (data?.candidates ?? []).filter((c) => !onlyReviewed || c.status === 'SUBMITTED')
   const stageLabel = (key: string) => stages.find((s) => s.key === key)?.label ?? key
   return (
@@ -212,6 +238,11 @@ export function AiInterviewPanel({
                 Shortlist selected ({picked.size})
               </Button>
             )}
+            {canEdit && (
+              <Button size="sm" variant="ghost" disabled={busy || picked.size === 0} onClick={() => void deleteChosen()}>
+                🗑 Delete AI interview ({picked.size})
+              </Button>
+            )}
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table className="bank-grid" aria-label="AI interview ranking" style={{ fontSize: 13, width: '100%' }}>
@@ -285,7 +316,7 @@ export function AiInterviewPanel({
                         </div>
                       )}
                     </td>
-                    <td style={{ textAlign: 'left', maxWidth: 320 }}>{r.summary ?? ''}</td>
+                    <td style={{ textAlign: 'left', minWidth: 260, maxWidth: 360 }}>{r.summary ?? ''}</td>
                   </tr>
                 ))}
               </tbody>

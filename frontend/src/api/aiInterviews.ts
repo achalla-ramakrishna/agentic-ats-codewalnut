@@ -85,6 +85,10 @@ export const deleteClosedVideos = (jobId: string) =>
   api<{ candidates: number; videos: number; bytes: number }>(`/jobs/${jobId}/ai-interviews/closed-videos`, { method: 'DELETE' })
 
 /** 1536 → "1.5 KB", 4.5e9 → "4.2 GB". */
+/** Deletes candidates' AI interviews for good: answers, videos, review and verdicts (the candidates stay). */
+export const deleteAiInterviews = (inviteIds: string[]) =>
+  api<{ interviews: number; videos: number; bytes: number }>('/ai-interviews/delete', { method: 'POST', body: JSON.stringify({ inviteIds }) })
+
 export function bytes(n: number) {
   if (n < 0) return '?'
   const units = ['B', 'KB', 'MB', 'GB', 'TB']

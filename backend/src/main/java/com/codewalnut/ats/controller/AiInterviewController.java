@@ -64,6 +64,13 @@ public class AiInterviewController {
         return interviews.deleteClosedVideos(currentUserService.require(), id);
     }
 
+    /** Delete candidates' AI interviews for good (answers, videos, review, verdicts); the candidates stay. */
+    @PostMapping("/api/v1/ai-interviews/delete")
+    public com.codewalnut.ats.dto.AiInterviewDtos.Deleted delete(
+            @Valid @RequestBody com.codewalnut.ats.dto.AiInterviewDtos.DeleteInterviewsRequest request) {
+        return interviews.deleteInterviews(currentUserService.require(), request.inviteIds());
+    }
+
     @GetMapping("/api/v1/jobs/{id}/ai-interviews")
     public JobInterviews ranking(@PathVariable UUID id) {
         return interviews.ranking(currentUserService.require(), id);
