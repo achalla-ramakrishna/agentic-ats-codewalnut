@@ -95,6 +95,8 @@ public class AssessmentInviteService {
     private final CodingSpecs codingSpecs;
     private final ApplicationEventPublisher events;
     private final InterviewReviews interviewReviews;
+    private final com.codewalnut.ats.repository.InterviewAnswerCheckRepository answerChecks;
+    private final InterviewRules interviewRules;
 
     /** Sample runs a candidate may make per coding question, and per test. */
     static final int RUNS_PER_QUESTION = 30;
@@ -264,13 +266,22 @@ public class AssessmentInviteService {
     InviteDetail detailOf(AssessmentInvite invite) {
         Map<UUID, List<String>> answers = answers(invite);
         Map<UUID, CodeResult> code = codeResults(invite);
-        List<AnswerReview> review = invite.getStatus() == AssessmentInvite.Status.SUBMITTED
+        boolean interview = invite.getAssessment().getCategory() == Assessment.Category.INTERVIEW;
+        // AI interviews show answers while still running too, so a flagged answer can be watched before it ends (AINT-24).
+        boolean show = invite.getStatus() == AssessmentInvite.Status.SUBMITTED
+                || (interview && invite.getStatus() == AssessmentInvite.Status.STARTED);
+        Map<UUID, com.codewalnut.ats.domain.InterviewAnswerCheck> checks = interview
+                ? answerChecks.findByInviteId(invite.getId()).stream().collect(java.util.stream.Collectors.toMap(
+                        com.codewalnut.ats.domain.InterviewAnswerCheck::getQuestionId, c -> c, (a, b) -> a))
+                : Map.of();
+        List<AnswerReview> review = show
                 ? questionRepository.findByAssessmentIdOrderByPositionAsc(invite.getAssessment().getId()).stream()
                         .map(q -> new AnswerReview(q.getPosition(), q.getKind(), q.getPrompt(), q.getCode(),
                                 assessmentService.options(q), answers.getOrDefault(q.getId(), List.of()),
                                 assessmentService.correct(q), assessmentService.accepted(q), q.getPoints(),
                                 earned(q, answers, code), q.getFigure(),
-                                assessmentService.optionFigures(q), q.getSection(), staffCode(q, answers, code), q.getExplanation()))
+                                assessmentService.optionFigures(q), q.getSection(), staffCode(q, answers, code), q.getExplanation(),
+                                signals(checks.get(q.getId()))))
                         .toList()
                 : List.of();
         return new InviteDetail(view(invite), review, sectionScores(review), activity(invite),
@@ -846,15 +857,41 @@ public class AssessmentInviteService {
         }
     }
 
+    static com.codewalnut.ats.dto.AssessmentDtos.AnswerSignals signals(com.codewalnut.ats.domain.InterviewAnswerCheck c) {
+        return c == null ? null : new com.codewalnut.ats.dto.AssessmentDtos.AnswerSignals(c.getThinkSeconds(), c.getTakes(),
+                c.getFocusLosses(), c.getReading() == null ? null : c.getReading().name(), c.getReadingReason());
+    }
+
+    /** Staff ended a running AI interview early (AINT-24): it is submitted now with what was answered. */
+    void endNow(AssessmentInvite invite) {
+        score(invite, Instant.now());
+    }
+
     private TakeTest take(AssessmentInvite invite) {
+        boolean interview = invite.getAssessment().getCategory() == Assessment.Category.INTERVIEW;
+        Map<UUID, List<String>> given = answers(invite);
+        // AI interviews (AINT-24): a spoken question stays hidden, even from the API, until the candidate opens it.
+        Map<UUID, com.codewalnut.ats.domain.InterviewAnswerCheck> opened = interview
+                ? answerChecks.findByInviteId(invite.getId()).stream().collect(java.util.stream.Collectors.toMap(
+                        com.codewalnut.ats.domain.InterviewAnswerCheck::getQuestionId, c -> c, (a, b) -> a))
+                : Map.of();
         List<CandidateQuestion> questions = questionRepository.findByAssessmentIdOrderByPositionAsc(invite.getAssessment().getId())
                 .stream()
-                .map(q -> new CandidateQuestion(q.getId(), q.getPosition(), q.getKind(), q.getPrompt(), q.getCode(),
-                        assessmentService.options(q), q.getPoints(), q.getFigure(), assessmentService.optionFigures(q), q.getSection(),
-                        q.getKind() == AssessmentQuestion.Kind.CODING ? codingSpecs.spec(q.getCodingJson()) : null, q.getMaxSeconds()))
+                .map(q -> {
+                    boolean spoken = interview && q.getKind() == AssessmentQuestion.Kind.VIDEO;
+                    com.codewalnut.ats.domain.InterviewAnswerCheck check = opened.get(q.getId());
+                    boolean recorded = !given.getOrDefault(q.getId(), List.of()).isEmpty()
+                            && !given.get(q.getId()).get(0).isBlank();
+                    boolean hidden = spoken && check == null && !recorded;
+                    Integer takesLeft = spoken ? Math.max(0, interviewRules.takes() - (check != null ? check.getTakes() : recorded ? 1 : 0)) : null;
+                    return new CandidateQuestion(q.getId(), q.getPosition(), q.getKind(), hidden ? "" : q.getPrompt(), hidden ? null : q.getCode(),
+                            assessmentService.options(q), q.getPoints(), hidden ? null : q.getFigure(), assessmentService.optionFigures(q), q.getSection(),
+                            q.getKind() == AssessmentQuestion.Kind.CODING ? codingSpecs.spec(q.getCodingJson()) : null, q.getMaxSeconds(),
+                            hidden, spoken && check != null ? check.getRevealedAt() : null, takesLeft);
+                })
                 .toList();
         long secondsLeft = Math.max(0, Duration.between(Instant.now(), invite.getDeadlineAt()).getSeconds());
-        return new TakeTest(mine(invite), questions, answers(invite), secondsLeft);
+        return new TakeTest(mine(invite), questions, given, secondsLeft, interview ? interviewRules.thinkSeconds() : null);
     }
 
     private InviteView view(AssessmentInvite i) {

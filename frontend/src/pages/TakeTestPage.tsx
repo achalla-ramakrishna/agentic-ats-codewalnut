@@ -54,6 +54,8 @@ export function TakeTestPage() {
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [phaseIndex, setPhaseIndex] = useState(0)
   const [recording, setRecording] = useState(false)
+  // AINT-24: shown when earlier answers sounded read out.
+  const [warning, setWarning] = useState<string | null>(null)
   const isInterview = (taking?.test.category ?? intro?.category) === 'INTERVIEW'
 
   async function camera(): Promise<boolean> {
@@ -239,8 +241,12 @@ export function TakeTestPage() {
                 <ul style={{ margin: 0 }}>
                   <li>The interview goes phase by phase: introduction, work experience, skills, projects, architecture, a technical round, soft skills and readiness to join.</li>
                   <li>
-                    For most questions you record a spoken answer on camera, up to the time shown. Think for a moment, then click Record and talk as you would
-                    to an interviewer. You can record an answer again.
+                    For most questions you answer out loud on camera. Each spoken question appears only when you click <strong>Show question and start</strong>
+                    : you get a short time to read and think, then recording starts on its own. Talk as you would to an interviewer in the room.
+                  </li>
+                  <li>
+                    Answer in your own words. Don’t read from notes, another screen or an AI tool — the team watches every video, and answers that sound read
+                    out are flagged.
                   </li>
                   <li>Use Chrome or Edge on a laptop, in a quiet, well-lit place. Your answers are watched by the CodeWalnut team and reviewed with the help of AI.</li>
                   {!speechRecognition() && <li><strong>This browser can’t write down speech — please switch to Chrome or Edge.</strong></li>}
@@ -322,6 +328,11 @@ export function TakeTestPage() {
                       {cameraError}
                     </div>
                   )}
+                  {warning && (
+                    <div role="alert" className="alert alert-error">
+                      {warning}
+                    </div>
+                  )}
                 </>
               )}
             </Card>
@@ -339,7 +350,11 @@ export function TakeTestPage() {
                       {q.kind === 'MULTI_CHOICE' ? ' · choose all that apply' : ''}
                     </span>
                   </div>
-                  <div style={{ whiteSpace: 'pre-wrap' }}>{q.prompt}</div>
+                  {q.hidden ? (
+                    <div className="muted">🔒 Hidden until you start it</div>
+                  ) : (
+                    <div style={{ whiteSpace: 'pre-wrap' }}>{q.prompt}</div>
+                  )}
                   {q.figure && <Figure figure={q.figure} />}
                   {q.code && <pre className="test-code">{q.code}</pre>}
                   {q.kind === 'CODING' && q.coding ? (
@@ -361,6 +376,21 @@ export function TakeTestPage() {
                       stream={stream}
                       value={value}
                       busy={recording}
+                      hidden={q.hidden ?? false}
+                      revealedAt={q.revealedAt ?? null}
+                      thinkSeconds={taking.thinkSeconds ?? 0}
+                      takesLeft={q.takesLeft ?? null}
+                      onRevealed={(r) => {
+                        setWarning(r.warning)
+                        setTaking((t) =>
+                          t && {
+                            ...t,
+                            questions: t.questions.map((x) =>
+                              x.id === r.questionId ? { ...x, prompt: r.prompt, code: r.code, hidden: false, revealedAt: r.revealedAt, takesLeft: r.takesLeft } : x,
+                            ),
+                          },
+                        )
+                      }}
                       onRecording={setRecording}
                       onSaved={(videoId, transcript) => setAnswers((a) => ({ ...a, [q.id]: [videoId, transcript] }))}
                     />

@@ -68,7 +68,17 @@ class AiInterviewFlowTest {
                 .andReturn().getRequest().getSession(false);
     }
 
+    private ResultActions reveal(MockHttpSession session, String invite, String question) throws Exception {
+        return mockMvc.perform(post("/api/v1/candidate/tests/" + invite + "/questions/" + question + "/reveal").session(session).with(csrf()));
+    }
+
+    /** Opens the question first, as the page does (AINT-24), then uploads. */
     private ResultActions upload(MockHttpSession session, String invite, String question, byte[] data, String transcript) throws Exception {
+        reveal(session, invite, question);
+        return record(session, invite, question, data, transcript);
+    }
+
+    private ResultActions record(MockHttpSession session, String invite, String question, byte[] data, String transcript) throws Exception {
         return mockMvc.perform(multipart("/api/v1/candidate/tests/" + invite + "/questions/" + question + "/video")
                 .file(new MockMultipartFile("file", "answer.webm", "video/webm", data))
                 .param("transcript", transcript).param("seconds", "75").session(session).with(csrf()));
@@ -436,5 +446,102 @@ class AiInterviewFlowTest {
         mockMvc.perform(get("/api/v1/tests/" + invites[0]).with(RECRUITER))
                 .andExpect(jsonPath("$.invite.status").value("SENT"))
                 .andExpect(jsonPath("$.invite.dueAt").value(JsonPath.<String>read(r, "$.dueAt")));
+    }
+
+    @Autowired
+    private com.codewalnut.ats.repository.InterviewAnswerCheckRepository checkRepository;
+
+    @Autowired
+    private com.codewalnut.ats.service.InterviewAnswerChecks answerChecks;
+
+    /** AINT-24: hidden questions, thinking time, one retake, signals for staff, the reading alert and ending early. */
+    @Test
+    void spokenQuestionsStayHiddenUntilOpenedAndReadingIsCaughtWhileRunning() throws Exception {
+        String job = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/jobs",
+                "{\"title\":\"Python Developer " + tag + "\",\"hiringType\":\"INTERNAL\"}")), "$.id");
+        String test = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/ai-interviews", "{\"jobId\":\"" + job + "\"}")),
+                "$.interview.summary.id");
+        json(RECRUITER, "POST", "/api/v1/assessments/" + test + "/publish", "").andExpect(status().isOk());
+        String email = "reader." + tag + "@gmail.com";
+        String app = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/jobs/" + job + "/applications",
+                "{\"name\":\"Reader Sample\",\"email\":\"" + email + "\",\"stage\":\"SCREENING\"}")), "$.id");
+        String invite = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/applications/" + app + "/tests",
+                "{\"assessmentId\":\"" + test + "\",\"dueDays\":3,\"sendEmail\":false,\"sendWhatsApp\":false}")), "$.invite.id");
+        MockHttpSession session = candidateSession(email);
+        String detail = body(mockMvc.perform(get("/api/v1/assessments/" + test).with(RECRUITER)));
+        String video = ((List<String>) JsonPath.read(detail, "$.questions[?(@.kind == 'VIDEO')].id")).get(0);
+        String prompt = ((List<String>) JsonPath.read(detail, "$.questions[?(@.kind == 'VIDEO')].prompt")).get(0);
+
+        // The spoken question's text isn't sent until it is opened; the thinking time comes with the test.
+        String taking = body(candidate(session, "POST", "/api/v1/candidate/tests/" + invite + "/start", "")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.thinkSeconds").value(30))
+                .andExpect(jsonPath("$.questions[0].hidden").value(true))
+                .andExpect(jsonPath("$.questions[0].prompt").value(""))
+                .andExpect(jsonPath("$.questions[0].takesLeft").value(2)));
+        assertThat(taking).doesNotContain(prompt);
+        // Recording without opening the question is refused.
+        record(session, invite, video, WEBM, "x").andExpect(status().isBadRequest());
+        reveal(session, invite, video)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.prompt").value(prompt))
+                .andExpect(jsonPath("$.thinkSecondsLeft").value(Matchers.greaterThan(25)))
+                .andExpect(jsonPath("$.takesLeft").value(2))
+                .andExpect(jsonPath("$.warning").doesNotExist());
+        String revealedAt = JsonPath.read(body(reveal(session, invite, video)), "$.revealedAt");
+        candidate(session, "GET", "/api/v1/candidate/tests/" + invite, "")
+                .andExpect(jsonPath("$.questions[0].hidden").value(false))
+                .andExpect(jsonPath("$.questions[0].prompt").value(prompt))
+                .andExpect(jsonPath("$.questions[0].revealedAt").value(revealedAt)); // opening again doesn't restart the clock
+        reveal(stranger(), invite, video).andExpect(status().isNotFound());
+
+        String read = "Firstly, dependency injection is a design pattern that plays a crucial role in building robust and scalable "
+                + "applications. Secondly, it ensures loose coupling. Additionally, it improves testability. In conclusion, it is essential.";
+        mockMvc.perform(multipart("/api/v1/candidate/tests/" + invite + "/questions/" + video + "/video")
+                        .file(new MockMultipartFile("file", "answer.webm", "video/webm", WEBM))
+                        .param("transcript", read).param("seconds", "50").param("focusLosses", "2").session(session).with(csrf()))
+                .andExpect(status().isOk());
+        record(session, invite, video, WEBM, read).andExpect(status().isOk()); // one retake
+        record(session, invite, video, WEBM, read).andExpect(status().isBadRequest()); // no more
+
+        // Staff see the answer and its signals while the interview is still running.
+        mockMvc.perform(get("/api/v1/tests/" + invite).with(RECRUITER))
+                .andExpect(jsonPath("$.invite.status").value("STARTED"))
+                .andExpect(jsonPath("$.answers[0].signals.takes").value(2))
+                .andExpect(jsonPath("$.answers[0].signals.focusLosses").value(2))
+                .andExpect(jsonPath("$.answers[0].signals.thinkSeconds").isNumber())
+                .andExpect(jsonPath("$.answers[0].signals.reading").value("SKIPPED")); // no AI in tests
+
+        // The agent says it sounds read out: the team is told at once, the candidate is warned before the next question.
+        var check = checkRepository.findByInviteId(UUID.fromString(invite)).get(0);
+        check.setReading(com.codewalnut.ats.domain.InterviewAnswerCheck.Reading.PENDING);
+        checkRepository.save(check);
+        answerChecks.recordCheck(check.getId(), new com.codewalnut.ats.client.InterviewAgent.ReadCheck("LIKELY",
+                "Generated shape: 'Firstly… Secondly… In conclusion' and no project of their own."));
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/ai-interviews").with(RECRUITER))
+                .andExpect(jsonPath("$.candidates[0].soundsRead").value(1))
+                .andExpect(jsonPath("$.candidates[0].readingAlertedAt").isNotEmpty());
+        mockMvc.perform(get("/api/v1/tests/" + invite).with(RECRUITER))
+                .andExpect(jsonPath("$.answers[0].signals.reading").value("LIKELY"))
+                .andExpect(jsonPath("$.answers[0].signals.readingReason").value(Matchers.containsString("In conclusion")));
+        mockMvc.perform(get("/api/v1/applications/" + app + "/messages?channel=TEAM").with(RECRUITER))
+                .andExpect(content -> assertThat(content.getResponse().getContentAsString()).contains("may be reading"));
+        String next = ((List<String>) JsonPath.read(detail, "$.questions[?(@.kind == 'VIDEO')].id")).get(1);
+        reveal(session, invite, next).andExpect(jsonPath("$.warning").value(Matchers.containsString("own words")));
+
+        // A person ends it early (recruiters only); it is submitted and reviewed as usual, and the candidate can't go on.
+        json(HM, "POST", "/api/v1/tests/" + invite + "/end", "{}").andExpect(status().isForbidden());
+        json(RECRUITER, "POST", "/api/v1/tests/" + invite + "/end", "{\"reason\":\"Reading from another screen\"}")
+                .andExpect(status().isNoContent());
+        json(RECRUITER, "POST", "/api/v1/tests/" + invite + "/end", "{}").andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/tests/" + invite).with(RECRUITER))
+                .andExpect(jsonPath("$.invite.status").value("SUBMITTED"))
+                .andExpect(jsonPath("$.invite.evaluation").value("DONE"));
+        record(session, invite, next, WEBM, "x").andExpect(status().isBadRequest());
+        reveal(session, invite, next).andExpect(status().isBadRequest());
+    }
+
+    private MockHttpSession stranger() throws Exception {
+        return candidateSession("someone." + tag + "@gmail.com");
     }
 }

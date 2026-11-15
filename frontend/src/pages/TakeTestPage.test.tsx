@@ -257,4 +257,59 @@ describe('TakeTestPage — AI interview (AINT-03, AINT-04)', () => {
     expect(screen.getByRole('button', { name: 'Next: Readiness to join →' })).toBeDisabled()
     expect(screen.getByText(/Finish the current answer/)).toBeInTheDocument()
   })
+
+  it('keeps a spoken question hidden until opened, gives thinking time, then records on its own (AINT-24)', { timeout: 20000 }, async () => {
+    const hidden = {
+      ...takingInterview,
+      thinkSeconds: 30,
+      questions: takingInterview.questions.map((q) => (q.id === 'v1' ? { ...q, prompt: '', hidden: true, revealedAt: null, takesLeft: 2 } : q)),
+    }
+    const fetchMock = fakeFetch([
+      { path: '/candidate/tests/i1/start', method: 'POST', body: hidden },
+      {
+        path: '/candidate/tests/i1/questions/v1/reveal',
+        method: 'POST',
+        body: {
+          questionId: 'v1',
+          prompt: 'Introduce yourself.',
+          code: null,
+          revealedAt: new Date().toISOString(),
+          thinkSeconds: 30,
+          thinkSecondsLeft: 1,
+          takesLeft: 2,
+          warning: 'Some of your answers sound as if they were read out.',
+        },
+      },
+      { path: '/candidate/tests/i1/questions/v1/video', method: 'POST', body: { videoId: 'vid-1', seconds: 12, sizeBytes: 4 } },
+      { path: '/candidate/tests/i1/activity', method: 'POST', status: 204 },
+      { path: '/candidate/tests/i1/answers', method: 'PUT', body: hidden },
+      { path: '/candidate/tests', body: [interview] },
+    ])
+    vi.stubGlobal('navigator', { ...navigator, mediaDevices: { getUserMedia: vi.fn(async () => ({ getTracks: () => [] })) } })
+    vi.stubGlobal('MediaRecorder', FakeRecorder)
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => 'blob:answer', revokeObjectURL: () => undefined }))
+    render(
+      <MemoryRouter initialEntries={['/tests/i1']}>
+        <Routes>
+          <Route path="/tests/:id" element={<TakeTestPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Start the interview' }))
+    expect(await screen.findByText(/Hidden until you start it/)).toBeInTheDocument()
+    expect(screen.queryByText('Introduce yourself.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '● Record answer' })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: '▶ Show question and start' }))
+    expect(await screen.findByText('Introduce yourself.')).toBeInTheDocument()
+    expect(screen.getByText(/sound as if they were read out/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Next:/ })).toBeDisabled() // held while thinking and recording
+    // The thinking time runs out and recording starts by itself.
+    expect(await screen.findByRole('timer', { name: 'Recording question 1' }, { timeout: 4000 })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: '■ Stop and save' }))
+    expect(await screen.findByText(/✓ Saved/, {}, { timeout: 8000 })).toBeInTheDocument()
+    const upload = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/questions/v1/video'))!
+    expect((upload[1]!.body as FormData).get('focusLosses')).toBe('0')
+    expect(screen.getByRole('button', { name: '↻ Record again (1 left)' })).toBeInTheDocument()
+  })
 })
