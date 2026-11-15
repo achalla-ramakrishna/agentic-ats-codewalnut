@@ -64,10 +64,15 @@ public interface InterviewAgent {
      * One answer as the reviewer sees it. answer: the transcript, the typed text, or the option picked; correct:
      * marked answers only; goodAnswer: what the hiring team expects a strong answer to cover, if they wrote it.
      */
-    record Answer(String phase, String kind, String question, String answer, Integer seconds, Boolean correct, String goodAnswer) {
+    record Answer(String phase, String kind, String question, String answer, Integer seconds, Boolean correct, String goodAnswer,
+            String signals) {
 
         public Answer(String phase, String kind, String question, String answer, Integer seconds, Boolean correct) {
-            this(phase, kind, question, answer, seconds, correct, null);
+            this(phase, kind, question, answer, seconds, correct, null, null);
+        }
+
+        public Answer(String phase, String kind, String question, String answer, Integer seconds, Boolean correct, String goodAnswer) {
+            this(phase, kind, question, answer, seconds, correct, goodAnswer, null);
         }
     }
 
@@ -78,7 +83,15 @@ public interface InterviewAgent {
             @JsonPropertyDescription("Up to 4 job-related strengths, each backed by something they said") List<String> strengths,
             @JsonPropertyDescription("Up to 4 things to check in a live interview, phrased as 'not evident' rather than 'lacks'") List<String> toCheck,
             @JsonPropertyDescription("Notice period as stated by the candidate, or empty if not said") String noticePeriod,
-            @JsonPropertyDescription("Expected salary as stated by the candidate, or empty if not said") String expectedSalary) {}
+            @JsonPropertyDescription("Expected salary as stated by the candidate, or empty if not said") String expectedSalary,
+            @JsonPropertyDescription("If several spoken answers sound read out from prepared or generated text rather than answered in "
+                    + "their own words, one or two sentences saying which questions and why; empty otherwise") String delivery) {
+
+        public Review(List<AreaRating> areas, List<PhaseNote> phases, String summary, List<String> strengths, List<String> toCheck,
+                String noticePeriod, String expectedSalary) {
+            this(areas, phases, summary, strengths, toCheck, noticePeriod, expectedSalary, null);
+        }
+    }
 
     record AreaRating(
             @JsonPropertyDescription("TECHNICAL, ARCHITECTURE, COMMUNICATION, EXPERIENCE or READINESS") String area,
@@ -90,6 +103,26 @@ public interface InterviewAgent {
             @JsonPropertyDescription("The phase, as given") String phase,
             @JsonPropertyDescription("1 to 5; 0 if unanswered") int rating,
             @JsonPropertyDescription("One short sentence") String note) {}
+
+    // ---- reading check, one answer at a time (AINT-24, ADR-0031) ----
+
+    /** One spoken answer, checked as soon as it uploads, while the interview is still running. */
+    record ReadCheckInput(String question, String transcript, int seconds) {}
+
+    record ReadCheck(
+            @JsonPropertyDescription("LIKELY (several clear signs it was read from prepared or generated text), POSSIBLE (some signs), "
+                    + "or UNLIKELY (sounds like their own words)") String verdict,
+            @JsonPropertyDescription("One or two sentences for the hiring team: the signs you saw, quoting a short phrase") String reason) {}
+
+    /**
+     * Whether a spoken answer sounds read out rather than answered in the candidate's own words. Advisory: it
+     * alerts people, who watch the video and decide. Null when this agent can't judge it (no model).
+     *
+     * @throws CalendarException when the check can't be done now
+     */
+    default ReadCheck readCheck(Job job, ReadCheckInput answer) {
+        return null;
+    }
 
     /** True when this agent uses a model; false for the built-in rules. */
     boolean usesAi();

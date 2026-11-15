@@ -244,6 +244,15 @@ export function AiInterviewPanel({
               </Button>
             )}
           </div>
+          {(() => {
+            const live = data.candidates.filter((c) => c.status === 'STARTED' && (c.soundsRead ?? 0) > 0)
+            return live.length > 0 ? (
+              <div role="alert" className="alert alert-error" style={{ margin: 0 }}>
+                ⚠ {live.map((c) => c.candidateName).join(', ')} may be reading answers in an interview that is still running. Click the name, watch
+                the flagged answers under Tests → Answers so far, and use <strong>End interview now</strong> if you agree. (AI check, advisory.)
+              </div>
+            ) : null
+          })()}
           <div style={{ overflowX: 'auto' }}>
             <table className="bank-grid" aria-label="AI interview ranking" style={{ fontSize: 13, width: '100%' }}>
               <thead>
@@ -289,6 +298,12 @@ export function AiInterviewPanel({
                         {stageLabel(r.stage)} · {status(r)}
                         {r.videos > 0 && ` · ${r.videos} video${r.videos === 1 ? '' : 's'}`}
                       </div>
+                      {(r.soundsRead ?? 0) > 0 && (
+                        <Badge tone="danger">
+                          ⚠ {r.soundsRead} answer{r.soundsRead === 1 ? '' : 's'} sound{r.soundsRead === 1 ? 's' : ''} read out
+                        </Badge>
+                      )}
+                      {(r.soundsRead ?? 0) === 0 && (r.maybeRead ?? 0) > 0 && <Badge tone="neutral">{r.maybeRead} may be read out</Badge>}
                     </td>
                     <td>
                       {r.aiScore != null ? <strong>{r.aiScore}</strong> : <span className="muted">–</span>}

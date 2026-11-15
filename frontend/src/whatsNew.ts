@@ -16,6 +16,18 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-15-ai-interview-reading-checks',
+    date: '2026-11-15',
+    title: 'AI interviews: catch candidates reading their answers',
+    summary: 'Spoken questions now stay hidden until the candidate starts them, with 30 seconds to think before recording starts and one retake. Each answer is checked by the AI as soon as it is recorded; if it sounds read out, you are told while the interview is still running and can end it.',
+    steps: [
+      'Opening → 🎥 AI interview: a red banner and a “sounds read out” badge show who may be reading.',
+      'Click the name → Tests → Answers so far: each answer shows the AI’s check, thinking time, recordings and window switches.',
+      'Agree after watching? End interview now → give a reason. It is submitted with the answers so far.',
+    ],
+    capability: 'VIEW_CANDIDATES',
+  },
+  {
     id: '2026-11-14-delete-archived',
     date: '2026-11-14',
     title: 'Clean up old AI interviews and tests',
