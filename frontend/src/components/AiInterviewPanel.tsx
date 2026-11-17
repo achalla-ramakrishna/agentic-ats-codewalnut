@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AREA_SHORT, bytes, createAiInterview, deleteAiInterviews, jobInterviews, type JobInterviews, type RankedCandidate } from '../api/aiInterviews'
+import { extendTests, remindTest } from '../api/assessments'
 import { moveStage } from '../api/tracker'
 import { Dots } from './InterviewReviewCard'
 import { Verdicts } from './Verdicts'
@@ -58,6 +59,9 @@ export function AiInterviewPanel({
   const [questionSet, setQuestionSet] = useState<'1' | '2' | '3' | '4' | 'all'>('1')
   const [previewing, setPreviewing] = useState(false)
   const [previewOf, setPreviewOf] = useState(1)
+  const [extending, setExtending] = useState(false)
+  const [days, setDays] = useState(15)
+  const [remind, setRemind] = useState(true)
 
   const load = useCallback(() => {
     jobInterviews(jobId)
@@ -134,6 +138,42 @@ export function AiInterviewPanel({
       onChanged()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not delete')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const notTaken = (data?.candidates ?? []).filter((c) => c.status === 'SENT' || c.status === 'EXPIRED')
+
+  /** Opens the link again for the ticked people who haven't taken it, and optionally emails each their link. */
+  async function extend() {
+    const chosen = (data?.candidates ?? []).filter((c) => picked.has(c.applicationId))
+    if (!chosen.length) return
+    setBusy(true)
+    setError(null)
+    try {
+      const r = await extendTests(
+        chosen.map((c) => c.inviteId),
+        days,
+      )
+      const due = new Date(r.dueAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+      let note = `${r.extended} can take it until ${due}.`
+      if (r.skipped.length) note += ` Not changed (already started or submitted): ${r.skipped.join(', ')}.`
+      if (remind && r.extended > 0) {
+        const failed: string[] = []
+        for (const c of chosen.filter((x) => !r.skipped.includes(x.candidateName))) {
+          await remindTest(c.inviteId, { sendEmail: true, sendWhatsApp: false }).catch((e: Error) => failed.push(`${c.candidateName} (${e.message})`))
+        }
+        note += failed.length
+          ? ` Reminder not sent to: ${failed.join('; ')}. Connect Google and use Email selected on the Candidates tab, or send each their link.`
+          : ' Each was emailed their link and the new date.'
+      }
+      setMessage(note)
+      setExtending(false)
+      setPicked(new Set())
+      load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not extend')
     } finally {
       setBusy(false)
     }
@@ -243,7 +283,51 @@ export function AiInterviewPanel({
                 🗑 Delete AI interview ({picked.size})
               </Button>
             )}
+            {canEdit && (
+              <Button size="sm" variant="secondary" disabled={busy || picked.size === 0} onClick={() => setExtending((x) => !x)}>
+                📅 Extend due date ({picked.size})
+              </Button>
+            )}
+            {canEdit && notTaken.length > 0 && (
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => {
+                  setOnlyReviewed(false)
+                  setPicked(new Set(notTaken.map((c) => c.applicationId)))
+                }}
+              >
+                Tick everyone who hasn’t taken it ({notTaken.length})
+              </button>
+            )}
           </div>
+          {extending && picked.size > 0 && (
+            <div className="row card" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap' }} role="group" aria-label="Extend due date">
+              <label className="row" style={{ gap: 6 }}>
+                Open for
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={days}
+                  onChange={(e) => setDays(Math.max(1, Math.min(60, Number(e.target.value) || 1)))}
+                  style={{ width: 64 }}
+                  aria-label="Days"
+                />
+                days from today
+              </label>
+              <label className="row" style={{ gap: 6 }}>
+                <input type="checkbox" checked={remind} onChange={(e) => setRemind(e.target.checked)} />
+                Email each their link and the new date
+              </label>
+              <Button size="sm" disabled={busy} onClick={() => void extend()}>
+                Extend for {picked.size}
+              </Button>
+              <span className="muted" style={{ fontSize: 12 }}>
+                Only people who haven’t started are changed. Someone whose interview was submitted half-done: open them and use Let them finish.
+              </span>
+            </div>
+          )}
           <div style={{ overflowX: 'auto' }}>
             <table className="bank-grid" aria-label="AI interview ranking" style={{ fontSize: 13, width: '100%' }}>
               <thead>

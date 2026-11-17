@@ -97,6 +97,34 @@ describe('AiInterviewPanel (AINT-07)', () => {
     expect(JSON.parse(del[1]!.body as string)).toEqual({ inviteIds: ['i-Asha Rao', 'i-Ravi Kumar'] })
   })
 
+  it('gives everyone who hasn’t taken it 15 more days and emails them (ASMT-42)', async () => {
+    const fetchMock = fakeFetch([
+      { path: '/tests/extend', method: 'POST', body: { extended: 2, skipped: [], dueAt: '2026-12-02T18:29:00Z' } },
+      { path: '/tests/i-', method: 'POST', body: {} },
+      {
+        path: '/jobs/j1/ai-interviews',
+        body: {
+          candidates: [row('Asha Rao', 86, 'SUBMITTED'), row('Meena Iyer', null, 'EXPIRED'), row('Ravi Kumar', null, 'SENT')],
+          sent: 3, started: 0, submitted: 1, reviewed: 1,
+        },
+      },
+      { path: '/stages', body: [] },
+    ])
+    render(
+      <MemoryRouter>
+        <AiInterviewPanel jobId="j1" canEdit onOpen={() => undefined} onChanged={() => undefined} />
+      </MemoryRouter>,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Tick everyone who hasn’t taken it (2)' }))
+    await userEvent.click(screen.getByRole('button', { name: '📅 Extend due date (2)' }))
+    expect(screen.getByLabelText('Days')).toHaveValue(15)
+    await userEvent.click(screen.getByRole('button', { name: 'Extend for 2' }))
+    expect(await screen.findByText(/2 can take it until .*Each was emailed their link and the new date\./)).toBeInTheDocument()
+    const ext = fetchMock.mock.calls.find(([url]) => String(url).includes('/tests/extend'))!
+    expect(JSON.parse(ext[1]!.body as string)).toEqual({ inviteIds: ['i-Meena Iyer', 'i-Ravi Kumar'], days: 15 })
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/remind'))).toHaveLength(2)
+  })
+
   it('creates the chosen question set, or all four (AINT-11)', async () => {
     const fetchMock = fakeFetch([
       { path: '/jobs/j1/ai-interviews', body: { candidates: [], sent: 0, started: 0, submitted: 0, reviewed: 0 } },

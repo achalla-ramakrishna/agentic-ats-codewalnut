@@ -124,6 +124,9 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
   Select for next round, Maybe — discuss or Don't progress (with a reason) → Save, or Save and review next.
   The verdict shows in the opening's 🎥 AI interview tab (Reviewers column) and in the candidate's team notes;
   the recruiter then moves the candidate. Hiring managers and admins can review too.
+- Candidates missed the AI interview deadline: opening → 🎥 AI interview → untick Only submitted → Tick
+  everyone who hasn't taken it → 📅 Extend due date → 15 days → keep "Email each their link" ticked → Extend.
+  Someone whose interview was submitted half-done: open them → Let them finish.
 - Free space from old tests and AI interviews: Tests → Status: Archived → Tick all shown → Clean up N
   ticked → OK (or open one → 🗑 Delete for good). It deletes them with every candidate's answers, scores,
   videos, reviews and verdicts; candidates stay. Only archived tests can be deleted this way.

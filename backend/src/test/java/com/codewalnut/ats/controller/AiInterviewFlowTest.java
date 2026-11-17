@@ -404,4 +404,37 @@ class AiInterviewFlowTest {
         mockMvc.perform(get("/api/v1/tests/" + invite + "/videos/" + videoId).with(RECRUITER)).andExpect(status().isNotFound());
         mockMvc.perform(get("/api/v1/jobs/" + job + "/applications").with(RECRUITER)).andExpect(jsonPath("$[0].name").value("Old Sample"));
     }
+    @Test
+    void moreTimeForCandidatesWhoHaventTakenIt() throws Exception {
+        String job = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/jobs",
+                "{\"title\":\"Java Developer " + tag + "\",\"hiringType\":\"INTERNAL\"}")), "$.id");
+        String test = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/ai-interviews", "{\"jobId\":\"" + job + "\"}")),
+                "$.interview.summary.id");
+        json(RECRUITER, "POST", "/api/v1/assessments/" + test + "/publish", "").andExpect(status().isOk());
+        String[] invites = new String[2];
+        for (int i = 0; i < 2; i++) {
+            String app = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/jobs/" + job + "/applications",
+                    "{\"name\":\"Late Sample " + i + "\",\"email\":\"late" + i + "." + tag + "@gmail.com\",\"stage\":\"SCREENING\"}")), "$.id");
+            invites[i] = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/applications/" + app + "/tests",
+                    "{\"assessmentId\":\"" + test + "\",\"dueDays\":1,\"sendEmail\":false,\"sendWhatsApp\":false}")), "$.invite.id");
+        }
+        // The second one starts, so it isn't extended.
+        candidate(candidateSession("late1." + tag + "@gmail.com"), "POST", "/api/v1/candidate/tests/" + invites[1] + "/start", "")
+                .andExpect(status().isOk());
+
+        // ASMT-42: managers only; 1–60 days; open till the end of that day.
+        json(HM, "POST", "/api/v1/tests/extend", "{\"inviteIds\":[\"" + invites[0] + "\"],\"days\":15}").andExpect(status().isForbidden());
+        json(RECRUITER, "POST", "/api/v1/tests/extend", "{\"inviteIds\":[\"" + invites[0] + "\"],\"days\":0}").andExpect(status().isBadRequest());
+        String r = body(json(RECRUITER, "POST", "/api/v1/tests/extend",
+                "{\"inviteIds\":[\"" + invites[0] + "\",\"" + invites[1] + "\"],\"days\":15}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.extended").value(1))
+                .andExpect(jsonPath("$.skipped[0]").value("Late Sample 1")));
+        java.time.Instant due = java.time.Instant.parse(JsonPath.read(r, "$.dueAt"));
+        java.time.ZoneId india = java.time.ZoneId.of("Asia/Kolkata");
+        assertThat(due.atZone(india).toLocalDate()).isEqualTo(java.time.LocalDate.now(india).plusDays(15));
+        mockMvc.perform(get("/api/v1/tests/" + invites[0]).with(RECRUITER))
+                .andExpect(jsonPath("$.invite.status").value("SENT"))
+                .andExpect(jsonPath("$.invite.dueAt").value(JsonPath.<String>read(r, "$.dueAt")));
+    }
 }

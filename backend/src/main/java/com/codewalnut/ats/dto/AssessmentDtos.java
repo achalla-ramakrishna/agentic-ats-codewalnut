@@ -28,6 +28,12 @@ public final class AssessmentDtos {
             Instant updatedAt, long taken, UUID jobId) {}
 
     /** openInvites: candidates who were sent the test but haven't started; their links stop working. */
+    /** skipped: names of candidates who had started or submitted, so weren't changed. */
+    public record Extended(int extended, List<String> skipped, java.time.Instant dueAt) {}
+
+    public record ExtendRequest(@jakarta.validation.constraints.NotEmpty @jakarta.validation.constraints.Size(max = 500) List<UUID> inviteIds,
+            @jakarta.validation.constraints.Min(1) @jakarta.validation.constraints.Max(60) int days) {}
+
     /** taken / videos / bytes: candidates' answers and recordings removed when an archived test is deleted for good. */
     public record DeleteResult(String title, int openInvites, int taken, int videos, long bytes) {
 

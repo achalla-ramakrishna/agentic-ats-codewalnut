@@ -420,6 +420,9 @@ export const tryQuestion = (assessmentId: string, questionId: string, input: { l
   api<RunCodeResult>(`/assessments/${assessmentId}/questions/${questionId}/run`, json('POST', input))
 export const remindTest = (inviteId: string, input: { sendEmail: boolean; sendWhatsApp: boolean }) =>
   api<SendResult>(`/tests/${inviteId}/remind`, json('POST', input))
+/** More time for candidates who haven't taken a test: open until the end of the day `days` from today (ASMT-42). */
+export const extendTests = (inviteIds: string[], days: number) =>
+  api<{ extended: number; skipped: string[]; dueAt: string }>('/tests/extend', json('POST', { inviteIds, days }))
 export const cancelTest = (inviteId: string) => api<InviteView>(`/tests/${inviteId}/cancel`, { method: 'POST' })
 
 // candidate

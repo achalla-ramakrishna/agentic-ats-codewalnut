@@ -74,6 +74,7 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | ASMT-39 | **Software engineering intern screening**: role tests for the Java, Python and MERN tracks (fresher only; 75 minutes, pass 60%): aptitude (quant, logical, verbal), 7 questions on the track's language, a new **Web, APIs & tools** area (HTTP and REST, HTML/CSS, Git/Docker/Kubernetes basics), SQL including a new *Scenario queries* topic (second highest salary, manager joins, duplicates, top per group), DSA and one coding problem; MERN adds React and Node.js. A 30-question *Software engineering intern — aptitude* pattern. In Send to candidates, each candidate's background (Java, Python, MERN, Mixed) is read from their AI résumé reading (`GET /jobs/{id}/backgrounds`) and *Select everyone with a … background* ticks the matching ones; staff still review and send. | Done |
 | ASMT-40 | **Tests list**: filter All / AI interviews / Tests, by status and by name; newest first with a Last changed column so copies can be told apart; tick several and **Delete or archive** them (never-sent ones are deleted, sent ones archived so answers stay; confirmed first); opening a test scrolls to it. | Done |
 | ASMT-41 | **Delete archived tests for good** to free space: Status → *Archived* (or Show archived), tick them (*Tick all shown*) → *Clean up N ticked*, or open one → *🗑 Delete for good*. Removes the test with every candidate's answers, scores, AI interview videos (files too), AI reviews and reviewers' verdicts; says how many videos and how much space was freed. Only archived tests (archive first); confirmed first; recruiters only; audited. The candidates stay in their openings. | Done |
+| ASMT-42 | **Extend the due date** for candidates who haven't taken a test or AI interview: in the opening's AI interview ranking, *Tick everyone who hasn't taken it* (or tick some) → *📅 Extend due date* → days (default 15) → *Extend*. Not-started and past-due invites open again until 23:59 India time that many days from today; started or submitted ones are skipped and named. Optionally emails each their link and the new date (the reminder email; needs Google connected). Recruiters only; audited. API `POST /tests/extend` {inviteIds, days}. | Done |
 | ASMT-25 | Per-section timers and optional negative marking. | v1 |
 | ASMT-17 | Automatic reminders (needs a sender that works without a staff session, e.g. WhatsApp Business API or a shared mailbox). | v1 |
 
@@ -110,6 +111,7 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 
 | Date | Change |
 | --- | --- |
+| 2026-11-17 | Extend the due date for candidates who haven't taken it (ASMT-42) |
 | 2026-11-14 | Delete archived tests for good with their answers and videos (ASMT-41) |
 | 2026-11-13 | Tests list filters, Last changed, tidy up ticked tests (ASMT-40) |
 | 2026-10-08 | Intern screening: Java/Python/MERN track tests, Web, APIs & tools bank, SQL scenario queries, select candidates by résumé background (ASMT-39) |

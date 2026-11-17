@@ -151,6 +151,37 @@ public class AssessmentInviteService {
         return new SendResult(view(invite), message);
     }
 
+    /**
+     * Gives candidates who haven't taken a test more time (ASMT-42): not started or past the due date → open again
+     * until the end of the day {@code days} from today (India time). Started or submitted ones are skipped (use
+     * "Let them finish" for a submitted AI interview). Nothing is sent; a reminder can follow.
+     */
+    @Transactional
+    public com.codewalnut.ats.dto.AssessmentDtos.Extended extend(AppUser actor, List<UUID> inviteIds, int days) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        if (days < 1 || days > 60) {
+            throw new IllegalArgumentException("days: between 1 and 60");
+        }
+        java.time.ZoneId india = java.time.ZoneId.of("Asia/Kolkata");
+        Instant due = java.time.LocalDate.now(india).plusDays(days).atTime(23, 59).atZone(india).toInstant();
+        int extended = 0;
+        List<String> skipped = new java.util.ArrayList<>();
+        for (UUID id : new java.util.LinkedHashSet<>(inviteIds)) {
+            AssessmentInvite invite = invite(id);
+            AssessmentInvite.Status status = finalise(invite);
+            if (status != AssessmentInvite.Status.SENT && status != AssessmentInvite.Status.EXPIRED) {
+                skipped.add(invite.getApplication().getCandidate().getName());
+                continue;
+            }
+            invite.setStatus(AssessmentInvite.Status.SENT);
+            invite.setDueAt(due);
+            extended++;
+            auditService.record(actor, AuditAction.ASSESSMENT_EXTENDED, "AssessmentInvite", id,
+                    Map.of("days", days, "was", status.name()));
+        }
+        return new com.codewalnut.ats.dto.AssessmentDtos.Extended(extended, skipped, due);
+    }
+
     /** A friendly nudge for a test not yet started. An expired invite gets two more days. */
     @Transactional
     public SendResult remind(AppUser actor, UUID inviteId, RemindRequest request, String baseUrl) {

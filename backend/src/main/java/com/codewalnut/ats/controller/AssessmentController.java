@@ -181,6 +181,13 @@ public class AssessmentController {
         return inviteService.regrade(currentUserService.require(), id);
     }
 
+    /** More time for candidates who haven't taken a test: open until the end of the day N days from today. */
+    @PostMapping("/api/v1/tests/extend")
+    public com.codewalnut.ats.dto.AssessmentDtos.Extended extend(
+            @jakarta.validation.Valid @RequestBody com.codewalnut.ats.dto.AssessmentDtos.ExtendRequest request) {
+        return inviteService.extend(currentUserService.require(), request.inviteIds(), request.days());
+    }
+
     @PostMapping("/api/v1/tests/{id}/cancel")
     public InviteView cancel(@PathVariable UUID id) {
         return inviteService.cancel(currentUserService.require(), id);

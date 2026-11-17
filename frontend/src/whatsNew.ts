@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-17-extend-due-date',
+    date: '2026-11-17',
+    title: 'More time for candidates who missed the AI interview',
+    summary: 'Re-open the AI interview for everyone who hasn’t taken it, for as many days as you choose, and email each of them their link with the new date.',
+    steps: ['Opening → 🎥 AI interview → Tick everyone who hasn’t taken it.', '📅 Extend due date → 15 days → Extend.'],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-11-14-delete-archived',
     date: '2026-11-14',
     title: 'Clean up old AI interviews and tests',
