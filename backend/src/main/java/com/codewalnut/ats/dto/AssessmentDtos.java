@@ -178,7 +178,15 @@ public final class AssessmentDtos {
     public record AnswerReview(
             int position, AssessmentQuestion.Kind kind, String prompt, String code, List<String> options,
             List<String> given, List<Integer> correct, List<String> acceptedAnswers, int points, int earned,
-            String figure, List<String> optionFigures, String section, CodeResult codeResult, String explanation) {}
+            String figure, List<String> optionFigures, String section, CodeResult codeResult, String explanation,
+            AnswerSignals signals) {}
+
+    /**
+     * How a spoken answer of an AI interview was given (AINT-24), for people: seconds between seeing the question
+     * and recording, recordings made, times the candidate left the window while recording, and the AI's reading
+     * check (LIKELY, POSSIBLE, UNLIKELY, PENDING, SKIPPED, FAILED) with its reason. Advisory.
+     */
+    public record AnswerSignals(Integer thinkSeconds, int takes, int focusLosses, String reading, String readingReason) {}
 
     /** Score per section, e.g. Numerical ability 14 / 20. */
     public record SectionScore(String section, String label, int score, int max, int questions) {}
@@ -197,11 +205,13 @@ public final class AssessmentDtos {
 
     public record CandidateQuestion(
             UUID id, int position, AssessmentQuestion.Kind kind, String prompt, String code, List<String> options,
-            int points, String figure, List<String> optionFigures, String section, CodingSpec coding, Integer maxSeconds) {}
+            int points, String figure, List<String> optionFigures, String section, CodingSpec coding, Integer maxSeconds,
+            boolean hidden, Instant revealedAt, Integer takesLeft) {}
 
     /** answers: what the candidate has saved so far, by question id. */
+    /** thinkSeconds: AI interviews only, the time to read a spoken question before recording starts (AINT-24). */
     public record TakeTest(MyTest test, List<CandidateQuestion> questions, Map<UUID, List<String>> answers,
-            long secondsLeft) {}
+            long secondsLeft, Integer thinkSeconds) {}
 
     /** Choice and short answers are capped at 500 characters each; a coding answer is [language, source]. */
     public record SaveAnswersRequest(@NotNull @Size(max = 200) Map<UUID, @Size(max = 10) List<@Size(max = 50_000) String>> answers) {}

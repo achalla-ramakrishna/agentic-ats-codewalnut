@@ -72,7 +72,17 @@ public final class AiInterviewDtos {
             UUID inviteId, UUID applicationId, String candidateName, Stage stage, AssessmentInvite.Status status,
             AssessmentInvite.Evaluation evaluation, boolean usesAi, Integer aiScore, Integer markedPercent,
             Map<String, Integer> areas, String summary, String noticePeriod, String expectedSalary,
-            Instant sentAt, Instant submittedAt, int videos, List<AiReviewDtos.VerdictBrief> verdicts) {}
+            Instant sentAt, Instant submittedAt, int videos, List<AiReviewDtos.VerdictBrief> verdicts,
+            int soundsRead, int maybeRead, Instant readingAlertedAt) {}
+
+    /**
+     * A spoken question once the candidate opens it (AINT-24): the prompt, the thinking time left before
+     * recording starts, the recordings left, and a warning when earlier answers sounded read out.
+     */
+    public record EndRequest(@jakarta.validation.constraints.Size(max = 1000) String reason) {}
+
+    public record RevealedQuestion(UUID questionId, String prompt, String code, Instant revealedAt, int thinkSeconds,
+            int thinkSecondsLeft, int takesLeft, String warning) {}
 
     public record JobInterviews(List<RankedCandidate> candidates, int sent, int started, int submitted, int reviewed) {}
 }

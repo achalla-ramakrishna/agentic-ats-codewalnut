@@ -35,6 +35,7 @@ public class AiInterviewController {
     private final AiInterviewService interviews;
     private final CurrentUserService currentUserService;
     private final CurrentCandidateService currentCandidateService;
+    private final com.codewalnut.ats.service.InterviewAnswerChecks answerChecks;
 
     @PostMapping("/api/v1/ai-interviews")
     public CreateInterviewResult create(@Valid @RequestBody CreateInterviewRequest request) {
@@ -107,7 +108,21 @@ public class AiInterviewController {
 
     @PostMapping("/api/v1/candidate/tests/{id}/questions/{questionId}/video")
     public VideoSaved upload(@PathVariable UUID id, @PathVariable UUID questionId, @RequestPart("file") MultipartFile file,
-            @RequestParam(value = "transcript", required = false) String transcript, @RequestParam("seconds") int seconds) throws IOException {
-        return interviews.upload(currentCandidateService.require(), id, questionId, file, transcript, seconds);
+            @RequestParam(value = "transcript", required = false) String transcript, @RequestParam("seconds") int seconds,
+            @RequestParam(value = "focusLosses", defaultValue = "0") int focusLosses) throws IOException {
+        return interviews.upload(currentCandidateService.require(), id, questionId, file, transcript, seconds, focusLosses);
+    }
+
+    /** The candidate opens a spoken question (AINT-24): its text, and the thinking time before recording starts. */
+    @PostMapping("/api/v1/candidate/tests/{id}/questions/{questionId}/reveal")
+    public com.codewalnut.ats.dto.AiInterviewDtos.RevealedQuestion reveal(@PathVariable UUID id, @PathVariable UUID questionId) {
+        return answerChecks.reveal(currentCandidateService.require(), id, questionId);
+    }
+
+    /** Staff: end a running AI interview now, e.g. after watching answers read out (AINT-24). */
+    @PostMapping("/api/v1/tests/{id}/end")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void end(@PathVariable UUID id, @RequestBody(required = false) @Valid com.codewalnut.ats.dto.AiInterviewDtos.EndRequest request) {
+        interviews.end(currentUserService.require(), id, request == null ? null : request.reason());
     }
 }

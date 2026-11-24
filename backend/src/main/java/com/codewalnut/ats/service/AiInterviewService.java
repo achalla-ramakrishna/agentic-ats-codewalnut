@@ -94,6 +94,7 @@ public class AiInterviewService {
     private final ApplicationEventPublisher events;
     private final AiReviewService verdicts;
     private final com.codewalnut.ats.repository.AiInterviewVerdictRepository verdictRepository;
+    private final InterviewAnswerChecks answerChecks;
 
     // ---- building an interview for an opening ----
 
@@ -135,7 +136,7 @@ public class AiInterviewService {
                 .description("A recorded interview for the " + job.getTitle() + " role, in phases: introduction, work experience, "
                         + "skills, projects, architecture, a technical round, soft skills and readiness to join. Most questions are "
                         + "answered on camera (use Chrome or Edge, with a working camera and microphone, in a quiet place); a few are "
-                        + "multiple choice or fill in the blank. You can record an answer again before moving on.")
+                        + "multiple choice or fill in the blank. Each spoken question appears when you start it, with a short time to think before recording starts; answer in your own words.")
                 .durationMinutes(request.durationMinutes() != null ? request.durationMinutes() : handWritten ? 120 : 75)
                 .passPercent(0)
                 .jobId(job.getId())
@@ -289,6 +290,13 @@ public class AiInterviewService {
     @Transactional
     public VideoSaved upload(CandidateAccount account, UUID inviteId, UUID questionId, MultipartFile file, String transcript, int seconds)
             throws IOException {
+        return upload(account, inviteId, questionId, file, transcript, seconds, 0);
+    }
+
+    /** focusLosses: times the candidate left the window or tab while recording (AINT-24). */
+    @Transactional
+    public VideoSaved upload(CandidateAccount account, UUID inviteId, UUID questionId, MultipartFile file, String transcript, int seconds,
+            int focusLosses) throws IOException {
         AssessmentInvite invite = inviteService.ownInvite(account, inviteId);
         if (inviteService.finalise(invite) != AssessmentInvite.Status.STARTED) {
             throw new IllegalArgumentException("This interview isn't open any more.");
@@ -299,6 +307,9 @@ public class AiInterviewService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("file: the recording is empty — record again");
         }
+        com.codewalnut.ats.domain.InterviewAnswerCheck check = invite.getAssessment().getCategory() == Assessment.Category.INTERVIEW
+                ? answerChecks.beforeUpload(invite, questionId, videoRepository.findByInviteIdAndQuestionId(inviteId, questionId).isPresent())
+                : null;
         if (file.getSize() > MAX_VIDEO_BYTES) {
             throw new IllegalArgumentException("file: the recording is too large — keep the answer shorter");
         }
@@ -338,6 +349,9 @@ public class AiInterviewService {
         answers.put(questionId, List.of(video.getId().toString(),
                 text.length() > AssessmentInviteService.MAX_OPEN_ANSWER ? text.substring(0, AssessmentInviteService.MAX_OPEN_ANSWER) : text));
         invite.setAnswersJson(write(answers));
+        if (check != null) {
+            answerChecks.afterUpload(check, length, focusLosses, text);
+        }
         auditService.recordAnonymous(account.getEmail(), AuditAction.INTERVIEW_VIDEO_UPLOADED,
                 Map.of("inviteId", inviteId, "questionId", questionId, "seconds", length));
         return new VideoSaved(video.getId(), length, size);
@@ -385,6 +399,8 @@ public class AiInterviewService {
         Map<UUID, List<String>> given = inviteService.answers(invite);
         Map<UUID, Integer> seconds = videoRepository.findByInviteId(inviteId).stream()
                 .collect(Collectors.toMap(InterviewVideo::getQuestionId, InterviewVideo::getDurationSeconds, (x, y) -> x));
+        Map<UUID, com.codewalnut.ats.domain.InterviewAnswerCheck> checks =
+                answerChecks.forInvites(List.of(inviteId)).getOrDefault(inviteId, Map.of());
         List<InterviewAgent.Answer> answers = new ArrayList<>();
         for (AssessmentQuestion q : questionRepository.findByAssessmentIdOrderByPositionAsc(invite.getAssessment().getId())) {
             List<String> g = given.getOrDefault(q.getId(), List.of());
@@ -396,7 +412,7 @@ public class AiInterviewService {
                     String transcript = g.size() > 1 ? g.get(1) : "";
                     answers.add(new InterviewAgent.Answer(phase, "VIDEO", asked,
                             !recorded ? "" : transcript.isBlank() ? "(answered on video; no transcript available)" : transcript,
-                            seconds.get(q.getId()), null, q.getExplanation()));
+                            seconds.get(q.getId()), null, q.getExplanation(), signals(checks.get(q.getId()))));
                 }
                 case WRITTEN -> answers.add(new InterviewAgent.Answer(phase, "WRITTEN", asked, g.isEmpty() ? "" : g.get(0), null, null,
                         q.getExplanation()));
@@ -421,6 +437,45 @@ public class AiInterviewService {
         }
         JobOpening job = invite.getApplication().getJob();
         return new ReviewWork(new InterviewAgent.Job(job.getTitle(), job.getDescription()), answers);
+    }
+
+    /** The reading signals of one spoken answer as attributes for the review prompt, or null. */
+    static String signals(com.codewalnut.ats.domain.InterviewAnswerCheck c) {
+        if (c == null) {
+            return null;
+        }
+        StringBuilder b = new StringBuilder();
+        if (c.getThinkSeconds() != null) {
+            b.append("think=\"").append(c.getThinkSeconds()).append("\" ");
+        }
+        b.append("takes=\"").append(c.getTakes()).append("\" left=\"").append(c.getFocusLosses()).append('"');
+        if (c.getReading() == com.codewalnut.ats.domain.InterviewAnswerCheck.Reading.LIKELY
+                || c.getReading() == com.codewalnut.ats.domain.InterviewAnswerCheck.Reading.POSSIBLE
+                || c.getReading() == com.codewalnut.ats.domain.InterviewAnswerCheck.Reading.UNLIKELY) {
+            b.append(" reading=\"").append(c.getReading().name()).append('"');
+        }
+        return b.toString();
+    }
+
+    /**
+     * Staff: end a running AI interview now (AINT-24), e.g. after watching answers that were read out. It is
+     * submitted with what was answered and reviewed as usual; the candidate can't continue. A person's call,
+     * never the AI's.
+     */
+    @Transactional
+    public void end(AppUser actor, UUID inviteId, String reason) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        AssessmentInvite invite = inviteRepository.findById(inviteId).orElseThrow(() -> new NotFoundException("Interview not found"));
+        if (invite.getAssessment().getCategory() != Assessment.Category.INTERVIEW
+                || inviteService.finalise(invite) != AssessmentInvite.Status.STARTED) {
+            throw new IllegalArgumentException("Only an AI interview in progress can be ended");
+        }
+        String why = reason == null || reason.isBlank() ? null : reason.strip();
+        inviteService.endNow(invite);
+        auditService.record(actor, AuditAction.INTERVIEW_ENDED, "AssessmentInvite", inviteId,
+                why == null ? Map.of() : Map.of("reason", why));
+        teamNote(invite, actor.getEmail() + " ended " + invite.getApplication().getCandidate().getName() + "'s AI interview early"
+                + (why == null ? "." : ": " + why) + " It was submitted with the answers so far.");
     }
 
     /** Records the review and the app's score, if still pending, and notes it in the team chat. */
@@ -477,7 +532,7 @@ public class AiInterviewService {
     }
 
     /**
-     * Reviews again every submitted AI interview in the opening that the AI hasn't reviewed (AINT-24): ones that
+     * Reviews again every submitted AI interview in the opening that the AI hasn't reviewed (AINT-25): ones that
      * failed (e.g. while the AI account had no credit) or got the basic rules review. Needs the AI to be set up.
      */
     @Transactional
@@ -685,6 +740,8 @@ public class AiInterviewService {
                 .collect(Collectors.groupingBy(InterviewVideo::getInviteId, Collectors.counting()));
         Map<UUID, List<com.codewalnut.ats.dto.AiReviewDtos.VerdictBrief>> people =
                 verdicts.briefsFor(latest.values().stream().map(AssessmentInvite::getId).toList());
+        Map<UUID, Map<UUID, com.codewalnut.ats.domain.InterviewAnswerCheck>> checks =
+                answerChecks.forInvites(latest.values().stream().map(AssessmentInvite::getId).toList());
         List<RankedCandidate> rows = new ArrayList<>();
         for (AssessmentInvite i : latest.values()) {
             InterviewReviews.Stored stored = reviews.read(i);
@@ -695,7 +752,10 @@ public class AiInterviewService {
                     i.getApplication().getStage(), i.getStatus(), i.getEvaluation(), stored != null && stored.usesAi(), i.getAiScore(), marked,
                     InterviewReviews.ratings(r), r == null ? null : r.summary(), r == null ? null : blankToNull(r.noticePeriod()),
                     r == null ? null : blankToNull(r.expectedSalary()), i.getSentAt(), i.getSubmittedAt(),
-                    videos.getOrDefault(i.getId(), 0L).intValue(), people.getOrDefault(i.getId(), List.of())));
+                    videos.getOrDefault(i.getId(), 0L).intValue(), people.getOrDefault(i.getId(), List.of()),
+                    reading(checks.get(i.getId()), com.codewalnut.ats.domain.InterviewAnswerCheck.Reading.LIKELY),
+                    reading(checks.get(i.getId()), com.codewalnut.ats.domain.InterviewAnswerCheck.Reading.POSSIBLE),
+                    i.getReadingAlertedAt()));
         }
         rows.sort(Comparator.comparingInt(AiInterviewService::rank)
                 .thenComparing(r -> r.aiScore() == null ? -1 : r.aiScore(), Comparator.reverseOrder())
@@ -704,6 +764,11 @@ public class AiInterviewService {
         int submitted = (int) rows.stream().filter(r -> r.status() == AssessmentInvite.Status.SUBMITTED).count();
         int reviewed = (int) rows.stream().filter(r -> r.evaluation() == AssessmentInvite.Evaluation.DONE).count();
         return new JobInterviews(rows, rows.size(), started, submitted, reviewed);
+    }
+
+    private static int reading(Map<UUID, com.codewalnut.ats.domain.InterviewAnswerCheck> checks,
+            com.codewalnut.ats.domain.InterviewAnswerCheck.Reading reading) {
+        return checks == null ? 0 : (int) checks.values().stream().filter(c -> c.getReading() == reading).count();
     }
 
     private static int rank(RankedCandidate r) {

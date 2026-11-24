@@ -12,6 +12,7 @@ import {
   testLink,
   testStatusLabel,
   type Activity,
+  type AnswerSignals,
   type AnswerReview,
   type SectionScore,
   type AssessmentSummary,
@@ -19,7 +20,7 @@ import {
   type InviteView,
   type SendResult,
 } from '../api/assessments'
-import { reopenInterview, reviewAgain, videoUrl } from '../api/aiInterviews'
+import { endInterview, reopenInterview, reviewAgain, videoUrl } from '../api/aiInterviews'
 import { sectionTitle } from '../api/questionBank'
 import { InterviewReviewCard } from './InterviewReviewCard'
 import { RecordedVideo } from './VideoAnswer'
@@ -46,6 +47,32 @@ function finishWhatsApp(result: SendResult, win: Window | null) {
 }
 
 /** Browser signals while the test was taken: a prompt to look closer, never a verdict. */
+/** How a spoken answer was given (AINT-24): advisory signals, with the AI's reading check first when it raised one. */
+export function AnswerSignalsNote({ signals }: { signals: AnswerSignals | null | undefined }) {
+  if (!signals) return null
+  const parts: string[] = []
+  if (signals.thinkSeconds != null) parts.push(`started ${signals.thinkSeconds}s after seeing the question`)
+  if (signals.takes > 1) parts.push(`recorded ${signals.takes} times`)
+  if (signals.focusLosses > 0) parts.push(`left the window ${signals.focusLosses}× while recording`)
+  const flagged = signals.reading === 'LIKELY' || signals.reading === 'POSSIBLE'
+  return (
+    <span className="stack" style={{ gap: 2 }}>
+      {flagged && (
+        <span role="note" className={signals.reading === 'LIKELY' ? 'alert alert-error' : 'alert alert-info'} style={{ margin: 0, fontSize: 12 }}>
+          <strong>{signals.reading === 'LIKELY' ? '⚠ Sounds read out' : 'May be read out'}</strong> (AI check, advisory — watch the video)
+          {signals.readingReason && `: ${signals.readingReason}`}
+        </span>
+      )}
+      {(parts.length > 0 || signals.reading === 'PENDING') && (
+        <span className="muted" style={{ fontSize: 12 }}>
+          {parts.length > 0 && `Signals: ${parts.join(' · ')}`}
+          {signals.reading === 'PENDING' && `${parts.length ? ' · ' : ''}reading check running…`}
+        </span>
+      )}
+    </span>
+  )
+}
+
 function ActivityNote({ activity }: { activity: Activity | null }) {
   if (!activity || (activity.tabSwitches === 0 && activity.pastes === 0 && activity.runs === 0)) return null
   const parts = [
@@ -150,6 +177,7 @@ export function TestAnswers({
               {a.kind === 'VIDEO' ? (
                 a.given[0] ? (
                   <>
+                    <AnswerSignalsNote signals={a.signals} />
                     <RecordedVideo src={videoUrl(inviteId, a.given[0])} label={`Answer to question ${a.position}`} />
                     <span className="muted">{a.given[1] ? `Transcript: ${a.given[1]}` : 'No transcript (recorded in a browser without speech-to-text).'}</span>
                   </>
@@ -347,6 +375,26 @@ export function TestsSection({
     }
   }
 
+  async function onEnd(invite: InviteView) {
+    const reason = window.prompt(
+      'End this AI interview now? It is submitted with the answers so far and reviewed as usual; the candidate can’t continue. Reason (for the team notes):',
+      'Reading answers instead of answering in their own words',
+    )
+    if (reason === null) return
+    setError(null)
+    try {
+      await endInterview(invite.id, reason)
+      setReview((all) => {
+        const rest = { ...all }
+        delete rest[invite.id]
+        return rest
+      })
+      setInvites(await listApplicationTests(applicationId))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not end the interview')
+    }
+  }
+
   async function onReviewAgain(invite: InviteView) {
     setError(null)
     try {
@@ -482,9 +530,14 @@ export function TestsSection({
                       Review again
                     </Button>
                   )}
-                  {i.status === 'SUBMITTED' && (
+                  {(i.status === 'SUBMITTED' || (i.category === 'INTERVIEW' && i.status === 'STARTED')) && (
                     <Button size="sm" variant="ghost" onClick={() => void toggleReview(i)}>
-                      {review[i.id] ? 'Hide answers' : 'Answers'}
+                      {review[i.id] ? 'Hide answers' : i.status === 'STARTED' ? 'Answers so far' : 'Answers'}
+                    </Button>
+                  )}
+                  {canSend && i.category === 'INTERVIEW' && i.status === 'STARTED' && (
+                    <Button size="sm" variant="secondary" onClick={() => void onEnd(i)}>
+                      End interview now
                     </Button>
                   )}
                   {canSend && (i.status === 'SENT' || i.status === 'EXPIRED') && (

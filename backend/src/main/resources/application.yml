@@ -70,6 +70,12 @@ ats:
     dir: ${ATS_MEDIA_DIR:data/media}
   interview:
     async: true
+    # Reading checks (AINT-24, ADR-0031): seconds to read a spoken question before recording starts,
+    # recordings allowed per question (1 = no retake), and how many answers that sound read out
+    # before the team is told while the interview is still running.
+    think-seconds: ${ATS_INTERVIEW_THINK_SECONDS:30}
+    takes: ${ATS_INTERVIEW_TAKES:2}
+    reading-alert-after: ${ATS_INTERVIEW_READING_ALERT_AFTER:1}
   coding:
     runner-url: ${ATS_CODE_RUNNER_URL:}
     runner-token: ${ATS_CODE_RUNNER_TOKEN:}

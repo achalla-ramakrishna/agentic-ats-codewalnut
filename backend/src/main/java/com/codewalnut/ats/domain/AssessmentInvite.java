@@ -129,6 +129,10 @@ public class AssessmentInvite {
     @Column(name = "evaluated_at")
     private Instant evaluatedAt;
 
+    /** When the team was told this candidate may be reading their answers (AINT-24); told once. */
+    @Column(name = "reading_alerted_at")
+    private Instant readingAlertedAt;
+
     @PrePersist
     void onCreate() {
         sentAt = Instant.now();

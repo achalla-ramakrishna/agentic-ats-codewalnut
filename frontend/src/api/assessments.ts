@@ -320,6 +320,21 @@ export interface AnswerReview {
   codeResult: CodeResult | null
   /** Notes for reviewers; for AI interview questions, what a strong answer covers. */
   explanation?: string | null
+  /** How a spoken AI interview answer was given (AINT-24); advisory signals for people. */
+  signals?: AnswerSignals | null
+}
+
+export type Reading = 'PENDING' | 'LIKELY' | 'POSSIBLE' | 'UNLIKELY' | 'SKIPPED' | 'FAILED'
+
+export interface AnswerSignals {
+  /** Seconds between seeing the question and starting to record. */
+  thinkSeconds: number | null
+  takes: number
+  /** Times the candidate left the window or tab while recording. */
+  focusLosses: number
+  /** The AI's check of whether the answer sounds read out. */
+  reading: Reading | null
+  readingReason: string | null
 }
 
 export interface SectionScore {
@@ -358,6 +373,10 @@ export interface CandidateQuestion {
   section: string | null
   coding: CodingSpec | null
   maxSeconds: number | null
+  /** AI interviews (AINT-24): a spoken question's text is sent only once the candidate opens it. */
+  hidden?: boolean
+  revealedAt?: string | null
+  takesLeft?: number | null
 }
 
 export interface TakeTest {
@@ -365,6 +384,8 @@ export interface TakeTest {
   questions: CandidateQuestion[]
   answers: Record<string, string[]>
   secondsLeft: number
+  /** AI interviews: seconds to read a spoken question before recording starts. */
+  thinkSeconds?: number | null
 }
 
 const json = (method: string, body?: unknown): RequestInit => ({

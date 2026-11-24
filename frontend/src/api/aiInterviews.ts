@@ -25,6 +25,11 @@ export interface RankedCandidate {
   videos: number
   /** People's verdicts (AINT-21): who said select, hold or don't progress. */
   verdicts: VerdictBrief[]
+  /** Answers the AI thinks were read out (AINT-24), and ones that might have been. */
+  soundsRead: number
+  maybeRead: number
+  /** When the team was told this candidate may be reading. */
+  readingAlertedAt: string | null
 }
 
 export interface JobInterviews {
@@ -115,11 +120,31 @@ export const reviewAgain = (inviteId: string) => api<void>(`/tests/${inviteId}/r
 /** Where staff play a recorded answer (the browser streams it, so seeking works). */
 export const videoUrl = (inviteId: string, videoId: string) => `/api/v1/tests/${inviteId}/videos/${videoId}`
 
-export function uploadAnswer(testId: string, questionId: string, video: Blob, transcript: string, seconds: number) {
+/** Staff end a running AI interview now (AINT-24); it is submitted with the answers so far. */
+export const endInterview = (inviteId: string, reason: string) =>
+  api<void>(`/tests/${inviteId}/end`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) })
+
+/** A spoken question once opened (AINT-24): its text, the thinking time left, recordings left, and any warning. */
+export interface RevealedQuestion {
+  questionId: string
+  prompt: string
+  code: string | null
+  revealedAt: string
+  thinkSeconds: number
+  thinkSecondsLeft: number
+  takesLeft: number
+  warning: string | null
+}
+
+export const revealQuestion = (testId: string, questionId: string) =>
+  api<RevealedQuestion>(`/candidate/tests/${testId}/questions/${questionId}/reveal`, { method: 'POST' })
+
+export function uploadAnswer(testId: string, questionId: string, video: Blob, transcript: string, seconds: number, focusLosses = 0) {
   const body = new FormData()
   body.append('file', video, video.type.includes('mp4') ? 'answer.mp4' : 'answer.webm')
   body.append('transcript', transcript)
   body.append('seconds', String(Math.max(1, Math.round(seconds))))
+  body.append('focusLosses', String(focusLosses))
   return api<{ videoId: string; seconds: number; sizeBytes: number }>(`/candidate/tests/${testId}/questions/${questionId}/video`, {
     method: 'POST',
     body,

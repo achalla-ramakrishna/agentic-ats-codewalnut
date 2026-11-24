@@ -6,8 +6,8 @@
 | **Status** | Done (first release) |
 | **Chunk** | v1 |
 | **Owner** | TBD |
-| **Related** | [assessments.md](assessments.md), [pipeline.md](pipeline.md) (PIPE-24 self-booking), ADR-0011, ADR-0030 |
-| **Last updated** | 2026-11-12 |
+| **Related** | [assessments.md](assessments.md), [pipeline.md](pipeline.md) (PIPE-24 self-booking), ADR-0011, ADR-0030, ADR-0031 |
+| **Last updated** | 2026-11-15 |
 
 ## Summary
 
@@ -56,7 +56,8 @@ team talks live only to the best few (e.g. 10 of 200).
 | AINT-21 | **Reviewer verdict**: a new role, *AI interview reviewer*, gets one page, **AI interview reviews**: every completed AI interview (to review first, then reviewed by me, all; by opening; search). Opening one shows the answers with videos, transcripts and "Look for", the AI's review, and other reviewers' verdicts. The reviewer marks answers (✓ Good / ~ Okay / ✗ Weak, with a note; optional) and decides **Select for next round**, **Maybe — discuss** or **Don't progress** (a reason is required unless selecting); *Save and review next* opens the next one waiting. One verdict per person, changeable. The verdict shows in the opening's ranking (Reviewers column), is posted to the candidate's team notes and audited. It doesn't move the candidate; the recruiter does. Hiring managers and admins can review too. | Done |
 | AINT-22 | **Outside reviewers**: an admin can add a non-CodeWalnut address (e.g. a Gmail address) under Users only with the *AI interview reviewer* role and nothing else (any other role is refused, now or later). That person signs in with Google as staff and sees only AI interview reviews. Other Gmail users still sign in as candidates. Not allowed for an address that belongs to a candidate or a client contact. | Done |
 | AINT-23 | **Delete AI interviews** of chosen candidates: in the opening's ranking, tick one or more → *🗑 Delete AI interview* → confirm (names listed). Deletes their answers, videos (files too), AI review and reviewers' verdicts for good; the candidates stay in the opening and can be sent a new one. Recruiters only (`MANAGE_JOBS`); audited per candidate. | Done |
-| AINT-24 | **Review again with AI** for the whole opening: one click re-reviews every submitted interview the AI hasn't reviewed (failed, e.g. while the account had no credit, or given the basic rules review). Refused when no AI key is set. `POST /jobs/{id}/ai-interviews/review-again`. | Done |
+| AINT-24 | **Reading checks** (ADR-0031): a spoken question is **hidden until the candidate opens it** (*Show question and start*; the API doesn't send the text before); they get **30 s to think, then recording starts on its own** (or *Start recording now*); **one retake** per question; the window or tab losing focus while recording is counted. As soon as an answer uploads, the AI **checks whether it sounds read out** (LIKELY / POSSIBLE / UNLIKELY with a reason; answers under 25 words aren't judged). On the first LIKELY answer, **while the interview is still running**, a note goes to the team chat, the opening's AI interview tab shows a banner and a badge, and the candidate is warned before the next question. Staff see *Answers so far* with the signals on each answer (thinking time, recordings, focus losses, the AI's check) and a recruiter can **End interview now** (submitted with the answers so far, reviewed as usual, audited, team note). The AI never ends or rejects anything itself. Thinking time, recordings and when to alert are settings (`ats.interview.*`). | Done |
+| AINT-25 | **Review again with AI** for the whole opening: one click re-reviews every submitted interview the AI hasn't reviewed (failed, e.g. while the account had no credit, or given the basic rules review). Refused when no AI key is set. `POST /jobs/{id}/ai-interviews/review-again`. | Done |
 | AINT-08 | Automatic retention: delete interview videos N days after the opening closes. | v1 |
 
 ## Business rules
@@ -79,24 +80,29 @@ team talks live only to the best few (e.g. 10 of 200).
 
 - **AINT-AC1** Given a submitted interview, then its review and score appear without anyone moving the candidate.
 - **AINT-AC2** Given a candidate who isn't the invitee, when they upload to the interview, then it's refused as not found.
+- **AINT-AC3** Given a spoken question the candidate hasn't opened, then its text isn't in any response to them, and a recording for it is refused.
+- **AINT-AC4** Given an answer the AI judges LIKELY read out while the interview is running, then the team is told and the candidate is warned, and the interview keeps running until a person ends it.
 
 ## Data
 
 `assessment` (category INTERVIEW), `assessment_question` (`section` = phase, `max_seconds`), `assessment_invite`
-(`evaluation`, `evaluation_json`, `ai_score`), `interview_video` (V28), `ai_interview_verdict` (V30: invite, reviewer, decision, marks, feedback).
+(`evaluation`, `evaluation_json`, `ai_score`), `interview_video` (V28), `ai_interview_verdict` (V30: invite, reviewer, decision, marks, feedback), `interview_answer_check` (V31: invite, question,
+revealed_at, takes, think_seconds, focus_losses, reading, reading_reason) and `assessment_invite.reading_alerted_at`.
 
 ## API
 
 `POST /ai-interviews`, `GET /jobs/{id}/ai-interviews`, `POST /tests/{id}/review-again`,
 `GET /tests/{id}/videos/{videoId}` (staff), `POST /candidate/tests/{id}/questions/{questionId}/video`; reviewers: `GET /ai-reviews`, `GET /ai-reviews/{inviteId}`,
-`PUT /ai-reviews/{inviteId}` (my verdict); `POST /ai-interviews/delete` {inviteIds}.
+`PUT /ai-reviews/{inviteId}` (my verdict); `POST /ai-interviews/delete` {inviteIds};
+`POST /candidate/tests/{id}/questions/{questionId}/reveal` (AINT-24), `POST /tests/{id}/end` {reason} (AINT-24).
 
 ## Change log
 
 | Date | Change |
 | --- | --- |
+| 2026-11-15 | Reading checks: hidden questions, thinking time, one retake, per-answer AI check and alert while running, End interview now (AINT-24, ADR-0031) |
 | 2026-11-14 | Archived AI interviews can be deleted for good with answers and videos (ASMT-41) |
-| 2026-11-24 | Review again with AI for the opening (AINT-24) |
+| 2026-11-24 | Review again with AI for the opening (AINT-25) |
 | 2026-11-14 | Delete the AI interviews of ticked candidates (AINT-23) |
 | 2026-11-14 | Outside reviewers (Gmail) as AI interview reviewers only (AINT-22) |
 | 2026-11-14 | AI interview reviewer role and verdicts: select for next round / hold / don't progress (AINT-21) |
