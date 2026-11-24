@@ -34,7 +34,8 @@ public final class AiInterviewDtos {
     public record SetQuestion(String phase, String phaseLabel, String kind, String prompt, String code, List<String> options,
             Integer correctOption, List<String> acceptedAnswers, Integer maxSeconds, String lookFor) {}
 
-    public record QuestionSetPreview(int set, String letter, List<SetQuestion> questions, int minutes) {}
+    /** track: whose sets these are, e.g. "senior Java" or "front-end and Java intern". */
+    public record QuestionSetPreview(int set, String letter, List<SetQuestion> questions, int minutes, String track) {}
 
     /**
      * Space for interview videos. perInterviewBytes: the average so far (an estimate until a few are in);

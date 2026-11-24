@@ -110,4 +110,13 @@ class ClaudeResumeAnalyzerTest {
                 .isInstanceOf(CalendarException.class).hasMessageContaining("another try");
         assertThat(new DisabledResumeAnalyzer().available()).isFalse();
     }
+
+    @org.junit.jupiter.api.Test
+    void withoutADescriptionTheUsualRequirementsForTheTitleAreUsed() {
+        String text = ClaudeResumeAnalyzer.jobText(new ResumeAnalyzer.Job("Front End Engineer Intern", null));
+        org.assertj.core.api.Assertions.assertThat(text).contains("Title: Front End Engineer Intern", "usual requirements for this title",
+                "Usual for this role:");
+        org.assertj.core.api.Assertions.assertThat(ClaudeResumeAnalyzer.jobText(new ResumeAnalyzer.Job("X", "- Java")))
+                .doesNotContain("usual requirements");
+    }
 }

@@ -56,6 +56,7 @@ hiring decision.
 | AI-28 | Fairness: only job-related evidence; personal attributes ignored and never mentioned; no rejection advice; résumé text is data, not instructions; low scores shown neutrally; labelled advisory. | Done |
 | AI-29 | Only job-related profiles (no email/phone) go to the assistant; résumé files go to the reader. Readings and uploads are audited (counts only). | Done |
 | AI-31 | Reading a résumé fills the candidate's empty profile fields: college, degree, graduation year, LinkedIn, current address (only a full postal address), and email/phone if missing. Never overwrites entered values; never extracts date of birth, age, gender or family details. Older readings show as out of date so **Analyze résumés** refreshes them. | Done |
+| AI-32 | **Match scores without a description, and after one is added**: an opening with no description is scored against the usual requirements for its title (marked "Usual for this role:"); adding or changing the title or description scores the opening's résumés again automatically. The candidates list says when there's no description (with *Add the job description*), when scores are out of date (*Score them now*), and when nobody reaches 50%. | Done |
 | AI-32 | **Closest to selection** ranks Interviewed and Shortlisted candidates by a readiness score (0–100): interview feedback is half (strong hire 100, hire 75, no hire 25, strong no hire 0, averaged over the panel; none yet counts as a neutral 50), the test score and résumé match the other half, plus 5 for Shortlisted. Anyone whose panel leans no (average below 50) is left out. The reason shows the stage, the panel's recommendations, the requirements met, the test score and a strength. It updates as soon as feedback is submitted or a test is scored. | Done |
 | AI-33 | Résumé counts separate people **without a résumé** (nothing to read: attach or upload one) from résumés **not read yet**; **Analyze résumés (n)** counts only the latter, so it reaches zero. | Done |
 | AI-30 | Email ingestion: a dedicated inbox (inbound-email webhook) feeding the same intake. | v1 |
@@ -84,6 +85,7 @@ hiring decision.
 
 | Date | Change |
 | --- | --- |
+| 2026-11-24 | AI-32: scores without a description; re-scored automatically when it's added |
 | 2026-11-24 | AI-31: résumés the AI couldn't read while it was down are kept and read again automatically |
 | 2026-09-25 | Created from SPEC.md |
 | 2026-10-06 | Ask ATS: chat with the whole ATS (ASK-01…ASK-05, ADR-0021) |

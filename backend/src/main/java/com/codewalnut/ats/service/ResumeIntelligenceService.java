@@ -201,8 +201,27 @@ public class ResumeIntelligenceService {
     @Transactional
     public AnalyzeResult analyzeAll(AppUser actor, UUID jobId) {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);
-        JobOpening job = job(jobId);
         requireAvailable();
+        AnalyzeResult result = analyzeStale(jobId);
+        auditService.record(actor, AuditAction.RESUMES_ANALYZED, "JobOpening", jobId,
+                Map.of("queued", result.queued(), "noResume", result.noResume()));
+        return result;
+    }
+
+    /** The opening's description or title changed: score its candidates' résumés again against it (AI-32). */
+    @TransactionalEventListener
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public void onDescriptionChanged(JobDescriptionChanged event) {
+        if (analyzer.available()) {
+            AnalyzeResult r = analyzeStale(event.jobId());
+            if (r.queued() > 0) {
+                log.info("Opening {} changed: scoring {} résumé(s) again", event.jobId(), r.queued());
+            }
+        }
+    }
+
+    private AnalyzeResult analyzeStale(UUID jobId) {
+        JobOpening job = job(jobId);
         String hash = ResumeProcessor.jobHash(job);
         List<Application> applications = applicationRepository.findByJobIdOrderByCandidateNameAsc(jobId);
         Map<UUID, CandidateInsight> insights = insightsFor(applications);
@@ -230,8 +249,6 @@ public class ResumeIntelligenceService {
             queue(application.getId());
             queued++;
         }
-        auditService.record(actor, AuditAction.RESUMES_ANALYZED, "JobOpening", jobId,
-                Map.of("queued", queued, "noResume", noResume));
         return new AnalyzeResult(queued, noResume, upToDate);
     }
 

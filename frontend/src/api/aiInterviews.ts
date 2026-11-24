@@ -69,8 +69,11 @@ export interface SetQuestion {
   lookFor: string | null
 }
 
-export const previewSet = (set: number) =>
-  api<{ set: number; letter: string; questions: SetQuestion[]; minutes: number }>(`/ai-interviews/sets/${set}`)
+/** jobId: the opening's own sets (e.g. intern); without it, the senior Java sets. */
+export const previewSet = (set: number, jobId?: string) =>
+  api<{ set: number; letter: string; questions: SetQuestion[]; minutes: number; track: string }>(
+    `/ai-interviews/sets/${set}${jobId ? `?jobId=${jobId}` : ''}`,
+  )
 
 export interface VideoStorage {
   usedBytes: number

@@ -12,7 +12,7 @@ import {
   type Stage,
 } from '../api/tracker'
 import { askAssistant, getAssistantStatus, type AssistantPlan } from '../api/assistant'
-import { getInsights, type InsightSummary, type InsightsResponse } from '../api/insights'
+import { analyzeAll, getInsights, type InsightSummary, type InsightsResponse } from '../api/insights'
 import { listJobTests, testStatusLabel, type InviteView } from '../api/assessments'
 import { useMe } from '../auth/AuthContext'
 import { AssistantPlanCard } from '../components/AssistantPlanCard'
@@ -741,6 +741,39 @@ export function JobDetailPage() {
           )
         })}
       </div>
+      {insights?.available && read.length > 0 && (() => {
+        const stale = read.filter((i) => i.stale).length
+        const scored = read.filter((i) => i.total > 0)
+        const best = scored.reduce((m, i) => Math.max(m, i.fitPercent ?? 0), 0)
+        const pendingReads = insights.pending > 0
+        if (insights.hasDescription && stale === 0 && !(scored.length > 0 && best < 50)) return null
+        return (
+          <div className="alert alert-info row" role="note" aria-label="Match scores" style={{ gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            {!insights.hasDescription ? (
+              <span>
+                <strong>No job description yet</strong>, so résumés are scored against the usual requirements for “{job.title}”. Add the
+                description and everyone is scored again against it automatically.
+              </span>
+            ) : stale > 0 ? (
+              <span>
+                <strong>{stale}</strong> résumé{stale === 1 ? ' was' : 's were'} scored before the description changed{pendingReads ? ' — scoring again now…' : '.'}
+              </span>
+            ) : scored.length > 0 && best < 50 ? (
+              <span>Best match so far is {best}% — nobody meets half the description’s must-haves yet. Sort by best match to see the closest.</span>
+            ) : null}
+            {canEdit && !insights.hasDescription && (
+              <Button size="sm" variant="secondary" onClick={() => showTab('details')}>
+                Add the job description
+              </Button>
+            )}
+            {canEdit && insights.hasDescription && stale > 0 && !pendingReads && (
+              <Button size="sm" variant="secondary" onClick={() => void analyzeAll(job.id).then(() => getInsights(job.id).then(setInsights))}>
+                Score them now
+              </Button>
+            )}
+          </div>
+        )
+      })()}
       {(read.length > 0 || passed.size > 0 || withResume > 0) && (
         <div className="row" role="group" aria-label="Filter by résumé" style={{ gap: 8, flexWrap: 'wrap' }}>
           {withResume > 0 && (

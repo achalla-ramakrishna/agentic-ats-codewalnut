@@ -113,7 +113,9 @@ public class ClaudeResumeAnalyzer implements ResumeAnalyzer {
 
     static String jobText(Job job) {
         String description = job.description() == null || job.description().isBlank()
-                ? "(No description was written for this opening. Extract the candidate's details and return no requirements.)"
+                ? "(No description was written for this opening. Use the usual requirements for this title instead: at most "
+                        + "six, the core skills and, for an intern or fresher role, the education asked for; start each with "
+                        + "\"Usual for this role:\" so recruiters know they were not written by CodeWalnut.)"
                 : job.description();
         return "<job>\nTitle: " + job.title().replaceAll("[<>]", " ") + "\n\n"
                 + description.replace("</job>", "") + "\n</job>";

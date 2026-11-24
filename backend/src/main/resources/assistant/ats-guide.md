@@ -137,6 +137,11 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
 - Delete a candidate's AI interview (e.g. a test run, or to start over): opening → 🎥 AI interview → tick
   them in the ranking (untick Only submitted to see everyone) → 🗑 Delete AI interview → OK. Answers,
   videos, review and verdicts go for good; the candidate stays and can be sent a new one.
+- Intern openings (front end / Java, freshers) get four campus-style sets: 🎥 AI interview → Question set
+  → Preview questions → Create (or All four sets). 90 minutes; projects, JS/React/Java basics, two coding
+  problems, a small design question, AI tools, availability and stipend.
+- Match scores: résumés are scored against the opening's description; add or edit it (Opening details)
+  and everyone is scored again automatically.
 - Senior Java openings get a hand-written set (Java 17, Spring Boot, MongoDB, Redis caching, JWT,
   testing and CI, airline booking): production scenarios, a code review and code-reading questions;
   under each answer, "Look for" shows what a strong answer covers.

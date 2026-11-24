@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-24-intern-interview-sets',
+    date: '2026-11-24',
+    title: 'Campus-style AI interviews for interns, and match scores that update',
+    summary: 'Front-end / Java intern openings now get four hand-written AI interview sets, like a campus interview: projects, web, React and Java basics, two coding problems, a small design question and availability. Résumés are scored again automatically when you add or change the job description.',
+    steps: ['Opening → 🎥 AI interview → Question set → Preview questions → Create.', 'Opening details → add the description; the match scores update by themselves.'],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-11-24-ai-retry',
     date: '2026-11-24',
     title: 'Nothing lost when the AI is unavailable',

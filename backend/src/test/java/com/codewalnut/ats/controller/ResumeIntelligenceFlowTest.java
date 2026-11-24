@@ -213,4 +213,24 @@ class ResumeIntelligenceFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.hasDescription").value(false));
     }
+    @Test
+    void addingTheDescriptionScoresEveryoneAgainAutomatically() throws Exception {
+        String job = opening(); // no description yet
+        upload(job, asha()).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/insights").with(RECRUITER))
+                .andExpect(jsonPath("$.hasDescription").value(false))
+                .andExpect(jsonPath("$.analyzed").value(1))
+                .andExpect(jsonPath("$.insights[0].total").value(0));
+
+        // AI-32: saving a description re-reads the opening's résumés against it — nobody clicks Analyze.
+        mockMvc.perform(patch("/api/v1/jobs/" + job).with(RECRUITER).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"description\":\"" + DESCRIPTION + "\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/jobs/" + job + "/insights").with(RECRUITER))
+                .andExpect(jsonPath("$.hasDescription").value(true))
+                .andExpect(jsonPath("$.insights[0].stale").value(false))
+                .andExpect(jsonPath("$.insights[0].total").value(3))
+                .andExpect(jsonPath("$.insights[0].fitPercent").value(100));
+        json("/api/v1/jobs/" + job + "/insights/analyze", "{}").andExpect(jsonPath("$.upToDate").value(1));
+    }
 }

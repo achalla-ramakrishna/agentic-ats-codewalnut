@@ -360,6 +360,26 @@ describe('JobDetailPage', () => {
     click.mockRestore()
   })
 
+  it('says why there are no match scores and leads to the job description (AI-32)', async () => {
+    fakeFetch([
+      { path: '/auth/session', body: { type: 'STAFF' } },
+      { path: '/me', body: recruiter },
+      { path: '/stages', body: stages },
+      { path: '/jobs/j1/applications', body: [row] },
+      {
+        path: '/jobs/j1/insights',
+        body: { ...noInsights, available: true, analyzed: 1, notAnalyzed: 0, insights: [{ ...insight, fitPercent: null, total: 0 }] },
+      },
+      { path: '/jobs/j1/tests', body: [] },
+      { path: '/jobs/j1', body: job },
+    ])
+    renderJob()
+    const note = await screen.findByRole('note', { name: 'Match scores' })
+    expect(note).toHaveTextContent('No job description yet')
+    await userEvent.click(within(note).getByRole('button', { name: 'Add the job description' }))
+    expect(await screen.findByRole('tab', { name: 'Opening details', selected: true })).toBeInTheDocument()
+  })
+
   it('combines search with the stage filter and offers to clear', async () => {
     fakeFetch([
       { path: '/auth/session', body: { type: 'STAFF' } },

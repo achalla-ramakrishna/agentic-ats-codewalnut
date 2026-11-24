@@ -17,6 +17,54 @@ public final class InterviewSets {
     /** How many hand-written senior Java sets there are (A, B, C, D). */
     public static final int SENIOR_JAVA_SETS = 4;
 
+    /** The kinds of opening with hand-written sets (four each, A–D). */
+    public enum Track {
+        SENIOR_JAVA("senior Java", 120, "Java 17, Spring Boot, MongoDB, Redis caching, JWT, testing and CI, airline shopping and "
+                + "booking: production scenarios, code reading and design"),
+        FRONT_END_INTERN("front-end and Java intern", 90, "a campus-style interview for freshers: projects, HTML/CSS, "
+                + "JavaScript, React and Java fundamentals with code-output questions, two coding problems, a small front-end "
+                + "design question, teamwork, AI tools and availability");
+
+        private final String label;
+        private final int minutes;
+        private final String covers;
+
+        Track(String label, int minutes, String covers) {
+            this.label = label;
+            this.minutes = minutes;
+            this.covers = covers;
+        }
+
+        public String label() {
+            return label;
+        }
+
+        public int minutes() {
+            return minutes;
+        }
+
+        public String covers() {
+            return covers;
+        }
+
+        public List<DraftQuestion> questions(int set) {
+            return this == SENIOR_JAVA ? seniorJava(set) : FrontEndInternSets.set(set);
+        }
+
+        /**
+         * The track for an opening, from its title and description (lower case), or null to draft questions from the
+         * description. seniorJava: the opening is a senior/lead Java role.
+         */
+        public static Track forOpening(String text, boolean seniorJava) {
+            if (seniorJava) {
+                return SENIOR_JAVA;
+            }
+            boolean junior = text.matches("(?s).*\\b(intern|interns|internship|fresher|freshers|trainee|graduate engineer)\\b.*");
+            boolean web = text.matches("(?s).*\\b(front[ -]?end|react|web|ui|software engineer(ing)?)\\b.*");
+            return junior && web ? FRONT_END_INTERN : null;
+        }
+    }
+
     /** Set 1–4 (A–D) for the senior Java developer opening; each covers the same skills with different questions. */
     public static List<DraftQuestion> seniorJava(int set) {
         return switch (set) {

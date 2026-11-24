@@ -73,6 +73,7 @@ public class TrackerService {
     private final com.codewalnut.ats.repository.MessageRepository messageRepository;
     private final AdminUpdateService adminUpdates;
     private final ClientShareRepository shareRepository;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     // ---- clients ----
 
@@ -197,6 +198,9 @@ public class TrackerService {
             changes.put("employmentType", "changed");
         }
         changeClient(job, request, changes);
+        if (changes.containsKey("title") || changes.containsKey("description")) {
+            events.publishEvent(new JobDescriptionChanged(job.getId()));
+        }
         if (request.published() != null && request.published() != job.isPublished()) {
             if (request.published() && job.getPublicSlug() == null) {
                 job.setPublicSlug(PublicLinks.newSlug());

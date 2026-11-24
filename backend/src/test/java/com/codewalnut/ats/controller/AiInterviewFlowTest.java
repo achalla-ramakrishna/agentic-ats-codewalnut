@@ -135,6 +135,20 @@ class AiInterviewFlowTest {
         mockMvc.perform(get("/api/v1/ai-interviews/sets/2").with(HM)).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/v1/ai-interviews/sets/9").with(RECRUITER)).andExpect(status().isBadRequest());
 
+        // AINT-26: a front-end / Java intern opening gets its own four campus-style sets.
+        String intern = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/jobs",
+                "{\"title\":\"Front End Engineer Intern " + tag + "\",\"hiringType\":\"INTERNAL\"}")), "$.id");
+        String internSet = body(json(RECRUITER, "POST", "/api/v1/ai-interviews", "{\"jobId\":\"" + intern + "\",\"questionSet\":2}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.interview.summary.title").value(Matchers.endsWith("Set B")))
+                .andExpect(jsonPath("$.interview.summary.durationMinutes").value(90)));
+        assertThat((List<String>) JsonPath.read(internSet, "$.notes")).anyMatch(n -> n.contains("front-end and Java intern"));
+        assertThat((List<String>) JsonPath.read(internSet, "$.interview.questions[*].prompt")).anyMatch(p -> p.contains("first character"));
+        mockMvc.perform(get("/api/v1/ai-interviews/sets/1?jobId=" + intern).with(RECRUITER))
+                .andExpect(jsonPath("$.track").value("front-end and Java intern"))
+                .andExpect(jsonPath("$.minutes").value(90));
+        mockMvc.perform(get("/api/v1/ai-interviews/sets/1").with(RECRUITER)).andExpect(jsonPath("$.track").value("senior Java"));
+
         // AINT-02: staff add and edit video questions with a phase and a time limit.
         String test = JsonPath.read(created, "$.interview.summary.id");
         json(RECRUITER, "POST", "/api/v1/assessments/" + test + "/questions",

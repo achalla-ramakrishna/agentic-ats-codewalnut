@@ -245,8 +245,8 @@ export function AiInterviewPanel({
             </Button>
           </div>
           <span className="muted" style={{ fontSize: 13 }}>
-            Senior Java openings have four hand-written sets (A–D): every set has the senior architect’s core questions plus different
-            concept and code questions, so you can give different candidates different papers. Other openings get questions drafted from
+            Senior Java openings and front-end / Java intern openings have four hand-written sets each (A–D), covering the same skills
+            with different questions, so you can give different candidates different papers. Other openings get questions drafted from
             the job description.
           </span>
           {previewing && questionSet === 'all' && (
@@ -258,7 +258,7 @@ export function AiInterviewPanel({
               ))}
             </div>
           )}
-          {previewing && <QuestionSetPreview set={questionSet === 'all' ? previewOf : Number(questionSet)} />}
+          {previewing && <QuestionSetPreview set={questionSet === 'all' ? previewOf : Number(questionSet)} jobId={jobId} />}
         </div>
       )}
       {error && (

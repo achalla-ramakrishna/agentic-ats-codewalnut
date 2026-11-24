@@ -110,15 +110,16 @@ public class AiInterviewService {
         BankQuestion.Section band = text.matches("(?s).*\\b(senior|lead|architect|principal|staff)\\b.*")
                 ? BankQuestion.Section.ADVANCED : BankQuestion.Section.PRACTICAL;
         // A hand-written set (marked answers checked by hand) beats a drafted one where it fits.
-        boolean handWritten = area == Assessment.Category.JAVA && band == BankQuestion.Section.ADVANCED;
+        com.codewalnut.ats.bank.InterviewSets.Track track = com.codewalnut.ats.bank.InterviewSets.Track.forOpening(text,
+                area == Assessment.Category.JAVA && band == BankQuestion.Section.ADVANCED);
+        boolean handWritten = track != null;
         int set = request.questionSet() == null ? 1 : request.questionSet();
         InterviewAgent.Draft draft;
         boolean drafted = !handWritten && agent.usesAi();
         if (handWritten) {
-            draft = new InterviewAgent.Draft(com.codewalnut.ats.bank.InterviewSets.seniorJava(set));
-            notes.add("Used hand-written senior Java question Set " + com.codewalnut.ats.bank.InterviewSets.setLetter(set) + " (Java 17, Spring Boot, MongoDB, Redis caching, JWT, testing and "
-                    + "CI, airline shopping and booking): production scenarios, code reading and design, with what a strong answer "
-                    + "covers for the reviewers. Edit anything you like.");
+            draft = new InterviewAgent.Draft(track.questions(set));
+            notes.add("Used hand-written " + track.label() + " question Set " + com.codewalnut.ats.bank.InterviewSets.setLetter(set)
+                    + " (" + track.covers() + "), with what a good answer covers for the reviewers. Edit anything you like.");
         } else {
             try {
                 draft = agent.draft(forAgent);
@@ -137,7 +138,7 @@ public class AiInterviewService {
                         + "skills, projects, architecture, a technical round, soft skills and readiness to join. Most questions are "
                         + "answered on camera (use Chrome or Edge, with a working camera and microphone, in a quiet place); a few are "
                         + "multiple choice or fill in the blank. Each spoken question appears when you start it, with a short time to think before recording starts; answer in your own words.")
-                .durationMinutes(request.durationMinutes() != null ? request.durationMinutes() : handWritten ? 120 : 75)
+                .durationMinutes(request.durationMinutes() != null ? request.durationMinutes() : handWritten ? track.minutes() : 75)
                 .passPercent(0)
                 .jobId(job.getId())
                 .status(Assessment.Status.DRAFT)
@@ -185,11 +186,21 @@ public class AiInterviewService {
     /** trusted: a hand-written set, whose multiple choice may be used as is (drafted multiple choice never is). */
     /** Staff: the questions of hand-written set 1–4 (A–D), with answers and reviewer notes, before creating it. */
     public com.codewalnut.ats.dto.AiInterviewDtos.QuestionSetPreview previewSet(AppUser actor, int set) {
+        return previewSet(actor, set, null);
+    }
+
+    /** The opening's hand-written set (senior Java when no opening is given or it has none of its own). */
+    public com.codewalnut.ats.dto.AiInterviewDtos.QuestionSetPreview previewSet(AppUser actor, int set, UUID jobId) {
         accessPolicy.require(actor, Capability.MANAGE_JOBS);
         if (set < 1 || set > com.codewalnut.ats.bank.InterviewSets.SENIOR_JAVA_SETS) {
             throw new IllegalArgumentException("set: choose 1 to " + com.codewalnut.ats.bank.InterviewSets.SENIOR_JAVA_SETS);
         }
-        List<com.codewalnut.ats.dto.AiInterviewDtos.SetQuestion> questions = com.codewalnut.ats.bank.InterviewSets.seniorJava(set)
+        com.codewalnut.ats.bank.InterviewSets.Track track = jobId == null ? null : trackFor(
+                jobRepository.findById(jobId).orElseThrow(() -> new NotFoundException("Opening not found")));
+        if (track == null) {
+            track = com.codewalnut.ats.bank.InterviewSets.Track.SENIOR_JAVA;
+        }
+        List<com.codewalnut.ats.dto.AiInterviewDtos.SetQuestion> questions = track.questions(set)
                 .stream()
                 .sorted(Comparator.comparingInt(d -> InterviewPhase.of(d.phase()).ordinal())) // same order as when created
                 .map(d -> new com.codewalnut.ats.dto.AiInterviewDtos.SetQuestion(d.phase(), InterviewPhase.of(d.phase()).getLabel(),
@@ -199,7 +210,15 @@ public class AiInterviewService {
                         d.goodAnswer() == null || d.goodAnswer().isBlank() ? null : d.goodAnswer()))
                 .toList();
         return new com.codewalnut.ats.dto.AiInterviewDtos.QuestionSetPreview(set, com.codewalnut.ats.bank.InterviewSets.setLetter(set),
-                questions, 120);
+                questions, track.minutes(), track.label());
+    }
+
+    /** Which hand-written sets an opening gets, or null when its questions are drafted from the description. */
+    com.codewalnut.ats.bank.InterviewSets.Track trackFor(JobOpening job) {
+        String text = (job.getTitle() + " " + job.getDescription()).toLowerCase(Locale.ROOT);
+        Assessment.Category area = stack(text);
+        boolean senior = text.matches("(?s).*\\b(senior|lead|architect|principal|staff)\\b.*");
+        return com.codewalnut.ats.bank.InterviewSets.Track.forOpening(text, area == Assessment.Category.JAVA && senior);
     }
 
     private AssessmentQuestion fromDraft(UUID assessmentId, InterviewAgent.DraftQuestion d, boolean aiDrafted, boolean trusted) {

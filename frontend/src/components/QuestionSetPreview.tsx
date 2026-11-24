@@ -10,21 +10,25 @@ const KIND: Record<SetQuestion['kind'], string> = {
 }
 
 /** Read a hand-written AI interview set before creating it: questions by phase, with answers and what to look for. */
-export function QuestionSetPreview({ set }: { set: number }) {
+export function QuestionSetPreview({ set, jobId }: { set: number; jobId?: string }) {
   const [questions, setQuestions] = useState<SetQuestion[] | null>(null)
   const [letter, setLetter] = useState('')
+  const [minutes, setMinutes] = useState(120)
+  const [track, setTrack] = useState('')
   const [answers, setAnswers] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     setQuestions(null)
-    previewSet(set)
+    previewSet(set, jobId)
       .then((r) => {
         setQuestions(r.questions)
         setLetter(r.letter)
+        setMinutes(r.minutes)
+        setTrack(r.track ?? '')
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not load the questions'))
-  }, [set])
+  }, [set, jobId])
 
   if (error) return <div role="alert" className="alert alert-error">{error}</div>
   if (!questions) return <p className="muted">Loading the questions…</p>
@@ -34,10 +38,10 @@ export function QuestionSetPreview({ set }: { set: number }) {
     <div className="stack" style={{ gap: 8 }} role="region" aria-label={`Set ${letter} questions`}>
       <div className="row" style={{ gap: 12, justifyContent: 'space-between' }}>
         <span>
-          <strong>Set {letter}</strong>{' '}
+          <strong>{track ? `${track[0].toUpperCase()}${track.slice(1)} · ` : ''}Set {letter}</strong>{' '}
           <span className="muted">
             · {questions.length} questions · {spoken} spoken · {questions.filter((q) => q.kind === 'WRITTEN' && q.phase === 'TECHNICAL').length} coding ·
-            time limit 120 min
+            time limit {minutes} min
           </span>
         </span>
         <label className="row" style={{ gap: 6, fontSize: 14 }}>

@@ -365,7 +365,9 @@ class ResumeProcessor {
     static String jobHash(JobOpening job) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(
-                    (job.getTitle() + "\n" + (job.getDescription() == null ? "" : job.getDescription()))
+                    (job.getTitle() + "\n" + (job.getDescription() == null || job.getDescription().isBlank()
+                            // No description: scored against the usual requirements for the title (AI-32).
+                            ? "#usual-requirements-v2" : job.getDescription()))
                             .getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(digest);
         } catch (NoSuchAlgorithmException e) {

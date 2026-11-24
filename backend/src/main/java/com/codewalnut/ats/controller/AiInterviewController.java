@@ -44,8 +44,9 @@ public class AiInterviewController {
 
     /** The questions of hand-written senior Java set 1–4, to read before creating one. */
     @GetMapping("/api/v1/ai-interviews/sets/{set}")
-    public com.codewalnut.ats.dto.AiInterviewDtos.QuestionSetPreview previewSet(@PathVariable int set) {
-        return interviews.previewSet(currentUserService.require(), set);
+    public com.codewalnut.ats.dto.AiInterviewDtos.QuestionSetPreview previewSet(@PathVariable int set,
+            @RequestParam(value = "jobId", required = false) UUID jobId) {
+        return interviews.previewSet(currentUserService.require(), set, jobId);
     }
 
     /** Room left for interview videos, with a warning when it's running low. */
