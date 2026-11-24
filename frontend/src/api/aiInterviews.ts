@@ -85,6 +85,9 @@ export const deleteClosedVideos = (jobId: string) =>
   api<{ candidates: number; videos: number; bytes: number }>(`/jobs/${jobId}/ai-interviews/closed-videos`, { method: 'DELETE' })
 
 /** 1536 → "1.5 KB", 4.5e9 → "4.2 GB". */
+/** Review again with the AI every submitted interview in the opening it hasn't reviewed (failed or basic). */
+export const reviewAllAgain = (jobId: string) => api<{ queued: number }>(`/jobs/${jobId}/ai-interviews/review-again`, { method: 'POST' })
+
 /** Deletes candidates' AI interviews for good: answers, videos, review and verdicts (the candidates stay). */
 export const deleteAiInterviews = (inviteIds: string[]) =>
   api<{ interviews: number; videos: number; bytes: number }>('/ai-interviews/delete', { method: 'POST', body: JSON.stringify({ inviteIds }) })

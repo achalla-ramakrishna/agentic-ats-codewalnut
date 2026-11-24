@@ -170,7 +170,11 @@ public class ResumeIntelligenceService {
         try {
             insight = analyzer.analyze(work.get().job(), work.get().file());
         } catch (CalendarException e) {
-            processor.failIntake(intakeId, e.getMessage());
+            if (passing(e.getMessage())) {
+                processor.postponeIntake(intakeId, retryNote(e.getMessage())); // keeps the file
+            } else {
+                processor.failIntake(intakeId, e.getMessage());
+            }
             return;
         }
         try {
@@ -260,7 +264,7 @@ public class ResumeIntelligenceService {
             ResumeInsight insight = analyzer.analyze(work.get().job(), work.get().file());
             processor.finishInsight(applicationId, work.get().documentId(), insight, analyzer.model(), work.get().jobHash());
         } catch (CalendarException e) {
-            processor.failInsight(applicationId, e.getMessage());
+            processor.failInsight(applicationId, passing(e.getMessage()) ? retryNote(e.getMessage()) : e.getMessage());
         } catch (RuntimeException e) {
             log.warn("Reading résumé for {} failed", applicationId, e);
             processor.failInsight(applicationId, "Something went wrong reading this résumé. Try again.");
@@ -280,6 +284,57 @@ public class ResumeIntelligenceService {
                 queue.submit(() -> processInsight(id));
             }
         }
+    }
+
+    // ---- when the AI was busy, down or out of credit ----
+
+    /** How long uploads and readings that failed for a passing AI reason keep being tried again. */
+    static final java.time.Duration RETRY_FOR = java.time.Duration.ofDays(14);
+
+    /** The AI couldn't read a résumé for a reason that passes (busy, down, out of credit), not because of the file. */
+    static boolean passing(String error) {
+        return error != null && error.contains("another try");
+    }
+
+    static String retryNote(String error) {
+        return error.replace("this résumé will need another try", "it will try again automatically")
+                .replace("This résumé will need another try", "It will try again automatically");
+    }
+
+    /**
+     * Every 10 minutes, while the AI works: reads again uploads and résumés it couldn't read for a passing reason
+     * (e.g. while the Anthropic account had no credit). Uploads keep their file until then, so nobody is lost.
+     */
+    @org.springframework.scheduling.annotation.Scheduled(fixedDelayString = "${ats.ai.retry-ms:600000}",
+            initialDelayString = "${ats.ai.retry-ms:600000}")
+    public void retryPassingFailures() {
+        if (analyzer.available()) {
+            retry(null, Instant.now().minus(RETRY_FOR));
+        }
+    }
+
+    /** Try again now (the upload panel's Try again): this opening's uploads and readings the AI couldn't do. */
+    public com.codewalnut.ats.dto.InsightDtos.Retried retryNow(AppUser actor, UUID jobId) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        job(jobId);
+        requireAvailable();
+        return retry(jobId, Instant.now().minus(RETRY_FOR));
+    }
+
+    private com.codewalnut.ats.dto.InsightDtos.Retried retry(UUID jobId, Instant since) {
+        List<UUID> intakes = processor.requeueIntakes(intakeRepository.findRetryableIds(since, jobId));
+        intakes.forEach(id -> queue.submit(() -> processIntake(id)));
+        List<UUID> readings = insightRepository.findRetryableApplicationIds(since).stream()
+                .filter(id -> jobId == null || applicationRepository.findById(id).map(a -> a.getJob().getId().equals(jobId)).orElse(false))
+                .toList();
+        for (UUID id : readings) {
+            processor.markPending(id);
+            queue.submit(() -> processInsight(id));
+        }
+        if (!intakes.isEmpty() || !readings.isEmpty()) {
+            log.info("Trying again: {} résumé upload(s) and {} reading(s) the AI couldn't do", intakes.size(), readings.size());
+        }
+        return new com.codewalnut.ats.dto.InsightDtos.Retried(intakes.size(), readings.size());
     }
 
     /** Picks up work a restart interrupted. */

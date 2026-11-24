@@ -124,6 +124,10 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
   Select for next round, Maybe — discuss or Don't progress (with a reason) → Save, or Save and review next.
   The verdict shows in the opening's 🎥 AI interview tab (Reviewers column) and in the candidate's team notes;
   the recruiter then moves the candidate. Hiring managers and admins can review too.
+- AI was unavailable (e.g. out of credit) and is back: opening → 🎥 AI interview → ✨ Review again with AI
+  (re-reviews failed and basic reviews). Résumés uploaded meanwhile are kept and read again automatically
+  every 10 minutes; or opening → + Add candidates → Upload résumés → Try again now. Profiles whose reading
+  failed earlier: AI suggestions → Analyze.
 - Candidates missed the AI interview deadline: opening → 🎥 AI interview → untick Only submitted → Tick
   everyone who hasn't taken it → 📅 Extend due date → 15 days → keep "Email each their link" ticked → Extend.
   Someone whose interview was submitted half-done: open them → Let them finish.

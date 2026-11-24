@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { getIntake, uploadResumes, type IntakeProgress } from '../api/insights'
+import { getIntake, retryResumes, uploadResumes, type IntakeProgress } from '../api/insights'
 import { Button, Card } from './ui'
 
 const BATCH = 5
@@ -42,6 +42,23 @@ export function ResumeUpload({ jobId, onProgress, onClose }: { jobId: string; on
     }, 3000)
     return () => window.clearInterval(timer)
   }, [jobId, pending])
+
+  const [retrying, setRetrying] = useState(false)
+  const waiting = (progress?.items ?? []).filter((i) => i.status === 'FAILED' && /try again automatically/i.test(i.error ?? '')).length
+
+  async function retry() {
+    setRetrying(true)
+    setError(null)
+    try {
+      await retryResumes(jobId)
+      setProgress(await getIntake(jobId))
+      onProgressRef.current()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not try again')
+    } finally {
+      setRetrying(false)
+    }
+  }
 
   async function send(list: File[]) {
     setError(null)
@@ -118,6 +135,16 @@ export function ResumeUpload({ jobId, onProgress, onClose }: { jobId: string; on
               {progress.existing > 0 && <> · {progress.existing} already known</>}
               {progress.failed > 0 && <> · {progress.failed} couldn’t be read</>}
             </div>
+            {waiting > 0 && (
+              <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+                <span className="muted" style={{ fontSize: 13 }}>
+                  {waiting} {waiting === 1 ? 'résumé is' : 'résumés are'} kept and will be read automatically once the AI works again.
+                </span>
+                <Button size="sm" variant="secondary" disabled={retrying} onClick={() => void retry()}>
+                  {retrying ? 'Trying…' : `Try again now (${waiting})`}
+                </Button>
+              </div>
+            )}
             <ul className="intake-list">
               {items
                 .slice()

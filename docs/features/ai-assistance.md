@@ -59,6 +59,7 @@ hiring decision.
 | AI-32 | **Closest to selection** ranks Interviewed and Shortlisted candidates by a readiness score (0–100): interview feedback is half (strong hire 100, hire 75, no hire 25, strong no hire 0, averaged over the panel; none yet counts as a neutral 50), the test score and résumé match the other half, plus 5 for Shortlisted. Anyone whose panel leans no (average below 50) is left out. The reason shows the stage, the panel's recommendations, the requirements met, the test score and a strength. It updates as soon as feedback is submitted or a test is scored. | Done |
 | AI-33 | Résumé counts separate people **without a résumé** (nothing to read: attach or upload one) from résumés **not read yet**; **Analyze résumés (n)** counts only the latter, so it reaches zero. | Done |
 | AI-30 | Email ingestion: a dedicated inbox (inbound-email webhook) feeding the same intake. | v1 |
+| AI-31 | **No résumé lost when the AI is down**: if the AI can't read an uploaded résumé for a passing reason (busy, down, the Anthropic account out of credit), the file is kept and the upload says it will try again automatically; every 10 minutes, while the AI works, those uploads and profile readings are read again (for 14 days). The upload panel has *Try again now (N)*. A file the AI can't read (old .doc, no text) still fails straight away. `POST /jobs/{id}/resumes/retry`. | Done |
 | ASK-01 | **Ask ATS** in the menu (all CodeWalnut staff): a chat page like ChatGPT. Type a question, or pick a suggestion, and get an answer from live ATS data. Enter sends, Shift+Enter adds a line. | Done |
 | ASK-02 | Answers look things up with read-only tools: openings with stage counts, candidates by name/stage/opening, one candidate in full (history and notes, other openings, interviews and feedback status, tests, résumé reading), résumé profiles across an opening, upcoming/recent interviews and feedback due, test results, recent activity; plus a built-in guide for "how do I…" questions. Candidates, openings and feedback forms are links into the app. | Done |
 | ASK-03 | The tools run as the person asking, through the same services and permissions as the screens: an interviewer can't read candidates through it, a recruiter sees what they see. Email and phone numbers are never sent to the AI (search by them still works). Lookups never change anything; changes only happen through confirmed actions (ASK-06). | Done |
@@ -83,6 +84,7 @@ hiring decision.
 
 | Date | Change |
 | --- | --- |
+| 2026-11-24 | AI-31: résumés the AI couldn't read while it was down are kept and read again automatically |
 | 2026-09-25 | Created from SPEC.md |
 | 2026-10-06 | Ask ATS: chat with the whole ATS (ASK-01…ASK-05, ADR-0021) |
 | 2026-10-07 | Closest to selection uses interview feedback, tests and résumé match; résumé counts fixed (AI-32, AI-33) |

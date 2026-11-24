@@ -56,6 +56,7 @@ team talks live only to the best few (e.g. 10 of 200).
 | AINT-21 | **Reviewer verdict**: a new role, *AI interview reviewer*, gets one page, **AI interview reviews**: every completed AI interview (to review first, then reviewed by me, all; by opening; search). Opening one shows the answers with videos, transcripts and "Look for", the AI's review, and other reviewers' verdicts. The reviewer marks answers (✓ Good / ~ Okay / ✗ Weak, with a note; optional) and decides **Select for next round**, **Maybe — discuss** or **Don't progress** (a reason is required unless selecting); *Save and review next* opens the next one waiting. One verdict per person, changeable. The verdict shows in the opening's ranking (Reviewers column), is posted to the candidate's team notes and audited. It doesn't move the candidate; the recruiter does. Hiring managers and admins can review too. | Done |
 | AINT-22 | **Outside reviewers**: an admin can add a non-CodeWalnut address (e.g. a Gmail address) under Users only with the *AI interview reviewer* role and nothing else (any other role is refused, now or later). That person signs in with Google as staff and sees only AI interview reviews. Other Gmail users still sign in as candidates. Not allowed for an address that belongs to a candidate or a client contact. | Done |
 | AINT-23 | **Delete AI interviews** of chosen candidates: in the opening's ranking, tick one or more → *🗑 Delete AI interview* → confirm (names listed). Deletes their answers, videos (files too), AI review and reviewers' verdicts for good; the candidates stay in the opening and can be sent a new one. Recruiters only (`MANAGE_JOBS`); audited per candidate. | Done |
+| AINT-24 | **Review again with AI** for the whole opening: one click re-reviews every submitted interview the AI hasn't reviewed (failed, e.g. while the account had no credit, or given the basic rules review). Refused when no AI key is set. `POST /jobs/{id}/ai-interviews/review-again`. | Done |
 | AINT-08 | Automatic retention: delete interview videos N days after the opening closes. | v1 |
 
 ## Business rules
@@ -95,6 +96,7 @@ team talks live only to the best few (e.g. 10 of 200).
 | Date | Change |
 | --- | --- |
 | 2026-11-14 | Archived AI interviews can be deleted for good with answers and videos (ASMT-41) |
+| 2026-11-24 | Review again with AI for the opening (AINT-24) |
 | 2026-11-14 | Delete the AI interviews of ticked candidates (AINT-23) |
 | 2026-11-14 | Outside reviewers (Gmail) as AI interview reviewers only (AINT-22) |
 | 2026-11-14 | AI interview reviewer role and verdicts: select for next round / hold / don't progress (AINT-21) |

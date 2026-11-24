@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AREA_SHORT, bytes, createAiInterview, deleteAiInterviews, jobInterviews, type JobInterviews, type RankedCandidate } from '../api/aiInterviews'
+import { AREA_SHORT, bytes, createAiInterview, deleteAiInterviews, jobInterviews, reviewAllAgain, type JobInterviews, type RankedCandidate } from '../api/aiInterviews'
 import { extendTests, remindTest } from '../api/assessments'
 import { moveStage } from '../api/tracker'
 import { Dots } from './InterviewReviewCard'
@@ -138,6 +138,24 @@ export function AiInterviewPanel({
       onChanged()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not delete')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const notByAi = (data?.candidates ?? []).filter(
+    (c) => c.status === 'SUBMITTED' && (c.evaluation === 'FAILED' || (c.evaluation === 'DONE' && !c.usesAi)),
+  )
+
+  async function reviewAgainWithAi() {
+    setBusy(true)
+    setError(null)
+    try {
+      const r = await reviewAllAgain(jobId)
+      setMessage(`${r.queued} interview${r.queued === 1 ? ' is' : 's are'} being reviewed by the AI — usually a minute or two each. Refresh to see the scores.`)
+      load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not review again')
     } finally {
       setBusy(false)
     }
@@ -286,6 +304,11 @@ export function AiInterviewPanel({
             {canEdit && (
               <Button size="sm" variant="secondary" disabled={busy || picked.size === 0} onClick={() => setExtending((x) => !x)}>
                 📅 Extend due date ({picked.size})
+              </Button>
+            )}
+            {canEdit && notByAi.length > 0 && (
+              <Button size="sm" variant="secondary" disabled={busy} onClick={() => void reviewAgainWithAi()}>
+                ✨ Review again with AI ({notByAi.length})
               </Button>
             )}
             {canEdit && notTaken.length > 0 && (

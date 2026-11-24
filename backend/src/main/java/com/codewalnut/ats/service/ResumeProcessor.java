@@ -166,6 +166,30 @@ class ResumeProcessor {
         intakeRepository.findById(intakeId).ifPresent(intake -> fail(intake, error));
     }
 
+    /** The AI couldn't read it for a passing reason: keep the file so it's tried again (automatically or Try again). */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void postponeIntake(UUID intakeId, String error) {
+        intakeRepository.findById(intakeId).ifPresent(intake -> {
+            intake.setStatus(ResumeIntake.Status.FAILED);
+            intake.setError(truncate(error, 500));
+            intake.setProcessedAt(Instant.now());
+        });
+    }
+
+    /** Puts kept uploads back in the queue; returns the ids to process. */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public List<UUID> requeueIntakes(List<UUID> ids) {
+        List<UUID> out = new java.util.ArrayList<>();
+        for (ResumeIntake intake : intakeRepository.findAllById(ids)) {
+            if (intake.getStatus() == ResumeIntake.Status.FAILED && intake.getData() != null) {
+                intake.setStatus(ResumeIntake.Status.PENDING);
+                intake.setError(null);
+                out.add(intake.getId());
+            }
+        }
+        return out;
+    }
+
     private void fail(ResumeIntake intake, String error) {
         intake.setStatus(ResumeIntake.Status.FAILED);
         intake.setError(truncate(error, 500));

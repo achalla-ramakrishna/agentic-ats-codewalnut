@@ -433,6 +433,11 @@ class AiInterviewFlowTest {
         java.time.Instant due = java.time.Instant.parse(JsonPath.read(r, "$.dueAt"));
         java.time.ZoneId india = java.time.ZoneId.of("Asia/Kolkata");
         assertThat(due.atZone(india).toLocalDate()).isEqualTo(java.time.LocalDate.now(india).plusDays(15));
+        // AINT-24: review the opening again with the AI — managers only; refused when no AI key is set (as in tests).
+        json(HM, "POST", "/api/v1/jobs/" + job + "/ai-interviews/review-again", "").andExpect(status().isForbidden());
+        json(RECRUITER, "POST", "/api/v1/jobs/" + job + "/ai-interviews/review-again", "")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value(Matchers.containsString("ANTHROPIC_API_KEY")));
         mockMvc.perform(get("/api/v1/tests/" + invites[0]).with(RECRUITER))
                 .andExpect(jsonPath("$.invite.status").value("SENT"))
                 .andExpect(jsonPath("$.invite.dueAt").value(JsonPath.<String>read(r, "$.dueAt")));

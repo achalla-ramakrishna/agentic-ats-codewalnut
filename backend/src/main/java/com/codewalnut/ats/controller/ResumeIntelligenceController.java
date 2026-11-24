@@ -33,6 +33,12 @@ public class ResumeIntelligenceController {
         return service.upload(currentUserService.require(), id, files);
     }
 
+    /** Try again now: this opening's uploads and readings the AI couldn't do (busy, down, out of credit). */
+    @PostMapping("/api/v1/jobs/{id}/resumes/retry")
+    public com.codewalnut.ats.dto.InsightDtos.Retried retry(@PathVariable UUID id) {
+        return service.retryNow(currentUserService.require(), id);
+    }
+
     @GetMapping("/api/v1/jobs/{id}/resumes")
     public IntakeProgress progress(@PathVariable UUID id) {
         return service.progress(currentUserService.require(), id);

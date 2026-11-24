@@ -477,6 +477,41 @@ public class AiInterviewService {
     }
 
     /**
+     * Reviews again every submitted AI interview in the opening that the AI hasn't reviewed (AINT-24): ones that
+     * failed (e.g. while the AI account had no credit) or got the basic rules review. Needs the AI to be set up.
+     */
+    @Transactional
+    public int reviewAllAgain(AppUser actor, UUID jobId) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        if (!agent.usesAi()) {
+            throw new IllegalArgumentException("The AI isn't set up (no ANTHROPIC_API_KEY), so there's nothing better to review with.");
+        }
+        List<UUID> apps = applicationRepository.findByJobIdOrderByCandidateNameAsc(jobId).stream().map(Application::getId).toList();
+        if (apps.isEmpty()) {
+            return 0;
+        }
+        List<UUID> queued = new ArrayList<>();
+        for (AssessmentInvite i : inviteRepository.findByApplicationIdInOrderBySentAtDesc(apps)) {
+            if (i.getAssessment().getCategory() != Assessment.Category.INTERVIEW || i.getStatus() != AssessmentInvite.Status.SUBMITTED) {
+                continue;
+            }
+            InterviewReviews.Stored stored = reviews.read(i);
+            boolean byAi = i.getEvaluation() == AssessmentInvite.Evaluation.DONE && stored != null && stored.usesAi();
+            if (byAi || i.getEvaluation() == AssessmentInvite.Evaluation.PENDING) {
+                continue;
+            }
+            i.setEvaluation(AssessmentInvite.Evaluation.PENDING);
+            i.setEvaluationAttempts(0);
+            queued.add(i.getId());
+        }
+        if (!queued.isEmpty()) {
+            auditService.record(actor, AuditAction.INTERVIEW_REVIEWED_AGAIN, "JobOpening", jobId, Map.of("interviews", queued.size()));
+            queued.forEach(id -> events.publishEvent(new InterviewReviewRequested(id)));
+        }
+        return queued.size();
+    }
+
+    /**
      * Staff: let a candidate finish a submitted AI interview (e.g. some recordings failed to upload). It opens
      * again for the given minutes with everything saved so far kept; the review runs again on the next submit.
      */

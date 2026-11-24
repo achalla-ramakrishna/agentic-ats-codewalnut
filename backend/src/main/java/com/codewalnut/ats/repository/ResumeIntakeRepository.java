@@ -24,4 +24,10 @@ public interface ResumeIntakeRepository extends JpaRepository<ResumeIntake, UUID
 
     @Query("select i.id from ResumeIntake i where i.status = com.codewalnut.ats.domain.ResumeIntake.Status.PENDING")
     List<UUID> findPendingIds();
+
+    /** Uploads the AI couldn't read for a passing reason (busy, down, out of credit); the file is kept to try again. */
+    @Query("select i.id from ResumeIntake i where i.status = com.codewalnut.ats.domain.ResumeIntake.Status.FAILED"
+            + " and i.data is not null and i.createdAt > :since and (:jobId is null or i.jobId = :jobId)")
+    List<UUID> findRetryableIds(@org.springframework.data.repository.query.Param("since") Instant since,
+            @org.springframework.data.repository.query.Param("jobId") UUID jobId);
 }

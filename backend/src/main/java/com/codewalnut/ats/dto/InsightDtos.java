@@ -8,6 +8,9 @@ import java.util.UUID;
 /** Résumé intelligence (ADR-0010). Everything here is advisory; people decide. */
 public final class InsightDtos {
 
+    /** Uploads and readings put back in the queue after the AI couldn't do them. */
+    public record Retried(int uploads, int readings) {}
+
     private InsightDtos() {}
 
     /**

@@ -82,6 +82,12 @@ public class AiInterviewController {
         interviews.reviewAgain(currentUserService.require(), id);
     }
 
+    /** Review again with the AI every submitted interview in the opening it hasn't reviewed (failed or basic). */
+    @PostMapping("/api/v1/jobs/{id}/ai-interviews/review-again")
+    public java.util.Map<String, Integer> reviewAllAgain(@PathVariable UUID id) {
+        return java.util.Map.of("queued", interviews.reviewAllAgain(currentUserService.require(), id));
+    }
+
     /** Let the candidate finish: reopens a submitted interview for the given minutes, keeping saved answers. */
     @PostMapping("/api/v1/tests/{id}/reopen")
     @ResponseStatus(HttpStatus.NO_CONTENT)

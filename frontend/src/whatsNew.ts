@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-24-ai-retry',
+    date: '2026-11-24',
+    title: 'Nothing lost when the AI is unavailable',
+    summary: 'Résumés uploaded while the AI is busy or out of credit are kept and read automatically once it works again. AI interviews the AI couldn’t review can be reviewed again for the whole opening in one click.',
+    steps: ['Upload résumés → Try again now, or just wait: it retries every 10 minutes.', 'Opening → 🎥 AI interview → ✨ Review again with AI.'],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-11-17-extend-due-date',
     date: '2026-11-17',
     title: 'More time for candidates who missed the AI interview',

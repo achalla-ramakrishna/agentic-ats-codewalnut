@@ -107,6 +107,8 @@ export function uploadResumes(jobId: string, files: File[]) {
   return api<IntakeProgress>(`/jobs/${jobId}/resumes`, { method: 'POST', body })
 }
 export const getIntake = (jobId: string) => api<IntakeProgress>(`/jobs/${jobId}/resumes`)
+/** Read again now the uploads and résumés the AI couldn't read (busy, down, out of credit); also happens every 10 minutes. */
+export const retryResumes = (jobId: string) => api<{ uploads: number; readings: number }>(`/jobs/${jobId}/resumes/retry`, { method: 'POST' })
 export const getInsights = (jobId: string) => api<InsightsResponse>(`/jobs/${jobId}/insights`)
 export const analyzeAll = (jobId: string) =>
   api<{ queued: number; noResume: number; upToDate: number }>(`/jobs/${jobId}/insights/analyze`, { method: 'POST' })

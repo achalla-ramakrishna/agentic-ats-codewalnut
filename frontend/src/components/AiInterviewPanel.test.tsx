@@ -125,6 +125,29 @@ describe('AiInterviewPanel (AINT-07)', () => {
     expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/remind'))).toHaveLength(2)
   })
 
+  it('reviews again with the AI the interviews it couldn’t review (AINT-24)', async () => {
+    const fetchMock = fakeFetch([
+      { path: '/jobs/j1/ai-interviews/review-again', method: 'POST', body: { queued: 2 } },
+      {
+        path: '/jobs/j1/ai-interviews',
+        body: {
+          candidates: [row('Asha Rao', 86, 'SUBMITTED'), row('Ravi Kumar', 40, 'SUBMITTED', { usesAi: false }),
+            row('Meena Iyer', null, 'SUBMITTED', { evaluation: 'FAILED' })],
+          sent: 3, started: 0, submitted: 3, reviewed: 2,
+        },
+      },
+      { path: '/stages', body: [] },
+    ])
+    render(
+      <MemoryRouter>
+        <AiInterviewPanel jobId="j1" canEdit onOpen={() => undefined} onChanged={() => undefined} />
+      </MemoryRouter>,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: '✨ Review again with AI (2)' }))
+    expect(await screen.findByText(/2 interviews are being reviewed by the AI/)).toBeInTheDocument()
+    expect(fetchMock.mock.calls.some(([url, init]) => String(url).endsWith('/review-again') && init?.method === 'POST')).toBe(true)
+  })
+
   it('creates the chosen question set, or all four (AINT-11)', async () => {
     const fetchMock = fakeFetch([
       { path: '/jobs/j1/ai-interviews', body: { candidates: [], sent: 0, started: 0, submitted: 0, reviewed: 0 } },
