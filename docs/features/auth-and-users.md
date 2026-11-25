@@ -82,6 +82,7 @@ interviews and nothing else (AINT-22). Any other outside address signs in as a c
 | AUTH-20 | `GET /auth/session` (public) returns the session type (staff / candidate / none) so the app shows the right area. | MVP |
 | AUTH-21 | A `demo` profile for shared previews (before Google is set up): seeded fake users and the dev login, gated by a shared access code of ≥ 12 characters; the app refuses to start in demo without it; wrong codes are refused and audited. | MVP |
 | AUTH-22 | A refused Google sign-in returns to the login page saying which email Google signed in with and why: not a user yet (ask an Admin to add exactly that email), deactivated, linked to a different Google account, or email not verified. Shown once, only in that browser; the refusal is also in the audit log. | Done |
+| AUTH-23 | **Sign-ins survive deploys**: sessions are stored in MySQL (8 hours idle), so a deploy or restart doesn't sign out staff or a candidate in the middle of an AI interview or test. If a candidate is signed out anyway, the test page says nothing is lost and offers *Sign in again* in a new tab; the unsent recording stays on the page to upload again, and unsaved answers save by themselves once signed in. | Done |
 
 ## Business rules
 
@@ -167,6 +168,7 @@ Passwords, self-registration, staff MFA beyond what Google enforces.
 
 | Date | Change |
 | --- | --- |
+| 2026-11-25 | AUTH-23: sessions in MySQL so deploys don't sign people out; sign in again without losing a recording |
 | 2026-09-25 | Created from SPEC.md; AUTH-01…16 implemented on the chunk-0 branch |
 | 2026-09-25 | AUTH-14: dev profile is never active by default (tested); UI for AUTH-07, AUTH-08 added |
 | 2026-09-25 | Google sign-in opened to any Google account: AUTH-02, AUTH-03 changed; AUTH-18…20 added (candidates with personal Gmail); ADR-0004 |

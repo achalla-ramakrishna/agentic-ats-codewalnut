@@ -174,6 +174,10 @@ Never set `SPRING_PROFILES_ACTIVE=dev` on Railway.
 
 ## Troubleshooting (lessons from the first deploy)
 
+- **Candidates got "Request failed (401)" while uploading** an AI interview answer: before 2026-11-25, sign-ins
+  lived in the app's memory and every deploy signed everyone out. They're now kept in MySQL, so deploys don't.
+  The deploy that switched over signed everyone out once (the cookie changed from `JSESSIONID` to `SESSION`).
+
 | Symptom | Cause | Fix |
 | --- | --- | --- |
 | Variables changed but nothing happens | Railway **stages** variable edits ("Apply N changes") | Click the purple **Deploy** button |

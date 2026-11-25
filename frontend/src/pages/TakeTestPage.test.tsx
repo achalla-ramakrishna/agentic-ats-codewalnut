@@ -258,6 +258,34 @@ describe('TakeTestPage — AI interview (AINT-03, AINT-04)', () => {
     expect(screen.getByText(/Finish the current answer/)).toBeInTheDocument()
   })
 
+  it('when the sign-in has gone, keeps the recording and offers to sign in again in a new tab', { timeout: 20000 }, async () => {
+    fakeFetch([
+      { path: '/candidate/tests/i1/start', method: 'POST', body: takingInterview },
+      { path: '/candidate/tests/i1/questions/v1/video', method: 'POST', status: 401, body: { error: 'Request failed (401)' } },
+      { path: '/candidate/tests/i1/activity', method: 'POST', status: 204 },
+      { path: '/candidate/tests', body: [interview] },
+    ])
+    vi.stubGlobal('navigator', { ...navigator, mediaDevices: { getUserMedia: vi.fn(async () => ({ getTracks: () => [] })) } })
+    vi.stubGlobal('MediaRecorder', FakeRecorder)
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => 'blob:answer', revokeObjectURL: () => undefined }))
+    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    render(
+      <MemoryRouter initialEntries={['/tests/i1']}>
+        <Routes>
+          <Route path="/tests/:id" element={<TakeTestPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Start the interview' }))
+    await userEvent.click(await screen.findByRole('button', { name: '● Record answer' }))
+    await userEvent.click(screen.getByRole('button', { name: '■ Stop and save' }))
+    expect(await screen.findByText(/You were signed out. Nothing is lost/, {}, { timeout: 8000 })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Sign in again' }))
+    expect(open).toHaveBeenCalledWith('/oauth2/authorization/google', '_blank')
+    expect(screen.getByRole('button', { name: 'Try uploading again' })).toBeInTheDocument()
+    open.mockRestore()
+  })
+
   it('keeps a spoken question hidden until opened, gives thinking time, then records on its own (AINT-24)', { timeout: 20000 }, async () => {
     const hidden = {
       ...takingInterview,

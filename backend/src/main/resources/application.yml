@@ -12,6 +12,10 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  # Sign-ins live in MySQL (tables from V32), so deploys don't sign anyone out.
+  session:
+    jdbc:
+      initialize-schema: never
   servlet:
     multipart:
       # Documents are checked at 10 MB by DocumentService; AI interview videos may be up to 60 MB.

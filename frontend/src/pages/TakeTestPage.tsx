@@ -16,6 +16,7 @@ import { VideoAnswer, speechRecognition } from '../components/VideoAnswer'
 import { Figure } from '../components/Figure'
 import { Button, Card } from '../components/ui'
 import { sectionTitle } from '../api/questionBank'
+import { SignedOutNotice, isSignedOut } from '../components/SignedOut'
 import '../components/tracker.css'
 import './CandidateHomePage.css'
 
@@ -44,6 +45,7 @@ export function TakeTestPage() {
   const [done, setDone] = useState<MyTest | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState<'idle' | 'saving' | 'saved' | 'offline'>('idle')
+  const [signedOut, setSignedOut] = useState(false)
   const dirty = useRef<Record<string, string[]>>({})
   const submitting = useRef(false)
   // Advisory signals for staff (ADR-0016): totals only, sent with the regular save.
@@ -118,9 +120,11 @@ export function TakeTestPage() {
     try {
       await saveAnswers(id, pending)
       setSaving('saved')
-    } catch {
+      setSignedOut(false)
+    } catch (e) {
       dirty.current = { ...pending, ...dirty.current }
       setSaving('offline')
+      if (isSignedOut(e)) setSignedOut(true)
     }
   }, [id])
 
@@ -132,7 +136,8 @@ export function TakeTestPage() {
       setTaking(null)
     } catch (e) {
       submitting.current = false
-      setError(e instanceof Error ? e.message : 'Could not submit. Check your connection and try again.')
+      if (isSignedOut(e)) setSignedOut(true)
+      else setError(e instanceof Error ? e.message : 'Could not submit. Check your connection and try again.')
     }
   }, [id, answers])
 
@@ -224,6 +229,7 @@ export function TakeTestPage() {
         )}
       </header>
       <main className="candidate-main stack">
+        {signedOut && <SignedOutNotice />}
         {error && (
           <div role="alert" className="alert alert-error">
             {error} <Link to="/">Back to my applications</Link>

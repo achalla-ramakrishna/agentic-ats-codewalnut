@@ -23,8 +23,9 @@ visitor is signed out, staff or a candidate, then loads `GET /api/v1/me`
 to `/oauth2/authorization/google`, handled by Spring Security;
 `SignInService` routes staff-domain emails to a provisioned `AppUser` and
 every other verified Google account to a `CandidateAccount`, then creates a
-server-side session (HTTP-only cookie) carrying `ROLE_STAFF` or
-`ROLE_CANDIDATE`. CSRF uses the
+server-side session (HTTP-only `SESSION` cookie) carrying `ROLE_STAFF` or
+`ROLE_CANDIDATE`. Sessions are kept in MySQL (Spring Session JDBC, `SPRING_SESSION*` tables, V32), so a
+deploy or restart doesn't sign anyone out; session attributes must be `Serializable`. CSRF uses the
 `XSRF-TOKEN` cookie echoed as `X-XSRF-TOKEN`.
 
 Interviews: a recruiter connects their own Google Calendar through a second

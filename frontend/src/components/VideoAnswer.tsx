@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { revealQuestion, uploadAnswer, type RevealedQuestion } from '../api/aiInterviews'
+import { SignedOutNotice, isSignedOut } from './SignedOut'
 import { Button } from './ui'
 
 /** The browser's speech-to-text (Chrome, Edge); not in TypeScript's DOM types. */
@@ -130,6 +131,7 @@ export function VideoAnswer({
   const [heard, setHeard] = useState('')
   const [playback, setPlayback] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [signedOut, setSignedOut] = useState(false)
   const recorder = useRef<MediaRecorder | null>(null)
   const chunks = useRef<Blob[]>([])
   const recognition = useRef<Recognition | null>(null)
@@ -324,6 +326,7 @@ export function VideoAnswer({
       onRecording(false)
     } catch (e) {
       // Stay "busy" so the page won't move on and lose this recording; retry or record again.
+      setSignedOut(isSignedOut(e))
       setError(`${e instanceof Error ? e.message : 'Could not upload your answer.'} Your recording is kept — click Try uploading again.`)
       setState('error')
     }
@@ -399,7 +402,8 @@ export function VideoAnswer({
           </>
         )}
       </div>
-      {error && (
+      {error && signedOut && state === 'error' && <SignedOutNotice retryLabel="Try uploading again" />}
+      {error && !(signedOut && state === 'error') && (
         <div role="alert" className="alert alert-error">
           {error}
         </div>

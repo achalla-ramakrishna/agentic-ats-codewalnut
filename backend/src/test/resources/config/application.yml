@@ -3,6 +3,9 @@
 spring:
   profiles:
     active: dev
+  # Most tests hold the container session in MockMvc; SessionStoreTest checks sessions kept in MySQL.
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.session.SessionAutoConfiguration
   datasource:
     url: ${TEST_DB_URL:jdbc:mysql://localhost:3306/ats_test?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true}
 

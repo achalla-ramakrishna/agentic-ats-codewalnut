@@ -10,7 +10,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * exactly what to fix (e.g. "arun.k@codewalnut.com isn't a user yet"). Only the person who
  * just signed in with that Google account sees it, and it is shown once.
  */
-public record SignInRefusal(String email, String reason) {
+public record SignInRefusal(String email, String reason) implements java.io.Serializable {
 
     public static final String NOT_PROVISIONED = "NOT_PROVISIONED";
     public static final String DEACTIVATED = "DEACTIVATED";
