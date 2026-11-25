@@ -563,4 +563,33 @@ class AiInterviewFlowTest {
     private MockHttpSession stranger() throws Exception {
         return candidateSession("someone." + tag + "@gmail.com");
     }
+    @Test
+    void sendsTheLinkOnWhatsApp() throws Exception {
+        String job = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/jobs",
+                "{\"title\":\"Front End Engineer Intern " + tag + "\",\"hiringType\":\"INTERNAL\"}")), "$.id");
+        String test = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/ai-interviews", "{\"jobId\":\"" + job + "\"}")),
+                "$.interview.summary.id");
+        json(RECRUITER, "POST", "/api/v1/assessments/" + test + "/publish", "").andExpect(status().isOk());
+        String digits = String.valueOf(1000 + (int) (Math.random() * 9000));
+        String[] invites = new String[2];
+        String[] phones = {"\"phone\":\"98765 4" + digits + "\",", ""};
+        for (int i = 0; i < 2; i++) {
+            String app = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/jobs/" + job + "/applications",
+                    "{\"name\":\"Wa Sample" + i + "\",\"email\":\"wa" + i + "." + tag + "@gmail.com\"," + phones[i]
+                            + "\"stage\":\"SCREENING\"}")), "$.id");
+            invites[i] = JsonPath.read(body(json(RECRUITER, "POST", "/api/v1/applications/" + app + "/tests",
+                    "{\"assessmentId\":\"" + test + "\",\"dueDays\":3,\"sendEmail\":false,\"sendWhatsApp\":false}")), "$.invite.id");
+        }
+        // ASMT-43: without the Business API, a wa.me link with the message and the personal link typed in.
+        json(HM, "POST", "/api/v1/tests/" + invites[0] + "/whatsapp", "").andExpect(status().isForbidden());
+        json(RECRUITER, "POST", "/api/v1/tests/" + invites[0] + "/whatsapp", "")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message.whatsappLink").value(Matchers.startsWith("https://wa.me/9198765" + "4" + digits + "?text=Hi%20Wa")))
+                .andExpect(jsonPath("$.message.whatsappLink").value(Matchers.containsString("AI%20interview%20is%20ready")))
+                .andExpect(jsonPath("$.message.whatsappLink").value(Matchers.containsString("%2Ftests%2F" + invites[0])))
+                .andExpect(jsonPath("$.invite.status").value("SENT"));
+        json(RECRUITER, "POST", "/api/v1/tests/" + invites[1] + "/whatsapp", "")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value(Matchers.containsString("mobile number")));
+    }
 }

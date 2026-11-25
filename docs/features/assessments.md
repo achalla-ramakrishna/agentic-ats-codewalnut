@@ -75,6 +75,7 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 | ASMT-40 | **Tests list**: filter All / AI interviews / Tests, by status and by name; newest first with a Last changed column so copies can be told apart; tick several and **Delete or archive** them (never-sent ones are deleted, sent ones archived so answers stay; confirmed first); opening a test scrolls to it. | Done |
 | ASMT-41 | **Delete archived tests for good** to free space: Status → *Archived* (or Show archived), tick them (*Tick all shown*) → *Clean up N ticked*, or open one → *🗑 Delete for good*. Removes the test with every candidate's answers, scores, AI interview videos (files too), AI reviews and reviewers' verdicts; says how many videos and how much space was freed. Only archived tests (archive first); confirmed first; recruiters only; audited. The candidates stay in their openings. | Done |
 | ASMT-42 | **Extend the due date** for candidates who haven't taken a test or AI interview: in the opening's AI interview ranking, *Tick everyone who hasn't taken it* (or tick some) → *📅 Extend due date* → days (default 15) → *Extend*. Not-started and past-due invites open again until 23:59 India time that many days from today; started or submitted ones are skipped and named. Optionally emails each their link and the new date (the reminder email; needs Google connected). Recruiters only; audited. API `POST /tests/extend` {inviteIds, days}. | Done |
+| ASMT-43 | **WhatsApp the link**: opening → 🎥 AI interview → tick candidates → *💬 WhatsApp link*, or *💬 WhatsApp them the link* right after sending. Each person gets their own link, the time it takes, how to sign in and the due date. Without the WhatsApp Business API each click opens WhatsApp (Web or app) with the message typed in; with it, *Send to all*. Only open invites (past due → extend first); needs the candidate's mobile number; saved in the candidate's chat; audited. API `POST /tests/{id}/whatsapp`. | Done |
 | ASMT-25 | Per-section timers and optional negative marking. | v1 |
 | ASMT-17 | Automatic reminders (needs a sender that works without a staff session, e.g. WhatsApp Business API or a shared mailbox). | v1 |
 
@@ -111,6 +112,7 @@ Recruiters send and review; Hiring Managers and interviewers read results.
 
 | Date | Change |
 | --- | --- |
+| 2026-11-25 | WhatsApp the test / AI interview link (ASMT-43) |
 | 2026-11-17 | Extend the due date for candidates who haven't taken it (ASMT-42) |
 | 2026-11-14 | Delete archived tests for good with their answers and videos (ASMT-41) |
 | 2026-11-13 | Tests list filters, Last changed, tidy up ticked tests (ASMT-40) |

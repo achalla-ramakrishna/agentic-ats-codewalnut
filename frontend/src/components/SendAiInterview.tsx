@@ -3,6 +3,7 @@ import { listAssessments, sendTest, testLink, type AssessmentSummary } from '../
 import { addCandidate, type ApplicationRow } from '../api/tracker'
 import { getGoogleStatus, type GoogleStatus } from '../api/interviews'
 import { ConnectGoogle } from './ConnectGoogle'
+import { WhatsAppLinks } from './WhatsAppLinks'
 import { Button } from './ui'
 
 const EMAIL = /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/
@@ -59,7 +60,8 @@ export function SendAiInterview({
   const [google, setGoogle] = useState<GoogleStatus | null>(null)
   const [email, setEmail] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
-  const [outcome, setOutcome] = useState<{ sent: { name: string; link: string }[]; failed: string[] } | null>(null)
+  const [outcome, setOutcome] = useState<{ sent: { name: string; link: string; inviteId: string }[]; failed: string[] } | null>(null)
+  const [whatsApping, setWhatsApping] = useState(false)
   const [copied, setCopied] = useState(false)
   const [extraText, setExtraText] = useState('')
 
@@ -91,7 +93,7 @@ export function SendAiInterview({
 
   async function send() {
     setOutcome(null)
-    const sent: { name: string; link: string }[] = []
+    const sent: { name: string; link: string; inviteId: string }[] = []
     const failed: string[] = []
     // People typed in: use them if they're already in this opening, otherwise add them first.
     const targets: { id: string; name: string }[] = withEmail.map((r) => ({ id: r.id, name: r.name }))
@@ -112,7 +114,7 @@ export function SendAiInterview({
       setBusy(`Sending ${i + 1} of ${targets.length}…`)
       try {
         const res = await sendTest(t.id, { assessmentId: chosen, dueDays: days, sendEmail: email, sendWhatsApp: false })
-        sent.push({ name: t.name, link: testLink(res.invite.id) })
+        sent.push({ name: t.name, link: testLink(res.invite.id), inviteId: res.invite.id })
       } catch (e) {
         failed.push(`${t.name}: ${e instanceof Error ? e.message : 'not sent'}`)
       }
@@ -192,7 +194,11 @@ export function SendAiInterview({
       <label className="row" style={{ gap: 6 }}>
         <input type="checkbox" checked={email} onChange={(e) => setEmail(e.target.checked)} /> Email them the link from my Gmail
       </label>
-      {!email && <span className="muted" style={{ fontSize: 13 }}>Their links will be listed here after sending, to copy into WhatsApp or your own email.</span>}
+      {!email && (
+        <span className="muted" style={{ fontSize: 13 }}>
+          After sending you can WhatsApp each person their link, or copy the links into your own email.
+        </span>
+      )}
       {needsGoogle && (
         <ConnectGoogle
           status={google}
@@ -214,6 +220,16 @@ export function SendAiInterview({
               {email ? ' (emailed)' : ''}: {outcome.sent.map((s) => s.name).join(', ')}.
             </div>
           )}
+          {outcome.sent.length > 0 &&
+            (whatsApping ? (
+              <WhatsAppLinks people={outcome.sent.map((s) => ({ inviteId: s.inviteId, name: s.name }))} onClose={() => setWhatsApping(false)} />
+            ) : (
+              <div>
+                <Button size="sm" variant="secondary" onClick={() => setWhatsApping(true)}>
+                  💬 WhatsApp them the link
+                </Button>
+              </div>
+            ))}
           {outcome.sent.length > 0 && !email && (
             <div className="stack" style={{ gap: 4 }}>
               <textarea

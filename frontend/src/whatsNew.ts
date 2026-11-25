@@ -16,6 +16,14 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-25-whatsapp-link',
+    date: '2026-11-25',
+    title: 'WhatsApp the AI interview link',
+    summary: 'Send candidates their personal AI interview link on WhatsApp. Each click opens WhatsApp with the message and the link already typed in; the message is saved in their chat.',
+    steps: ['Opening → 🎥 AI interview → tick candidates → 💬 WhatsApp link.', 'Click 💬 WhatsApp next to each name → press Send in WhatsApp.'],
+    capability: 'MANAGE_JOBS',
+  },
+  {
     id: '2026-11-24-intern-interview-sets',
     date: '2026-11-24',
     title: 'Campus-style AI interviews for interns, and match scores that update',

@@ -444,6 +444,8 @@ export const remindTest = (inviteId: string, input: { sendEmail: boolean; sendWh
 /** More time for candidates who haven't taken a test: open until the end of the day `days` from today (ASMT-42). */
 export const extendTests = (inviteIds: string[], days: number) =>
   api<{ extended: number; skipped: string[]; dueAt: string }>('/tests/extend', json('POST', { inviteIds, days }))
+/** Send the candidate their link on WhatsApp: through the Business API, or message.whatsappLink to open (ASMT-43). */
+export const whatsAppTest = (inviteId: string) => api<SendResult>(`/tests/${inviteId}/whatsapp`, { method: 'POST' })
 export const cancelTest = (inviteId: string) => api<InviteView>(`/tests/${inviteId}/cancel`, { method: 'POST' })
 
 // candidate

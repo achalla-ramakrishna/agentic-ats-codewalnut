@@ -184,6 +184,38 @@ public class AssessmentInviteService {
         return new com.codewalnut.ats.dto.AssessmentDtos.Extended(extended, skipped, due);
     }
 
+    /**
+     * Sends a candidate their test or AI interview link on WhatsApp (ASMT-43): through the Business API when it's set
+     * up, otherwise the result carries a wa.me link that opens WhatsApp with the message typed. Only open invites; the
+     * message is saved in the candidate's chat. Changes nothing else (no due date, no reminder count).
+     */
+    @Transactional
+    public SendResult whatsApp(AppUser actor, UUID inviteId, String baseUrl) {
+        accessPolicy.require(actor, Capability.MANAGE_JOBS);
+        accessPolicy.require(actor, Capability.MESSAGE_CANDIDATES);
+        AssessmentInvite invite = invite(inviteId);
+        AssessmentInvite.Status status = finalise(invite);
+        if (status != AssessmentInvite.Status.SENT && status != AssessmentInvite.Status.STARTED) {
+            throw new IllegalArgumentException(status == AssessmentInvite.Status.EXPIRED
+                    ? "The due date has passed; extend it first" : "This one is already finished");
+        }
+        Application application = invite.getApplication();
+        Assessment assessment = invite.getAssessment();
+        boolean interview = assessment.getCategory() == Assessment.Category.INTERVIEW;
+        String body = "Hi " + firstName(application.getCandidate().getName()) + ", this is CodeWalnut about the "
+                + application.getJob().getTitle() + " role. "
+                + (interview
+                        ? "Your AI interview is ready: you answer the questions on camera, in about " + assessment.getDurationMinutes()
+                                + " minutes. Please use Chrome or Edge on a laptop with a camera and microphone, in a quiet place."
+                        : "Your " + assessment.getTitle() + " test is ready (" + assessment.getDurationMinutes() + " minutes).")
+                + "\n\nOpen " + link(baseUrl, invite) + " and sign in with Google using " + application.getCandidate().getEmail()
+                + ". The timer starts only when you click Start. Please finish by " + DUE.format(invite.getDueAt()) + ".\n\nAll the best!";
+        MessageResponse message = messageService.post(actor, application.getId(), new PostMessageRequest(MessageChannel.CANDIDATE,
+                body, null, false, true, "test_whatsapp"), baseUrl);
+        auditService.record(actor, AuditAction.ASSESSMENT_WHATSAPPED, "AssessmentInvite", inviteId, Map.of());
+        return new SendResult(view(invite), message);
+    }
+
     /** A friendly nudge for a test not yet started. An expired invite gets two more days. */
     @Transactional
     public SendResult remind(AppUser actor, UUID inviteId, RemindRequest request, String baseUrl) {

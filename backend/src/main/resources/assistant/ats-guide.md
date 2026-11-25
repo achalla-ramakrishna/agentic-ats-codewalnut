@@ -128,6 +128,9 @@ part of Shortlisted; selected and offer accepted are part of Offer sent; withdra
   (re-reviews failed and basic reviews). Résumés uploaded meanwhile are kept and read again automatically
   every 10 minutes; or opening → + Add candidates → Upload résumés → Try again now. Profiles whose reading
   failed earlier: AI suggestions → Analyze.
+- WhatsApp the AI interview link: opening → 🎥 AI interview → tick candidates (untick Only submitted) →
+  💬 WhatsApp link → click 💬 WhatsApp next to each name; WhatsApp opens with the message and their link
+  typed in → Send. Needs their mobile number. Also offered right after sending the AI interview.
 - Candidates missed the AI interview deadline: opening → 🎥 AI interview → untick Only submitted → Tick
   everyone who hasn't taken it → 📅 Extend due date → 15 days → keep "Email each their link" ticked → Extend.
   Someone whose interview was submitted half-done: open them → Let them finish.

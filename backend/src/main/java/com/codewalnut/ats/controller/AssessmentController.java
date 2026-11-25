@@ -157,6 +157,12 @@ public class AssessmentController {
         return inviteService.detail(currentUserService.require(), id);
     }
 
+    /** Send the candidate their link on WhatsApp (Business API, or a wa.me link to open). */
+    @PostMapping("/api/v1/tests/{id}/whatsapp")
+    public SendResult whatsApp(@PathVariable UUID id) {
+        return inviteService.whatsApp(currentUserService.require(), id, baseUrl());
+    }
+
     @PostMapping("/api/v1/tests/{id}/remind")
     public SendResult remind(@PathVariable UUID id, @RequestBody RemindRequest request) {
         return inviteService.remind(currentUserService.require(), id, request, baseUrl());

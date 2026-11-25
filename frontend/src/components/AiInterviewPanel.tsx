@@ -7,6 +7,7 @@ import { Dots } from './InterviewReviewCard'
 import { Verdicts } from './Verdicts'
 import { QuestionSetPreview } from './QuestionSetPreview'
 import { VideoSpace } from './VideoSpace'
+import { WhatsAppLinks } from './WhatsAppLinks'
 import { useStages } from './useStages'
 import { Badge, Button, Card } from './ui'
 
@@ -60,6 +61,7 @@ export function AiInterviewPanel({
   const [previewing, setPreviewing] = useState(false)
   const [previewOf, setPreviewOf] = useState(1)
   const [extending, setExtending] = useState(false)
+  const [whatsApping, setWhatsApping] = useState<{ inviteId: string; name: string }[] | null>(null)
   const [days, setDays] = useState(15)
   const [remind, setRemind] = useState(true)
 
@@ -311,6 +313,22 @@ export function AiInterviewPanel({
                 ✨ Review again with AI ({notByAi.length})
               </Button>
             )}
+            {canEdit && (
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={busy || picked.size === 0}
+                onClick={() =>
+                  setWhatsApping(
+                    (data?.candidates ?? [])
+                      .filter((c) => picked.has(c.applicationId) && (c.status === 'SENT' || c.status === 'STARTED'))
+                      .map((c) => ({ inviteId: c.inviteId, name: c.candidateName })),
+                  )
+                }
+              >
+                💬 WhatsApp link ({picked.size})
+              </Button>
+            )}
             {canEdit && notTaken.length > 0 && (
               <button
                 type="button"
@@ -324,6 +342,18 @@ export function AiInterviewPanel({
               </button>
             )}
           </div>
+          {whatsApping && (
+            whatsApping.length ? (
+              <WhatsAppLinks people={whatsApping} onClose={() => setWhatsApping(null)} />
+            ) : (
+              <div className="alert alert-info" role="status">
+                None of the ticked candidates has an open AI interview to send. Past the due date? Use 📅 Extend due date first.{' '}
+                <button type="button" className="link-button" onClick={() => setWhatsApping(null)}>
+                  OK
+                </button>
+              </div>
+            )
+          )}
           {extending && picked.size > 0 && (
             <div className="row card" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap' }} role="group" aria-label="Extend due date">
               <label className="row" style={{ gap: 6 }}>
